@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart'; // 온보딩 이후 로그인으로 넘어가기 위해
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() async{
+import 'login_screen.dart'; // 로그인 화면 파일을 import
+
+void main() async {
+  // .env 파일 로드
   await dotenv.load(fileName: ".env");
+
+  // 카카오 SDK 초기화
+  KakaoSdk.init(nativeAppKey: dotenv.env['KAKAO_NATIVE_APP_KEY'] ?? '');
+
   runApp(MyApp());
 }
 
@@ -12,27 +18,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Kakao Login',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomeScreen(),
+      home: LoginScreen(), // 로그인 화면으로 설정
     );
   }
 }
-
-class HomeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // .env에서 KAKAO_NATIVE_APP_KEY 읽기
-    String kakaoKey = dotenv.env['KAKAO_NATIVE_APP_KEY'] ?? 'No Key Found';
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('환경 변수 테스트'),
-      ),
-      body: Center(
-        child: Text('카카오 네이티브 앱 키: $kakaoKey'),
-      ),
-    );
-  }}

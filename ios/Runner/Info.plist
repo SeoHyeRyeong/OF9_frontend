@@ -43,7 +43,26 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
+
+    <!-- 카카오 로그인 관련 설정 추가 -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>kakao${NATIVE_APP_KEY}</string>
+        <string>kakaokompassauth</string>
+    </array>
+
+    <!-- URL Types 설정 -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>kakao${NATIVE_APP_KEY}</string><!-- 카카오 네이티브 앱 키를 여기에 입력 -->
+            </array>
+        </dict>
+    </array>
+
 </dict>
 </plist>

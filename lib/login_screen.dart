@@ -1,29 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'login_signup.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   Future<void> kakaoLogin() async {
     try {
+      OAuthToken token;
+
       // 카카오톡 설치 여부 확인
       if (await isKakaoTalkInstalled()) {
         try {
-          OAuthToken token = await UserApi.instance.loginWithKakaoTalk();
+          token = await UserApi.instance.loginWithKakaoTalk();
           print('카카오톡으로 로그인 성공: ${token.accessToken}');
         } catch (error) {
           print('카카오톡으로 로그인 실패: $error');
-          // 카카오톡 로그인 실패 시, 계정으로 로그인 시도
-          OAuthToken token = await UserApi.instance.loginWithKakaoAccount();
+          token = await UserApi.instance.loginWithKakaoAccount();
           print('카카오 계정으로 로그인 성공: ${token.accessToken}');
         }
       } else {
-        // 카카오톡이 설치되어 있지 않은 경우, 계정으로 로그인
-        OAuthToken token = await UserApi.instance.loginWithKakaoAccount();
+        token = await UserApi.instance.loginWithKakaoAccount();
         print('카카오 계정으로 로그인 성공: ${token.accessToken}');
       }
 
       // 사용자 정보 조회
       User user = await UserApi.instance.me();
       print('사용자 정보: ${user.kakaoAccount?.email}, ${user.kakaoAccount?.profile?.nickname}');
+
+      final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
+
+      // ✅ 백엔드로 access token 전송
+      final response = await http.post(
+        Uri.parse('$backendUrl/api/auth/kakao'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'accessToken': token.accessToken}),
+      );
+
+      if (response.statusCode == 200 && mounted) {
+        print('백엔드 로그인 성공: ${response.body}');
+
+        // ✅ 화면 전환 (Flutter 프레임 이후 안전하게)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoginSignupScreen(
+                nickname: user.kakaoAccount?.profile?.nickname,
+                email: user.kakaoAccount?.email,
+              ),
+            ),
+          );
+        });
+      } else {
+        print('백엔드 로그인 실패: ${response.statusCode}, ${response.body}');
+      }
     } catch (error) {
       print('로그인 실패: $error');
     }
@@ -49,16 +86,12 @@ class LoginScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              onPressed: () async {
-                await kakaoLogin(); // 카카오 로그인 함수 호출
-              },
+              onPressed: kakaoLogin,
               child: Text('카카오 로그인'),
             ),
-            SizedBox(height: 20), // 버튼 간격 조정
+            SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () async {
-                await kakaoLogout(); // 카카오 로그아웃 함수 호출
-              },
+              onPressed: kakaoLogout,
               child: Text('카카오 로그아웃'),
             ),
           ],

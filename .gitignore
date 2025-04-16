@@ -46,3 +46,4 @@ app.*.map.json
 
 # 환경 변수 파일 (추가)
 .env
+android/key.properties

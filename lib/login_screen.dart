@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () async {
                   setState(() => isLoading = true);
                   print('▶️ 좋아하는 팀: $favTeam 으로 로그인 시작');
-                  final result = await _authService.loginAndStoreJwt(favTeam);
+                  final result = await _authService.loginAndStoreTokens(favTeam);
                   print('◀️ 로그인 결과: $result');
                   setState(() {
                     isLoggedIn = result;

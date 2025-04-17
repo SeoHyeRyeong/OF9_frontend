@@ -44,8 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# 환경 변수 파일 (추가)
 # 민감정보처리
 key.properties
 .env
-key.properties

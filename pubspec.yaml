@@ -38,6 +38,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   kakao_flutter_sdk: ^1.9.7+3
   kakao_flutter_sdk_user: ^1.9.7+3
+  flutter_secure_storage: ^8.0.0
 
 dev_dependencies:
   flutter_test:

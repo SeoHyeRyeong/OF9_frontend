@@ -3,6 +3,8 @@ import 'kakao_auth_service.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_imgs.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:frontend/utils/size_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -48,8 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 300), //색상 전환 애니메이션 속도
-              width: 10,
-              height: 10,
+              width: 10.w,
+              height: 10.w,
               decoration: BoxDecoration(
                 shape: BoxShape.circle, //원형 동그라미
                 color: _currentIndex == index ? AppColors.gray600 : AppColors
@@ -57,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             if (index != onboardingData.length - 1) // 마지막 인덱스가 아니라면 gap 삽입
-              const SizedBox(width: 16),
+              SizedBox(width: 16.w),
           ],
         );
       }),
@@ -82,87 +84,122 @@ class _LoginScreenState extends State<LoginScreen> {
   /// 뷰 디자인
   @override
   Widget build(BuildContext context) {
+    final heights = calculateHeights(
+      imageBaseHeight: 450, // 이 화면의 상단 기준 높이
+      contentBaseHeight: 350, // 이 화면의 하단 기준 높이
+    );
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea( //노치, 상태바 등 피해서 배치
-        child: Column(
+      body: SafeArea( // 노치, 상태바 등 피해서 배치
+        child: Stack(
           children: [
 
             /// 상단 그래픽 이미지 (450 영역)
-            Expanded(
-              flex: 9,
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: heights['imageHeight'],
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: onboardingData.length,
                 onPageChanged: (index) {
-                  setState(() => _currentIndex = index); //페이지 전환 시 인디케이터 갱신
+                  setState(() => _currentIndex = index); // 페이지 전환 시 인디케이터 갱신
                 },
                 itemBuilder: (context, index) {
                   final data = onboardingData[index];
                   return Image.asset(
                     data['image']!,
-                    width: double.infinity, //가로 꽉 채우기
-                    fit: BoxFit.cover, //이미지 비율 유지하며 빈 공간 없이 채우기
+                    width: double.infinity, // 가로 꽉 채우기
+                    fit: BoxFit.cover, // 이미지 비율 유지하며 빈 공간 없이 채우기
                     errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.error), //이미지 로딩 실패 시
+                    const Icon(Icons.error), // 이미지 로딩 실패 시
                   );
                 },
               ),
             ),
 
-            /// 인디케이터 + 설명 + 버튼 (350 영역)
-            Expanded(
-              flex: 7,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                //위젯들 세로로 고르게 배치
-                children: [
-                  // 인디케이터
-                  _buildPageIndicator(),
+            /// 인디케이터 (480 위치)
+            Positioned(
+              top: scaleHeight(480),
+              left: 0,
+              right: 0,
+              child: _buildPageIndicator(),
+            ),
 
-                  // 텍스트 설명
-                  Column(
-                    children: [
-                      Text(
-                        onboardingData[_currentIndex]['title']!,
-                        style: AppFonts.h3_eb.copyWith(
-                            color: AppColors.gray800),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 44),
-                      Text(
-                        onboardingData[_currentIndex]['subtitle']!,
-                        style: AppFonts.b2_m_long.copyWith(
-                            color: AppColors.gray300),
-                        textAlign: TextAlign.center,
-                      )
-                    ],
-                  ),
+            /// 메인 텍스트 (530 위치)
+            Positioned(
+              top: scaleHeight(530),
+              left: 0,
+              right: 0,
+              child: Text(
+                onboardingData[_currentIndex]['title']!,
+                style: AppFonts.h3_eb.copyWith(
+                  color: AppColors.gray800,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
 
-                  // 카카오 버튼
-                  isLoading
-                      ? const CircularProgressIndicator() //로딩 중이면 로딩 인디케이션 표시
-                      : SizedBox(
-                    width: 320,
-                    height: 54,
-                    child: ElevatedButton.icon(
-                      onPressed: _handleKakaoLogin, //버튼 클릭 시 로그인 함수 실행
-                      icon: Image.asset(AppImages.kakaobrown),
-                      label: Text(
-                        '카카오로 계속하기',
-                        style: AppFonts.b2_b.copyWith(color: AppColors.kakao02), // 폰트 적용
+            /// 서브 텍스트 (574 위치)
+            Positioned(
+              top: scaleHeight(574),
+              left: 0,
+              right: 0,
+              child: Text(
+                onboardingData[_currentIndex]['subtitle']!,
+                style: AppFonts.b2_m_long.copyWith(
+                  color: AppColors.gray300,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            /// 카카오 버튼 (674 위치)
+            Positioned(
+              top: scaleHeight(674),
+              left: 0,
+              right: 0,
+              child: Center(
+                child: SizedBox(
+                  width: 320.w,
+                  height: 54.h,
+                  child: isLoading
+                      ? const CircularProgressIndicator() // 로딩 중이면 로딩 표시
+                      : ElevatedButton(
+                    onPressed: _handleKakaoLogin, // 버튼 클릭 시 로그인 함수 실행
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.all(10.w), // 피그마에는 18인데... 그러면 글자가 안 들어가져서 줄임
+                      backgroundColor: AppColors.kakao01,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r), // 모서리 둥근 정도
                       ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(18), // 버튼 안쪽 여백 18px
-                        backgroundColor: AppColors.kakao01,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8), //모서리 둥근 정도
+                      elevation: 0, // 그림자 제거
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, // 버튼 내용 크기만큼만 차지
+                      mainAxisAlignment: MainAxisAlignment.center, // 가운데 정렬
+                      children: [
+                        Image.asset(
+                          AppImages.kakaobrown,
+                          width: 28.w,
+                          height: 28.h,
+                          filterQuality: FilterQuality.high,
                         ),
-                      ),
+                        SizedBox(width: 4.w), // 아이콘과 텍스트 사이 간격 추가
+                        Text(
+                          '카카오로 계속하기',
+                          style: AppFonts.b2_b.copyWith(
+                            color: AppColors.kakao02,
+                            fontSize: 16.sp,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ],

@@ -24,17 +24,17 @@ class _LoginScreenState extends State<LoginScreen> {
   /// 로그인 화면에 들어갈 그래픽 및 설명
   final onboardingData = [
     {
-      'image': 'assets/imgs/login_onboarding1.png',
+      'image': 'assets/imgs/login_onboarding1.jpg',
       'title': '직관 기록 업로드',
       'subtitle': '기능설명! 기능설명! 기능설명! 기능설명!\n기능설명! 기능설명! 기능설명! 기능설명!'
     },
     {
-      'image': 'assets/imgs/login_onboarding2.png',
+      'image': 'assets/imgs/login_onboarding2.jpg',
       'title': '기록으로 쌓이는 팬 히스토리',
       'subtitle': '직관 횟수, 감정 분포 등 통계를 확인하고\n특별한 팬 뱃지를 모아보세요'
     },
     {
-      'image': 'assets/imgs/login_onboarding3.png',
+      'image': 'assets/imgs/login_onboarding3.jpg',
       'title': '친구와 직관 기록 공유',
       'subtitle': '이제부터 직찍!\n친구와 직관 순간을 나눠 보세요'
     },

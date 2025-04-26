@@ -12,7 +12,9 @@ class AppImages {
   static const tigers = 'assets/imgs/img_kia.png';
   static const twins = 'assets/imgs/img_lg.png';
 
-  static const loginOnboarding1 = 'assets/imgs/login_onboarding1.png';
+  static const loginOnboarding1 = 'assets/imgs/login_onboarding1.jpg';
+  static const loginOnboarding2 = 'assets/imgs/login_onboarding2.jpg';
+  static const loginOnboarding3 = 'assets/imgs/login_onboarding3.jpg';
 
   static const kakaobrown = 'assets/imgs/ic_kakao_kakaobrown_28.png';
 }

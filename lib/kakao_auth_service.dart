@@ -49,7 +49,7 @@ class KakaoAuthService {
         url,
         headers: {'Content-Type': 'application/json'},
         body: payload,
-      );
+      ).timeout(const Duration(seconds: 5));
 
       print('⬅️ [HTTP ${response.statusCode}] ${response.body}');
 

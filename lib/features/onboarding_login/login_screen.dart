@@ -4,8 +4,8 @@ import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
-import 'package:frontend/kakao_auth_service.dart';
-import 'favorite_team_screen.dart'; // 추가
+import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
+import 'package:frontend/features/onboarding_login/favorite_team_screen.dart'; // 추가
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);

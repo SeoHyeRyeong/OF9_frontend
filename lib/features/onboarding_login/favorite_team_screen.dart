@@ -4,8 +4,8 @@ import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
-import 'package:frontend/kakao_auth_service.dart';
-import 'signup_complete_screen.dart'; // 회원가입 완료 화면 import
+import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
+import 'package:frontend/features/onboarding_login/signup_complete_screen.dart';
 
 class FavoriteTeamScreen extends StatefulWidget {
   const FavoriteTeamScreen({Key? key}) : super(key: key);

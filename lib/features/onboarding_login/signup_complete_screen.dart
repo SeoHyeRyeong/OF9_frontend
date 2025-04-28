@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/utils/size_utils.dart';
-import 'home_screen.dart'; // 홈화면
+import 'package:frontend/features/onboarding_login/home_screen.dart';
 
 class SignupCompleteScreen extends StatelessWidget {
   const SignupCompleteScreen({Key? key}) : super(key: key);

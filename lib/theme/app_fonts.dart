@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:frontend/utils/size_utils.dart'; // scaleFont 함수 import
 
 // 사용법 - style: AppFonts.h4_b
 class AppFonts {
@@ -9,7 +9,7 @@ class AppFonts {
   static TextStyle h1_b = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: 28.sp,
+    fontSize: scaleFont(28),
     height: 1.0,
     letterSpacing: -0.84,
   );
@@ -17,7 +17,7 @@ class AppFonts {
   static TextStyle h3_eb = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w800,
-    fontSize: 24.sp,
+    fontSize: scaleFont(24),
     height: 1.0,
     letterSpacing: -0.72,
   );
@@ -25,7 +25,7 @@ class AppFonts {
   static TextStyle h3_sb = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: 24.sp,
+    fontSize: scaleFont(24),
     height: 1.0,
     letterSpacing: -0.72,
   );
@@ -33,7 +33,7 @@ class AppFonts {
   static TextStyle h4_b = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: 22.sp,
+    fontSize: scaleFont(22),
     height: 1.0,
     letterSpacing: -0.66,
   );
@@ -41,7 +41,7 @@ class AppFonts {
   static TextStyle h5_b = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: 20.sp,
+    fontSize: scaleFont(20),
     height: 1.0,
     letterSpacing: -0.6,
   );
@@ -49,7 +49,7 @@ class AppFonts {
   static TextStyle h5_sb = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: 20.sp,
+    fontSize: scaleFont(20),
     height: 1.0,
     letterSpacing: -0.6,
   );
@@ -58,7 +58,7 @@ class AppFonts {
   static TextStyle b1_b = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: 18.sp,
+    fontSize: scaleFont(18),
     height: 1.0,
     letterSpacing: -0.54,
   );
@@ -66,7 +66,7 @@ class AppFonts {
   static TextStyle b1_sb = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: 18.sp,
+    fontSize: scaleFont(18),
     height: 1.0,
     letterSpacing: -0.54,
   );
@@ -74,7 +74,7 @@ class AppFonts {
   static TextStyle b2_b = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: 16.sp,
+    fontSize: scaleFont(16),
     height: 1.0,
     letterSpacing: -0.48,
   );
@@ -82,7 +82,7 @@ class AppFonts {
   static TextStyle b2_m = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w500,
-    fontSize: 16.sp,
+    fontSize: scaleFont(16),
     height: 1.0,
     letterSpacing: -0.48,
   );
@@ -90,7 +90,7 @@ class AppFonts {
   static TextStyle b2_m_long = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w500,
-    fontSize: 16.sp,
+    fontSize: scaleFont(16),
     height: 1.6,
     letterSpacing: -0.48,
   );
@@ -98,7 +98,7 @@ class AppFonts {
   static TextStyle b3_sb = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: 14.sp,
+    fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
@@ -106,7 +106,7 @@ class AppFonts {
   static TextStyle b3_sb_long = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: 14.sp,
+    fontSize: scaleFont(14),
     height: 1.6,
     letterSpacing: -0.42,
   );
@@ -114,7 +114,7 @@ class AppFonts {
   static TextStyle b3_m = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w500,
-    fontSize: 14.sp,
+    fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
@@ -122,7 +122,7 @@ class AppFonts {
   static TextStyle b3_r = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w400,
-    fontSize: 14.sp,
+    fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
@@ -131,7 +131,7 @@ class AppFonts {
   static TextStyle c1_b = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: 12.sp,
+    fontSize: scaleFont(12),
     height: 1.0,
     letterSpacing: -0.36,
   );
@@ -139,7 +139,7 @@ class AppFonts {
   static TextStyle c1_2 = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w400,
-    fontSize: 12.sp,
+    fontSize: scaleFont(12),
     height: 1.0,
     letterSpacing: -0.36,
   );
@@ -147,7 +147,7 @@ class AppFonts {
   static TextStyle c2_b = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: 10.sp,
+    fontSize: scaleFont(10),
     height: 1.0,
     letterSpacing: -0.3,
   );
@@ -155,7 +155,7 @@ class AppFonts {
   static TextStyle c2_sb = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: 10.sp,
+    fontSize: scaleFont(10),
     height: 1.0,
     letterSpacing: -0.3,
   );
@@ -163,7 +163,7 @@ class AppFonts {
   static TextStyle c3_sb = TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: 8.sp,
+    fontSize: scaleFont(8),
     height: 1.0,
     letterSpacing: -0.3,
   );

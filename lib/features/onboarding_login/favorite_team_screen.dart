@@ -36,7 +36,9 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final screenHeight = MediaQuery.of(context).size.height; // 전체 화면 높이 가져오기
+    final statusBarHeight = MediaQuery.of(context).padding.top; // 상태바 높이 가져오기
+    final baseScreenHeight = 800;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -45,22 +47,23 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
           children: [
             // 뒤로가기 버튼
             Positioned(
-              top: scaleHeight(46) - statusBarHeight,
+              top: (screenHeight * (46 / baseScreenHeight)) - statusBarHeight,
               left: 0,
               right: 0,
               child: SizedBox(
                 width: 360.w,
-                height: scaleHeight(60),
+                height: screenHeight * (60 / baseScreenHeight),
                 child: Stack(
                   children: [
                     Positioned(
-                      top: scaleHeight(18),
+                      top: screenHeight * (18 / baseScreenHeight),
                       left: 20.w,
                       child: GestureDetector(
                         onTap: () {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(
+                                builder: (context) => const LoginScreen()),
                           );
                         },
                         child: SvgPicture.asset(
@@ -68,7 +71,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                           width: 24.w,
                           height: 24.w,
                           fit: BoxFit.contain,
-                        )
+                        ),
                       ),
                     ),
                   ],
@@ -78,40 +81,40 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
 
             // "최애 구단 선택" 텍스트
             Positioned(
-              top: scaleHeight(130) - statusBarHeight,
+              top: (screenHeight * (130 / baseScreenHeight)) - statusBarHeight,
               left: 20.w,
               child: Text(
                 '최애 구단 선택',
-                style: AppFonts.h1_b.copyWith(color: Colors.black),
+                style: AppFonts.h1_b(context).copyWith(color: Colors.black),
               ),
             ),
 
             // "나중에 마이페이지에서 변경 가능해요" 텍스트
             Positioned(
-              top: scaleHeight(174) - statusBarHeight,
+              top: (screenHeight * (174 / baseScreenHeight)) - statusBarHeight,
               left: 20.w,
               child: Text(
                 '나중에 마이페이지에서 변경 가능해요',
-                style: AppFonts.b2_m.copyWith(color: AppColors.gray300),
+                style: AppFonts.b2_m(context).copyWith(color: AppColors.gray300),
               ),
             ),
 
             // 구단 선택 그리드
             Positioned(
-              top: scaleHeight(190) - statusBarHeight,
+              top: (screenHeight * (190 / baseScreenHeight)) - statusBarHeight,
               left: 0,
               right: 0,
-              bottom: scaleHeight(88) + scaleHeight(24), // 완료 버튼 높이 + 완료 프레임 패딩 top
+              bottom: (screenHeight * (88 / baseScreenHeight)) + (screenHeight * (24 / baseScreenHeight)),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: GridView.builder(
-                  padding: EdgeInsets.only(top: scaleHeight(32),),
+                  padding: EdgeInsets.only(top: screenHeight * (32 / baseScreenHeight)),
                   itemCount: _teams.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 8.w,
-                    mainAxisSpacing: scaleHeight(8),
-                    childAspectRatio: 1.2, //카드 width:height 비율은 156:130 ≈ 1.2
+                    mainAxisSpacing: screenHeight * (8 / baseScreenHeight),
+                    childAspectRatio: 1.2,
                   ),
                   itemBuilder: (context, index) {
                     final team = _teams[index];
@@ -146,10 +149,11 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                     width: 60.w,
                                     height: 60.w,
                                   ),
-                                  SizedBox(height: scaleHeight(8)),
+                                  SizedBox(height: screenHeight * (8 / baseScreenHeight)),
                                   Text(
                                     team['name']!,
-                                    style: AppFonts.b2_b.copyWith(color: AppColors.gray900),
+                                    style: AppFonts.b2_b(context).copyWith(
+                                        color: AppColors.gray900),
                                   ),
                                 ],
                               ),
@@ -180,35 +184,35 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
               ),
             ),
 
-
-
             // 완료 버튼
             Positioned(
-              top: scaleHeight(688) - statusBarHeight,
+              top: (screenHeight * (688 / baseScreenHeight)) - statusBarHeight,
               left: 0,
               right: 0,
               child: Container(
                 color: Colors.white,
                 width: 360.w,
-                height: scaleHeight(88),
+                height: screenHeight * (88 / baseScreenHeight),
                 padding: EdgeInsets.only(
-                  top: scaleHeight(24),
+                  top: screenHeight * (24 / baseScreenHeight),
                   left: 20.w,
                   right: 20.w,
-                  bottom: scaleHeight(10),
+                  bottom: screenHeight * (10 / baseScreenHeight),
                 ),
                 child: Center(
                   child: SizedBox(
                     width: 320.w,
-                    height: scaleHeight(54),
+                    height: screenHeight * (54 / baseScreenHeight),
                     child: ElevatedButton(
                       onPressed: _selectedTeam != null
                           ? () async {
-                        final success = await kakaoAuthService.loginAndStoreTokens(_selectedTeam!);
+                        final success = await kakaoAuthService
+                            .loginAndStoreTokens(_selectedTeam!);
                         if (success) {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const SignupCompleteScreen()),
+                            MaterialPageRoute(builder: (
+                                context) => const SignupCompleteScreen()),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -218,17 +222,18 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                       }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedTeam != null ? AppColors.gray700 : AppColors.gray200,
+                        backgroundColor: _selectedTeam != null ? AppColors
+                            .gray700 : AppColors.gray200,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         elevation: 0,
-                        padding: EdgeInsets.symmetric(horizontal: 18.w), // 내부 패딩
+                        padding: EdgeInsets.symmetric(horizontal: 18.w),
                       ),
                       child: Text(
                         '완료',
-                        style: AppFonts.b2_b.copyWith(color: AppColors.gray20,),
+                        style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
                       ),
                     ),
                   ),

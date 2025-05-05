@@ -53,7 +53,7 @@ class _TicketInfoFormScreenState extends State<TicketInfoFormScreen> {
     return Scaffold(
       backgroundColor: AppColors.gray20,
       appBar: AppBar(
-        title: Text('티켓 정보 확인', style: AppFonts.b2_b.copyWith(color: AppColors.gray900)),
+        title: Text('티켓 정보 확인', style: AppFonts.b2_b(context).copyWith(color: AppColors.gray900)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -67,7 +67,7 @@ class _TicketInfoFormScreenState extends State<TicketInfoFormScreen> {
               SizedBox(height: 16.h),
 
               // OCR 인식된 텍스트 표시
-              Text('인식된 원본 텍스트', style: AppFonts.b3_sb.copyWith(color: AppColors.gray700)),
+              Text('인식된 원본 텍스트', style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray700)),
               SizedBox(height: 8.h),
               Container(
                 padding: EdgeInsets.all(12.w),
@@ -77,7 +77,7 @@ class _TicketInfoFormScreenState extends State<TicketInfoFormScreen> {
                 ),
                 child: Text(
                   widget.recognizedText,
-                  style: AppFonts.b3_m.copyWith(color: AppColors.gray800),
+                  style: AppFonts.b3_m(context).copyWith(color: AppColors.gray800),
                 ),
               ),
 
@@ -113,7 +113,7 @@ class _TicketInfoFormScreenState extends State<TicketInfoFormScreen> {
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                 ),
-                child: Text('완료', style: AppFonts.b2_b.copyWith(color: Colors.white)),
+                child: Text('완료', style: AppFonts.b2_b(context).copyWith(color: Colors.white)),
               ),
             ],
           ),
@@ -123,7 +123,7 @@ class _TicketInfoFormScreenState extends State<TicketInfoFormScreen> {
   }
 
   Widget _buildLabel(String text) {
-    return Text(text, style: AppFonts.b3_sb.copyWith(color: AppColors.gray700));
+    return Text(text, style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray700));
   }
 
   Widget _buildTextField(TextEditingController controller, String hint) {

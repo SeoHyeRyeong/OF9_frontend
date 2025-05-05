@@ -2,19 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
+import 'package:frontend/features/upload/ticket_ocr_screen.dart'; // 티켓 스캔 화면 import
 
-// 임시 홈 화면
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.gray20,
+      appBar: AppBar(
+        title: Text('야구 직관 기록 앱', style: AppFonts.b2_b.copyWith(color: AppColors.gray900)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
       body: Center(
-        child: Text(
-          '홈 화면입니다!',
-          style: AppFonts.h3_eb.copyWith(color: AppColors.gray800),
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const TicketOcrScreen()),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.pri500,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+          ),
+          child: Text('티켓 스캔 시작', style: AppFonts.b2_b.copyWith(color: Colors.white)),
         ),
       ),
     );

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
+import 'package:frontend/features/onboarding_login/login_screen.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/signup_complete_screen.dart';
 
@@ -30,97 +32,143 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
     {'name': 'SSG 랜더스', 'image': AppImages.landers},
   ];
 
-  final kakaoAuthService = KakaoAuthService(); // Kakao 서비스 인스턴스
+  final kakaoAuthService = KakaoAuthService();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.gray20,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: scaleHeight(32)),
-              Text(
-                '최애 구단 선택',
-                style: AppFonts.h3_eb.copyWith(color: AppColors.gray900),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                '나중에 마이페이지에서 변경 가능해요',
-                style: AppFonts.b3_m.copyWith(color: AppColors.gray400),
-              ),
-              SizedBox(height: scaleHeight(24)),
+    final statusBarHeight = MediaQuery.of(context).padding.top;
 
-              Expanded(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // 뒤로가기 버튼
+            Positioned(
+              top: scaleHeight(46) - statusBarHeight,
+              left: 0,
+              right: 0,
+              child: SizedBox(
+                width: 360.w,
+                height: scaleHeight(60),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: scaleHeight(18),
+                      left: 20.w,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          );
+                        },
+                        child: SvgPicture.asset(
+                          AppImages.backBlack,
+                          width: 24.w,
+                          height: 24.w,
+                          fit: BoxFit.contain,
+                        )
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // "최애 구단 선택" 텍스트
+            Positioned(
+              top: scaleHeight(130) - statusBarHeight,
+              left: 20.w,
+              child: Text(
+                '최애 구단 선택',
+                style: AppFonts.h1_b.copyWith(color: Colors.black),
+              ),
+            ),
+
+            // "나중에 마이페이지에서 변경 가능해요" 텍스트
+            Positioned(
+              top: scaleHeight(174) - statusBarHeight,
+              left: 20.w,
+              child: Text(
+                '나중에 마이페이지에서 변경 가능해요',
+                style: AppFonts.b2_m.copyWith(color: AppColors.gray300),
+              ),
+            ),
+
+            // 구단 선택 그리드
+            Positioned(
+              top: scaleHeight(190) - statusBarHeight,
+              left: 0,
+              right: 0,
+              bottom: scaleHeight(88) + scaleHeight(24), // 완료 버튼 높이 + 완료 프레임 패딩 top
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: GridView.builder(
-                  padding: EdgeInsets.zero,
+                  padding: EdgeInsets.only(top: scaleHeight(32),),
                   itemCount: _teams.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    crossAxisSpacing: 12.w,
-                    mainAxisSpacing: 12.h,
-                    childAspectRatio: 1.4,
+                    crossAxisSpacing: 8.w,
+                    mainAxisSpacing: scaleHeight(8),
+                    childAspectRatio: 1.2, //카드 width:height 비율은 156:130 ≈ 1.2
                   ),
                   itemBuilder: (context, index) {
                     final team = _teams[index];
                     final isSelected = _selectedTeam == team['name'];
 
-                    // 박스 색상 결정
-                    Color boxColor;
-                    if (_selectedTeam == null) {
-                      boxColor = AppColors.gray50; // 아무것도 선택 안했을 때는 모두 연회색
-                    } else {
-                      boxColor = isSelected ? AppColors.gray50 : const Color(0xFF83878A); // 선택된 것만 연회색, 나머지 회색
-                    }
-
                     return GestureDetector(
                       onTap: () {
                         setState(() {
                           if (_selectedTeam == team['name']) {
-                            _selectedTeam = null; // 같은 걸 누르면 선택 해제
+                            _selectedTeam = null;
                           } else {
-                            _selectedTeam = team['name']; // 새로 선택
+                            _selectedTeam = team['name'];
                           }
                         });
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: boxColor,
-                          border: Border.all(
-                            color: isSelected ? AppColors.pri500 : AppColors.gray100,
-                            width: isSelected ? 2.w : 1.w,
-                          ),
+                          color: AppColors.gray50,
+                          border: isSelected
+                              ? Border.all(color: AppColors.pri300, width: 3.w)
+                              : Border.all(color: AppColors.gray50, width: 1.w),
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Stack(
-                          alignment: Alignment.center,
                           children: [
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  team['image']!,
-                                  width: 48.w,
-                                  height: 48.w,
-                                ),
-                                SizedBox(height: 8.h),
-                                Text(
-                                  team['name']!,
-                                  style: AppFonts.b3_sb.copyWith(color: AppColors.gray800),
-                                ),
-                              ],
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.asset(
+                                    team['image']!,
+                                    width: 60.w,
+                                    height: 60.w,
+                                  ),
+                                  SizedBox(height: scaleHeight(8)),
+                                  Text(
+                                    team['name']!,
+                                    style: AppFonts.b2_b.copyWith(color: AppColors.gray900),
+                                  ),
+                                ],
+                              ),
                             ),
                             if (isSelected)
                               Positioned(
-                                top: 8.w,
-                                right: 8.w,
+                                top: 16.w,
+                                left: 16.w,
                                 child: Icon(
                                   Icons.check_circle,
-                                  color: AppColors.pri500,
-                                  size: 20.w,
+                                  color: AppColors.pri300,
+                                  size: 24.w,
+                                ),
+                              ),
+                            if (!isSelected && _selectedTeam != null)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.gray50.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(12.r),
                                 ),
                               ),
                           ],
@@ -130,47 +178,64 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                   },
                 ),
               ),
+            ),
 
-              SizedBox(height: 16.h),
 
-              SizedBox(
-                width: double.infinity,
-                height: 54.h,
-                child: ElevatedButton(
-                  onPressed: _selectedTeam != null
-                      ? () async {
-                    final success = await kakaoAuthService.loginAndStoreTokens(_selectedTeam!);
-                    if (success) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SignupCompleteScreen()),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('로그인 실패')),
-                      );
-                    }
-                  }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _selectedTeam != null ? AppColors.pri500 : AppColors.gray100,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    '완료',
-                    style: AppFonts.b2_b.copyWith(
-                      color: _selectedTeam != null ? Colors.white : AppColors.gray400,
+
+            // 완료 버튼
+            Positioned(
+              top: scaleHeight(688) - statusBarHeight,
+              left: 0,
+              right: 0,
+              child: Container(
+                color: Colors.white,
+                width: 360.w,
+                height: scaleHeight(88),
+                padding: EdgeInsets.only(
+                  top: scaleHeight(24),
+                  left: 20.w,
+                  right: 20.w,
+                  bottom: scaleHeight(10),
+                ),
+                child: Center(
+                  child: SizedBox(
+                    width: 320.w,
+                    height: scaleHeight(54),
+                    child: ElevatedButton(
+                      onPressed: _selectedTeam != null
+                          ? () async {
+                        final success = await kakaoAuthService.loginAndStoreTokens(_selectedTeam!);
+                        if (success) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SignupCompleteScreen()),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('로그인 실패')),
+                          );
+                        }
+                      }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _selectedTeam != null ? AppColors.gray700 : AppColors.gray200,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        elevation: 0,
+                        padding: EdgeInsets.symmetric(horizontal: 18.w), // 내부 패딩
+                      ),
+                      child: Text(
+                        '완료',
+                        style: AppFonts.b2_b.copyWith(color: AppColors.gray20,),
+                      ),
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 24.h),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

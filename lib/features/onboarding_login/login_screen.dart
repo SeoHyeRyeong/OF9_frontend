@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_imgs.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/favorite_team_screen.dart'; // 추가
@@ -50,7 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 10.w,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _currentIndex == index ? AppColors.gray600 : AppColors.gray100,
+                color: _currentIndex == index ? AppColors.gray600 : AppColors
+                    .gray100,
               ),
             ),
             if (index != onboardingData.length - 1)
@@ -80,41 +82,79 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final statusBarHeight = MediaQuery.of(context).padding.top; // 상태바 높이 가져오기
+
     final heights = calculateHeights(
-      imageBaseHeight: 450,
-      contentBaseHeight: 350,
+      imageBaseHeight: 450 - statusBarHeight, // 사진 쪽 높이
+      contentBaseHeight: 350, // 나머지 높이
     );
+
+    final imageHeightWithStatusBar = heights['imageHeight']! + statusBarHeight; // 이미지 높이 보정
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Stack(
           children: [
+            // 배경 이미지 + 로고
             Positioned(
               top: 0,
               left: 0,
               right: 0,
-              height: heights['imageHeight'],
+              height: imageHeightWithStatusBar,
+              // 상태바 높이 더한 값 사용
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: onboardingData.length,
                 onPageChanged: (index) => setState(() => _currentIndex = index),
                 itemBuilder: (context, index) {
                   final data = onboardingData[index];
-                  return Image.asset(
-                    data['image']!,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
+                  return Stack(
+                    children: [
+                      Image.asset(
+                        data['image']!,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                      // bar_top_main + logo_small.svg
+                      Positioned(
+                        top: scaleHeight(46) - statusBarHeight, // 상태바 높이 빼기
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          width: 360.w,
+                          height: 64.h,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                top: 40.h,
+                                left: 20.w,
+                                child: SvgPicture.asset(
+                                  AppImages.logo_small,
+                                  width: 82.w,
+                                  height: 16.h,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
             ),
+
+            // 페이지 인디케이터
             Positioned(
               top: scaleHeight(480),
               left: 0,
               right: 0,
               child: _buildPageIndicator(),
             ),
+
+            // 타이틀 텍스트
             Positioned(
               top: scaleHeight(530),
               left: 0,
@@ -125,6 +165,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
+
+            // 서브 타이틀 텍스트
             Positioned(
               top: scaleHeight(574),
               left: 0,
@@ -135,6 +177,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
+
+            // 카카오 로그인 버튼
             Positioned(
               top: scaleHeight(674),
               left: 0,
@@ -143,9 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: SizedBox(
                   width: 320.w,
                   height: 54.h,
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
+                  child: ElevatedButton(
                     onPressed: _handleKakaoLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.kakao01,
@@ -158,10 +200,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Image.asset(
+                        SvgPicture.asset(
                           AppImages.kakaobrown,
                           width: 28.w,
                           height: 28.h,
+                          color: AppColors.kakao02,
                         ),
                         SizedBox(width: 4.w),
                         Text(

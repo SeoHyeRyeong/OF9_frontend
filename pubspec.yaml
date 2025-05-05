@@ -32,6 +32,7 @@ dependencies:
   http: ^0.13.6
   flutter:
     sdk: flutter
+  intl: ^0.18.1 # 아직 사용X 나중에 날짜 포맷 깔끔하게 하기 위해 추가했습니당
   flutter_dotenv: ^5.1.0
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -41,6 +42,11 @@ dependencies:
   flutter_secure_storage: ^8.0.0
   flutter_screenutil: ^5.8.4
   flutter_svg: ^1.1.6
+
+  google_mlkit_text_recognition: ^0.15.0
+  #google_mlkit_text_recognition_korean: ^0.2.0
+  #flutter_tesseract_ocr: ^0.3.5
+  permission_handler: ^11.0.1
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +69,7 @@ flutter:
     - .env
     - assets/imgs/
     - assets/fonts/
+    - assets/tessdata/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

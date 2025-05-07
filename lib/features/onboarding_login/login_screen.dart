@@ -87,65 +87,50 @@ class _LoginScreenState extends State<LoginScreen> {
     final baseScreenHeight = 800;
 
     final imageBaseHeight = 450 - statusBarHeight;
-    final imageHeightWithoutStatusBar = screenHeight * (imageBaseHeight / baseScreenHeight);
-    final imageHeightWithStatusBar = imageHeightWithoutStatusBar + statusBarHeight;
+    final imageHeightWithoutStatusBar = screenHeight *
+        (imageBaseHeight / baseScreenHeight);
+    final imageHeightWithStatusBar = imageHeightWithoutStatusBar +
+        statusBarHeight;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Stack(
           children: [
-            // 배경 이미지 + 로고
+            // PageView: 온보딩 이미지 슬라이더
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               height: imageHeightWithStatusBar,
-              // 상태바 높이 더한 값 사용
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: onboardingData.length,
                 onPageChanged: (index) => setState(() => _currentIndex = index),
                 itemBuilder: (context, index) {
                   final data = onboardingData[index];
-                  return Stack(
-                    children: [
-                      Image.asset(
-                        data['image']!,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                      // bar_top_main + logo_small.svg
-                      Positioned(
-                        top: (screenHeight * 0.0575) - statusBarHeight, // 상태바 높이 빼기
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          width: 360.w,
-                          height: 64.h,
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                top: 40.h,
-                                left: 20.w,
-                                child: SvgPicture.asset(
-                                  AppImages.logo_small,
-                                  width: 82.w,
-                                  height: 16.h,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                  return Image.asset(
+                    data['image']!,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
                   );
                 },
               ),
             ),
 
-            // 페이지 인디케이터
+            // 로고:
+            Positioned(
+              top: (screenHeight * 0.0575),
+              left: 20.w,
+              child: SvgPicture.asset(
+                AppImages.logo_small,
+                width: 82.w,
+                height: 16.h,
+                fit: BoxFit.contain,
+              ),
+            ),
+
+            // 인디케이터
             Positioned(
               top: screenHeight * 0.6,
               left: 0,
@@ -153,26 +138,28 @@ class _LoginScreenState extends State<LoginScreen> {
               child: _buildPageIndicator(),
             ),
 
-            // 타이틀 텍스트
+            // 타이틀
             Positioned(
               top: screenHeight * 0.6625,
               left: 0,
               right: 0,
               child: Text(
                 onboardingData[_currentIndex]['title']!,
-                style: AppFonts.h3_eb(context).copyWith(color: AppColors.gray800),
+                style: AppFonts.h3_eb(context).copyWith(
+                    color: AppColors.gray800),
                 textAlign: TextAlign.center,
               ),
             ),
 
-            // 서브 타이틀 텍스트
+            // 서브타이틀
             Positioned(
               top: screenHeight * 0.7175,
               left: 0,
               right: 0,
               child: Text(
                 onboardingData[_currentIndex]['subtitle']!,
-                style: AppFonts.b2_m_long(context).copyWith(color: AppColors.gray300),
+                style: AppFonts.b2_m_long(context).copyWith(
+                    color: AppColors.gray300),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -201,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         SvgPicture.asset(
                           AppImages.kakaobrown,
-                          width: 28.h,
+                          width: 28.w,
                           height: 28.h,
                           color: AppColors.kakao02,
                         ),

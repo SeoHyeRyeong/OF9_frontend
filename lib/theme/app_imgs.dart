@@ -21,4 +21,21 @@ class AppImages {
   static const lions = 'assets/imgs/img_samsung.png';
   static const tigers = 'assets/imgs/img_kia.png';
   static const twins = 'assets/imgs/img_lg.png';
+
+  static const home = 'assets/imgs/ic_normal_home.svg';
+  static const report = 'assets/imgs/ic_normal_report.svg';
+  static const upload = 'assets/imgs/ic_normal_upload.svg';
+  static const bell = 'assets/imgs/ic_normal_bell.svg';
+  static const person = 'assets/imgs/ic_normal_person.svg';
+
+  static const icCornerTopLeft = 'assets/imgs/ic_corner_top_left.svg';
+  static const icCornerTopRight = 'assets/imgs/ic_corner_top_right.svg';
+  static const icCornerBottomLeft = 'assets/imgs/ic_corner_bottom_left.svg';
+  static const icCornerBottomRight = 'assets/imgs/ic_corner_bottom_right.svg';
+
+  static const camera = 'assets/imgs/ic_camera_grayscale20.svg';
+
+  static const canlendar = 'assets/imgs/ic_normal_canlendar.svg';
+  static const gallery = 'assets/imgs/ic_normal_gallery.svg';
+  static const list = 'assets/imgs/ic_normal_list.svg';
 }

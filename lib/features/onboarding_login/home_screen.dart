@@ -12,7 +12,7 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.gray20,
       appBar: AppBar(
-        title: Text('야구 직관 기록 앱', style: AppFonts.b2_b.copyWith(color: AppColors.gray900)),
+        title: Text('야구 직관 기록 앱', style: AppFonts.b2_b(context).copyWith(color: AppColors.gray900)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -31,7 +31,7 @@ class HomeScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(8.r),
             ),
           ),
-          child: Text('티켓 스캔 시작', style: AppFonts.b2_b.copyWith(color: Colors.white)),
+          child: Text('티켓 스캔 시작', style: AppFonts.b2_b(context).copyWith(color: Colors.white)),
         ),
       ),
     );

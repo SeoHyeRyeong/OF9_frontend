@@ -82,14 +82,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height; //전체 화면 높이 가져오기
     final statusBarHeight = MediaQuery.of(context).padding.top; // 상태바 높이 가져오기
+    final baseScreenHeight = 800;
 
-    final heights = calculateHeights(
-      imageBaseHeight: 450 - statusBarHeight, // 사진 쪽 높이
-      contentBaseHeight: 350, // 나머지 높이
-    );
-
-    final imageHeightWithStatusBar = heights['imageHeight']! + statusBarHeight; // 이미지 높이 보정
+    final imageBaseHeight = 450 - statusBarHeight;
+    final imageHeightWithoutStatusBar = screenHeight * (imageBaseHeight / baseScreenHeight);
+    final imageHeightWithStatusBar = imageHeightWithoutStatusBar + statusBarHeight;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -118,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       // bar_top_main + logo_small.svg
                       Positioned(
-                        top: scaleHeight(46) - statusBarHeight, // 상태바 높이 빼기
+                        top: (screenHeight * 0.0575) - statusBarHeight, // 상태바 높이 빼기
                         left: 0,
                         right: 0,
                         child: Container(
@@ -148,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             // 페이지 인디케이터
             Positioned(
-              top: scaleHeight(480),
+              top: screenHeight * 0.6,
               left: 0,
               right: 0,
               child: _buildPageIndicator(),
@@ -156,31 +155,31 @@ class _LoginScreenState extends State<LoginScreen> {
 
             // 타이틀 텍스트
             Positioned(
-              top: scaleHeight(530),
+              top: screenHeight * 0.6625,
               left: 0,
               right: 0,
               child: Text(
                 onboardingData[_currentIndex]['title']!,
-                style: AppFonts.h3_eb.copyWith(color: AppColors.gray800),
+                style: AppFonts.h3_eb(context).copyWith(color: AppColors.gray800),
                 textAlign: TextAlign.center,
               ),
             ),
 
             // 서브 타이틀 텍스트
             Positioned(
-              top: scaleHeight(574),
+              top: screenHeight * 0.7175,
               left: 0,
               right: 0,
               child: Text(
                 onboardingData[_currentIndex]['subtitle']!,
-                style: AppFonts.b2_m_long.copyWith(color: AppColors.gray300),
+                style: AppFonts.b2_m_long(context).copyWith(color: AppColors.gray300),
                 textAlign: TextAlign.center,
               ),
             ),
 
             // 카카오 로그인 버튼
             Positioned(
-              top: scaleHeight(674),
+              top: screenHeight * 0.8425,
               left: 0,
               right: 0,
               child: Center(
@@ -209,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(width: 4.w),
                         Text(
                           '카카오로 계속하기',
-                          style: AppFonts.b2_b.copyWith(
+                          style: AppFonts.b2_b(context).copyWith(
                             color: AppColors.kakao02,
                             fontSize: 16.sp,
                           ),

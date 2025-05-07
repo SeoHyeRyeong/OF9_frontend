@@ -64,5 +64,8 @@
         </dict>
     </array>
 
+    <!-- 카메라 설정 -->
+    <key>NSCameraUsageDescription</key>
+    <string>티켓 촬영을 위해 카메라 접근이 필요합니다.</string>
 </dict>
 </plist>

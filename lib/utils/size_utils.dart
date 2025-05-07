@@ -34,11 +34,6 @@ Map<String, double> calculateHeights({
 
 /// 화면 크기에 따라 폰트 크기를 조정하는 함수
 /// 기본 800px 기준으로 비율 조정
-double scaleFont(double baseFontSize) {
-  double screenHeight = ScreenUtil().screenHeight;
-  if (screenHeight >= 800) {
-    return baseFontSize.sp; // 800 이상은 고정
-  } else {
-    return (baseFontSize * (screenHeight / 800)).sp;
-  }
+double scaleFont(double baseFontSize, double screenHeight) {
+  return screenHeight * (baseFontSize / 800);
 }

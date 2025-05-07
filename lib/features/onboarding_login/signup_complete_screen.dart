@@ -47,10 +47,10 @@ class SignupCompleteScreen extends StatelessWidget {
             // 축하 에셋
             Positioned(
               top: (screenHeight * (319 / baseScreenHeight)) - statusBarHeight,
-              left: (ScreenUtil().screenWidth - 240.w) / 2, // 가운데 정렬
+              left: (ScreenUtil().screenWidth - 240.h) / 2, // 가운데 정렬
               child: Container(
-                width: 240.w,
-                height: 240.w,
+                width: 240.h,
+                height: 240.h,
                 decoration: BoxDecoration(
                   color: AppColors.gray50,
                 ),

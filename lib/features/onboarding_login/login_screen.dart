@@ -201,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         SvgPicture.asset(
                           AppImages.kakaobrown,
-                          width: 28.w,
+                          width: 28.h,
                           height: 28.h,
                           color: AppColors.kakao02,
                         ),

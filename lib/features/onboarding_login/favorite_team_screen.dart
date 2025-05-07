@@ -68,8 +68,8 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                         },
                         child: SvgPicture.asset(
                           AppImages.backBlack,
-                          width: 24.w,
-                          height: 24.w,
+                          width: 24.h,
+                          height: 24.h,
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -146,8 +146,8 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                 children: [
                                   Image.asset(
                                     team['image']!,
-                                    width: 60.w,
-                                    height: 60.w,
+                                    width: 60.h,
+                                    height: 60.h,
                                   ),
                                   SizedBox(height: screenHeight * (8 / baseScreenHeight)),
                                   Text(
@@ -160,8 +160,8 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                             ),
                             if (isSelected)
                               Positioned(
-                                top: 16.w,
-                                left: 16.w,
+                                top: 16.h,
+                                left: 16.h,
                                 child: Icon(
                                   Icons.check_circle,
                                   color: AppColors.pri300,

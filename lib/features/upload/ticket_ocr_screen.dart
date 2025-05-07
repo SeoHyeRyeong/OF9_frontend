@@ -45,7 +45,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('카메라 권한이 필요합니다'),
-          content: const Text('티켓 촬영을 위해 카메라 권한이 필요합니다.\n설정 화면으로 이동할까요?'),
+          content: const Text(
+            '티켓 촬영을 위해 카메라 권한이 필요합니다.\n설정 화면으로 이동할까요?',
+          ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
             TextButton(
@@ -72,6 +74,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
       _cameraController = CameraController(
         _cameras.firstWhere((camera) => camera.lensDirection == CameraLensDirection.back),
         ResolutionPreset.high,
+        enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
       await _cameraController.initialize();
@@ -109,7 +112,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('OCR 실패: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('OCR 실패: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -123,22 +127,25 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
     const baseScreenHeight = 800;
 
     final imageHeight = screenHeight * 475 / baseScreenHeight;
-    final navBarHeight = screenHeight * 86 / baseScreenHeight;
-    final reservedHeight = imageHeight + navBarHeight + bottomPadding;
-    final remainingHeight = screenHeight - reservedHeight;
-    final textSectionHeight = remainingHeight > 0 ? remainingHeight : screenHeight * 214 / baseScreenHeight;
+    final extraCameraHeight = 20.h; // 모서리 카메라 여분 높이 추가
+
+    final whitePanelTop = statusBarHeight + imageHeight;
+    final whitePanelHeight = screenHeight - whitePanelTop;
+
+    final navBarHeight = screenHeight * 86 / baseScreenHeight; //네비게이션 바 높이 및 위치
+    final navBarTopInWhite = whitePanelHeight - navBarHeight - bottomPadding; //흰 패널 중 네비바 띄울 위치
 
     return Scaffold(
       body: Stack(
         children: [
           Container(color: AppColors.gray400),
-
+          // 카메라 뷰
           if (_isCameraInitialized)
             Positioned(
               top: statusBarHeight,
               left: 0,
               right: 0,
-              height: imageHeight,
+              height: imageHeight + extraCameraHeight,
               child: ClipRect(
                 child: OverflowBox(
                   alignment: Alignment.center,
@@ -157,30 +164,48 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
           Positioned(
             top: screenHeight * 55 / baseScreenHeight,
             left: 24.w,
-            child: SvgPicture.asset(AppImages.icCornerTopLeft, width: 24.w, height: 24.h),
+            child: SvgPicture.asset(
+              AppImages.icCornerTopLeft,
+              width: 24.h,
+              height: 24.h,
+            ),
           ),
           Positioned(
             top: screenHeight * 55 / baseScreenHeight,
             right: 24.w,
-            child: SvgPicture.asset(AppImages.icCornerTopRight, width: 24.w, height: 24.h),
+            child: SvgPicture.asset(
+              AppImages.icCornerTopRight,
+              width: 24.h,
+              height: 24.h,
+            ),
           ),
           Positioned(
             top: statusBarHeight + screenHeight * 430 / baseScreenHeight,
             left: 24.w,
-            child: SvgPicture.asset(AppImages.icCornerBottomLeft, width: 24.w, height: 24.h),
+            child: SvgPicture.asset(
+              AppImages.icCornerBottomLeft,
+              width: 24.h,
+              height: 24.h,
+            ),
           ),
           Positioned(
             top: statusBarHeight + screenHeight * 430 / baseScreenHeight,
             right: 24.w,
-            child: SvgPicture.asset(AppImages.icCornerBottomRight, width: 24.w, height: 24.h),
+            child: SvgPicture.asset(
+              AppImages.icCornerBottomRight,
+              width: 24.h,
+              height: 24.h,
+            ),
           ),
 
+
+          // 텍스트 및 바텀네비게이션
           Positioned(
             top: statusBarHeight + imageHeight,
             left: 0,
             right: 0,
+            bottom: 0,
             child: Container(
-              height: textSectionHeight,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
@@ -190,6 +215,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
               ),
               child: Stack(
                 children: [
+
                   Positioned(
                     top: screenHeight * 33 / baseScreenHeight,
                     left: 0,
@@ -197,10 +223,12 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
                     child: Center(
                       child: Text(
                         '티켓을 스캔해 주세요',
-                        style: AppFonts.h4_b(context).copyWith(color: Colors.black),
+                        style: AppFonts.h4_b(context)
+                            .copyWith(color: Colors.black),
                       ),
                     ),
                   ),
+
                   Positioned(
                     top: screenHeight * 72 / baseScreenHeight,
                     left: 0,
@@ -208,10 +236,12 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
                     child: Center(
                       child: Text(
                         '직관 티켓을 사각 프레임 안에 맞춰 찍어주세요',
-                        style: AppFonts.b3_r(context).copyWith(color: AppColors.gray300),
+                        style: AppFonts.b3_r(context)
+                            .copyWith(color: AppColors.gray300),
                       ),
                     ),
                   ),
+
                   Positioned(
                     top: screenHeight * 110 / baseScreenHeight,
                     left: 0,
@@ -220,57 +250,72 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
                       child: GestureDetector(
                         onTap: _isLoading ? null : _onCameraButtonPressed,
                         child: Container(
-                          width: 80.w,
-                          height: 80.w,
+                          width: 80.h,
+                          height: 80.h,
                           decoration: const BoxDecoration(
                             color: AppColors.gray700,
                             shape: BoxShape.circle,
                           ),
                           child: Center(
-                            child: SvgPicture.asset(AppImages.camera, width: 48.w, height: 48.h, color: AppColors.gray20),
+                            child: SvgPicture.asset(
+                              AppImages.camera,
+                              width: 48.h,
+                              height: 48.h,
+                              color: AppColors.gray20,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  if (_isLoading) const Center(child: CircularProgressIndicator()),
-                ],
-              ),
-            ),
-          ),
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator()),
 
-          Positioned(
-            bottom: bottomPadding,
-            left: 0,
-            right: 0,
-            child: Container(
-              width: 360.w,
-              height: navBarHeight,
-              padding: EdgeInsets.symmetric(
-                horizontal: screenHeight * 32 / baseScreenHeight,
-                vertical: screenHeight * 12 / baseScreenHeight,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: AppColors.gray20, width: 0.5.w)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildBottomNavItem(context, AppImages.home, '피드', isActive: false, screenHeight: screenHeight),
-                  _buildBottomNavItem(context, AppImages.report, '리포트', isActive: false, screenHeight: screenHeight),
-                  _buildBottomNavItem(context, AppImages.upload, '업로드', isActive: true, screenHeight: screenHeight),
-                  _buildBottomNavItem(context, AppImages.bell, '알림', isActive: false, screenHeight: screenHeight),
-                  _buildBottomNavItem(context, AppImages.person, 'MY', isActive: false, screenHeight: screenHeight),
+                  Positioned(
+                    top: navBarTopInWhite,
+                    left: 0,
+                    right: 0,
+                    height: navBarHeight,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenHeight * 32 / baseScreenHeight,
+                        vertical: screenHeight * 10 / baseScreenHeight,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border(top: BorderSide(color: AppColors.gray20, width: 0.5.w,),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildBottomNavItem(
+                              context, AppImages.home, '피드',
+                              isActive: false,
+                              screenHeight: screenHeight),
+                          _buildBottomNavItem(
+                              context, AppImages.report, '리포트',
+                              isActive: false,
+                              screenHeight: screenHeight),
+                          _buildBottomNavItem(
+                              context, AppImages.upload, '업로드',
+                              isActive: true,
+                              screenHeight: screenHeight),
+                          _buildBottomNavItem(
+                              context, AppImages.bell, '알림',
+                              isActive: false,
+                              screenHeight: screenHeight),
+                          _buildBottomNavItem(
+                              context, AppImages.person, 'MY',
+                              isActive: false,
+                              screenHeight: screenHeight),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(height: bottomPadding, color: Colors.white),
           ),
         ],
       ),
@@ -278,13 +323,28 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
   }
 }
 
-Widget _buildBottomNavItem(BuildContext context, String iconPath, String label, {required bool isActive, required double screenHeight}) {
+Widget _buildBottomNavItem(
+    BuildContext context,
+    String iconPath,
+    String label, {
+      required bool isActive,
+      required double screenHeight,
+    }) {
   return Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      SvgPicture.asset(iconPath, width: screenHeight * 28 / 800, height: screenHeight * 28 / 800, color: isActive ? null : AppColors.gray200),
+      SvgPicture.asset(
+        iconPath,
+        width: screenHeight * 28 / 800,
+        height: screenHeight * 28 / 800,
+        color: isActive ? null : AppColors.gray200,
+      ),
       SizedBox(height: screenHeight * 6 / 800),
-      Text(label, style: AppFonts.c1_b(context).copyWith(color: isActive ? Colors.black : AppColors.gray200)),
+      Text(
+        label,
+        style: AppFonts.c1_b(context)
+            .copyWith(color: isActive ? Colors.black : AppColors.gray200),
+      ),
     ],
   );
 }

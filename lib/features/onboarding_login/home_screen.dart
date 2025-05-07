@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
-import 'package:frontend/features/upload/ticket_ocr_screen.dart'; // 티켓 스캔 화면 import
+import 'package:frontend/features/upload/ticket_scan_screen.dart'; // ✅ 새로 만든 스캔 화면 import
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -20,9 +20,9 @@ class HomeScreen extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () {
-            Navigator.push(
+            Navigator.pushReplacement( // ✅ pushReplacement로 변경!
               context,
-              MaterialPageRoute(builder: (context) => const TicketOcrScreen()),
+              MaterialPageRoute(builder: (context) => TicketScanScreen()),
             );
           },
           style: ElevatedButton.styleFrom(

@@ -1,13 +1,12 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:camera/camera.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_imgs.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/features/upload/ticket_info_screen.dart';
+import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 late List<CameraDescription> _cameras;
 late CameraController _cameraController;
@@ -63,11 +62,13 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
   }
 
   Future<void> _onCameraButtonPressed() async {
+    // 카메라가 아직 초기화되지 않았다면
     if (!_isCameraInitialized) {
-      final hasPermission = await _requestCameraPermission();
-      if (!hasPermission) return;
+      final hasPermission = await _requestCameraPermission(); //카메라 권한 요청
+      if (!hasPermission) return; //권한 없으면 종료
 
       _cameras = await availableCameras();
+      // 카메라 컨트롤러 초기화
       _cameraController = CameraController(
         _cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.back),
         ResolutionPreset.high,
@@ -76,15 +77,15 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
       );
       await _cameraController.initialize();
 
-      if (mounted) {
+      if (mounted) {  //위젯이 아직 화면에 있다면 상태 업데이트
         setState(() => _isCameraInitialized = true);
       }
-    } else {
+    } else {   //이미 초기화되어 있다면
       setState(() => _isLoading = true);
       try {
         final XFile file = await _cameraController.takePicture();
         if (!mounted) return;
-        Navigator.push(
+        Navigator.push(  //촬영된 이미지를 다음 화면으로 전달
           context,
           MaterialPageRoute(
             builder: (context) => TicketInfoScreen(imagePath: file.path),

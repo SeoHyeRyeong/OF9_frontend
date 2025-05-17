@@ -43,6 +43,7 @@ dependencies:
   flutter_screenutil: ^5.8.4
   flutter_svg: ^1.1.6
   camera: ^0.10.5+5
+  table_calendar: ^3.0.0
 
   google_mlkit_text_recognition: ^0.15.0
   #google_mlkit_text_recognition_korean: ^0.2.0

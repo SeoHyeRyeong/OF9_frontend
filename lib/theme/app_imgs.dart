@@ -13,7 +13,7 @@ class AppImages {
 
   static const bears = 'assets/imgs/img_doosan.png';
   static const dinos = 'assets/imgs/img_nc.png';
-  static const engles = 'assets/imgs/img_eagles.png';
+  static const eagles = 'assets/imgs/img_eagles.png';
   static const giants = 'assets/imgs/img_lotte.png';
   static const kiwoom = 'assets/imgs/img_kiwoom.png';
   static const ktwiz = 'assets/imgs/img_kt.png';

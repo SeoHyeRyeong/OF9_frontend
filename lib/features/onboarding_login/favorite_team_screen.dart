@@ -25,7 +25,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
     {'name': '롯데 자이언츠', 'image': AppImages.giants},
     {'name': '삼성 라이온즈', 'image': AppImages.lions},
     {'name': '키움 히어로즈', 'image': AppImages.kiwoom},
-    {'name': '한화 이글스', 'image': AppImages.engles},
+    {'name': '한화 이글스', 'image': AppImages.eagles},
     {'name': 'KT WIZ', 'image': AppImages.ktwiz},
     {'name': 'LG 트윈스', 'image': AppImages.twins},
     {'name': 'NC 다이노스', 'image': AppImages.dinos},
@@ -101,14 +101,14 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
 
             // 구단 선택 그리드
             Positioned(
-              top: (screenHeight * (190 / baseScreenHeight)) - statusBarHeight,
+              top: (screenHeight * (202 / baseScreenHeight)) - statusBarHeight,
               left: 0,
               right: 0,
               bottom: (screenHeight * (88 / baseScreenHeight)) + (screenHeight * (24 / baseScreenHeight)),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: GridView.builder(
-                  padding: EdgeInsets.only(top: screenHeight * (32 / baseScreenHeight)),
+                  padding: EdgeInsets.only(top: screenHeight * (20 / baseScreenHeight), bottom: screenHeight * (32 / baseScreenHeight)),
                   itemCount: _teams.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -183,6 +183,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                 ),
               ),
             ),
+
 
             // 완료 버튼
             Positioned(

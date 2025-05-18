@@ -123,12 +123,12 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
 
   // OCR에서 추출한 'KIA' 같은 축약명을 팀 풀네임으로 변환해주는 함수 (나중에 picker에서 사용하기 위해)
   String? mapCorpToFullName(String shortName) {
-    try {
-      return teamListWithImages
-          .firstWhere((team) => _teamToCorp[team['name']] == shortName)['name'];
-    } catch (e) {
-      return null; // 매칭 실패 시 null 반환
+    for (final team in teamListWithImages) {
+      final fullName = team['name']!;
+      final corp = _teamToCorp[fullName];
+      if (corp == shortName) return fullName;
     }
+    return null;
   }
 
   //완료 조건 함수 정의
@@ -167,21 +167,35 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
 
   void _extractTicketInfo(String text) {
     final lines = text.split('\n');
+    String? awayTeam, date, time;
 
-    extractedAwayTeam = extractAwayTeam(text, _teamToCorp, _teamKeywords);
+    final vsRegex = RegExp(r'[vV][sS]\s*(.+)');
+    for (final line in lines) {
+      final match = vsRegex.firstMatch(line.replaceAll(' ', ''));
+      if (match != null) {
+        final candidate = match.group(1)!.trim();
+        for (final keyword in _teamKeywords) {
+          if (candidate.contains(keyword.replaceAll(' ', ''))) {
+            awayTeam = _teamToCorp[keyword];
+            break;
+          }
+        }
+        if (awayTeam != null) break;
+      }
+    }
 
-    String? date, time;
     for (final line in lines) {
       date = extractDate(line) ?? date;
       time = extractTime(line) ?? time;
     }
 
+    extractedAwayTeam = awayTeam;
     extractedDate = date;
     extractedTime = time;
 
-    print('🔎 추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime');
+    print(
+        '🔎 추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime');
   }
-
 
   Future<void> _findMatchingGame() async {
     matchedGames = [];
@@ -299,21 +313,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                 children: [
                   Row(
                     children: [
-                      SizedBox(
-                        width: 34.w,
-                        height: 12.h,
-                        child: Text('홈 구단',
-                            style: AppFonts.c1_b(context).copyWith(
-                                color: AppColors.gray400)),
-                      ),
+                      Text('홈 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      SizedBox(
-                        width: 7.w,
-                        height: 12.h,
-                        child: Text('*',
-                            style: AppFonts.c1_b(context).copyWith(
-                                color: AppColors.gray200)),
-                      ),
+                      Text('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
@@ -338,7 +340,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        selectedHome ?? extractedHomeTeam ?? '구단을 선택해 주세요',
+                        mapCorpToFullName(selectedHome ?? extractedHomeTeam ?? '') ?? '구단을 선택해 주세요',
                         style: AppFonts.b3_m(context).copyWith(
                           color: ((selectedHome ?? extractedHomeTeam) == null ||
                               (selectedHome ?? extractedHomeTeam)!.isEmpty)
@@ -361,21 +363,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                 children: [
                   Row(
                     children: [
-                      SizedBox(
-                        width: 44.w,
-                        height: 12.h,
-                        child: Text('원정 구단',
-                            style: AppFonts.c1_b(context).copyWith(
-                                color: AppColors.gray400)),
-                      ),
+                      Text('원정 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      SizedBox(
-                        width: 7.w,
-                        height: 12.h,
-                        child: Text('*',
-                            style: AppFonts.c1_b(context).copyWith(
-                                color: AppColors.gray200)),
-                      ),
+                      Text('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
@@ -400,7 +390,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        selectedAway ?? extractedAwayTeam ?? '구단을 선택해 주세요',
+                        mapCorpToFullName(selectedAway ?? extractedAwayTeam ?? '') ?? '구단을 선택해 주세요',
                         style: AppFonts.b3_m(context).copyWith(
                           color: ((selectedAway ?? extractedAwayTeam) == null ||
                               (selectedAway ?? extractedAwayTeam)!.isEmpty)
@@ -423,21 +413,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                 children: [
                   Row(
                     children: [
-                      SizedBox(
-                        width: 21.w,
-                        height: 12.h,
-                        child: Text('일시',
-                            style: AppFonts.c1_b(context).copyWith(
-                                color: AppColors.gray400)),
-                      ),
+                      Text('일시', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      SizedBox(
-                        width: 7.w,
-                        height: 12.h,
-                        child: Text('*',
-                            style: AppFonts.c1_b(context).copyWith(
-                                color: AppColors.gray200)),
-                      ),
+                      Text('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
@@ -487,21 +465,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                 children: [
                   Row(
                     children: [
-                      SizedBox(
-                        width: 21.w,
-                        height: 12.h,
-                        child: Text('좌석',
-                            style: AppFonts.c1_b(context).copyWith(
-                                color: AppColors.gray400)),
-                      ),
+                      Text('좌석', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      SizedBox(
-                        width: 7.w,
-                        height: 12.h,
-                        child: Text('*',
-                            style: AppFonts.c1_b(context).copyWith(
-                                color: AppColors.gray200)),
-                      ),
+                      Text('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),

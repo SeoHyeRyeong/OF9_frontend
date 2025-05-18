@@ -167,35 +167,21 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
 
   void _extractTicketInfo(String text) {
     final lines = text.split('\n');
-    String? awayTeam, date, time;
 
-    final vsRegex = RegExp(r'[vV][sS]\s*(.+)');
-    for (final line in lines) {
-      final match = vsRegex.firstMatch(line.replaceAll(' ', ''));
-      if (match != null) {
-        final candidate = match.group(1)!.trim();
-        for (final keyword in _teamKeywords) {
-          if (candidate.contains(keyword.replaceAll(' ', ''))) {
-            awayTeam = _teamToCorp[keyword];
-            break;
-          }
-        }
-        if (awayTeam != null) break;
-      }
-    }
+    extractedAwayTeam = extractAwayTeam(text, _teamToCorp, _teamKeywords);
 
+    String? date, time;
     for (final line in lines) {
       date = extractDate(line) ?? date;
       time = extractTime(line) ?? time;
     }
 
-    extractedAwayTeam = awayTeam;
     extractedDate = date;
     extractedTime = time;
 
-    print(
-        '🔎 추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime');
+    print('🔎 추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime');
   }
+
 
   Future<void> _findMatchingGame() async {
     matchedGames = [];
@@ -230,7 +216,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final statusBarHeight = MediaQuery.of(context).padding.top;
-    const baseScreenHeight = 800.0;
+    const baseScreenHeight = 800;
 
     return Scaffold(
       backgroundColor: Colors.white,

@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
+import 'package:frontend/utils/fixed_text.dart';
 
 /// 홈/원정 구단 선택용 BottomSheet
 Future<String?> showTeamPicker({
@@ -57,7 +58,7 @@ Future<String?> showTeamPicker({
                       Positioned(
                         top: screenHeight * (22 / baseH),
                         left: 158.w,
-                        child: Text(
+                        child: FixedText(
                           title,
                           style: AppFonts.b2_b(context).copyWith(color: Colors.black),
                         ),
@@ -112,7 +113,7 @@ Future<String?> showTeamPicker({
                                       ),
                                       SizedBox(width: 8.w),
                                       Expanded(
-                                        child: Text(
+                                        child: FixedText(
                                           team,
                                           style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray900),
                                         ),
@@ -184,7 +185,7 @@ Future<String?> showTeamPicker({
                           padding: EdgeInsets.all(10.w),
                           elevation: 0,
                         ),
-                        child: Text(
+                        child: FixedText(
                           '완료',
                           style: AppFonts.b2_b(context).copyWith(
                             color: AppColors.gray20,

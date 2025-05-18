@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/favorite_team_screen.dart'; // 추가
+import 'package:frontend/utils/fixed_text.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -143,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
               top: screenHeight * 0.6625,
               left: 0,
               right: 0,
-              child: Text(
+              child: FixedText(
                 onboardingData[_currentIndex]['title']!,
                 style: AppFonts.h3_eb(context).copyWith(
                     color: AppColors.gray800),
@@ -156,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
               top: screenHeight * 0.7175,
               left: 0,
               right: 0,
-              child: Text(
+              child: FixedText(
                 onboardingData[_currentIndex]['subtitle']!,
                 style: AppFonts.b2_m_long(context).copyWith(
                     color: AppColors.gray300),
@@ -193,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: AppColors.kakao02,
                         ),
                         SizedBox(width: 4.w),
-                        Text(
+                        FixedText(
                           '카카오로 계속하기',
                           style: AppFonts.b2_b(context).copyWith(
                             color: AppColors.kakao02,

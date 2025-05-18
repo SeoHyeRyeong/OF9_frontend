@@ -4,7 +4,7 @@ import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
-
+import 'package:frontend/utils/fixed_text.dart';
 
 class SignupCompleteScreen extends StatelessWidget {
   const SignupCompleteScreen({Key? key}) : super(key: key);
@@ -25,7 +25,7 @@ class SignupCompleteScreen extends StatelessWidget {
               top: (screenHeight * (182 / baseScreenHeight)) - statusBarHeight,
               left: 0,
               right: 0,
-              child: Text(
+              child: FixedText(
                 '회원가입을 완료했어요!',
                 style: AppFonts.h1_b(context).copyWith(color: Colors.black),
                 textAlign: TextAlign.center,
@@ -37,7 +37,7 @@ class SignupCompleteScreen extends StatelessWidget {
               top: (screenHeight * (226 / baseScreenHeight)) - statusBarHeight,
               left: 0,
               right: 0,
-              child: Text(
+              child: FixedText(
                 '지금부터 당신의 야구 이야기를 기록해 보세요',
                 style: AppFonts.b2_m_long(context).copyWith(color: AppColors.gray300),
                 textAlign: TextAlign.center,
@@ -86,7 +86,7 @@ class SignupCompleteScreen extends StatelessWidget {
                           padding: EdgeInsets.symmetric(horizontal: 18.w),
                           elevation: 0,
                         ),
-                        child: Text(
+                        child: FixedText(
                           '완료',
                           style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20,),
                         ),

@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/features/upload/ticket_info_screen.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:frontend/utils/fixed_text.dart';
 
 late List<CameraDescription> _cameras;
 late CameraController _cameraController;
@@ -42,8 +43,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('카메라 권한이 필요합니다'),
-          content: const Text('앱에서 카메라를 사용하려면 권한이 필요합니다. 설정 화면으로 이동할까요?'),
+          title: const FixedText('카메라 권한이 필요합니다'),
+          content: const FixedText('앱에서 카메라를 사용하려면 권한이 필요합니다. 설정 화면으로 이동할까요?'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
             TextButton(
@@ -51,7 +52,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
                 Navigator.pop(context);
                 await openAppSettings();
               },
-              child: const Text('설정으로 이동'),
+              child: const FixedText('설정으로 이동'),
             ),
           ],
         ),
@@ -97,7 +98,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('촬영 오류: $e')),
+          SnackBar(content: FixedText('촬영 오류: $e')),
         );
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -181,7 +182,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
                     left: 0,
                     right: 0,
                     child: Center(
-                      child: Text('티켓을 스캔해 주세요', style: AppFonts.h4_b(context).copyWith(color: Colors.black)),
+                      child: FixedText('티켓을 스캔해 주세요', style: AppFonts.h4_b(context).copyWith(color: Colors.black)),
                     ),
                   ),
                   Positioned(
@@ -189,7 +190,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
                     left: 0,
                     right: 0,
                     child: Center(
-                      child: Text(
+                      child: FixedText(
                         '직관 티켓을 사각 프레임 안에 맞춰 찍어주세요',
                         style: AppFonts.b3_r(context).copyWith(color: AppColors.gray300),
                       ),
@@ -275,7 +276,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
           color: isActive ? null : AppColors.gray200,
         ),
         SizedBox(height: screenHeight * 6 / 800),
-        Text(
+        FixedText(
           label,
           style: AppFonts.c1_b(context).copyWith(
             color: isActive ? Colors.black : AppColors.gray200,

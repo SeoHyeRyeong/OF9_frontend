@@ -8,6 +8,7 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/onboarding_login/login_screen.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/signup_complete_screen.dart';
+import 'package:frontend/utils/fixed_text.dart';
 
 class FavoriteTeamScreen extends StatefulWidget {
   const FavoriteTeamScreen({Key? key}) : super(key: key);
@@ -83,7 +84,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
             Positioned(
               top: (screenHeight * (130 / baseScreenHeight)) - statusBarHeight,
               left: 20.w,
-              child: Text(
+              child: FixedText(
                 '최애 구단 선택',
                 style: AppFonts.h1_b(context).copyWith(color: Colors.black),
               ),
@@ -93,7 +94,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
             Positioned(
               top: (screenHeight * (174 / baseScreenHeight)) - statusBarHeight,
               left: 20.w,
-              child: Text(
+              child: FixedText(
                 '나중에 마이페이지에서 변경 가능해요',
                 style: AppFonts.b2_m(context).copyWith(color: AppColors.gray300),
               ),
@@ -150,7 +151,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                     height: 60.h,
                                   ),
                                   SizedBox(height: screenHeight * (8 / baseScreenHeight)),
-                                  Text(
+                                  FixedText(
                                     team['name']!,
                                     style: AppFonts.b2_b(context).copyWith(
                                         color: AppColors.gray900),
@@ -232,7 +233,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                         elevation: 0,
                         padding: EdgeInsets.symmetric(horizontal: 18.w),
                       ),
-                      child: Text(
+                      child: FixedText(
                         '완료',
                         style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
                       ),

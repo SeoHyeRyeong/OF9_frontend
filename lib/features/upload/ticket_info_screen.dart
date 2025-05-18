@@ -15,6 +15,7 @@ import 'package:frontend/features/upload/show_team_picker.dart';
 import 'package:frontend/features/upload/show_date_time_picker.dart';
 import 'package:frontend/features/upload/show_seat_picker.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
+import 'package:frontend/utils/fixed_text.dart';
 
 class TicketInfoScreen extends StatefulWidget {
   final String imagePath; // 이미지 경로 받기
@@ -274,12 +275,12 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
             Positioned(
               top: (screenHeight * 130 / baseScreenHeight) - statusBarHeight,
               left: 20.w,
-              child: Text('티켓 정보 확인', style: AppFonts.h1_b(context)),
+              child: FixedText('티켓 정보 확인', style: AppFonts.h1_b(context)),
             ),
             Positioned(
               top: (screenHeight * 174 / baseScreenHeight) - statusBarHeight,
               left: 20.w,
-              child: Text(
+              child: FixedText(
                 '스캔한 정보와 다른 부분이 있다면 수정해 주세요.',
                 style: AppFonts.b2_m(context).copyWith(
                     color: AppColors.gray300),
@@ -299,7 +300,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                   child: _selectedImage != null
                       ? Image.file(
                       File(_selectedImage!.path), fit: BoxFit.cover)
-                      : const Center(child: Text('이미지 분석 중입니다...')),
+                      : const Center(child: FixedText('이미지 분석 중입니다...')),
                 ),
               ),
             ),
@@ -313,9 +314,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                 children: [
                   Row(
                     children: [
-                      Text('홈 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                      FixedText('홈 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      Text('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
+                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
@@ -339,7 +340,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         color: AppColors.gray50,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
+                      child: FixedText(
                         mapCorpToFullName(selectedHome ?? extractedHomeTeam ?? '') ?? '구단을 선택해 주세요',
                         style: AppFonts.b3_m(context).copyWith(
                           color: ((selectedHome ?? extractedHomeTeam) == null ||
@@ -363,9 +364,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                 children: [
                   Row(
                     children: [
-                      Text('원정 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                      FixedText('원정 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      Text('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
+                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
@@ -389,7 +390,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         color: AppColors.gray50,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
+                      child: FixedText(
                         mapCorpToFullName(selectedAway ?? extractedAwayTeam ?? '') ?? '구단을 선택해 주세요',
                         style: AppFonts.b3_m(context).copyWith(
                           color: ((selectedAway ?? extractedAwayTeam) == null ||
@@ -413,19 +414,29 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                 children: [
                   Row(
                     children: [
-                      Text('일시', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                      FixedText('일시', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      Text('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
+                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
                   GestureDetector(
                     onTap: () async {
+                      final home = selectedHome ?? extractedHomeTeam;
+                      final away = selectedAway ?? extractedAwayTeam;
+
+                      if (home == null || home.isEmpty || away == null || away.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: FixedText('홈 구단과 원정 구단을 먼저 선택해 주세요.')),
+                        );
+                        return;
+                      }
+
                       final dt = await showDateTimePicker(
                         context: context,
                         ocrDateText: extractedDate,
-                        homeTeam: selectedHome,
-                        opponentTeam: selectedAway,
+                        homeTeam: home,
+                        opponentTeam: away,
                       );
                       if (dt != null) setState(() => selectedDateTime = dt);
                     },
@@ -438,7 +449,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         color: AppColors.gray50,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
+                      child: FixedText(
                         selectedDateTime ??
                             ((extractedDate != null && extractedTime != null)
                                 ? '$extractedDate $extractedTime'
@@ -465,9 +476,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                 children: [
                   Row(
                     children: [
-                      Text('좌석', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                      FixedText('좌석', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      Text('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
+                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
@@ -488,7 +499,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         color: AppColors.gray50,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
+                      child: FixedText(
                         selectedSeat ?? extractedSeat ?? '좌석 정보를 작성해 주세요',
                         style: AppFonts.b3_m(context).copyWith(
                           color: ((selectedSeat ?? extractedSeat) == null ||
@@ -500,7 +511,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                     ),
                   ),
                   SizedBox(height: 8.h),
-                  Text(
+                  FixedText(
                     '*상세 좌석 정보는 나에게만 보여요',
                     style: AppFonts.c2_sb(context).copyWith(
                         color: AppColors.gray300),
@@ -528,7 +539,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                   onPressed: isComplete
                       ? () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('저장 완료')),
+                      const SnackBar(content: FixedText('저장 완료')),
                     );
                   }
                       : null,
@@ -541,7 +552,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 18.w),
                   ),
-                  child: Text('완료',
+                  child: FixedText('완료',
                       style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20)),
                 ),
               ),

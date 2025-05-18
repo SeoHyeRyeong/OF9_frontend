@@ -6,6 +6,7 @@ import 'package:frontend/models/game_response.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
+import 'package:frontend/utils/fixed_text.dart';
 
 DateTime? tryParseDateFromOcr(String rawText) {
   final regex = RegExp(r'(20\d{2})[년\-\. ]+(\d{1,2})[월\-\. ]+(\d{1,2})');
@@ -145,7 +146,7 @@ Future<String?> showDateTimePicker({
                       ),
                       const Expanded(
                         child: Center(
-                          child: Text(
+                          child: FixedText(
                             '일시',
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
@@ -182,7 +183,7 @@ Future<String?> showDateTimePicker({
                       width: 36.w,
                       height: 12.h,
                       child: Center(
-                        child: Text(
+                        child: FixedText(
                           d,
                           style: AppFonts.b2_m_long(context).copyWith(color: AppColors.gray300),
                         ),
@@ -225,7 +226,7 @@ Future<String?> showDateTimePicker({
                               borderRadius: BorderRadius.circular(16.r),
                             ),
                             child: Center(
-                              child: Text(
+                              child: FixedText(
                                 '${date.day}',
                                 style: AppFonts.b2_m_long(ctx).copyWith(
                                   color: isEnabled ? AppColors.gray900 : AppColors.gray200,
@@ -268,7 +269,7 @@ Future<String?> showDateTimePicker({
                         ),
                         padding: EdgeInsets.symmetric(vertical: 14.h),
                       ),
-                      child: Text(
+                      child: FixedText(
                         '완료',
                         style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
                       ),

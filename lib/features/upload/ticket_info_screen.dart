@@ -33,11 +33,13 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
   String? extractedAwayTeam;
   String? extractedDate;
   String? extractedTime;
+  String? extractedStadium;
   String? extractedSeat;
 
   String? selectedHome;
   String? selectedAway;
   String? selectedDateTime;
+  String? selectedStadium;
   String? selectedSeat;
 
   List<GameResponse> matchedGames = [];
@@ -167,6 +169,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
         );
         matchedGames = [game];
         extractedHomeTeam = game.homeTeam;
+        extractedStadium = game.stadium;
         extractedSeat = extractSeat(cleanedText, game.stadium);
 
         print('🔍추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime, seat: $extractedSeat');
@@ -426,9 +429,65 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
               ),
             ),
 
+            // 🏟️ 구장
+            Positioned(
+              top: (screenHeight * 482 / baseScreenHeight) - statusBarHeight,
+              left: 20.w,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      FixedText('구장', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                      SizedBox(width: 2.w),
+                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
+                    ],
+                  ),
+                  SizedBox(height: 8.h),
+                  GestureDetector(
+                    onTap: () async {
+                      final team = await showTeamPicker(
+                        context: context,
+                        title: '구장',
+                        teams: teamListWithImages,
+                        initial: selectedAway ?? mapCorpToFullName(
+                            extractedAwayTeam ?? ''),
+                      );
+                      if (team != null) setState(() => selectedAway = team);
+                    },
+                    child: Container(
+                      width: 320.w,
+                      height: screenHeight * 52 / baseScreenHeight,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      alignment: Alignment.centerLeft,
+                      decoration: BoxDecoration(
+                        color: AppColors.gray50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: FixedText(
+                        mapCorpToFullName(selectedStadium ?? extractedStadium ?? '') ?? '구장 정보를 작성해 주세요',
+                        style: AppFonts.b3_m(context).copyWith(
+                          color: ((selectedStadium ?? extractedStadium) == null ||
+                              (selectedStadium ?? extractedStadium)!.isEmpty)
+                              ? AppColors.gray500
+                              : AppColors.gray800,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  FixedText(
+                    '*홈 구장과 실제 경기 구장이 다를 경우 직접 작성해 주세요',
+                    style: AppFonts.c2_sb(context).copyWith(
+                        color: AppColors.gray300),
+                  ),
+                ],
+              ),
+            ),
+
             // 🎫 좌석
             Positioned(
-              top: (screenHeight * 498 / baseScreenHeight) - statusBarHeight,
+              top: (screenHeight * 592 / baseScreenHeight) - statusBarHeight,
               left: 20.w,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

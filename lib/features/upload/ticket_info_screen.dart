@@ -18,10 +18,8 @@ import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/utils/fixed_text.dart';
 
 class TicketInfoScreen extends StatefulWidget {
-  final String imagePath; // 이미지 경로 받기
-
+  final String imagePath;
   const TicketInfoScreen({Key? key, required this.imagePath}) : super(key: key);
-
   @override
   State<TicketInfoScreen> createState() => _TicketInfoScreenState();
 }
@@ -29,29 +27,20 @@ class TicketInfoScreen extends StatefulWidget {
 class _TicketInfoScreenState extends State<TicketInfoScreen> {
   final ImagePicker _picker = ImagePicker();
   XFile? _selectedImage;
+  String rawOcrText = '';
 
-  @override
-  void initState() {
-    super.initState();
-    // 이미지 OCR 시작
-    _processImage(widget.imagePath); // 이미지 처리 시작
-  }
+  String? extractedHomeTeam;
+  String? extractedAwayTeam;
+  String? extractedDate;
+  String? extractedTime;
+  String? extractedSeat;
 
-  Future<void> _processImage(String path) async {
-    final inputImage = InputImage.fromFile(File(path));
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
-    final recognizedText = await textRecognizer.processImage(inputImage);
+  String? selectedHome;
+  String? selectedAway;
+  String? selectedDateTime;
+  String? selectedSeat;
 
-    final text = recognizedText.text;
-    print('📄 OCR 결과:\n$text');
-
-    _extractTicketInfo(text); // 날짜, 시간, 팀 추출
-    await _findMatchingGame(); // DB에서 매치된 경기 조회
-
-    setState(() {
-      _selectedImage = XFile(path); // UI에 표시할 이미지 저장
-    });
-  }
+  List<GameResponse> matchedGames = [];
 
   final Map<String, String> _teamToCorp = {
     'KIA 타이거즈': 'KIA',
@@ -86,28 +75,12 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     '베어스': '두산',
     'Eagles': '한화'
   };
-
   final List<String> _teamKeywords = [
     'KIA 타이거즈', '두산 베어스', '롯데 자이언츠', '삼성 라이온즈', '키움 히어로즈', '한화 이글스',
     'KT WIZ', 'LG 트윈스', 'NC 다이노스', 'SSG 랜더스', '자이언츠', '타이거즈', '라이온즈',
     '히어로즈', '이글스', '트윈스', '다이노스', '랜더스', '베어스', 'Eagles', 'KIA', '두산',
     '롯데', '삼성', '키움', '한화', 'KT', 'LG', 'NC', 'SSG', 'WIZ'
   ];
-
-  // OCR 결과로 채워지는 값들 (기존 로직 유지)
-  String? extractedHomeTeam;
-  String? extractedAwayTeam;
-  String? extractedDate;
-  String? extractedTime;
-  String? extractedSeat;
-
-  // 수동 선택용 상태
-  String? selectedHome;
-  String? selectedAway;
-  String? selectedDateTime; // 'YYYY-MM-DD HH:mm:00'
-  String? selectedSeat;
-
-  // 팀 리스트
   final List<Map<String, String>> teamListWithImages = [
     {'name': 'KIA 타이거즈', 'image': AppImages.tigers},
     {'name': '두산 베어스', 'image': AppImages.bears},
@@ -121,32 +94,46 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     {'name': 'SSG 랜더스', 'image': AppImages.landers},
   ];
 
-
   // OCR에서 추출한 'KIA' 같은 축약명을 팀 풀네임으로 변환해주는 함수 (나중에 picker에서 사용하기 위해)
   String? mapCorpToFullName(String shortName) {
+    final cleaned = shortName.trim();
     for (final team in teamListWithImages) {
       final fullName = team['name']!;
-      final corp = _teamToCorp[fullName];
-      if (corp == shortName) return fullName;
+      final corp = _teamToCorp[fullName]?.trim();
+      if (corp == cleaned) return fullName;
     }
     return null;
   }
 
-  //완료 조건 함수 정의
   bool get isComplete {
     final home = selectedHome ?? extractedHomeTeam;
     final away = selectedAway ?? extractedAwayTeam;
     final dateTime = selectedDateTime ?? ((extractedDate != null && extractedTime != null) ? '$extractedDate $extractedTime' : null);
     final seat = selectedSeat ?? extractedSeat;
-
-    return home?.isNotEmpty == true &&
-        away?.isNotEmpty == true &&
-        dateTime?.isNotEmpty == true &&
-        seat?.isNotEmpty == true;
+    return home?.isNotEmpty == true && away?.isNotEmpty == true && dateTime?.isNotEmpty == true && seat?.isNotEmpty == true;
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _processImage(widget.imagePath);
+  }
 
-  List<GameResponse> matchedGames = [];
+  Future<void> _processImage(String path) async {
+    final inputImage = InputImage.fromFile(File(path));
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
+    final result = await textRecognizer.processImage(inputImage);
+    rawOcrText = result.text;
+    print('📄 OCR 전체 텍스트:\n$rawOcrText');
+
+    final cleanedText = rawOcrText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    extractedAwayTeam = extractAwayTeam(cleanedText, _teamToCorp, _teamKeywords);
+    extractedDate = extractDate(cleanedText);
+    extractedTime = extractTime(cleanedText);
+
+    await _findMatchingGame(cleanedText);
+    setState(() => _selectedImage = XFile(path));
+  }
 
   // 📌 현재는 사용하지 않지만 추후 사진보관함에서 티켓 사진을 불러오는 기능을 위해 보존
   Future<void> _pickImage() async {
@@ -156,52 +143,22 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
 
     final inputImage = InputImage.fromFile(File(pickedFile.path));
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
-    final RecognizedText recognizedText = await textRecognizer.processImage(
-        inputImage);
-    final text = recognizedText.text;
-    print('📄 OCR 결과:\n$text');
+    final result = await textRecognizer.processImage(inputImage);
+    rawOcrText = result.text;
+    print('📄 OCR 젠체 텍스트:\n$rawOcrText');
 
-    _extractTicketInfo(text);
-    await _findMatchingGame();
-    setState(() {});
+    final cleanedText = rawOcrText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    extractedAwayTeam = extractAwayTeam(cleanedText, _teamToCorp, _teamKeywords);
+    extractedDate = extractDate(cleanedText);
+    extractedTime = extractTime(cleanedText);
+
+    await _findMatchingGame(cleanedText);
+    //setState(() {});
   }
 
-  void _extractTicketInfo(String text) {
-    final lines = text.split('\n');
-    String? awayTeam, date, time;
-
-    final vsRegex = RegExp(r'[vV][sS]\s*(.+)');
-    for (final line in lines) {
-      final match = vsRegex.firstMatch(line.replaceAll(' ', ''));
-      if (match != null) {
-        final candidate = match.group(1)!.trim();
-        for (final keyword in _teamKeywords) {
-          if (candidate.contains(keyword.replaceAll(' ', ''))) {
-            awayTeam = _teamToCorp[keyword];
-            break;
-          }
-        }
-        if (awayTeam != null) break;
-      }
-    }
-
-    for (final line in lines) {
-      date = extractDate(line) ?? date;
-      time = extractTime(line) ?? time;
-    }
-
-    extractedAwayTeam = awayTeam;
-    extractedDate = date;
-    extractedTime = time;
-
-    print(
-        '🔎 추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime');
-  }
-
-  Future<void> _findMatchingGame() async {
+  Future<void> _findMatchingGame(String cleanedText) async {
     matchedGames = [];
-    if (extractedAwayTeam != null && extractedDate != null &&
-        extractedTime != null) {
+    if (extractedAwayTeam != null && extractedDate != null && extractedTime != null) {
       try {
         final game = await GameApi.searchGame(
           awayTeam: extractedAwayTeam!,
@@ -209,8 +166,10 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
           time: extractedTime!,
         );
         matchedGames = [game];
-
         extractedHomeTeam = game.homeTeam;
+        extractedSeat = extractSeat(cleanedText, game.stadium);
+
+        print('🔍추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime, seat: $extractedSeat');
 
         debugMatchResult(
           isMatched: true,
@@ -220,7 +179,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
           time: extractedTime!,
         );
       } catch (e) {
-        print('❌ 오류: $e');
+        print('DB 매칭 실패 오류: $e');
         debugMatchResult(isMatched: false);
       }
     }
@@ -341,7 +300,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: FixedText(
-                        mapCorpToFullName(selectedHome ?? extractedHomeTeam ?? '') ?? '구단을 선택해 주세요',
+                        (selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '')) ?? '구단을 선택해 주세요',
                         style: AppFonts.b3_m(context).copyWith(
                           color: ((selectedHome ?? extractedHomeTeam) == null ||
                               (selectedHome ?? extractedHomeTeam)!.isEmpty)

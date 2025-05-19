@@ -34,6 +34,7 @@ class AppImages {
   static const icCornerBottomRight = 'assets/imgs/ic_corner_bottom_right.svg';
 
   static const camera = 'assets/imgs/ic_camera_grayscale20.svg';
+  static const solar_gallery = 'assets/imgs/ic_solar_gallery.svg';
 
   static const canlendar = 'assets/imgs/ic_normal_canlendar.svg';
   static const gallery = 'assets/imgs/ic_normal_gallery.svg';

@@ -8,6 +8,8 @@ import 'package:frontend/features/upload/ticket_info_screen.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:frontend/utils/fixed_text.dart';
+import 'package:image_picker/image_picker.dart';
+
 
 late List<CameraDescription> _cameras;
 late CameraController _cameraController;
@@ -23,12 +25,60 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
   bool _isCameraInitialized = false;
   bool _isLoading = false;
 
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCameraIfNeeded();
+  }
+
+  Future<void> _initializeCameraIfNeeded() async {
+    final hasPermission = await _requestCameraPermission();
+    if (!hasPermission) return;
+
+    _cameras = await availableCameras();
+    _cameraController = CameraController(
+      _cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.back),
+      ResolutionPreset.high,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.jpeg,
+    );
+
+    try {
+      await _cameraController.initialize();
+      if (mounted) {
+        setState(() => _isCameraInitialized = true);
+      }
+    } catch (e) {
+      print('카메라 초기화 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('카메라 초기화 실패: $e')),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     if (_isCameraInitialized) {
       _cameraController.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _onGalleryButtonPressed() async {
+    final picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile == null) return;
+
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TicketInfoScreen(imagePath: pickedFile.path),
+      ),
+    );
   }
 
   Future<bool> _requestCameraPermission() async {
@@ -63,48 +113,35 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
   }
 
   Future<void> _onCameraButtonPressed() async {
-    // 카메라가 아직 초기화되지 않았다면
     if (!_isCameraInitialized) {
-      final hasPermission = await _requestCameraPermission(); //카메라 권한 요청
-      if (!hasPermission) return; //권한 없으면 종료
-
-      _cameras = await availableCameras();
-      // 카메라 컨트롤러 초기화
-      _cameraController = CameraController(
-        _cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.back),
-        ResolutionPreset.high,
-        enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.jpeg,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('카메라가 아직 준비되지 않았습니다')),
       );
-      await _cameraController.initialize();
+      return;
+    }
 
-      if (mounted) {  //위젯이 아직 화면에 있다면 상태 업데이트
-        setState(() => _isCameraInitialized = true);
-      }
-    } else {   //이미 초기화되어 있다면
-      setState(() => _isLoading = true);
-      try {
-        final XFile file = await _cameraController.takePicture();
-        if (!mounted) return;
-        Navigator.push(  //촬영된 이미지를 다음 화면으로 전달
-          context,
-          MaterialPageRoute(
-            builder: (context) => TicketInfoScreen(imagePath: file.path),
-          ),
-        );
-        /*ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('사진 저장 경로: ${file.path}')),
-        );*/
-      } catch (e) {
-        if (!mounted) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final XFile file = await _cameraController.takePicture();
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TicketInfoScreen(imagePath: file.path),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: FixedText('촬영 오류: $e')),
+          SnackBar(content: Text('촬영 오류: $e')),
         );
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -191,8 +228,20 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
                     right: 0,
                     child: Center(
                       child: FixedText(
-                        '직관 티켓을 사각 프레임 안에 맞춰 찍어주세요',
+                        '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
                         style: AppFonts.b3_r(context).copyWith(color: AppColors.gray300),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: screenHeight * 132 / baseScreenHeight,
+                    left: 48,
+                    child: GestureDetector(
+                      onTap: _onGalleryButtonPressed,
+                      child: SvgPicture.asset(
+                        AppImages.solar_gallery,
+                        width: 36.w,
+                        height: 36.w,
                       ),
                     ),
                   ),
@@ -222,8 +271,6 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
                       ),
                     ),
                   ),
-                  if (_isLoading)
-                    const Center(child: CircularProgressIndicator()),
                   Positioned(
                     top: navBarTopInWhite,
                     left: 0,

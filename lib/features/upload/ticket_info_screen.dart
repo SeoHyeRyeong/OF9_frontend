@@ -121,41 +121,62 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     _processImage(widget.imagePath);
   }
 
-  Future<void> _processImage(String path) async {
-    final inputImage = InputImage.fromFile(File(path));
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
-    final result = await textRecognizer.processImage(inputImage);
-    rawOcrText = result.text;
-    print('📄 OCR 전체 텍스트:\n$rawOcrText');
+  Future<void> _handleImage(String path, {bool updateSelectedImage = true}) async {
+    try {
 
-    final cleanedText = rawOcrText.replaceAll(RegExp(r'\s+'), ' ').trim();
-    extractedAwayTeam = extractAwayTeam(cleanedText, _teamToCorp, _teamKeywords);
-    extractedDate = extractDate(cleanedText);
-    extractedTime = extractTime(cleanedText);
+      // 이미지를 변경하면 OCR 자동 입력 및 수동 입력 관련 상태 초기화
+      setState(() {
+        rawOcrText = '';
+        extractedHomeTeam = null;
+        extractedAwayTeam = null;
+        extractedDate = null;
+        extractedTime = null;
+        extractedStadium = null;
+        extractedSeat = null;
 
-    await _findMatchingGame(cleanedText);
-    setState(() => _selectedImage = XFile(path));
+        selectedHome = null;
+        selectedAway = null;
+        selectedDateTime = null;
+        selectedStadium = null;
+        // 구장 사용자 자유 입력 필드 별도 사용 시에 .clear() 처리 추가 필요
+        selectedSeat = null;
+      });
+
+      final inputImage = InputImage.fromFile(File(path));
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
+      final result = await textRecognizer.processImage(inputImage);
+      rawOcrText = result.text;
+      print('📄 OCR 전체 텍스트:\n$rawOcrText');
+
+      final cleanedText = rawOcrText.replaceAll(RegExp(r'\s+'), ' ').trim();
+      extractedAwayTeam = extractAwayTeam(cleanedText, _teamToCorp, _teamKeywords);
+      extractedDate = extractDate(cleanedText);
+      extractedTime = extractTime(cleanedText);
+
+      await _findMatchingGame(cleanedText);
+
+      if (updateSelectedImage) {
+        setState(() => _selectedImage = XFile(path));
+      }
+    } catch (e) {
+      print('이미지 처리 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미지 처리 중 오류가 발생했습니다')),
+        );
+      }
+    }
   }
 
-  // 📌 현재는 사용하지 않지만 추후 사진보관함에서 티켓 사진을 불러오는 기능을 위해 보존
+  Future<void> _processImage(String path) async {
+    await _handleImage(path, updateSelectedImage: true);
+  }
+
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile == null) return;
-    setState(() => _selectedImage = pickedFile);
-
-    final inputImage = InputImage.fromFile(File(pickedFile.path));
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
-    final result = await textRecognizer.processImage(inputImage);
-    rawOcrText = result.text;
-    print('📄 OCR 젠체 텍스트:\n$rawOcrText');
-
-    final cleanedText = rawOcrText.replaceAll(RegExp(r'\s+'), ' ').trim();
-    extractedAwayTeam = extractAwayTeam(cleanedText, _teamToCorp, _teamKeywords);
-    extractedDate = extractDate(cleanedText);
-    extractedTime = extractTime(cleanedText);
-
-    await _findMatchingGame(cleanedText);
-    //setState(() {});
+    if (pickedFile != null) {
+      await _handleImage(pickedFile.path, updateSelectedImage: true);
+    }
   }
 
   Future<void> _findMatchingGame(String cleanedText) async {
@@ -180,6 +201,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
           awayTeam: game.awayTeam,
           date: DateFormat('yyyy-MM-dd').format(game.date),
           time: extractedTime!,
+          stadium: extractedStadium!,
         );
       } catch (e) {
         print('DB 매칭 실패 오류: $e');
@@ -253,19 +275,27 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
             Positioned(
               top: (screenHeight * 218 / baseScreenHeight) - statusBarHeight,
               left: 20.w,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 107.w,
-                  height: screenHeight * 156 / baseScreenHeight,
-                  color: Colors.grey[200],
-                  child: _selectedImage != null
-                      ? Image.file(
-                      File(_selectedImage!.path), fit: BoxFit.cover)
-                      : const Center(child: FixedText('이미지 분석 중입니다...')),
+              child: GestureDetector(
+                onTap: _pickImage,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 107.w,
+                    height: screenHeight * 156 / baseScreenHeight,
+                    color: Colors.grey[200],
+                    child: _selectedImage != null
+                        ? Image.file(
+                      File(_selectedImage!.path),
+                      fit: BoxFit.cover,
+                    )
+                        : const Center(
+                      child: FixedText('  처리 중..'),
+                    ),
+                  ),
                 ),
               ),
             ),
+
 
             // 🏠 홈 구단
             Positioned(
@@ -445,7 +475,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                   ),
                   SizedBox(height: 8.h),
                   GestureDetector(
-                    onTap: () async {
+                    onTap: () async { // 바텀 시트 부붑ㄴ 수정 필요
                       final team = await showTeamPicker(
                         context: context,
                         title: '구장',
@@ -465,7 +495,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: FixedText(
-                        mapCorpToFullName(selectedStadium ?? extractedStadium ?? '') ?? '구장 정보를 작성해 주세요',
+                        selectedStadium ?? extractedStadium ?? '구장 정보를 작성해 주세요', // 추후 구장 풀네임 변환 함수 적용
                         style: AppFonts.b3_m(context).copyWith(
                           color: ((selectedStadium ?? extractedStadium) == null ||
                               (selectedStadium ?? extractedStadium)!.isEmpty)

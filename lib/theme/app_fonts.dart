@@ -135,7 +135,7 @@ class AppFonts {
     letterSpacing: -0.36,
   );
 
-  static TextStyle c1_2(BuildContext context) => TextStyle(
+  static TextStyle c1_r(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w400,
     fontSize: scaleFont(12, MediaQuery.of(context).size.height),

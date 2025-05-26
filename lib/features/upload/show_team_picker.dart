@@ -6,7 +6,7 @@ import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/fixed_text.dart';
 
-/// 홈/원정 구단 선택용 BottomSheet
+///홈/원정 구단 선택용 BottomSheet
 Future<String?> showTeamPicker({
   required BuildContext context,
   required String title,      // "홈 구단" 또는 "원정 구단"
@@ -98,7 +98,7 @@ Future<String?> showTeamPicker({
                                     color: AppColors.gray50,
                                     borderRadius: BorderRadius.circular(8.r),
                                     border: Border.all(
-                                      color: isSel ? AppColors.pri300 : Colors.transparent,
+                                      color: isSel ? AppColors.pri300: Colors.transparent,
                                       width: 2,
                                     ),
                                   ),
@@ -178,7 +178,7 @@ Future<String?> showTeamPicker({
                       child: ElevatedButton(
                         onPressed: () => Navigator.pop(context, selected),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: selected != null ? AppColors.gray700 : AppColors.gray200,
+                          backgroundColor: selected != null ? AppColors.gray700: AppColors.gray200,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.r),
                           ),

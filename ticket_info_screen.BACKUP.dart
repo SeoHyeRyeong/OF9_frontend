@@ -12,7 +12,6 @@ import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/features/upload/show_team_picker.dart';
-import 'package:frontend/features/upload/show_stadium_picker.dart'; // 추가된 import
 import 'package:frontend/features/upload/show_date_time_picker.dart';
 import 'package:frontend/features/upload/show_seat_picker.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
@@ -34,13 +33,11 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
   String? extractedAwayTeam;
   String? extractedDate;
   String? extractedTime;
-  String? extractedStadium;
   String? extractedSeat;
 
   String? selectedHome;
   String? selectedAway;
   String? selectedDateTime;
-  String? selectedStadium;
   String? selectedSeat;
 
   List<GameResponse> matchedGames = [];
@@ -78,14 +75,12 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     '베어스': '두산',
     'Eagles': '한화'
   };
-
   final List<String> _teamKeywords = [
     'KIA 타이거즈', '두산 베어스', '롯데 자이언츠', '삼성 라이온즈', '키움 히어로즈', '한화 이글스',
     'KT WIZ', 'LG 트윈스', 'NC 다이노스', 'SSG 랜더스', '자이언츠', '타이거즈', '라이온즈',
     '히어로즈', '이글스', '트윈스', '다이노스', '랜더스', '베어스', 'Eagles', 'KIA', '두산',
     '롯데', '삼성', '키움', '한화', 'KT', 'LG', 'NC', 'SSG', 'WIZ'
   ];
-
   final List<Map<String, String>> teamListWithImages = [
     {'name': 'KIA 타이거즈', 'image': AppImages.tigers},
     {'name': '두산 베어스', 'image': AppImages.bears},
@@ -99,55 +94,6 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     {'name': 'SSG 랜더스', 'image': AppImages.landers},
   ];
 
-  // 구장 리스트 추가 (images를 List<String>으로 변경)
-  final List<Map<String, dynamic>> stadiumListWithImages = [
-    {'name': '잠실 야구장', 'images': [AppImages.bears, AppImages.twins]}, // 두산, LG 홈구장
-    {'name': '사직 야구장', 'images': [AppImages.giants]},
-    {'name': '고척 SKYDOME', 'images': [AppImages.kiwoom]},
-    {'name': '대구삼성라이온즈파크', 'images': [AppImages.lions]},
-    {'name': '한화생명 볼파크', 'images': [AppImages.eagles]},
-    {'name': '기아 챔피언스 필드', 'images': [AppImages.tigers]},
-    {'name': '수원 케이티 위즈 파크', 'images': [AppImages.ktwiz]},
-    {'name': '창원 NC파크', 'images': [AppImages.dinos]},
-    {'name': '인천 SSG 랜더스필드', 'images': [AppImages.landers]},
-    {'name': '직접 작성하기', 'images': []}, // 이미지 없는 옵션
-  ];
-
-  final Map<String, String> _stadiumMapping = {
-    '잠실': '잠실 야구장',
-    '문학': '인천 SSG 랜더스필드',
-    '대구': '대구삼성라이온즈파크',
-    '수원': '수원 케이티 위즈 파크',
-    '광주': '기아 챔피언스 필드',
-    '창원': '창원 NC파크',
-    '고척': '고척 SKYDOME',
-    '대전(신)': '한화생명 볼파크',
-    '사직': '사직 야구장',
-  };
-
-  // OCR에서 추출된 구장명을 정식 이름으로 변환
-  String? mapStadiumName(String? extractedName) {
-    if (extractedName == null || extractedName.isEmpty) return null;
-
-    final cleaned = extractedName.trim();
-
-    // 정확히 일치하는 경우
-    if (_stadiumMapping.containsKey(cleaned)) {
-      return _stadiumMapping[cleaned];
-    }
-
-    // 부분 일치 검색 (대소문자 무시)
-    for (final entry in _stadiumMapping.entries) {
-      if (cleaned.toLowerCase().contains(entry.key.toLowerCase()) ||
-          entry.key.toLowerCase().contains(cleaned.toLowerCase())) {
-        return entry.value;
-      }
-    }
-
-    // 매핑되지 않은 경우 원본 반환
-    return extractedName;
-  }
-
   // OCR에서 추출한 'KIA' 같은 축약명을 팀 풀네임으로 변환해주는 함수 (나중에 picker에서 사용하기 위해)
   String? mapCorpToFullName(String shortName) {
     final cleaned = shortName.trim();
@@ -159,18 +105,19 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     return null;
   }
 
+  //크롤링 정보 매칭을 위해 shortname으로 변환해주는 함수 (홈,원정 구단은 fullname으로 가져와져서...)
+  String? mapFullNameToCorp(String? fullName) {
+    if (fullName == null) return null;
+    final cleaned = fullName.trim();
+    return _teamToCorp[cleaned];
+  }
+
   bool get isComplete {
     final home = selectedHome ?? extractedHomeTeam;
     final away = selectedAway ?? extractedAwayTeam;
-    final dateTime = selectedDateTime ?? extractedDate; // extractedTime 제거
+    final dateTime = selectedDateTime ?? ((extractedDate != null && extractedTime != null) ? '$extractedDate $extractedTime' : null);
     final seat = selectedSeat ?? extractedSeat;
-    final stadium = selectedStadium ?? extractedStadium;
-
-    return home?.isNotEmpty == true &&
-        away?.isNotEmpty == true &&
-        dateTime?.isNotEmpty == true &&
-        seat?.isNotEmpty == true &&
-        stadium?.isNotEmpty == true;
+    return home?.isNotEmpty == true && away?.isNotEmpty == true && dateTime?.isNotEmpty == true && seat?.isNotEmpty == true;
   }
 
   @override
@@ -179,62 +126,41 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     _processImage(widget.imagePath);
   }
 
-  Future<void> _handleImage(String path, {bool updateSelectedImage = true}) async {
-    try {
-
-      // 이미지를 변경하면 OCR 자동 입력 및 수동 입력 관련 상태 초기화
-      setState(() {
-        rawOcrText = '';
-        extractedHomeTeam = null;
-        extractedAwayTeam = null;
-        extractedDate = null;
-        extractedTime = null;
-        extractedStadium = null;
-        extractedSeat = null;
-
-        selectedHome = null;
-        selectedAway = null;
-        selectedDateTime = null;
-        selectedStadium = null;
-        // 구장 사용자 자유 입력 필드 별도 사용 시에 .clear() 처리 추가 필요
-        selectedSeat = null;
-      });
-
-      final inputImage = InputImage.fromFile(File(path));
-      final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
-      final result = await textRecognizer.processImage(inputImage);
-      rawOcrText = result.text;
-      print('📄 OCR 전체 텍스트:\n$rawOcrText');
-
-      final cleanedText = rawOcrText.replaceAll(RegExp(r'\s+'), ' ').trim();
-      extractedAwayTeam = extractAwayTeam(cleanedText, _teamToCorp, _teamKeywords);
-      extractedDate = extractDate(cleanedText);
-      extractedTime = extractTime(cleanedText);
-
-      await _findMatchingGame(cleanedText);
-
-      if (updateSelectedImage) {
-        setState(() => _selectedImage = XFile(path));
-      }
-    } catch (e) {
-      print('이미지 처리 오류: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('이미지 처리 중 오류가 발생했습니다')),
-        );
-      }
-    }
-  }
-
   Future<void> _processImage(String path) async {
-    await _handleImage(path, updateSelectedImage: true);
+    final inputImage = InputImage.fromFile(File(path));
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
+    final result = await textRecognizer.processImage(inputImage);
+    rawOcrText = result.text;
+    print('📄 OCR 전체 텍스트:\n$rawOcrText');
+
+    final cleanedText = rawOcrText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    extractedAwayTeam = extractAwayTeam(cleanedText, _teamToCorp, _teamKeywords);
+    extractedDate = extractDate(cleanedText);
+    extractedTime = extractTime(cleanedText);
+
+    await _findMatchingGame(cleanedText);
+    setState(() => _selectedImage = XFile(path));
   }
 
+  // 📌 현재는 사용하지 않지만 추후 사진보관함에서 티켓 사진을 불러오는 기능을 위해 보존
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      await _handleImage(pickedFile.path, updateSelectedImage: true);
-    }
+    if (pickedFile == null) return;
+    setState(() => _selectedImage = pickedFile);
+
+    final inputImage = InputImage.fromFile(File(pickedFile.path));
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
+    final result = await textRecognizer.processImage(inputImage);
+    rawOcrText = result.text;
+    print('📄 OCR 젠체 텍스트:\n$rawOcrText');
+
+    final cleanedText = rawOcrText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    extractedAwayTeam = extractAwayTeam(cleanedText, _teamToCorp, _teamKeywords);
+    extractedDate = extractDate(cleanedText);
+    extractedTime = extractTime(cleanedText);
+
+    await _findMatchingGame(cleanedText);
+    //setState(() {});
   }
 
   Future<void> _findMatchingGame(String cleanedText) async {
@@ -248,34 +174,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
         );
         matchedGames = [game];
         extractedHomeTeam = game.homeTeam;
-        extractedStadium = game.stadium;
         extractedSeat = extractSeat(cleanedText, game.stadium);
-
-        // OCR 추출된 날짜와 시간을 요일 포함 형식으로 보정
-        if (extractedDate != null && extractedTime != null) {
-          try {
-            final parts = extractedDate!.split('-');
-            if (parts.length == 3) {
-              final year = int.parse(parts[0]);
-              final month = int.parse(parts[1]);
-              final day = int.parse(parts[2]);
-              final date = DateTime(year, month, day);
-
-              const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-              final weekday = weekdays[date.weekday % 7];
-
-              // 시간 형식 변환 (14:00 -> 14시 00분)
-              final timeParts = extractedTime!.split(':');
-              final timeKorean = '${timeParts[0]}시 ${timeParts[1]}분';
-
-              // extractedDate와 extractedTime을 합쳐서 요일 포함 형식으로 저장
-              extractedDate = '${parts[0]} - ${parts[1].padLeft(2, '0')} - ${parts[2].padLeft(2, '0')} ($weekday) $timeKorean';
-              extractedTime = null; // 시간 정보는 extractedDate에 포함되었으므로 null로 설정
-            }
-          } catch (e) {
-            print('날짜 포맷 변환 오류: $e');
-          }
-        }
 
         print('🔍추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime, seat: $extractedSeat');
 
@@ -284,8 +183,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
           homeTeam: game.homeTeam,
           awayTeam: game.awayTeam,
           date: DateFormat('yyyy-MM-dd').format(game.date),
-          time: extractedTime ?? '',
-          stadium: extractedStadium!,
+          time: extractedTime!,
         );
       } catch (e) {
         print('DB 매칭 실패 오류: $e');
@@ -300,6 +198,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final statusBarHeight = MediaQuery.of(context).padding.top;
     const baseScreenHeight = 800;
+    final scaffoldContext = context;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -359,27 +258,19 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
             Positioned(
               top: (screenHeight * 218 / baseScreenHeight) - statusBarHeight,
               left: 20.w,
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    width: 107.w,
-                    height: screenHeight * 156 / baseScreenHeight,
-                    color: Colors.grey[200],
-                    child: _selectedImage != null
-                        ? Image.file(
-                      File(_selectedImage!.path),
-                      fit: BoxFit.cover,
-                    )
-                        : const Center(
-                      child: FixedText('  처리 중..'),
-                    ),
-                  ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 107.w,
+                  height: screenHeight * 156 / baseScreenHeight,
+                  color: Colors.grey[200],
+                  child: _selectedImage != null
+                      ? Image.file(
+                      File(_selectedImage!.path), fit: BoxFit.cover)
+                      : const Center(child: FixedText('분석 중...')),
                 ),
               ),
             ),
-
 
             // 🏠 홈 구단
             Positioned(
@@ -392,7 +283,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                     children: [
                       FixedText('홈 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200)),
+                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
@@ -402,8 +293,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         context: context,
                         title: '홈 구단',
                         teams: teamListWithImages,
-                        initial: selectedHome ?? mapCorpToFullName(
-                            extractedHomeTeam ?? ''),
+                        initial: selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? ''),
                       );
                       if (team != null) setState(() => selectedHome = team);
                     },
@@ -416,20 +306,27 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         color: AppColors.gray50,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: FixedText(
-                        (selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '')) ?? '구단을 선택해 주세요',
-                        style: AppFonts.b3_sb_long(context).copyWith(
-                          color: ((selectedHome ?? extractedHomeTeam) == null ||
-                              (selectedHome ?? extractedHomeTeam)!.isEmpty)
-                              ? AppColors.gray300
-                              : Colors.black,
-                        ),
+                      child: Builder(
+                        builder: (context) {
+                          final displayText = selectedHome
+                              ?? mapCorpToFullName(extractedHomeTeam ?? '')
+                              ?? '구단을 선택해 주세요';
+                          final isHint = displayText == '구단을 선택해 주세요';
+
+                          return FixedText(
+                            displayText,
+                            style: AppFonts.b3_sb_long(context).copyWith(
+                              color: isHint ? AppColors.gray300 : Colors.black,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+
 
             // 🛫 원정 구단
             Positioned(
@@ -442,7 +339,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                     children: [
                       FixedText('원정 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200)),
+                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
@@ -452,8 +349,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         context: context,
                         title: '원정 구단',
                         teams: teamListWithImages,
-                        initial: selectedAway ?? mapCorpToFullName(
-                            extractedAwayTeam ?? ''),
+                        initial: selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? ''),
                       );
                       if (team != null) setState(() => selectedAway = team);
                     },
@@ -466,14 +362,20 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         color: AppColors.gray50,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: FixedText(
-                        (selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '')) ?? '구단을 선택해 주세요',
-                        style: AppFonts.b3_sb_long(context).copyWith(
-                          color: ((selectedAway ?? extractedAwayTeam) == null ||
-                              (selectedAway ?? extractedAwayTeam)!.isEmpty)
-                              ? AppColors.gray300
-                              : Colors.black,
-                        ),
+                      child: Builder(
+                        builder: (context) {
+                          final displayText = selectedAway
+                              ?? mapCorpToFullName(extractedAwayTeam ?? '')
+                              ?? '구단을 선택해 주세요';
+                          final isHint = displayText == '구단을 선택해 주세요';
+
+                          return FixedText(
+                            displayText,
+                            style: AppFonts.b3_sb_long(context).copyWith(
+                              color: isHint ? AppColors.gray300 : Colors.black,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -497,13 +399,21 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                   ),
                   SizedBox(height: 8.h),
                   GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () async {
-                      final home = selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '');
-                      final away = selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '');
+                      final homeFull = selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '');
+                      final awayFull = selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '');
 
-                      if (home == null || home.isEmpty || away == null || away.isEmpty) {
+                      final homeShort = mapFullNameToCorp(homeFull);
+                      final awayShort = mapFullNameToCorp(awayFull);
+
+                      print('selectedHome: $selectedHome, extractedHomeTeam: $extractedHomeTeam');
+                      print('selectedAway: $selectedAway, extractedAwayTeam: $extractedAwayTeam');
+                      print('📌 홈: "$homeShort", 원정: "$awayShort"');
+
+                      if (homeShort == null || awayShort == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: FixedText('홈 구단과 원정 구단을 먼저 선택해 주세요.')),
+                          const SnackBar(content: FixedText('홈 구단과 원정 구단을 먼저 선택해 주세요.')),
                         );
                         return;
                       }
@@ -511,61 +421,13 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                       final dt = await showDateTimePicker(
                         context: context,
                         ocrDateText: extractedDate,
-                        homeTeam: home,
-                        opponentTeam: away,
+                        homeTeam: homeShort,
+                        opponentTeam: awayShort,
                       );
+
                       if (dt != null) setState(() => selectedDateTime = dt);
                     },
-                    child: Container(
-                      width: 320.w,
-                      height: screenHeight * 52 / baseScreenHeight,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      alignment: Alignment.centerLeft,
-                      decoration: BoxDecoration(
-                        color: AppColors.gray50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: FixedText(
-                        selectedDateTime ?? extractedDate ?? '경기 날짜를 선택해 주세요', // 단순화
-                        style: AppFonts.b3_sb_long(context).copyWith(
-                          color: (selectedDateTime == null && extractedDate == null)
-                              ? AppColors.gray300
-                              : Colors.black,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
-            // 🏟️ 구장 - showStadiumPicker로 변경
-            Positioned(
-              top: (screenHeight * 482 / baseScreenHeight) - statusBarHeight,
-              left: 20.w,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      FixedText('구장', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
-                      SizedBox(width: 2.w),
-                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200)),
-                    ],
-                  ),
-                  SizedBox(height: 8.h),
-                  GestureDetector(
-                    onTap: () async {
-                      final stadium = await showStadiumPicker(
-                        context: context,
-                        title: '구장',
-                        stadiums: stadiumListWithImages, // 구장 리스트 사용
-                        initial: selectedStadium ?? mapStadiumName(extractedStadium), // 현재 선택된 값을 initial로 전달
-                      );
-                      if (stadium != null) {
-                        setState(() => selectedStadium = stadium);
-                      }
-                    },
                     child: Container(
                       width: 320.w,
                       height: screenHeight * 52 / baseScreenHeight,
@@ -576,21 +438,17 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: FixedText(
-                        selectedStadium ?? mapStadiumName(extractedStadium) ?? '구장 정보를 작성해 주세요',
+                        selectedDateTime ?? ((extractedDate != null && extractedTime != null)
+                            ? '$extractedDate $extractedTime'
+                            : '경기 날짜를 선택해 주세요'),
                         style: AppFonts.b3_sb_long(context).copyWith(
-                          color: ((selectedStadium ?? extractedStadium) == null ||
-                              (selectedStadium ?? extractedStadium)!.isEmpty)
+                          color: (selectedDateTime == null &&
+                              (extractedDate == null || extractedTime == null))
                               ? AppColors.gray300
                               : Colors.black,
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 8.h),
-                  FixedText(
-                    '*홈 구장과 실제 경기 구장이 다를 경우 직접 작성해 주세요',
-                    style: AppFonts.c2_sb(context).copyWith(
-                        color: AppColors.gray300),
                   ),
                 ],
               ),
@@ -598,7 +456,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
 
             // 🎫 좌석
             Positioned(
-              top: (screenHeight * 592 / baseScreenHeight) - statusBarHeight,
+              top: (screenHeight * 498 / baseScreenHeight) - statusBarHeight,
               left: 20.w,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -607,7 +465,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                     children: [
                       FixedText('좌석', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
                       SizedBox(width: 2.w),
-                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200)),
+                      FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray200)),
                     ],
                   ),
                   SizedBox(height: 8.h),
@@ -615,7 +473,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                     onTap: () async {
                       final seat = await showSeatInputDialog(
                         context,
-                        initial: selectedSeat,
+                        initial: selectedSeat ?? extractedSeat,
                       );
                       if (seat != null) setState(() => selectedSeat = seat);
                     },
@@ -630,7 +488,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                       ),
                       child: FixedText(
                         selectedSeat ?? extractedSeat ?? '좌석 정보를 작성해 주세요',
-                        style: AppFonts.b3_sb_long(context).copyWith(
+                        style: AppFonts.b3_m(context).copyWith(
                           color: ((selectedSeat ?? extractedSeat) == null ||
                               (selectedSeat ?? extractedSeat)!.isEmpty)
                               ? AppColors.gray300

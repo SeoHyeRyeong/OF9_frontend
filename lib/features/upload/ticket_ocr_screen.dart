@@ -10,7 +10,17 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:frontend/components/custom_popup_dialog.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:frontend/utils/ticket_info_extractor.dart';
 
+
+class ExtractedTicketInfo {
+  final String? awayTeam;
+  final String? date;
+  final String? time;
+
+  ExtractedTicketInfo({this.awayTeam, this.date, this.time});
+}
 
 late List<CameraDescription> _cameras;
 late CameraController _cameraController;
@@ -26,6 +36,46 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
   bool _isCameraInitialized = false;
   bool _isLoading = false;
 
+  final Map<String, String> teamToCorpMap = {
+    'KIA 타이거즈': 'KIA',
+    'KIA': 'KIA',
+    '두산 베어스': '두산',
+    '두산': '두산',
+    '롯데 자이언츠': '롯데',
+    '롯데': '롯데',
+    '삼성 라이온즈': '삼성',
+    '삼성': '삼성',
+    '키움 히어로즈': '키움',
+    '키움': '키움',
+    '한화 이글스': '한화',
+    '한화': '한화',
+    'KT WIZ': 'KT',
+    'KT': 'KT',
+    'LG 트윈스': 'LG',
+    'LG': 'LG',
+    'NC 다이노스': 'NC',
+    'NC': 'NC',
+    'SSG 랜더스': 'SSG',
+    'SSG': 'SSG',
+    '자이언츠': '롯데',
+    '타이거즈': 'KIA',
+    '라이온즈': '삼성',
+    '히어로즈': '키움',
+    '이글스': '한화',
+    'WIZ': 'KT',
+    '트윈스': 'LG',
+    '다이노스': 'NC',
+    '랜더스': 'SSG',
+    '베어스': '두산',
+    'Eagles': '한화',
+  };
+
+  final List<String> teamKeywordsList = [
+    'KIA 타이거즈', '두산 베어스', '롯데 자이언츠', '삼성 라이온즈', '키움 히어로즈', '한화 이글스',
+    'KT WIZ', 'LG 트윈스', 'NC 다이노스', 'SSG 랜더스', '자이언츠', '타이거즈', '라이온즈',
+    '히어로즈', '이글스', '트윈스', '다이노스', '랜더스', '베어스', 'Eagles', 'KIA', '두산',
+    '롯데', '삼성', '키움', '한화', 'KT', 'LG', 'NC', 'SSG', 'WIZ'
+  ];
 
   @override
   void initState() {
@@ -153,6 +203,50 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
     );
   }
 
+  void _showMissingInfoDialog(String imagePath) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CustomPopupDialog(
+        imageAsset: AppImages.icAlert,
+        title: '티켓 속 정보를\n인식하지 못했어요',
+        subtitle: '다시 촬영하거나 정보를 직접 입력해 주세요',
+        firstButtonText: '직접 입력',
+        firstButtonAction: () {
+          Navigator.pop(context); // 팝업 닫기
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => TicketInfoScreen(imagePath: imagePath)),
+          );
+        },
+        secondButtonText: '다시 촬영하기',
+        secondButtonAction: () {
+          Navigator.pop(context); // 팝업만 닫고 재촬영 가능
+        },
+      ),
+    );
+  }
+
+  Future<ExtractedTicketInfo> extractTicketInfoFromImage(String imagePath) async {
+    final inputImage = InputImage.fromFilePath(imagePath);
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
+    final recognizedText = await textRecognizer.processImage(inputImage);
+    final cleanedText = recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ').trim();
+
+    // 전체 OCR 텍스트 출력
+    print('😱 OCR 전체 텍스트:\n${recognizedText.text}');
+
+    final awayTeam = extractAwayTeam(cleanedText, teamToCorpMap, teamKeywordsList);
+    final date = extractDate(cleanedText);
+    final time = extractTime(cleanedText);
+
+    // 개별 추출 결과 출력
+    print('🟨 추출된 awayTeam: $awayTeam');
+    print('🟨 추출된 date: $date');
+    print('🟨 추출된 time: $time');
+
+    return ExtractedTicketInfo(awayTeam: awayTeam, date: date, time: time);
+  }
 
   Future<void> _onCameraButtonPressed() async {
     final status = await Permission.camera.status;
@@ -170,12 +264,21 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
     try {
       final XFile file = await _cameraController.takePicture();
       if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => TicketInfoScreen(imagePath: file.path),
-        ),
-      );
+
+      final extracted = await extractTicketInfoFromImage(file.path);
+
+      if (extracted.awayTeam?.isEmpty != false ||
+          extracted.date?.isEmpty != false ||
+          extracted.time?.isEmpty != false) {
+        _showMissingInfoDialog(file.path);
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TicketInfoScreen(imagePath: file.path),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

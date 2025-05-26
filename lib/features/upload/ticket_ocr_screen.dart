@@ -9,6 +9,7 @@ import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:frontend/components/custom_popup_dialog.dart';
 
 
 late List<CameraDescription> _cameras;
@@ -65,7 +66,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
       orElse: () => _cameras.first,
     );
     _cameraController = CameraController(
-      _cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.back),
+      backCamera,
       ResolutionPreset.high,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
@@ -120,7 +121,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
     final status = await Permission.camera.status;
 
     if (status.isPermanentlyDenied) {
-      // '다시 묻지 않음' 눌렀을 때만 커스텀 다이얼로그 표시
+      // '허용 안함' 눌렀을 때만 커스텀 다이얼로그 표시
       _showCustomPermissionDialog();
     }
 
@@ -131,18 +132,27 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
   void _showCustomPermissionDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
-        child: _buildCameraPermissionDialog(
-          context: context,
-          screenHeight: MediaQuery.of(context).size.height,
-          screenWidth: MediaQuery.of(context).size.width,
-        ),
+      builder: (context) => CustomPopupDialog(
+        imageAsset: AppImages.icAlert,
+        title: '현재 카메라 사용에 대한\n접근 권한이 없어요',
+        subtitle: '설정의 (Lookit) 탭에서 접근 활성화가 필요해요',
+        firstButtonText: '직접 입력',
+        firstButtonAction: () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TicketInfoScreen(imagePath: '')),
+          );
+        },
+        secondButtonText: '설정으로 이동',
+        secondButtonAction: () async {
+          Navigator.pop(context);
+          await openAppSettings();
+        },
       ),
     );
   }
+
 
   Future<void> _onCameraButtonPressed() async {
     final status = await Permission.camera.status;
@@ -339,230 +349,6 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
       ),
     );
   }
-
-  /*Widget _buildCameraPermissionDialog({
-    required double screenHeight,
-    required double screenWidth,
-    required BuildContext context,
-  }) {
-
-    const double designDialogHeight = 294.0;
-
-    return Center(
-      child: Container(
-        width: screenWidth * 320 / 360,
-        height: screenHeight * 294 / 800,
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 20 / 320),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(AppImages.icAlert, width: screenHeight * 82 / 800, height: screenHeight * 82 / 800),
-
-            // 이미지 ↔ 텍스트 간격: 10px
-            SizedBox(height: screenHeight * 10 / 800),
-
-            FixedText(
-              '현재 카메라 사용에 대한\n접근 권한이 없어요',
-              style: AppFonts.h5_b(context).copyWith(
-                color: AppColors.gray950,
-                  height: designDialogHeight * 30 / 294 / AppFonts.h5_b(context).fontSize!
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            // 텍스트 ↔ 텍스트 간격: 18px
-            SizedBox(height: screenHeight * 18 / 800),
-
-            FixedText(
-              '설정의 (Lookit) 탭에서 접근 활성화가 필요해요',
-              style: AppFonts.b3_r(context).copyWith(color: AppColors.gray300),
-              textAlign: TextAlign.center,
-            ),
-
-            // 텍스트 ↔ 버튼 간격: 26px
-            SizedBox(height: screenHeight * 26 / 800),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 136,
-                  height: screenHeight * 46 / 800,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const TicketInfoScreen(imagePath: ''),
-                        ),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      backgroundColor: AppColors.gray50,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: FixedText(
-                      '직접 입력',
-                      style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray600),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 136,
-                  height: screenHeight * 46 / 800,
-                  child: TextButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await openAppSettings();
-                    },
-                    style: TextButton.styleFrom(
-                      backgroundColor: AppColors.pri700,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: FixedText(
-                      '설정으로 이동',
-                      style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray20),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }*/
-
-  Widget _buildCameraPermissionDialog({
-    required double screenHeight,
-    required double screenWidth,
-    required BuildContext context,
-  }) {
-    const double baseScreenHeight = 800;
-    const double baseScreenWidth = 360;
-    const double dialogWidth = 320;
-    const double dialogHeight = 294;
-
-    return Center(
-      child: Container(
-        width: screenWidth * dialogWidth / baseScreenWidth,
-        height: screenHeight * dialogHeight / baseScreenHeight,
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 20 / baseScreenWidth),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // 이미지
-            SvgPicture.asset(
-              AppImages.icAlert,
-              width: screenHeight * 82 / baseScreenHeight,
-              height: screenHeight * 82 / baseScreenHeight,
-            ),
-
-            // 이미지 ↔ 타이틀 간격 10px
-            SizedBox(height: screenHeight * 10 / baseScreenHeight),
-
-            // 타이틀
-            FixedText(
-              '현재 카메라 사용에 대한\n접근 권한이 없어요',
-              style: AppFonts.h5_b(context).copyWith(
-                color: AppColors.gray950,
-                height: (dialogHeight * 30 / 294) / AppFonts.h5_b(context).fontSize!,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            // 타이틀 ↔ 서브텍스트 간격 18px
-            SizedBox(height: screenHeight * 18 / baseScreenHeight),
-
-            // 서브텍스트
-            FixedText(
-              '설정의 (Lookit) 탭에서 접근 활성화가 필요해요',
-              style: AppFonts.b3_r(context).copyWith(color: AppColors.gray300),
-              textAlign: TextAlign.center,
-            ),
-
-            // 서브텍스트 ↔ 버튼 간격 26px
-            SizedBox(height: screenHeight * 26 / baseScreenHeight),
-
-            // 버튼들
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 직접 입력 버튼
-                Expanded(
-                  child: SizedBox(
-                    height: screenHeight * 46 / baseScreenHeight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TicketInfoScreen(imagePath: ''),
-                          ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        backgroundColor: AppColors.gray50,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: FixedText(
-                        '직접 입력',
-                        style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray600),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 버튼 사이 간격 8px
-                SizedBox(width: screenWidth * 8 / 360),
-
-                // 설정으로 이동 버튼
-                Expanded(
-                  child: SizedBox(
-                    height: screenHeight * 46 / baseScreenHeight,
-                    child: TextButton(
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        await openAppSettings();
-                      },
-                      style: TextButton.styleFrom(
-                        backgroundColor: AppColors.pri700,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: FixedText(
-                        '설정으로 이동',
-                        style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray20),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
 
 
   Widget _buildBottomNavItem(

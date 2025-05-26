@@ -197,7 +197,6 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
         selectedAway = null;
         selectedDateTime = null;
         selectedStadium = null;
-        // 구장 사용자 자유 입력 필드 별도 사용 시에 .clear() 처리 추가 필요
         selectedSeat = null;
       });
 

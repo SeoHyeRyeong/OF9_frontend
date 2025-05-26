@@ -16,6 +16,7 @@ import 'package:frontend/features/upload/show_stadium_picker.dart'; // 추가된
 import 'package:frontend/features/upload/show_date_time_picker.dart';
 import 'package:frontend/features/upload/show_seat_picker.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
+import 'package:frontend/features/upload/emotion_select_screen.dart';
 import 'package:frontend/utils/fixed_text.dart';
 
 class TicketInfoScreen extends StatefulWidget {
@@ -667,8 +668,21 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                 child: ElevatedButton(
                   onPressed: isComplete
                       ? () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: FixedText('저장 완료')),
+                    final String finalStadium = selectedStadium ?? extractedStadium ?? '';
+                    final String finalSeat = selectedSeat ?? extractedSeat ?? '';
+                    final String finalGameId = matchedGames.isNotEmpty ? matchedGames.first.gameId : '';
+                    final int userId = 1; // 또는 사용자 세션에서 불러오기
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EmotionSelectScreen(
+                          userId: userId,
+                          gameId: finalGameId,
+                          seatInfo: finalSeat,
+                          stadium: finalStadium,
+                        ),
+                      ),
                     );
                   }
                       : null,
@@ -683,7 +697,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                   ),
                   child: FixedText('완료',
                       style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20)),
-                ),
+                )
               ),
             ),
           ],

@@ -187,10 +187,13 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                           'stadium': widget.stadium,
                         };
 
-                        // API 연동 로직 (예시)
-                        print('POST /emotion $requestBody');
+                        // 로그 출력
+                        print('😊 1차 저장된 감정 선택 바디: ${requestBody}');
 
-                        // 다음 화면 이동 (필요 시 추가)
+                        // 실제 전송은 추후 구현
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('감정 선택이 저장되었습니다')),
+                        );
                       }
                           : null,
                       style: ElevatedButton.styleFrom(

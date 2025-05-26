@@ -29,13 +29,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Kakao Login',
       theme: ThemeData(primarySwatch: Colors.blue),
       debugShowCheckedModeBanner: false, //디버그 리본 숨기기
-      //home: const TicketOcrScreen(),//LoginScreen(),
-      home: EmotionSelectScreen(
-        userId: 1,
-        gameId: '20250323LGLT0',
-        seatInfo: '1루 네이비석 309블럭 11열 4번',
-        stadium: '잠실야구장',
-      ),
+      home: const TicketOcrScreen(),//LoginScreen(),
     );
   }
 }

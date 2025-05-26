@@ -35,6 +35,18 @@ class AppImages {
 
   static const camera = 'assets/imgs/ic_camera_grayscale20.svg';
   static const solar_gallery = 'assets/imgs/ic_solar_gallery.svg';
+  static const icAlert = 'assets/imgs/ic_alert.svg';
+
+  static const emotion_1 = 'assets/imgs/ic_emotion/emotion_1.svg';
+  static const emotion_2 = 'assets/imgs/ic_emotion/emotion_2.svg';
+  static const emotion_3 = 'assets/imgs/ic_emotion/emotion_3.svg';
+  static const emotion_4 = 'assets/imgs/ic_emotion/emotion_4.svg';
+  static const emotion_5 = 'assets/imgs/ic_emotion/emotion_5.svg';
+  static const emotion_6 = 'assets/imgs/ic_emotion/emotion_6.svg';
+  static const emotion_7 = 'assets/imgs/ic_emotion/emotion_7.svg';
+  static const emotion_8 = 'assets/imgs/ic_emotion/emotion_8.svg';
+  static const emotion_9 = 'assets/imgs/ic_emotion/emotion_9.svg';
+
 
   static const canlendar = 'assets/imgs/ic_normal_canlendar.svg';
   static const gallery = 'assets/imgs/ic_normal_gallery.svg';

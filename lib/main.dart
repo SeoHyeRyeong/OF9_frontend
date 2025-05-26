@@ -4,6 +4,7 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:frontend/features/onboarding_login/login_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
+import 'package:frontend/features/upload/emotion_select_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +29,13 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Kakao Login',
       theme: ThemeData(primarySwatch: Colors.blue),
       debugShowCheckedModeBanner: false, //디버그 리본 숨기기
-      home: const TicketOcrScreen(),//LoginScreen(),
+      //home: const TicketOcrScreen(),//LoginScreen(),
+      home: EmotionSelectScreen(
+        userId: 1,
+        gameId: '20250323LGLT0',
+        seatInfo: '1루 네이비석 309블럭 11열 4번',
+        stadium: '잠실야구장',
+      ),
     );
   }
 }

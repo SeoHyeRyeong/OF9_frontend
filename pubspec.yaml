@@ -70,6 +70,7 @@ flutter:
   assets:
     - .env
     - assets/imgs/
+    - assets/imgs/ic_emotion/
     - assets/fonts/
     - assets/tessdata/
   # The following line ensures that the Material Icons font is

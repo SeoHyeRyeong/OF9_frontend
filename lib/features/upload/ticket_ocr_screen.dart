@@ -21,7 +21,7 @@ class TicketOcrScreen extends StatefulWidget {
   State<TicketOcrScreen> createState() => _TicketOcrScreenState();
 }
 
-class _TicketOcrScreenState extends State<TicketOcrScreen> {
+class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingObserver {
   bool _isCameraInitialized = false;
   bool _isLoading = false;
 
@@ -29,14 +29,41 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeCameraIfNeeded();
+    WidgetsBinding.instance.addObserver(this);
+    if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+      _initializeCameraIfNeeded();
+    }
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkPermissionOnly(); // request() 하지 않음
+    }
+  }
+
+  Future<void> _checkPermissionOnly() async {
+    final status = await Permission.camera.status;
+
+    if (status.isGranted) {
+      if (!_isCameraInitialized) {
+        _initializeCameraIfNeeded();
+      }
+    }
+
+    // 이 상태에서는 시스템이 팝업 띄우고 있을 수 있음 → 아무것도 하지 않음
+  }
+
 
   Future<void> _initializeCameraIfNeeded() async {
     final hasPermission = await _requestCameraPermission();
     if (!hasPermission) return;
 
     _cameras = await availableCameras();
+    final backCamera = _cameras.firstWhere(
+          (c) => c.lensDirection == CameraLensDirection.back,
+      orElse: () => _cameras.first,
+    );
     _cameraController = CameraController(
       _cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.back),
       ResolutionPreset.high,
@@ -61,6 +88,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_isCameraInitialized) {
       _cameraController.dispose();
     }
@@ -82,43 +110,50 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
   }
 
   Future<bool> _requestCameraPermission() async {
+    final result = await Permission.camera.request();
+
+    if (result.isGranted) return true;
+
+    // 시스템 팝업이 사라질 시간 확보 (겹침 방지)
+    await Future.delayed(const Duration(milliseconds: 300));
+
     final status = await Permission.camera.status;
-    if (status.isGranted) return true;
-    if (status.isDenied) {
-      final result = await Permission.camera.request();
-      return result.isGranted;
-    }
+
     if (status.isPermanentlyDenied) {
-      if (!mounted) return false;
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const FixedText('카메라 권한이 필요합니다'),
-          content: const FixedText('앱에서 카메라를 사용하려면 권한이 필요합니다. 설정 화면으로 이동할까요?'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await openAppSettings();
-              },
-              child: const FixedText('설정으로 이동'),
-            ),
-          ],
-        ),
-      );
-      return false;
+      // '다시 묻지 않음' 눌렀을 때만 커스텀 다이얼로그 표시
+      _showCustomPermissionDialog();
     }
+
+    // denied 또는 restricted일 경우 false 리턴 (다음 시도 가능)
     return false;
   }
 
+  void _showCustomPermissionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: _buildCameraPermissionDialog(
+          context: context,
+          screenHeight: MediaQuery.of(context).size.height,
+          screenWidth: MediaQuery.of(context).size.width,
+        ),
+      ),
+    );
+  }
+
   Future<void> _onCameraButtonPressed() async {
-    if (!_isCameraInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('카메라가 아직 준비되지 않았습니다')),
-      );
-      return;
+    final status = await Permission.camera.status;
+
+    if (!status.isGranted) {
+      final granted = await _requestCameraPermission();
+      if (!granted) return;
     }
+
+    // 카메라 초기화 및 촬영 실행
+    if (!_isCameraInitialized) return;
 
     setState(() => _isLoading = true);
 
@@ -142,7 +177,6 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final statusBarHeight = MediaQuery.of(context).padding.top;
@@ -162,7 +196,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
       body: Stack(
         children: [
           Container(color: AppColors.gray400),
-          if (_isCameraInitialized)
+          if (_isCameraInitialized && _cameraController.value.isInitialized && _cameraController.value.previewSize != null)
             Positioned(
               top: statusBarHeight,
               left: 0,
@@ -305,6 +339,107 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> {
       ),
     );
   }
+
+  Widget _buildCameraPermissionDialog({
+    required double screenHeight,
+    required double screenWidth,
+    required BuildContext context,
+  }) {
+    const baseScreenHeight = 800.0;
+    const baseScreenWidth = 360.0;
+
+    final containerWidth = screenWidth * 320 / baseScreenWidth;
+    final containerHeight = screenHeight * 294 / baseScreenHeight;
+    final imageSize = screenHeight * 40 / baseScreenHeight;
+    final verticalSpacing = screenHeight * 20 / baseScreenHeight;
+    final buttonHeight = screenHeight * 46 / baseScreenHeight;
+    final buttonWidth = screenWidth * 136 / baseScreenWidth;
+    final fontSpacingSmall = screenHeight * 12 / baseScreenHeight;
+    final fontSpacingLarge = screenHeight * 32 / baseScreenHeight;
+    final horizontalPadding = screenWidth * 24 / baseScreenWidth;
+
+    return Center(
+      child: Container(
+        width: containerWidth,
+        height: containerHeight,
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(AppImages.icAlert, width: imageSize, height: imageSize),
+            SizedBox(height: verticalSpacing),
+            FixedText(
+              '현재 카메라 사용에 대한\n접근 권한이 없어요',
+              style: AppFonts.h5_b(context).copyWith(color: AppColors.gray950),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: fontSpacingSmall),
+            FixedText(
+              '설정의 (Lookit) 탭에서 접근 활성화가 필요해요',
+              style: AppFonts.b3_r(context).copyWith(color: AppColors.gray300),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: fontSpacingLarge),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                SizedBox(
+                  width: buttonWidth,
+                  height: buttonHeight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // 팝업 닫고
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TicketInfoScreen(imagePath: ''), // 직접 입력 화면으로 이동
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppColors.gray50,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: FixedText(
+                      '직접 입력',
+                      style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray600),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: buttonWidth,
+                  height: buttonHeight,
+                  child: TextButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      await openAppSettings();
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppColors.pri700,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: FixedText(
+                      '설정으로 이동',
+                      style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildBottomNavItem(
       BuildContext context,

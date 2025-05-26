@@ -18,10 +18,23 @@ import 'package:frontend/features/upload/show_seat_picker.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/upload/emotion_select_screen.dart';
 import 'package:frontend/utils/fixed_text.dart';
+import 'package:frontend/components/custom_popup_dialog.dart';
 
 class TicketInfoScreen extends StatefulWidget {
   final String imagePath;
-  const TicketInfoScreen({Key? key, required this.imagePath}) : super(key: key);
+  final bool skipOcrFailPopup;
+  final String? preExtractedAwayTeam;
+  final String? preExtractedDate;
+  final String? preExtractedTime;
+
+  const TicketInfoScreen({
+    Key? key,
+    required this.imagePath,
+    this.skipOcrFailPopup = false,
+    this.preExtractedAwayTeam,
+    this.preExtractedDate,
+    this.preExtractedTime,
+  }) : super(key: key);
   @override
   State<TicketInfoScreen> createState() => _TicketInfoScreenState();
 }
@@ -43,6 +56,48 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
   String? selectedDateTime;
   String? selectedStadium;
   String? selectedSeat;
+
+  // 날짜(yyyy-MM-dd) → '2025 - 04 - 15 (수)' 형식
+  String? formatKoreanDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+    try {
+      final date = DateTime.parse(dateStr);
+      final weekday = DateFormat('E', 'ko_KR').format(date); // '수'
+      return '${date.year} - ${date.month.toString().padLeft(2, '0')} - ${date.day.toString().padLeft(2, '0')} ($weekday)';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
+  // 시간(HH:mm:ss) → '14시 00분' 형식
+  String? formatKoreanTime(String? timeStr) {
+    if (timeStr == null || timeStr.isEmpty) return null;
+    try {
+      final timeParts = timeStr.split(':');
+      if (timeParts.length >= 2) {
+        return '${timeParts[0]}시 ${timeParts[1]}분';
+      }
+      return timeStr;
+    } catch (_) {
+      return timeStr;
+    }
+  }
+
+
+  // 날짜+시간 → '2025 - 04 - 15 (수) 14시 00분' 형식
+  String? formatKoreanDateTime(String? dateStr, String? timeStr) {
+    final formattedDate = formatKoreanDate(dateStr);
+    final formattedTime = formatKoreanTime(timeStr);
+    if (formattedDate != null && formattedTime != null) {
+      return '$formattedDate $formattedTime';
+    } else if (formattedDate != null) {
+      return formattedDate;
+    } else if (formattedTime != null) {
+      return formattedTime;
+    }
+    return null;
+  }
+
 
   List<GameResponse> matchedGames = [];
 
@@ -177,7 +232,45 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
   @override
   void initState() {
     super.initState();
-    _processImage(widget.imagePath);
+
+    if (widget.preExtractedAwayTeam != null) {
+      extractedAwayTeam = widget.preExtractedAwayTeam;
+    }
+    if (widget.preExtractedDate != null) {
+      extractedDate = widget.preExtractedDate;
+    }
+    if (widget.preExtractedTime != null) {
+      extractedTime = widget.preExtractedTime;
+    }
+
+    // OCR 및 팝업 노출을 첫 프레임 이후에 실행
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _processImage(widget.imagePath);
+      // _handleImage 내부에서 인식 실패 시 _showMissingInfoDialog가 호출됩니다.
+    });
+  }
+
+
+  void _showMissingInfoDialog(String imagePath) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CustomPopupDialog(
+        imageAsset: AppImages.icAlert,
+        title: '티켓 속 정보를\n인식하지 못했어요',
+        subtitle: '다시 선택하거나 정보를 직접 입력해 주세요',
+        firstButtonText: '직접 입력',
+        firstButtonAction: () {
+          Navigator.pop(context);
+          // 팝업만 닫고, 사용자가 직접 입력하도록 유도
+        },
+        secondButtonText: '다시 선택하기',
+        secondButtonAction: () async {
+          Navigator.pop(context);
+          await _pickImage(); // 이미지 다시 선택
+        },
+      ),
+    );
   }
 
   Future<void> _handleImage(String path, {bool updateSelectedImage = true}) async {
@@ -210,6 +303,14 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
       extractedAwayTeam = extractAwayTeam(cleanedText, _teamToCorp, _teamKeywords);
       extractedDate = extractDate(cleanedText);
       extractedTime = extractTime(cleanedText);
+
+      if (extractedAwayTeam == null || extractedAwayTeam!.isEmpty ||
+          extractedDate == null || extractedDate!.isEmpty ||
+          extractedTime == null || extractedTime!.isEmpty) {
+        if (!widget.skipOcrFailPopup) {
+          _showMissingInfoDialog(path);
+        }
+      }
 
       await _findMatchingGame(cleanedText);
 
@@ -250,32 +351,6 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
         extractedHomeTeam = game.homeTeam;
         extractedStadium = game.stadium;
         extractedSeat = extractSeat(cleanedText, game.stadium);
-
-        // OCR 추출된 날짜와 시간을 요일 포함 형식으로 보정
-        if (extractedDate != null && extractedTime != null) {
-          try {
-            final parts = extractedDate!.split('-');
-            if (parts.length == 3) {
-              final year = int.parse(parts[0]);
-              final month = int.parse(parts[1]);
-              final day = int.parse(parts[2]);
-              final date = DateTime(year, month, day);
-
-              const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-              final weekday = weekdays[date.weekday % 7];
-
-              // 시간 형식 변환 (14:00 -> 14시 00분)
-              final timeParts = extractedTime!.split(':');
-              final timeKorean = '${timeParts[0]}시 ${timeParts[1]}분';
-
-              // extractedDate와 extractedTime을 합쳐서 요일 포함 형식으로 저장
-              extractedDate = '${parts[0]} - ${parts[1].padLeft(2, '0')} - ${parts[2].padLeft(2, '0')} ($weekday) $timeKorean';
-              extractedTime = null; // 시간 정보는 extractedDate에 포함되었으므로 null로 설정
-            }
-          } catch (e) {
-            print('날짜 포맷 변환 오류: $e');
-          }
-        }
 
         print('🔍추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime, seat: $extractedSeat');
 
@@ -526,9 +601,10 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: FixedText(
-                        selectedDateTime ?? extractedDate ?? '경기 날짜를 선택해 주세요', // 단순화
+                        selectedDateTime ?? formatKoreanDateTime(extractedDate, extractedTime)
+                            ?? '경기 날짜를 선택해 주세요', // 단순화
                         style: AppFonts.b3_sb_long(context).copyWith(
-                          color: (selectedDateTime == null && extractedDate == null)
+                          color: (selectedDateTime == null && extractedDate == null && extractedTime == null)
                               ? AppColors.gray300
                               : Colors.black,
                         ),

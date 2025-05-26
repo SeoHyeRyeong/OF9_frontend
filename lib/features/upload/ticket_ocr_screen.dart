@@ -216,7 +216,10 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
           Navigator.pop(context); // 팝업 닫기
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => TicketInfoScreen(imagePath: imagePath)),
+            MaterialPageRoute(builder: (_) => TicketInfoScreen(
+                imagePath: imagePath,
+              skipOcrFailPopup: true,
+            )),
           );
         },
         secondButtonText: '다시 촬영하기',
@@ -233,17 +236,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
     final recognizedText = await textRecognizer.processImage(inputImage);
     final cleanedText = recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ').trim();
 
-    // 전체 OCR 텍스트 출력
-    print('😱 OCR 전체 텍스트:\n${recognizedText.text}');
-
     final awayTeam = extractAwayTeam(cleanedText, teamToCorpMap, teamKeywordsList);
     final date = extractDate(cleanedText);
     final time = extractTime(cleanedText);
-
-    // 개별 추출 결과 출력
-    print('🟨 추출된 awayTeam: $awayTeam');
-    print('🟨 추출된 date: $date');
-    print('🟨 추출된 time: $time');
 
     return ExtractedTicketInfo(awayTeam: awayTeam, date: date, time: time);
   }
@@ -275,7 +270,12 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TicketInfoScreen(imagePath: file.path),
+            builder: (_) => TicketInfoScreen(
+              imagePath: file.path,
+              preExtractedAwayTeam: extracted.awayTeam,
+              preExtractedDate: extracted.date,
+              preExtractedTime: extracted.time,
+            ),
           ),
         );
       }

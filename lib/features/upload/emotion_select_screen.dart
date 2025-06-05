@@ -5,12 +5,17 @@ import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/theme/app_imgs.dart';
+import 'package:frontend/features/upload/detail_record_screen.dart';
 
 class EmotionSelectScreen extends StatefulWidget {
   final String gameId;
   final String seatInfo;
   final String stadium;
   final int userId;
+  final String? imagePath;
+  final String? homeTeam;
+  final String? awayTeam;
+  final String? gameDate;
 
   const EmotionSelectScreen({
     Key? key,
@@ -18,6 +23,10 @@ class EmotionSelectScreen extends StatefulWidget {
     required this.gameId,
     required this.seatInfo,
     required this.stadium,
+    this.imagePath,
+    this.homeTeam,
+    this.awayTeam,
+    this.gameDate,
   }) : super(key: key);
 
   @override
@@ -80,7 +89,9 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
               left: 20.w,
               child: FixedText(
                 '이번 직관에 대한 내 생생한 감정을 남겨봐요!',
-                style: AppFonts.b2_m(context).copyWith(color: AppColors.gray300),
+                style: AppFonts.b2_m(
+                  context,
+                ).copyWith(color: AppColors.gray300),
               ),
             ),
 
@@ -89,7 +100,9 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
               top: (screenHeight * (212 / baseScreenHeight)),
               left: 0,
               right: 0,
-              bottom: (screenHeight * (88 / baseScreenHeight)) + (screenHeight * (24 / baseScreenHeight)),
+              bottom:
+                  (screenHeight * (88 / baseScreenHeight)) +
+                  (screenHeight * (24 / baseScreenHeight)),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: GridView.builder(
@@ -102,12 +115,17 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                   ),
                   itemBuilder: (context, index) {
                     final emotion = emotions[index];
-                    final isSelected = selectedEmotionCode == null || selectedEmotionCode == emotion['code'];
+                    final isSelected =
+                        selectedEmotionCode == null ||
+                        selectedEmotionCode == emotion['code'];
 
                     return GestureDetector(
                       onTap: () {
                         setState(() {
-                          selectedEmotionCode = selectedEmotionCode == emotion['code'] ? null : emotion['code'];
+                          selectedEmotionCode =
+                              selectedEmotionCode == emotion['code']
+                                  ? null
+                                  : emotion['code'];
                         });
                       },
                       child: Opacity(
@@ -121,16 +139,17 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Colors.white,
-                                boxShadow: isSelected
-                                    ? [
-                                  BoxShadow(
-                                    color: const Color(0x0D000000),
-                                    blurRadius: 7,
-                                    spreadRadius: 0,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                                    : [],
+                                boxShadow:
+                                    isSelected
+                                        ? [
+                                          BoxShadow(
+                                            color: const Color(0x0D000000),
+                                            blurRadius: 7,
+                                            spreadRadius: 0,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                        : [],
                               ),
                               child: Padding(
                                 padding: EdgeInsets.all(6.h),
@@ -145,7 +164,10 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                             FixedText(
                               emotion['label'],
                               style: AppFonts.b2_m_long(context).copyWith(
-                                color: isSelected ? AppColors.gray800 : AppColors.trans700,
+                                color:
+                                    isSelected
+                                        ? AppColors.gray800
+                                        : AppColors.trans700,
                               ),
                             ),
                           ],
@@ -177,29 +199,40 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                     width: 320.w,
                     height: screenHeight * (54 / baseScreenHeight),
                     child: ElevatedButton(
-                      onPressed: selectedEmotionCode != null
-                          ? () {
-                        final requestBody = {
-                          'userId': widget.userId,
-                          'gameId': widget.gameId,
-                          'seatInfo': widget.seatInfo,
-                          'emotionCode': selectedEmotionCode,
-                          'stadium': widget.stadium,
-                        };
+                      onPressed:
+                          selectedEmotionCode != null
+                              ? () {
+                                final requestBody = {
+                                  'userId': widget.userId,
+                                  'gameId': widget.gameId,
+                                  'seatInfo': widget.seatInfo,
+                                  'emotionCode': selectedEmotionCode,
+                                  'stadium': widget.stadium,
+                                };
 
-                        // 로그 출력
-                        print('😊 1차 저장된 감정 선택 바디: ${requestBody}');
+                                // 로그 출력
+                                print('😊 1차 저장된 감정 선택 바디: ${requestBody}');
 
-                        // 실제 전송은 추후 구현
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('감정 선택이 저장되었습니다')),
-                        );
-                      }
-                          : null,
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => DetailRecordScreen(
+                                          imagePath: widget.imagePath,
+                                          gameDate: widget.gameDate,
+                                          homeTeam: widget.homeTeam,
+                                          awayTeam: widget.awayTeam,
+                                          stadium: widget.stadium,
+                                        ),
+                                  ),
+                                );
+                              }
+                              : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: selectedEmotionCode != null
-                            ? AppColors.gray700
-                            : AppColors.gray200,
+                        backgroundColor:
+                            selectedEmotionCode != null
+                                ? AppColors.gray700
+                                : AppColors.gray200,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8.r),
@@ -208,7 +241,9 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                       ),
                       child: FixedText(
                         '다음',
-                        style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
+                        style: AppFonts.b2_b(
+                          context,
+                        ).copyWith(color: AppColors.gray20),
                       ),
                     ),
                   ),

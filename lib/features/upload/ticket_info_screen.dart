@@ -748,6 +748,11 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                     final String finalGameId = matchedGames.isNotEmpty ? matchedGames.first.gameId : '';
                     final int userId = 1; // 또는 사용자 세션에서 불러오기
 
+                    //상세기록에서 사용하기 위해서
+                    final String finalHomeTeam = selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '') ?? '';
+                    final String finalAwayTeam = selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '') ?? '';
+                    final String finalGameDate = selectedDateTime ?? formatKoreanDateTime(extractedDate, extractedTime) ?? '';
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -756,6 +761,11 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                           gameId: finalGameId,
                           seatInfo: finalSeat,
                           stadium: finalStadium,
+                          imagePath: widget.imagePath,
+
+                          homeTeam: finalHomeTeam,
+                          awayTeam: finalAwayTeam,
+                          gameDate: finalGameDate,
                         ),
                       ),
                     );

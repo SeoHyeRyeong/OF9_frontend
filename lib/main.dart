@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/upload/emotion_select_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:frontend/features/upload/detail_record_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +40,7 @@ class MyApp extends StatelessWidget {
         Locale('ko', 'KR'), // 한국어
       ],
       locale: const Locale('ko', 'KR'),
-      home: const TicketOcrScreen(),//LoginScreen(),
+      home: const DetailRecordScreen(),//LoginScreen(),
     );
   }
 }

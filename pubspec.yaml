@@ -29,6 +29,8 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   image_picker: ^1.0.4
+  video_thumbnail: ^0.5.3
+  path_provider: ^2.1.1
   http: ^0.13.6
   flutter:
     sdk: flutter
@@ -73,6 +75,7 @@ flutter:
     - .env
     - assets/imgs/
     - assets/imgs/ic_emotion/
+    - assets/imgs/ic_detail_record/
     - assets/fonts/
     - assets/tessdata/
   # The following line ensures that the Material Icons font is

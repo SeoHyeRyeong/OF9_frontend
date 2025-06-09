@@ -18,7 +18,8 @@ class AppColors {
   static const Color gray200 = Color(0xFFB7C1C9);
   static const Color gray100 = Color(0xFFD9E0E7);
   static const Color gray50  = Color(0xFFE9F1F6);
-  static const Color gray20  = Color(0xFFFCFCFC);
+  static const Color gray30  = Color(0xFFF4F8FB);
+  static const Color gray20  = Color(0xFFF6FAFD);
 
   // 🔳 Transparency (gray with opacity)
   static const Color trans900 = Color(0xE60E1117); // 90%

@@ -10,6 +10,7 @@ class AppImages {
 
   static const kakaobrown = 'assets/imgs/ic_kakao_kakaobrown_28.svg';
   static const backBlack = 'assets/imgs/ic_back_black_24.svg';
+  static const dropdownBlack = 'assets/imgs/ic_dropdown_black.svg';
 
   static const bears = 'assets/imgs/img_doosan.png';
   static const dinos = 'assets/imgs/img_nc.png';
@@ -48,7 +49,11 @@ class AppImages {
   static const emotion_9 = 'assets/imgs/ic_emotion/emotion_9.svg';
 
 
-  static const canlendar = 'assets/imgs/ic_normal_canlendar.svg';
+  static const calendar = 'assets/imgs/ic_normal_calendar.svg';
   static const gallery = 'assets/imgs/ic_normal_gallery.svg';
   static const list = 'assets/imgs/ic_normal_list.svg';
+
+  static const Setting = 'assets/imgs/ic_setting.svg';
+  static const Share = 'assets/imgs/ic_share_upload.svg';
+  static const profile = 'assets/imgs/asset_profile_default.svg';
 }

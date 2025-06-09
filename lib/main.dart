@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:frontend/features/onboarding_login/login_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -39,7 +40,7 @@ class MyApp extends StatelessWidget {
         Locale('ko', 'KR'), // 한국어
       ],
       locale: const Locale('ko', 'KR'),
-      home: const TicketOcrScreen(),//LoginScreen(),
+      home: const MyPageScreen(),//LoginScreen(),
     );
   }
 }

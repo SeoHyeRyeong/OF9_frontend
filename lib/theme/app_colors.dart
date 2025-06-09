@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 //사용법 - color: AppColors.gray600
 class AppColors {
+
+  static const Color black = Color(0xFF000000);
+  static const Color white = Color(0xFFFFFFFF);
+
   // 🔷 GrayScale
   static const Color gray950 = Color(0xFF0E1117);
   static const Color gray900 = Color(0xFF141B23);

@@ -29,7 +29,6 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   image_picker: ^1.0.4
-  dropdown_button2: ^2.3.9
   http: ^0.13.6
   flutter:
     sdk: flutter

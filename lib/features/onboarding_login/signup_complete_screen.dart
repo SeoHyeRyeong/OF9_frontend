@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:frontend/features/feed/feed_screen.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/utils/size_utils.dart';
@@ -75,7 +76,7 @@ class SignupCompleteScreen extends StatelessWidget {
                         onPressed: () {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const TicketOcrScreen()),
+                            MaterialPageRoute(builder: (context) => const FeedScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(

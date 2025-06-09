@@ -8,7 +8,7 @@ import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
-import 'package:frontend/features/upload/upload_complete_screen.dart';
+import 'package:frontend/features/feed/feed_screen.dart';
 
 class DetailRecordScreen extends StatefulWidget {
   final String? imagePath;
@@ -645,7 +645,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const UploadCompleteScreen(),
+                            builder: (context) => const FeedScreen(),
                           ),
                         );
                       },

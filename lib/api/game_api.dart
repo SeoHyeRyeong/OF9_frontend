@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/game_response.dart';
+import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 
 class GameApi {
   static String get baseUrl {
@@ -54,6 +55,7 @@ class GameApi {
     required String date,
     required String time,
   }) async {
+    final token = await KakaoAuthService().getAccessToken();
     final uri = Uri.parse('$baseUrl/games/search').replace(
       queryParameters: {
         'awayTeam': awayTeam,
@@ -63,6 +65,7 @@ class GameApi {
     );
 
     final res = await http.get(uri, headers: {
+      'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     });
 

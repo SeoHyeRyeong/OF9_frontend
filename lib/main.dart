@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
         Locale('ko', 'KR'), // 한국어
       ],
       locale: const Locale('ko', 'KR'),
-      home: const MyPageScreen(),//LoginScreen(),
+      home: const LoginScreen(),//MyPageScreen(),
     );
   }
 }

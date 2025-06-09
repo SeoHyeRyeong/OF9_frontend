@@ -36,7 +36,6 @@ class KakaoAuthService {
     final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
     final url = Uri.parse('$backendUrl/auth/kakao');
     final payload = jsonEncode({
-      'accessToken': accessToken,
       'favTeam': favTeam,
     });
 
@@ -47,9 +46,12 @@ class KakaoAuthService {
     try {
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
         body: payload,
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 8));
 
       print('⬅️ [HTTP ${response.statusCode}] ${response.body}');
 

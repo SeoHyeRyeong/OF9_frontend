@@ -59,7 +59,11 @@ class CustomBottomNavBar extends StatelessWidget {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => target),
+      PageRouteBuilder(
+        pageBuilder: (context, animation1, animation2) => target,
+        transitionDuration: Duration.zero, // 전환 애니메이션 제거
+        reverseTransitionDuration: Duration.zero,
+      ),
     );
   }
 
@@ -86,23 +90,28 @@ class CustomBottomNavBar extends StatelessWidget {
             final isActive = currentIndex == index;
             return GestureDetector(
               onTap: () => _handleTap(context, index),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SvgPicture.asset(
-                    item['icon']!,
-                    width: screenHeight * 28 / 800,
-                    height: screenHeight * 28 / 800,
-                    color: isActive ? null : AppColors.gray200,
-                  ),
-                  SizedBox(height: screenHeight * 6 / 800),
-                  FixedText(
-                    item['label']!,
-                    style: AppFonts.c1_b(context).copyWith(
-                      color: isActive ? Colors.black : AppColors.gray200,
+              behavior: HitTestBehavior.opaque, // 터치 안 되는 문제 방지
+              child: SizedBox(
+                width: 32.w,
+                height: 46.h,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SvgPicture.asset(
+                      item['icon']!,
+                      width: screenHeight * 28 / 800,
+                      height: screenHeight * 28 / 800,
+                      color: isActive ? null : AppColors.gray200,
                     ),
-                  ),
-                ],
+                    SizedBox(height: screenHeight * 6 / 800),
+                    FixedText(
+                      item['label']!,
+                      style: AppFonts.c1_b(context).copyWith(
+                        color: isActive ? Colors.black : AppColors.gray200,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }),

@@ -5,6 +5,7 @@ import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/fixed_text.dart';
+import 'package:frontend/components/custom_bottom_navbar.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({Key? key}) : super(key: key);
@@ -27,8 +28,16 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
   // 피드 예시 데이터
   final List<Map<String, dynamic>> feedList = [
-    {"recordId": 5, "gameDate": "2025/03/23 Sun", "imageUrl": "https://example.com/photos/game1.jpg"},
-    {"recordId": 6, "gameDate": "2025/03/23 Sun", "imageUrl": "https://example.com/photos/game1.jpg"},
+    {
+      "recordId": 5,
+      "gameDate": "2025/03/23 Sun",
+      "imageUrl": "https://example.com/photos/game1.jpg",
+    },
+    {
+      "recordId": 6,
+      "gameDate": "2025/03/23 Sun",
+      "imageUrl": "https://example.com/photos/game1.jpg",
+    },
   ];
 
   @override
@@ -43,15 +52,20 @@ class _MyPageScreenState extends State<MyPageScreen> {
     final double baseScreenHeight = 800;
     final double baseScreenWeight = 360;
     final double navBarHeight = screenH * 86 / baseScreenHeight;
-    final double navBarTopInWhite = screenH - navBarHeight - MediaQuery.of(context).padding.bottom;
+    final double navBarTopInWhite =
+        screenH - navBarHeight - MediaQuery.of(context).padding.bottom;
 
     // 탭 활성화 선 위치 계산
     double tabIndicatorX(int tabIndex) {
       switch (tabIndex) {
-        case 0: return wp(43.5);
-        case 1: return wp(154.5);
-        case 2: return wp(265.5);
-        default: return 0;
+        case 0:
+          return wp(43.5);
+        case 1:
+          return wp(154.5);
+        case 2:
+          return wp(265.5);
+        default:
+          return 0;
       }
     }
 
@@ -101,13 +115,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     SizedBox(height: hp(196 - 82 - 100)),
                     FixedText(
                       nickname,
-                      style: AppFonts.b1_b(context).copyWith(color: AppColors.black),
+                      style: AppFonts.b1_b(
+                        context,
+                      ).copyWith(color: AppColors.black),
                     ),
                     // 구단명
                     SizedBox(height: hp(224 - 196 - 16)),
                     FixedText(
                       "$favTeam 팬",
-                      style: AppFonts.c1_b(context).copyWith(color: AppColors.gray300),
+                      style: AppFonts.c1_b(
+                        context,
+                      ).copyWith(color: AppColors.gray300),
                     ),
                     // 게시글/팔로잉/팔로워
                     SizedBox(height: hp(256 - 224 - 16)),
@@ -124,7 +142,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             SizedBox(height: hp(4)),
                             FixedText(
                               "게시글",
-                              style: AppFonts.b3_m(context).copyWith(color: AppColors.gray400),
+                              style: AppFonts.b3_m(
+                                context,
+                              ).copyWith(color: AppColors.gray400),
                             ),
                           ],
                         ),
@@ -139,7 +159,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             SizedBox(height: hp(4)),
                             FixedText(
                               "팔로잉",
-                              style: AppFonts.b3_m(context).copyWith(color: AppColors.gray400),
+                              style: AppFonts.b3_m(
+                                context,
+                              ).copyWith(color: AppColors.gray400),
                             ),
                           ],
                         ),
@@ -156,7 +178,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             SizedBox(height: hp(4)),
                             FixedText(
                               "팔로워",
-                              style: AppFonts.b3_m(context).copyWith(color: AppColors.gray400),
+                              style: AppFonts.b3_m(
+                                context,
+                              ).copyWith(color: AppColors.gray400),
                             ),
                           ],
                         ),
@@ -173,7 +197,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.gray600,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -186,7 +212,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               SizedBox(width: wp(11)),
                               FixedText(
                                 "프로필 공유하기",
-                                style: AppFonts.b3_sb(context).copyWith(color: AppColors.white),
+                                style: AppFonts.b3_sb(
+                                  context,
+                                ).copyWith(color: AppColors.white),
                               ),
                             ],
                           ),
@@ -201,10 +229,15 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: List.generate(3, (index) {
                           // 탭에 대응하는 이미지 리스트
-                          final images = [AppImages.calendar, AppImages.list, AppImages.gallery];
+                          final images = [
+                            AppImages.calendar,
+                            AppImages.list,
+                            AppImages.gallery,
+                          ];
 
                           return GestureDetector(
-                            onTap: () => setState(() => selectedTabIndex = index),
+                            onTap:
+                                () => setState(() => selectedTabIndex = index),
                             child: Container(
                               width: wp(51),
                               height: hp(36),
@@ -215,9 +248,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                 images[index],
                                 width: wp(24),
                                 height: wp(24),
-                                color: selectedTabIndex == index
-                                    ? AppColors.gray600
-                                    : AppColors.trans200,
+                                color:
+                                    selectedTabIndex == index
+                                        ? AppColors.gray600
+                                        : AppColors.trans200,
                               ),
                             ),
                           );
@@ -296,10 +330,11 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     // 가로 구분선
                     SizedBox(height: hp(430 - 394 - 36)),
                     Divider(color: AppColors.gray100, thickness: 1),
-                      // 드롭박스
-                      SizedBox(height: hp(16)),
+                    // 드롭박스
+                    SizedBox(height: hp(16)),
                     Padding(
-                      padding: EdgeInsets.only(left: wp(20)), // 왼쪽 여백 20 기준 유동성 적용
+                      padding: EdgeInsets.only(left: wp(20)),
+                      // 왼쪽 여백 20 기준 유동성 적용
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
@@ -308,17 +343,23 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             width: wp(83),
                             height: hp(28),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Color(0xFFCFD3DE), width: 1),
+                              border: Border.all(
+                                color: Color(0xFFCFD3DE),
+                                width: 1,
+                              ),
                               borderRadius: BorderRadius.circular(14.r),
                             ),
                             child: Padding(
                               padding: EdgeInsets.symmetric(horizontal: wp(8)),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   FixedText(
                                     "경기 구단",
-                                    style: AppFonts.c2_sb(context).copyWith(color: Color(0xFF96A0B1)),
+                                    style: AppFonts.c2_sb(
+                                      context,
+                                    ).copyWith(color: Color(0xFF96A0B1)),
                                   ),
                                   SvgPicture.asset(
                                     AppImages.dropdownBlack,
@@ -334,17 +375,23 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             width: wp(61),
                             height: hp(28),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Color(0xFFCFD3DE), width: 1),
+                              border: Border.all(
+                                color: Color(0xFFCFD3DE),
+                                width: 1,
+                              ),
                               borderRadius: BorderRadius.circular(14.r),
                             ),
                             child: Padding(
                               padding: EdgeInsets.symmetric(horizontal: wp(8)),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   FixedText(
                                     "구장",
-                                    style: AppFonts.c2_sb(context).copyWith(color: Color(0xFF96A0B1)),
+                                    style: AppFonts.c2_sb(
+                                      context,
+                                    ).copyWith(color: Color(0xFF96A0B1)),
                                   ),
                                   SvgPicture.asset(
                                     AppImages.dropdownBlack,
@@ -360,17 +407,23 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             width: wp(83),
                             height: hp(28),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Color(0xFFCFD3DE), width: 1),
+                              border: Border.all(
+                                color: Color(0xFFCFD3DE),
+                                width: 1,
+                              ),
                               borderRadius: BorderRadius.circular(14.r),
                             ),
                             child: Padding(
                               padding: EdgeInsets.symmetric(horizontal: wp(8)),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   FixedText(
                                     "승패 여부",
-                                    style: AppFonts.c2_sb(context).copyWith(color: Color(0xFF96A0B1)),
+                                    style: AppFonts.c2_sb(
+                                      context,
+                                    ).copyWith(color: Color(0xFF96A0B1)),
                                   ),
                                   SvgPicture.asset(
                                     AppImages.dropdownBlack,
@@ -383,16 +436,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           ),
                         ],
                       ),
-                      ),
-                      SizedBox(height: hp(16)),
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: hp(16)),
+                  ],
                 ),
+              ),
             ),
 
             // 스크롤 가능한 본문 (상단 고정 영역 제외)
             Positioned(
-              top: hp(430 + 28 + 16), // 탭+드롭박스+여백 아래부터 시작
+              top: hp(430 + 28 + 16),
+              // 탭+드롭박스+여백 아래부터 시작
               left: 0,
               right: 0,
               bottom: 0,
@@ -419,10 +473,13 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             child: Image.network(
                               feedList[index]['imageUrl'],
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: AppColors.gray50,
-                                child: Center(child: Text(feedList[index]['gameDate'])),
-                              ),
+                              errorBuilder:
+                                  (_, __, ___) => Container(
+                                    color: AppColors.gray50,
+                                    child: Center(
+                                      child: Text(feedList[index]['gameDate']),
+                                    ),
+                                  ),
                             ),
                           );
                         },
@@ -436,54 +493,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
           ],
         ),
       ),
-      // 하단 내비게이션 바
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: screenW * 32 / baseW,
-          vertical: screenH * 24 / baseH,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: AppColors.gray20, width: 0.5.w)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildBottomNavItem(context, AppImages.home, '피드', isActive: false, screenHeight: screenH),
-            _buildBottomNavItem(context, AppImages.report, '리포트', isActive: false, screenHeight: screenH),
-            _buildBottomNavItem(context, AppImages.upload, '업로드', isActive: false, screenHeight: screenH),
-            _buildBottomNavItem(context, AppImages.bell, '알림', isActive: false, screenHeight: screenH),
-            _buildBottomNavItem(context, AppImages.person, 'MY', isActive: true, screenHeight: screenH),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem(
-      BuildContext context,
-      String iconPath,
-      String label, {
-        required bool isActive,
-        required double screenHeight,
-      }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SvgPicture.asset(
-          iconPath,
-          width: screenHeight * 28 / 800,
-          height: screenHeight * 28 / 800,
-          color: isActive ? null : AppColors.gray200,
-        ),
-        SizedBox(height: screenHeight * 6 / 800),
-        FixedText(
-          label,
-          style: AppFonts.c1_b(context).copyWith(
-            color: isActive ? Colors.black : AppColors.gray200,
-          ),
-        ),
-      ],
+      bottomNavigationBar: CustomBottomNavBar(currentIndex: 4),
     );
   }
 }

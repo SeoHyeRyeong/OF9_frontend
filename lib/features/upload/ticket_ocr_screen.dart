@@ -12,7 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:frontend/components/custom_popup_dialog.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:frontend/utils/ticket_info_extractor.dart';
-
+import 'package:frontend/components/custom_bottom_navbar.dart';
 
 class ExtractedTicketInfo {
   final String? awayTeam;
@@ -148,7 +148,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
 
   Future<void> _onGalleryButtonPressed() async {
     final picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile = await picker.pickImage(
+        source: ImageSource.gallery);
     if (pickedFile == null) return;
 
     if (!mounted) return;
@@ -182,24 +183,26 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
   void _showCustomPermissionDialog() {
     showDialog(
       context: context,
-      builder: (context) => CustomPopupDialog(
-        imageAsset: AppImages.icAlert,
-        title: '현재 카메라 사용에 대한\n접근 권한이 없어요',
-        subtitle: '설정의 (Lookit) 탭에서 접근 활성화가 필요해요',
-        firstButtonText: '직접 입력',
-        firstButtonAction: () {
-          Navigator.pop(context);
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const TicketInfoScreen(imagePath: '')),
-          );
-        },
-        secondButtonText: '설정으로 이동',
-        secondButtonAction: () async {
-          Navigator.pop(context);
-          await openAppSettings();
-        },
-      ),
+      builder: (context) =>
+          CustomPopupDialog(
+            imageAsset: AppImages.icAlert,
+            title: '현재 카메라 사용에 대한\n접근 권한이 없어요',
+            subtitle: '설정의 (Lookit) 탭에서 접근 활성화가 필요해요',
+            firstButtonText: '직접 입력',
+            firstButtonAction: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const TicketInfoScreen(imagePath: '')),
+              );
+            },
+            secondButtonText: '설정으로 이동',
+            secondButtonAction: () async {
+              Navigator.pop(context);
+              await openAppSettings();
+            },
+          ),
     );
   }
 
@@ -207,36 +210,41 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => CustomPopupDialog(
-        imageAsset: AppImages.icAlert,
-        title: '티켓 속 정보를\n인식하지 못했어요',
-        subtitle: '다시 촬영하거나 정보를 직접 입력해 주세요',
-        firstButtonText: '직접 입력',
-        firstButtonAction: () {
-          Navigator.pop(context); // 팝업 닫기
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => TicketInfoScreen(
-                imagePath: imagePath,
-              skipOcrFailPopup: true,
-            )),
-          );
-        },
-        secondButtonText: '다시 촬영하기',
-        secondButtonAction: () {
-          Navigator.pop(context); // 팝업만 닫고 재촬영 가능
-        },
-      ),
+      builder: (context) =>
+          CustomPopupDialog(
+            imageAsset: AppImages.icAlert,
+            title: '티켓 속 정보를\n인식하지 못했어요',
+            subtitle: '다시 촬영하거나 정보를 직접 입력해 주세요',
+            firstButtonText: '직접 입력',
+            firstButtonAction: () {
+              Navigator.pop(context); // 팝업 닫기
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) =>
+                    TicketInfoScreen(
+                      imagePath: imagePath,
+                      skipOcrFailPopup: true,
+                    )),
+              );
+            },
+            secondButtonText: '다시 촬영하기',
+            secondButtonAction: () {
+              Navigator.pop(context); // 팝업만 닫고 재촬영 가능
+            },
+          ),
     );
   }
 
-  Future<ExtractedTicketInfo> extractTicketInfoFromImage(String imagePath) async {
+  Future<ExtractedTicketInfo> extractTicketInfoFromImage(
+      String imagePath) async {
     final inputImage = InputImage.fromFilePath(imagePath);
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
     final recognizedText = await textRecognizer.processImage(inputImage);
-    final cleanedText = recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ').trim();
+    final cleanedText = recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ')
+        .trim();
 
-    final awayTeam = extractAwayTeam(cleanedText, teamToCorpMap, teamKeywordsList);
+    final awayTeam = extractAwayTeam(
+        cleanedText, teamToCorpMap, teamKeywordsList);
     final date = extractDate(cleanedText);
     final time = extractTime(cleanedText);
 
@@ -270,12 +278,13 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TicketInfoScreen(
-              imagePath: file.path,
-              preExtractedAwayTeam: extracted.awayTeam,
-              preExtractedDate: extracted.date,
-              preExtractedTime: extracted.time,
-            ),
+            builder: (_) =>
+                TicketInfoScreen(
+                  imagePath: file.path,
+                  preExtractedAwayTeam: extracted.awayTeam,
+                  preExtractedDate: extracted.date,
+                  preExtractedTime: extracted.time,
+                ),
           ),
         );
       }
@@ -292,9 +301,18 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
-    final statusBarHeight = MediaQuery.of(context).padding.top;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final screenHeight = MediaQuery.of(context).size.height;
+    final statusBarHeight = MediaQuery
+        .of(context)
+        .padding
+        .top;
+    final bottomPadding = MediaQuery
+        .of(context)
+        .padding
+        .bottom;
+    final screenHeight = MediaQuery
+        .of(context)
+        .size
+        .height;
     const baseScreenHeight = 800;
 
     final imageHeight = screenHeight * 475 / baseScreenHeight;
@@ -309,7 +327,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
       body: Stack(
         children: [
           Container(color: AppColors.gray400),
-          if (_isCameraInitialized && _cameraController.value.isInitialized && _cameraController.value.previewSize != null)
+          if (_isCameraInitialized && _cameraController.value.isInitialized &&
+              _cameraController.value.previewSize != null)
             Positioned(
               top: statusBarHeight,
               left: 0,
@@ -332,22 +351,26 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
           Positioned(
             top: screenHeight * 55 / baseScreenHeight,
             left: 24.w,
-            child: SvgPicture.asset(AppImages.icCornerTopLeft, width: 24.h, height: 24.h),
+            child: SvgPicture.asset(
+                AppImages.icCornerTopLeft, width: 24.h, height: 24.h),
           ),
           Positioned(
             top: screenHeight * 55 / baseScreenHeight,
             right: 24.w,
-            child: SvgPicture.asset(AppImages.icCornerTopRight, width: 24.h, height: 24.h),
+            child: SvgPicture.asset(
+                AppImages.icCornerTopRight, width: 24.h, height: 24.h),
           ),
           Positioned(
             top: statusBarHeight + screenHeight * 430 / baseScreenHeight,
             left: 24.w,
-            child: SvgPicture.asset(AppImages.icCornerBottomLeft, width: 24.h, height: 24.h),
+            child: SvgPicture.asset(
+                AppImages.icCornerBottomLeft, width: 24.h, height: 24.h),
           ),
           Positioned(
             top: statusBarHeight + screenHeight * 430 / baseScreenHeight,
             right: 24.w,
-            child: SvgPicture.asset(AppImages.icCornerBottomRight, width: 24.h, height: 24.h),
+            child: SvgPicture.asset(
+                AppImages.icCornerBottomRight, width: 24.h, height: 24.h),
           ),
           Positioned(
             top: whitePanelTop,
@@ -357,7 +380,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20)),
               ),
               child: Stack(
                 children: [
@@ -366,7 +390,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
                     left: 0,
                     right: 0,
                     child: Center(
-                      child: FixedText('티켓을 스캔해 주세요', style: AppFonts.h4_b(context).copyWith(color: Colors.black)),
+                      child: FixedText('티켓을 스캔해 주세요',
+                          style: AppFonts.h4_b(context).copyWith(
+                              color: Colors.black)),
                     ),
                   ),
                   Positioned(
@@ -376,7 +402,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
                     child: Center(
                       child: FixedText(
                         '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
-                        style: AppFonts.b3_r(context).copyWith(color: AppColors.gray300),
+                        style: AppFonts.b3_r(context).copyWith(
+                            color: AppColors.gray300),
                       ),
                     ),
                   ),
@@ -418,66 +445,15 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: navBarTopInWhite,
-                    left: 0,
-                    right: 0,
-                    height: navBarHeight,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: screenHeight * 32 / baseScreenHeight,
-                        vertical: screenHeight * 10 / baseScreenHeight,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border(top: BorderSide(color: AppColors.gray20, width: 0.5.w)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildBottomNavItem(context, AppImages.home, '피드', isActive: false, screenHeight: screenHeight),
-                          _buildBottomNavItem(context, AppImages.report, '리포트', isActive: false, screenHeight: screenHeight),
-                          _buildBottomNavItem(context, AppImages.upload, '업로드', isActive: true, screenHeight: screenHeight),
-                          _buildBottomNavItem(context, AppImages.bell, '알림', isActive: false, screenHeight: screenHeight),
-                          _buildBottomNavItem(context, AppImages.person, 'MY', isActive: false, screenHeight: screenHeight),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-
-  Widget _buildBottomNavItem(
-      BuildContext context,
-      String iconPath,
-      String label, {
-        required bool isActive,
-        required double screenHeight,
-      }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SvgPicture.asset(
-          iconPath,
-          width: screenHeight * 28 / 800,
-          height: screenHeight * 28 / 800,
-          color: isActive ? null : AppColors.gray200,
-        ),
-        SizedBox(height: screenHeight * 6 / 800),
-        FixedText(
-          label,
-          style: AppFonts.c1_b(context).copyWith(
-            color: isActive ? Colors.black : AppColors.gray200,
-          ),
-        ),
-      ],
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: 2,
+      ),
     );
   }
 }

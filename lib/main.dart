@@ -9,6 +9,7 @@ import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/upload/emotion_select_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:frontend/features/upload/detail_record_screen.dart';
+import 'package:frontend/features/feed/feed_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,13 +25,15 @@ Future<void> main() async {
       designSize: Size(360, 800), // 디자인 기준 잡은 해상도
       minTextAdapt: true,         // 폰트 사이즈 줄어들게 설정
       splitScreenMode: true,      // 분할화면 대응
-      builder: (context, child) => const MyApp(),
+      builder: (context, child) => MyApp(isLoggedIn: isLoggedIn),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final bool isLoggedIn;
+  const MyApp({Key? key, required this.isLoggedIn}) : super(key: key);
+
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +52,8 @@ class MyApp extends StatelessWidget {
       locale: const Locale('ko', 'KR'),
 
       // 로그인 여부에 따라 시작 화면 분기
-      // home: isLoggedIn ? const 피드스크린() : const LoginScreen(),
-      home: const LoginScreen(),//MyPageScreen(),
+      home: isLoggedIn ? const FeedScreen() : const LoginScreen(),
+      //home: const LoginScreen(),//MyPageScreen(),
     );
   }
 }

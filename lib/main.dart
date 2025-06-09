@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/login_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
@@ -13,6 +14,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
   KakaoSdk.init(nativeAppKey: dotenv.env['NATIVE_APP_KEY']);
+
+  // JWT 토큰 존재 여부로 로그인 유지 판단
+  final token = await KakaoAuthService().getAccessToken();
+  final isLoggedIn = token != null;
+
   runApp(
     ScreenUtilInit(
       designSize: Size(360, 800), // 디자인 기준 잡은 해상도
@@ -41,6 +47,9 @@ class MyApp extends StatelessWidget {
         Locale('ko', 'KR'), // 한국어
       ],
       locale: const Locale('ko', 'KR'),
+
+      // 로그인 여부에 따라 시작 화면 분기
+      // home: isLoggedIn ? const 피드스크린() : const LoginScreen(),
       home: const LoginScreen(),//MyPageScreen(),
     );
   }

@@ -392,7 +392,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                             // 티켓 정보
                             Expanded(
                               child: Padding(
-                                padding: EdgeInsets.only(top: 2.h),
+                                padding: EdgeInsets.only(top: 10.h),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -612,7 +612,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                           ),
 
                           // 하단 여백
-                          SizedBox(height: screenHeight * (50 / baseScreenHeight)),
+                          SizedBox(height: screenHeight * (55 / baseScreenHeight)),
                         ],
                       ),
                     ),

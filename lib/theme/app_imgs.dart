@@ -45,6 +45,9 @@ class AppImages {
   static const solar_gallery = 'assets/imgs/ic_solar_gallery.svg';
   static const icAlert = 'assets/imgs/ic_alert.svg';
 
+  //티켓 정보 확인
+  static const dropdown = 'assets/imgs/ic_right_black_24.svg';
+
   // 이모지 선택
   static const emotion_1 = 'assets/imgs/ic_emotion/emotion_1.svg';
   static const emotion_2 = 'assets/imgs/ic_emotion/emotion_2.svg';

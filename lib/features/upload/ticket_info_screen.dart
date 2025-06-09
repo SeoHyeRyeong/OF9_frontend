@@ -689,9 +689,11 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                   SizedBox(height: 8.h),
                   GestureDetector(
                     onTap: () async {
+                      final currentStadium = selectedStadium ?? extractedStadium;
                       final seat = await showSeatInputDialog(
                         context,
                         initial: selectedSeat,
+                        stadium: currentStadium,
                       );
                       if (seat != null) setState(() => selectedSeat = seat);
                     },

@@ -483,8 +483,8 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     {'name': '잠실 야구장', 'images': [AppImages.bears, AppImages.twins]}, // 두산, LG 홈구장
     {'name': '사직 야구장', 'images': [AppImages.giants]},
     {'name': '고척 SKYDOME', 'images': [AppImages.kiwoom]},
-    {'name': '대구삼성라이온즈파크', 'images': [AppImages.lions]},
     {'name': '한화생명 볼파크', 'images': [AppImages.eagles]},
+    {'name': '대구삼성라이온즈파크', 'images': [AppImages.lions]},
     {'name': '기아 챔피언스 필드', 'images': [AppImages.tigers]},
     {'name': '수원 케이티 위즈 파크', 'images': [AppImages.ktwiz]},
     {'name': '창원 NC파크', 'images': [AppImages.dinos]},

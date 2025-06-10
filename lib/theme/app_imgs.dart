@@ -78,4 +78,19 @@ class AppImages {
   static const Share = 'assets/imgs/ic_share_upload.svg';
   static const profile = 'assets/imgs/asset_profile_default.svg';
 
+  //피드
+  //달력 아이콘
+  static const month1 = 'assets/imgs/ic_feed/1.svg';
+  static const month2 = 'assets/imgs/ic_feed/2.svg';
+  static const month3 = 'assets/imgs/ic_feed/3.svg';
+  static const month4 = 'assets/imgs/ic_feed/4.svg';
+  static const month5 = 'assets/imgs/ic_feed/5.svg';
+  static const month6 = 'assets/imgs/ic_feed/6.svg';
+  static const month7 = 'assets/imgs/ic_feed/7.svg';
+  static const month8 = 'assets/imgs/ic_feed/8.svg';
+  static const month9 = 'assets/imgs/ic_feed/9.svg';
+  static const month10 = 'assets/imgs/ic_feed/10.svg';
+  static const month11 = 'assets/imgs/ic_feed/11.svg';
+  static const month12 = 'assets/imgs/ic_feed/12.svg';
+  static const search = 'assets/imgs/ic_feed/ic_search.svg';
 }

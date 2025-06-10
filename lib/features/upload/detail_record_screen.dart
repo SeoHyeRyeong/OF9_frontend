@@ -9,6 +9,9 @@ import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/feed/feed_screen.dart';
+import 'package:frontend/components/custom_popup_dialog.dart';
+import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
 
 class DetailRecordScreen extends StatefulWidget {
   final String? imagePath;
@@ -645,7 +648,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const FeedScreen(),
+                            builder: (context) => const FeedScreen(showCompletionPopup: true),
                           ),
                         );
                       },
@@ -913,7 +916,7 @@ class _DiaryNoteSectionContentState extends State<DiaryNoteSectionContent> {
           height: 1.0,
         ),
       ),
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
       maxLines: 1,
     );
 
@@ -1085,15 +1088,21 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> {
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_updateState);
     _focusNode.addListener(_updateFocusState);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_updateState);
     _focusNode.removeListener(_updateFocusState);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _updateState() {
+    setState(() {});
   }
 
   void _scrollToTextField() {
@@ -1226,15 +1235,21 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> {
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_updateState);
     _focusNode.addListener(_updateFocusState);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_updateState);
     _focusNode.removeListener(_updateFocusState);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _updateState() {
+    setState(() {});
   }
 
   void _scrollToTextField() {

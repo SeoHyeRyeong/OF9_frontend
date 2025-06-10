@@ -7,6 +7,8 @@ import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/features/upload/detail_record_screen.dart';
 import 'package:frontend/features/upload/ticket_info_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:frontend/features/upload/providers/record_state.dart';
 
 class EmotionSelectScreen extends StatefulWidget {
   final String gameId;
@@ -185,13 +187,15 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
             child: ElevatedButton(
               onPressed: selectedEmotionCode != null
                   ? () {
-                final requestBody = {
-                  'userId': widget.userId,
-                  'gameId': widget.gameId,
-                  'seatInfo': widget.seatInfo,
-                  'emotionCode': selectedEmotionCode,
-                  'stadium': widget.stadium,
-                };
+                // 상태에 기본 정보 저장
+                final recordState = Provider.of<RecordState>(context, listen: false);
+                recordState.setBasicInfo(
+                  userId: widget.userId,
+                  gameId: widget.gameId,
+                  seatInfo: widget.seatInfo,
+                  emotionCode: selectedEmotionCode!,
+                  stadium: widget.stadium,
+                );
 
                 Navigator.push(
                   context,
@@ -207,6 +211,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                 );
               }
                   : null,
+
               style: ElevatedButton.styleFrom(
                 backgroundColor: selectedEmotionCode != null
                     ? AppColors.gray700

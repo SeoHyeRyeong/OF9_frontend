@@ -11,9 +11,23 @@ class GameApi {
     return backendUrl;
   }
 
+  /// 공통 Authorization 헤더 생성
+  static Future<Map<String, String>> _authHeaders() async {
+    final token = await KakaoAuthService().getAccessToken();
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+  }
+
   /// 월별 경기 목록 조회
   static Future<List<GameResponse>> listByMonth(String yearMonth) async {
-    final res = await http.get(Uri.parse('$baseUrl/games/month/$yearMonth'));
+    final headers = await _authHeaders();
+    final res = await http.get(
+      Uri.parse('$baseUrl/games/month/$yearMonth'),
+      headers: headers,
+    );
+
     if (res.statusCode == 200) {
       final List<dynamic> data = jsonDecode(res.body);
       return data.map((e) => GameResponse.fromJson(e)).toList();
@@ -23,15 +37,18 @@ class GameApi {
   }
 
   /// 기간별 경기 목록 조회
-  static Future<List<GameResponse>> listByDateRange({required String from, required String to}) async {
+  static Future<List<GameResponse>> listByDateRange({
+    required String from,
+    required String to,
+  }) async {
+    final headers = await _authHeaders();
     final uri = Uri.parse('$baseUrl/games?from=$from&to=$to');
-    final res = await http.get(uri);
+    final res = await http.get(uri, headers: headers);
 
     print('📥 응답 코드: ${res.statusCode}');
     print('📥 응답 본문: ${res.body}');
 
     if (res.statusCode == 200) {
-      final decoded = jsonDecode(utf8.decode(res.bodyBytes));
       final List<dynamic> data = jsonDecode(res.body);
       return data.map((e) => GameResponse.fromJson(e)).toList();
     } else {
@@ -41,7 +58,12 @@ class GameApi {
 
   /// 특정 경기 단일 조회
   static Future<GameResponse> getById(String gameId) async {
-    final res = await http.get(Uri.parse('$baseUrl/games/$gameId'));
+    final headers = await _authHeaders();
+    final res = await http.get(
+      Uri.parse('$baseUrl/games/$gameId'),
+      headers: headers,
+    );
+
     if (res.statusCode == 200) {
       return GameResponse.fromJson(jsonDecode(res.body));
     } else {
@@ -49,13 +71,13 @@ class GameApi {
     }
   }
 
-  /// 홈/원정/날짜/시간 조건으로 경기 찾기 (extracted info 매칭용)
+  /// 원정팀/날짜/시간 조건으로 경기 찾기
   static Future<GameResponse> searchGame({
     required String awayTeam,
     required String date,
     required String time,
   }) async {
-    final token = await KakaoAuthService().getAccessToken();
+    final headers = await _authHeaders();
     final uri = Uri.parse('$baseUrl/games/search').replace(
       queryParameters: {
         'awayTeam': awayTeam,
@@ -64,10 +86,7 @@ class GameApi {
       },
     );
 
-    final res = await http.get(uri, headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    });
+    final res = await http.get(uri, headers: headers);
 
     if (res.statusCode == 200) {
       final decoded = jsonDecode(utf8.decode(res.bodyBytes));

@@ -39,6 +39,329 @@ class TicketInfoScreen extends StatefulWidget {
   State<TicketInfoScreen> createState() => _TicketInfoScreenState();
 }
 
+// 좌석 매칭용 클래스
+// 개선된 좌석 매칭용 클래스
+class SeatParser {
+  // 구역명 패턴들 (다양한 끝맺음 고려)
+  static const List<String> zonePatterns = [
+    r'(\S+(?:석|존|zone|Zone|ZONE))', // ~석, ~존, ~zone
+    r'(\S+(?:테이블|table|Table|TABLE))', // ~테이블
+    r'(\S+(?:박스|box|Box|BOX))', // ~박스
+    r'(\S+(?:클럽|club|Club|CLUB))', // ~클럽
+    r'(\S+(?:라이브|live|Live|LIVE))', // ~라이브
+    r'(\S+(?:패밀리|family|Family))', // ~패밀리
+    r'(\S+(?:커플|couple|Couple))', // ~커플
+    r'(\S+(?:응원|cheer|Cheer))', // ~응원
+    r'(\S+(?:VIP|vip|Vip))', // VIP
+    r'(\S+(?:SKY|sky|Sky))', // SKY
+    r'(\d+루\s*\S*)', // 1루~, 3루~
+    r'(중앙\s*\S*)', // 중앙~
+    r'(외야\s*\S*)', // 외야~
+    r'(\S*캠핑\S*)', // ~캠핑~
+    r'(\S*그린\S*)', // ~그린~
+  ];
+
+  // 블럭 패턴들
+  static const List<String> blockPatterns = [
+    r'(\S+)블럭', // ~블럭
+    r'(\S+)구역', // ~구역
+    r'([A-Z]\d+)', // A1, B2 등
+    r'([A-Z]-\d+)', // A-1, B-2 등
+    r'(\d+[A-Z])', // 1A, 2B 등
+    r'(\S+)-(\d+)구역', // T1-1구역 등
+    r'([TUS]-?\d+)', // T01, U-1, S-301 등
+    r'(\d{3})', // 세자리 숫자 (101, 201 등)
+    r'([A-Z]+\d*[A-Z]*)', // 복합 알파벳+숫자 패턴
+  ];
+
+  // 열 패턴들
+  static const List<String> rowPatterns = [
+    r'(\d+)열', // 숫자+열
+    r'([A-Z])열', // 알파벳+열
+    r'(\d+)row', // 숫자+row
+    r'([A-Z])row', // 알파벳+row
+  ];
+
+  // 번호 패턴들
+  static const List<String> numberPatterns = [
+    r'(\d+)번', // 숫자+번
+    r'(\d+)호', // 숫자+호
+    r'(\d+)seat', // 숫자+seat
+    r'No\.?\s*(\d+)', // No.1, No 1 등
+  ];
+
+  /// OCR 텍스트에서 좌석 정보를 파싱하여 구조화된 형태로 반환
+  static Map<String, String>? parseAdvancedSeat(String? ocrText, String? stadium) {
+    if (ocrText == null || ocrText.isEmpty) return null;
+
+    final cleanedText = ocrText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    print('🎫 좌석 파싱 시작: $cleanedText');
+
+    Map<String, String> result = {};
+
+    // 1. 구역 찾기 (개선된 로직)
+    String? foundZone = _findZoneAdvanced(cleanedText, stadium);
+    if (foundZone != null) {
+      result['zone'] = foundZone;
+      print('🎯 구역 발견: $foundZone');
+    }
+
+    // 2. 블럭 찾기
+    String? foundBlock = _findBlock(cleanedText, stadium, foundZone);
+    if (foundBlock != null) {
+      result['block'] = foundBlock;
+      print('🎯 블럭 발견: $foundBlock');
+    }
+
+    // 3. 열 찾기
+    String? foundRow = _findRow(cleanedText);
+    if (foundRow != null) {
+      result['row'] = foundRow;
+      print('🎯 열 발견: $foundRow');
+    }
+
+    // 4. 번호 찾기
+    String? foundNumber = _findNumber(cleanedText);
+    if (foundNumber != null) {
+      result['num'] = foundNumber;
+      print('🎯 번호 발견: $foundNumber');
+    }
+
+    print('🎫 파싱 결과: $result');
+    return result.isNotEmpty ? result : null;
+  }
+
+  /// 개선된 구역 찾기 - 실제 구장 데이터 우선 매칭
+  static String? _findZoneAdvanced(String text, String? stadium) {
+    print('🔍 구역 찾기 시작 - 텍스트: "$text", 구장: "$stadium"');
+
+    // 해당 구장의 실제 구역명과 직접 매칭 시도
+    if (stadium != null) {
+      try {
+        // StadiumSeatInfo에서 해당 구장의 구역 리스트 가져오기
+        final zones = StadiumSeatInfo.getZones(stadium);
+
+        print('🔍 구장 "$stadium"의 구역들: $zones');
+
+        // 더 구체적이고 긴 구역명을 먼저 매칭 (길이순 정렬)
+        final sortedZones = List<String>.from(zones)
+          ..sort((a, b) => b.length.compareTo(a.length));
+
+        print('📏 길이순 정렬된 구역들: $sortedZones');
+
+        // 1차: 완전 일치 매칭 (대소문자 구분 없이)
+        for (final zone in sortedZones) {
+          if (text.toLowerCase().contains(zone.toLowerCase())) {
+            print('✅ 완전 일치 발견: $zone');
+            return zone;
+          }
+        }
+
+        // 2차: 공백 및 특수문자 제거 후 매칭
+        final cleanText = text.replaceAll(RegExp(r'[\s\-_]'), '').toLowerCase();
+        for (final zone in sortedZones) {
+          final cleanZone = zone.replaceAll(RegExp(r'[\s\-_]'), '').toLowerCase();
+          if (cleanText.contains(cleanZone)) {
+            print('✅ 공백 제거 후 일치 발견: $zone (clean: "$cleanZone" in "$cleanText")');
+            return zone;
+          }
+        }
+
+        // 3차: 순차적 키워드 매칭 (순서대로 모든 키워드가 포함되는지 확인)
+        for (final zone in sortedZones) {
+          if (_matchZoneSequentially(text, zone)) {
+            print('✅ 순차 키워드 매칭 발견: $zone');
+            return zone;
+          }
+        }
+
+        // 4차: 핵심 키워드 기반 매칭
+        for (final zone in sortedZones) {
+          if (_matchZoneByKeywords(text, zone)) {
+            print('✅ 핵심 키워드 매칭 발견: $zone');
+            return zone;
+          }
+        }
+
+        // 5차: 부분 키워드 매칭 (모든 단어가 포함되는지)
+        for (final zone in sortedZones) {
+          final zoneKeywords = zone.split(RegExp(r'[\s\-_]+'));
+          if (zoneKeywords.length >= 2) {
+            bool allFound = true;
+            for (final keyword in zoneKeywords) {
+              if (keyword.length > 1 && !text.toLowerCase().contains(keyword.toLowerCase())) {
+                allFound = false;
+                break;
+              }
+            }
+            if (allFound) {
+              print('✅ 부분 키워드 매칭 발견: $zone (키워드: $zoneKeywords)');
+              return zone;
+            }
+          }
+        }
+
+      } catch (e) {
+        print('❌ 구역 매칭 중 오류: $e');
+      }
+    }
+
+    // 6차: 패턴 기반 매칭 (최후의 수단)
+    for (final pattern in zonePatterns) {
+      final regex = RegExp(pattern, caseSensitive: false);
+      final match = regex.firstMatch(text);
+      if (match != null) {
+        final matched = match.group(1);
+        if (matched != null && matched.length >= 2) {
+          print('⚠️ 패턴 매칭 발견: $matched');
+          return matched;
+        }
+      }
+    }
+
+    print('❌ 구역을 찾을 수 없음');
+    return null;
+  }
+
+  /// 순차적 키워드 매칭 - 구역명의 단어들이 텍스트에 순서대로 포함되는지 확인
+  static bool _matchZoneSequentially(String text, String zone) {
+    final zoneWords = zone.toLowerCase().split(RegExp(r'[\s\-_]+'));
+    final textLower = text.toLowerCase();
+
+    if (zoneWords.length < 2) return false; // 단일 단어는 제외
+
+    int lastIndex = -1;
+    for (final word in zoneWords) {
+      if (word.length <= 1) continue; // 너무 짧은 단어 제외
+
+      final foundIndex = textLower.indexOf(word, lastIndex + 1);
+      if (foundIndex == -1) {
+        return false; // 단어를 찾을 수 없음
+      }
+      lastIndex = foundIndex;
+    }
+
+    print('🔄 순차 매칭 성공: "$zone" 의 모든 단어가 순서대로 발견됨');
+    return true;
+  }
+
+  /// 핵심 키워드 기반 구역 매칭
+  static bool _matchZoneByKeywords(String text, String zone) {
+    // 구역명을 핵심 키워드로 분해
+    final keywords = _extractZoneKeywords(zone);
+
+    if (keywords.isEmpty) return false;
+
+    // 모든 핵심 키워드가 텍스트에 포함되어야 함
+    int matchCount = 0;
+    for (final keyword in keywords) {
+      if (text.toLowerCase().contains(keyword.toLowerCase())) {
+        matchCount++;
+      }
+    }
+
+    // 키워드의 70% 이상 매칭되면 성공으로 간주
+    return matchCount >= (keywords.length * 0.7).ceil();
+  }
+
+  /// 구역명에서 핵심 키워드 추출
+  static List<String> _extractZoneKeywords(String zone) {
+    final keywords = <String>[];
+
+    // 방향 키워드
+    if (zone.contains('1루')) keywords.add('1루');
+    if (zone.contains('3루')) keywords.add('3루');
+    if (zone.contains('중앙')) keywords.add('중앙');
+    if (zone.contains('외야')) keywords.add('외야');
+
+    // 색상 키워드
+    if (zone.contains('네이비')) keywords.add('네이비');
+    if (zone.contains('블루')) keywords.add('블루');
+    if (zone.contains('레드')) keywords.add('레드');
+    if (zone.contains('오렌지')) keywords.add('오렌지');
+    if (zone.contains('버건디')) keywords.add('버건디');
+    if (zone.contains('다크버건디')) keywords.add('다크버건디');
+
+    // 석종 키워드
+    if (zone.contains('테이블')) keywords.add('테이블');
+    if (zone.contains('박스')) keywords.add('박스');
+    if (zone.contains('VIP')) keywords.add('VIP');
+    if (zone.contains('SKY')) keywords.add('SKY');
+    if (zone.contains('지정석')) keywords.add('지정석');
+    if (zone.contains('내야')) keywords.add('내야');
+    if (zone.contains('필드')) keywords.add('필드');
+    if (zone.contains('상단')) keywords.add('상단');
+    if (zone.contains('덕아웃')) keywords.add('덕아웃');
+    if (zone.contains('응원')) keywords.add('응원');
+    if (zone.contains('패밀리')) keywords.add('패밀리');
+    if (zone.contains('커플')) keywords.add('커플');
+    if (zone.contains('익사이팅')) keywords.add('익사이팅');
+    if (zone.contains('휠체어')) keywords.add('휠체어');
+
+    // 특수 키워드
+    if (zone.contains('챔피언')) keywords.add('챔피언');
+    if (zone.contains('라이브')) keywords.add('라이브');
+    if (zone.contains('랜더스')) keywords.add('랜더스');
+    if (zone.contains('으쓱이')) keywords.add('으쓱이');
+    if (zone.contains('캠핑')) keywords.add('캠핑');
+    if (zone.contains('그린')) keywords.add('그린');
+
+    return keywords;
+  }
+
+  /// 블럭 찾기
+  static String? _findBlock(String text, String? stadium, String? zone) {
+    // 패턴 기반 매칭
+    for (final pattern in blockPatterns) {
+      final regex = RegExp(pattern, caseSensitive: false);
+      final match = regex.firstMatch(text);
+      if (match != null) {
+        // 복합 패턴의 경우 (예: T1-1구역)
+        if (match.groupCount >= 2 && match.group(2) != null) {
+          return '${match.group(1)}-${match.group(2)}구역';
+        }
+        return match.group(1);
+      }
+    }
+
+    return null;
+  }
+
+  /// 열 찾기
+  static String? _findRow(String text) {
+    for (final pattern in rowPatterns) {
+      final regex = RegExp(pattern, caseSensitive: false);
+      final match = regex.firstMatch(text);
+      if (match != null) {
+        return match.group(1);
+      }
+    }
+    return null;
+  }
+
+  /// 번호 찾기
+  static String? _findNumber(String text) {
+    for (final pattern in numberPatterns) {
+      final regex = RegExp(pattern, caseSensitive: false);
+      final match = regex.firstMatch(text);
+      if (match != null) {
+        return match.group(1);
+      }
+    }
+
+    // 마지막으로 단순 숫자 매칭 (1-4자리)
+    final simpleNumber = RegExp(r'\b(\d{1,4})\b');
+    final matches = simpleNumber.allMatches(text);
+    if (matches.isNotEmpty) {
+      // 가장 마지막 숫자를 좌석 번호로 간주
+      return matches.last.group(1);
+    }
+
+    return null;
+  }
+}
+
+// 실제 ticket_info_screen 클래스
 class _TicketInfoScreenState extends State<TicketInfoScreen> {
   final ImagePicker _picker = ImagePicker();
   XFile? _selectedImage;
@@ -160,8 +483,8 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     {'name': '잠실 야구장', 'images': [AppImages.bears, AppImages.twins]}, // 두산, LG 홈구장
     {'name': '사직 야구장', 'images': [AppImages.giants]},
     {'name': '고척 SKYDOME', 'images': [AppImages.kiwoom]},
-    {'name': '대구삼성라이온즈파크', 'images': [AppImages.lions]},
     {'name': '한화생명 볼파크', 'images': [AppImages.eagles]},
+    {'name': '대구삼성라이온즈파크', 'images': [AppImages.lions]},
     {'name': '기아 챔피언스 필드', 'images': [AppImages.tigers]},
     {'name': '수원 케이티 위즈 파크', 'images': [AppImages.ktwiz]},
     {'name': '창원 NC파크', 'images': [AppImages.dinos]},
@@ -350,9 +673,47 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
         matchedGames = [game];
         extractedHomeTeam = game.homeTeam;
         extractedStadium = game.stadium;
-        extractedSeat = extractSeat(cleanedText, game.stadium);
 
-        print('🔍추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime, seat: $extractedSeat');
+        // <좌석 매칭용>
+        final mappedStadiumForSeat = mapStadiumName(game.stadium) ?? game.stadium;
+
+        // 향상된 파싱 로직 사용
+        final parsedSeat = SeatParser.parseAdvancedSeat(cleanedText, mappedStadiumForSeat);
+        if (parsedSeat != null) {
+          // 파싱된 정보를 문자열로 조합
+          final zone = parsedSeat['zone'] ?? '';
+          final block = parsedSeat['block'] ?? '';
+          final row = parsedSeat['row'] ?? '';
+          final num = parsedSeat['num'] ?? '';
+
+          if (zone.isNotEmpty && block.isNotEmpty && num.isNotEmpty) {
+            if (row.isNotEmpty) {
+              extractedSeat = '$zone ${block}블럭 ${row}열 ${num}번';
+            } else {
+              extractedSeat = '$zone ${block}블럭 ${num}번';
+            }
+          } else if (zone.isNotEmpty && num.isNotEmpty) {
+            // 블럭 정보가 없어도 구역과 번호가 있으면 기본 형태로
+            if (row.isNotEmpty) {
+              extractedSeat = '$zone ${row}열 ${num}번';
+            } else {
+              extractedSeat = '$zone ${num}번';
+            }
+          } else if (num.isNotEmpty) {
+            // 번호만 있는 경우
+            extractedSeat = '${num}번';
+          } else {
+            // 기존 extractSeat 함수 fallback
+            extractedSeat = extractSeat(cleanedText, mappedStadiumForSeat);
+          }
+        } else {
+          // 향상된 파싱이 실패하면 기존 함수 사용
+          extractedSeat = extractSeat(cleanedText, mappedStadiumForSeat);
+        }
+
+        print('🔍추출 결과 → awayTeam: $extractedAwayTeam, date: $extractedDate, time: $extractedTime');
+        print('🏟️ 구장 매핑: ${game.stadium} → $mappedStadiumForSeat');
+        print('🎫 추출된 좌석: $extractedSeat');
 
         debugMatchResult(
           isMatched: true,
@@ -689,10 +1050,12 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                   SizedBox(height: 8.h),
                   GestureDetector(
                     onTap: () async {
-                      final currentStadium = selectedStadium ?? extractedStadium;
+                      final currentStadium = selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium;
+                      print('🎫 좌석 선택 시 사용할 구장명: $currentStadium (원본: $extractedStadium)');
+
                       final seat = await showSeatInputDialog(
                         context,
-                        initial: selectedSeat,
+                        initial: selectedSeat ?? extractedSeat, // 기존 좌석 정보도 initial로 전달
                         stadium: currentStadium,
                       );
                       if (seat != null) setState(() => selectedSeat = seat);

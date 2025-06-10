@@ -75,6 +75,7 @@ flutter:
     - assets/imgs/
     - assets/imgs/ic_emotion/
     - assets/imgs/ic_detail_record/
+    - assets/imgs/ic_feed/
     - assets/fonts/
     - assets/tessdata/
   # The following line ensures that the Material Icons font is

@@ -76,7 +76,7 @@ class CustomBottomNavBar extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: 86.h,
-        padding: EdgeInsets.fromLTRB(32, 20, 32, 20),
+        padding: EdgeInsets.fromLTRB(32, 15, 32, 15),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
@@ -93,7 +93,7 @@ class CustomBottomNavBar extends StatelessWidget {
               behavior: HitTestBehavior.opaque, // 터치 안 되는 문제 방지
               child: SizedBox(
                 width: 32.w,
-                height: 46.h,
+                height: 50.h,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

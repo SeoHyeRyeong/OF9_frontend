@@ -195,16 +195,111 @@ class StadiumSeatInfo {
     }
   };
 
+  static String? mapOcrStadiumToSeatKey(String? ocrStadium) {
+    if (ocrStadium == null || ocrStadium.isEmpty) return null;
+
+    final cleaned = ocrStadium.trim();
+
+    // 정확히 일치하는 경우 (stadiumSeats의 키와 동일)
+    if (stadiumSeats.containsKey(cleaned)) {
+      return cleaned;
+    }
+
+    // OCR 구장명을 stadiumSeats 키로 매핑
+    const ocrToSeatMapping = {
+      '잠실': '잠실 야구장',
+      '문학': '인천 SSG 랜더스필드',
+      '대구': '대구삼성라이온즈파크',
+      '수원': '수원 케이티 위즈 파크',
+      '광주': '기아 챔피언스 필드',
+      '창원': '창원 NC파크',
+      '고척': '고척 SKYDOME',
+      '대전(신)': '한화생명 볼파크',
+      '사직': '사직 야구장',
+      // 추가적인 매핑들
+      '잠실야구장': '잠실 야구장',
+      '사직야구장': '사직 야구장',
+      '고척스카이돔': '고척 SKYDOME',
+      '대구삼성라이온즈파크': '대구삼성라이온즈파크',
+      '한화생명볼파크': '한화생명 볼파크',
+      '기아챔피언스필드': '기아 챔피언스 필드',
+      '수원케이티위즈파크': '수원 케이티 위즈 파크',
+      '창원NC파크': '창원 NC파크',
+      '인천SSG랜더스필드': '인천 SSG 랜더스필드',
+    };
+
+    // 정확히 일치하는 매핑
+    if (ocrToSeatMapping.containsKey(cleaned)) {
+      return ocrToSeatMapping[cleaned];
+    }
+
+    // 부분 일치 검색 (대소문자 무시)
+    for (final entry in ocrToSeatMapping.entries) {
+      if (cleaned.toLowerCase().contains(entry.key.toLowerCase()) ||
+          entry.key.toLowerCase().contains(cleaned.toLowerCase())) {
+        return entry.value;
+      }
+    }
+
+    // stadiumSeats의 키들과 부분 일치 검색
+    for (final key in stadiumSeats.keys) {
+      if (key == 'default') continue;
+
+      if (cleaned.toLowerCase().contains(key.toLowerCase()) ||
+          key.toLowerCase().contains(cleaned.toLowerCase())) {
+        return key;
+      }
+    }
+
+    // 매핑되지 않은 경우 null 반환 (default 처리됨)
+    return null;
+  }
+
   static List<String> getZones(String? stadium) {
-    final seatInfo = stadiumSeats[stadium] ?? stadiumSeats['default']!;
+    // OCR 구장명을 먼저 매핑 시도
+    final mappedStadium = mapOcrStadiumToSeatKey(stadium);
+    final seatInfo = stadiumSeats[mappedStadium] ?? stadiumSeats['default']!;
     return seatInfo.keys.toList();
   }
 
   static List<String> getBlocks(String? stadium, String? zone) {
     if (zone == null) return [];
-    final seatInfo = stadiumSeats[stadium] ?? stadiumSeats['default']!;
+    // OCR 구장명을 먼저 매핑 시도
+    final mappedStadium = mapOcrStadiumToSeatKey(stadium);
+    final seatInfo = stadiumSeats[mappedStadium] ?? stadiumSeats['default']!;
     return seatInfo[zone] ?? [];
   }
+}
+
+// parseSeatString 함수를 수정 - stadium 매개변수 추가
+Map<String, String>? parseSeatString(String? text, {String? stadium}) {
+  if (text == null || text.isEmpty) return null;
+
+  // 패턴 1: "구역 블럭 열 번" 형태
+  final reg1 = RegExp(r'(.+?)\s+(.+?)블럭\s+(.+?)열\s+(.+?)번');
+  final match1 = reg1.firstMatch(text);
+  if (match1 != null) {
+    return {
+      'zone': match1.group(1)!,
+      'block': match1.group(2)!,
+      'row': match1.group(3)!,
+      'num': match1.group(4)!,
+    };
+  }
+
+  // 패턴 2: "구역 블럭 번" 형태 (열 없음)
+  final reg2 = RegExp(r'(.+?)\s+(.+?)블럭\s+(.+?)번');
+  final match2 = reg2.firstMatch(text);
+  if (match2 != null) {
+    return {
+      'zone': match2.group(1)!,
+      'block': match2.group(2)!,
+      'row': '',
+      'num': match2.group(3)!,
+    };
+  }
+
+  return null;
 }
 
 Future<String?> showSeatInputDialog(
@@ -212,23 +307,62 @@ Future<String?> showSeatInputDialog(
       String? initial,
       String? stadium, // 구장 정보 추가
     }) async {
-  final parsed = parseSeatString(initial);
+  // OCR 구장명을 좌석 데이터 키로 매핑
+  final mappedStadium = StadiumSeatInfo.mapOcrStadiumToSeatKey(stadium);
+  print('🏟️ 원본 구장명: $stadium → 매핑된 구장명: $mappedStadium');
 
-  String? selectedZone = parsed?['zone'];
-  String? selectedBlock = parsed?['block'];
-  final rowController = TextEditingController(text: parsed?['row'] ?? '');
-  final numController = TextEditingController(text: parsed?['num'] ?? '');
+  // 기존 파싱에서 stadium 정보도 전달하고, 실제 데이터와 검증
+  final parsed = parseSeatString(initial, stadium: mappedStadium ?? stadium);
 
-  // 구장에 따른 동적 zones와 blocks
-  List<String> zones = StadiumSeatInfo.getZones(stadium);
-  List<String> blocks = StadiumSeatInfo.getBlocks(stadium, selectedZone);
+  String? selectedZone;
+  String? selectedBlock;
+  final rowController = TextEditingController();
+  final numController = TextEditingController();
+
+  // 파싱된 좌석 정보도 출력
+  if (parsed != null) {
+    print('🎫 파싱된 좌석 정보: $parsed');
+  }
+
+  // 🔧 파싱된 데이터가 실제 구장 데이터에 존재하는지 검증 후 자동 입력
+  if (mappedStadium != null && parsed != null) {
+    final zones = StadiumSeatInfo.getZones(mappedStadium);
+    final parsedZone = parsed['zone'];
+
+    // 구역이 실제 데이터에 존재하는지 확인
+    if (parsedZone != null && zones.contains(parsedZone)) {
+      selectedZone = parsedZone;
+      print('✅ 구역 "$parsedZone" 매칭 성공 → 자동 입력');
+
+      // 구역이 매칭되면 블럭도 확인
+      final blocks = StadiumSeatInfo.getBlocks(mappedStadium, parsedZone);
+      final parsedBlock = parsed['block'];
+
+      if (parsedBlock != null && blocks.contains(parsedBlock)) {
+        selectedBlock = parsedBlock;
+        print('✅ 블럭 "$parsedBlock" 매칭 성공 → 자동 입력');
+      } else {
+        print('❌ 블럭 "$parsedBlock"이 구역 "$parsedZone"에 없음 → 빈 상태로 유지');
+      }
+    } else {
+      print('❌ 구역 "$parsedZone"이 실제 구장 데이터에 없음 → 빈 상태로 유지');
+    }
+
+    // 열과 번호는 검증 없이 자동 입력 (자유 입력)
+    rowController.text = parsed['row'] ?? '';
+    numController.text = parsed['num'] ?? '';
+  }
+
+  // 구장에 따른 동적 zones와 blocks (매핑된 구장명 사용)
+  List<String> zones = StadiumSeatInfo.getZones(mappedStadium ?? stadium);
+  List<String> blocks = StadiumSeatInfo.getBlocks(mappedStadium ?? stadium, selectedZone);
   bool isZoneDropdownOpen = false;
   bool isBlockDropdownOpen = false;
 
-  // 정의된 구장인지 확인 (default가 아닌 실제 구장 데이터가 있는지)
-  bool isDefinedStadium = stadium != null &&
-      StadiumSeatInfo.stadiumSeats.containsKey(stadium) &&
-      stadium != '창원 NC파크'; // NC파크는 아직 정보가 없어 default 값이로 텍스트필드 처리
+  // 정의된 구장인지 확인 (매핑된 구장명 기준)
+  bool isDefinedStadium = mappedStadium != null &&
+      StadiumSeatInfo.stadiumSeats.containsKey(mappedStadium) &&
+      mappedStadium != '창원 NC파크'; // NC파크는 아직 정보가 없어 default 값으로 텍스트필드 처리
 
   // 정의되지 않은 구장의 경우 텍스트필드용 컨트롤러
   final zoneController = TextEditingController(text: parsed?['zone'] ?? '');
@@ -547,6 +681,9 @@ Future<String?> showSeatInputDialog(
                                     context,
                                   ).copyWith(color: AppColors.gray300),
                                 ),
+                                style: AppFonts.b3_sb_long(context).copyWith(
+                                  color: AppColors.gray950,
+                                ),
                               ),
                             ),
                           ),
@@ -602,6 +739,14 @@ Future<String?> showSeatInputDialog(
                                     context,
                                   ).copyWith(color: AppColors.gray300),
                                 ),
+                                style: AppFonts.b3_sb_long(context).copyWith(
+                                  color: AppColors.gray950,
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    // 완료 버튼 활성화 상태 업데이트
+                                  });
+                                },
                               ),
                             ),
                           ),
@@ -701,7 +846,7 @@ Future<String?> showSeatInputDialog(
                                     setState(() {
                                       selectedZone = zone;
                                       selectedBlock = null; // 구역 변경시 블럭 초기화
-                                      blocks = StadiumSeatInfo.getBlocks(stadium, zone); // 블럭 목록 업데이트
+                                      blocks = StadiumSeatInfo.getBlocks(mappedStadium ?? stadium, zone); // 블럭 목록 업데이트
                                       isZoneDropdownOpen = false;
                                     });
                                   },
@@ -727,7 +872,7 @@ Future<String?> showSeatInputDialog(
                     // 블럭 드롭다운 리스트 (정의된 구장에서만 표시)
                     if (isDefinedStadium && isBlockDropdownOpen)
                       Positioned(
-                        top: 256.h, // 182 + 8 + 48 + 6 = 244h 구역에서 6px 떨어진 위치
+                        top: 256.h,
                         left: 20.w,
                         child: Material(
                           color: Colors.transparent,
@@ -787,19 +932,4 @@ Future<String?> showSeatInputDialog(
       );
     },
   );
-}
-
-Map<String, String>? parseSeatString(String? text) {
-  if (text == null || text.isEmpty) return null;
-
-  final reg = RegExp(r'(.+?)\s+(.+?)블럭\s+(.+?)열\s+(.+?)번');
-  final match = reg.firstMatch(text);
-  if (match == null) return null;
-
-  return {
-    'zone': match.group(1)!,
-    'block': match.group(2)!,
-    'row': match.group(3)!,
-    'num': match.group(4)!,
-  };
 }

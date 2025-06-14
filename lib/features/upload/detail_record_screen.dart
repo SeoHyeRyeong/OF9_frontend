@@ -12,6 +12,10 @@ import 'package:frontend/features/feed/feed_screen.dart';
 import 'package:frontend/components/custom_popup_dialog.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
+import 'package:provider/provider.dart';
+import 'package:frontend/features/upload/providers/record_state.dart';
+import 'package:frontend/api/record_api.dart';
+
 
 class DetailRecordScreen extends StatefulWidget {
   final String? imagePath;
@@ -90,6 +94,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
           selectedImages.add(file.path);
         }
         setState(() {});
+
+        // Provider에 이미지 경로 저장
+        Provider.of<RecordState>(context, listen: false)
+            .updateImagePaths(selectedImages);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,6 +111,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     setState(() {
       selectedImages.removeAt(index);
     });
+
+    // Provider에 업데이트된 이미지 경로 저장
+    Provider.of<RecordState>(context, listen: false)
+        .updateImagePaths(selectedImages);
   }
 
   /// 갤러리 위젯 빌드
@@ -644,14 +656,57 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                     width: 320.w,
                     height: screenHeight * (54 / baseScreenHeight),
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const FeedScreen(showCompletionPopup: true),
-                          ),
-                        );
+                      onPressed: () async {
+                        try {
+                          final recordState = Provider.of<RecordState>(context, listen: false);
+
+                          // 기본 정보가 완전한지 확인
+                          if (!recordState.isBasicInfoComplete) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('기본 정보가 누락되었습니다.')),
+                            );
+                            return;
+                          }
+
+                          // API 호출
+                          final result = await RecordApi.createCompleteRecord(
+                            userId: recordState.userId!,
+                            gameId: recordState.gameId!,
+                            seatInfo: recordState.seatInfo!,
+                            emotionCode: recordState.emotionCode!,
+                            stadium: recordState.stadium!,
+                            comment: recordState.comment,
+                            longContent: recordState.longContent,
+                            bestPlayer: recordState.bestPlayer,
+                            companions: recordState.companions,
+                            foodTags: recordState.foodTags,
+                            imagePaths: recordState.imagePaths,
+                          );
+
+                          print('✅ 기록 저장 성공: $result');
+
+                          // 성공 시 상태 초기화
+                          recordState.reset();
+
+                          // 성공 메시지 및 화면 이동
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FeedScreen(showCompletionPopup: true),
+                            ),
+                          );
+
+                        } catch (e) {
+                          print('❌ 기록 저장 실패: $e');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('기록 저장에 실패했습니다: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       },
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.gray700,
                         foregroundColor: Colors.white,
@@ -718,6 +773,10 @@ class _OneWordSectionContentState extends State<OneWordSectionContent> {
     setState(() {
       _currentLength = _controller.text.length;
     });
+
+    // Provider에 데이터 저장
+    Provider.of<RecordState>(context, listen: false)
+        .updateComment(_controller.text);
   }
 
   void _scrollToTextField() {
@@ -899,9 +958,12 @@ class _DiaryNoteSectionContentState extends State<DiaryNoteSectionContent> {
   void _updateCharacterCount() {
     setState(() {
       _currentLength = _controller.text.length;
-      // 텍스트에 줄바꿈이 있거나 한 줄이 넘치면 다중행으로 전환
       _isMultiLine = _controller.text.contains('\n') || _needsMultiLine();
     });
+
+    // Provider에 데이터 저장
+    Provider.of<RecordState>(context, listen: false)
+        .updateLongContent(_controller.text);
   }
 
   // 한 줄이 넘치는지 확인하는 함수
@@ -1103,7 +1165,12 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> {
 
   void _updateState() {
     setState(() {});
+
+    // Provider에 데이터 저장
+    Provider.of<RecordState>(context, listen: false)
+        .updateBestPlayer(_controller.text);
   }
+
 
   void _scrollToTextField() {
     Future.delayed(Duration(milliseconds: 100), () {
@@ -1250,7 +1317,15 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> {
 
   void _updateState() {
     setState(() {});
+
+    // Provider에 데이터 저장 (companions는 List<String>이므로 배열로 변환)
+    final companions = _controller.text.isNotEmpty
+        ? [_controller.text]
+        : <String>[];
+    Provider.of<RecordState>(context, listen: false)
+        .updateCompanions(companions);
   }
+
 
   void _scrollToTextField() {
     Future.delayed(Duration(milliseconds: 100), () {
@@ -1359,6 +1434,17 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> {
     );
   }
 }
+
+
+/*
+// FoodTagSectionContent에서 먹거리 태그 선택 시 Provider 연동 추가 필요 (혜령)
+void _onFoodTagSelected(List<String> selectedTags) {
+  Provider.of<RecordState>(context, listen: false)
+      .updateFoodTags(selectedTags);
+}
+
+ */
+
 
 /// FoodTagSectionContent 위젯 클래스
 /// 먹거리 태그 뷰 디자인

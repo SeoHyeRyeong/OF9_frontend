@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+
 
 class RecordApi {
   static String get baseUrl {
@@ -20,16 +23,7 @@ class RecordApi {
     };
   }
 
-  /// 공통 Authorization 헤더 생성 (multipart/form-data용)
-  static Future<Map<String, String>> _authHeadersMultipart() async {
-    final token = await KakaoAuthService().getAccessToken();
-    return {
-      'Authorization': 'Bearer $token',
-      // Content-Type은 multipart 요청 시 자동으로 설정됨
-    };
-  }
-
-  /// 모든 기록을 한 번에 업로드 (메인 메서드)
+  /// 모든 기록을 한 번에 업로드 (JSON + Base64 방식)
   static Future<Map<String, dynamic>> createCompleteRecord({
     required int userId,
     required String gameId,
@@ -43,68 +37,56 @@ class RecordApi {
     List<String>? foodTags,
     List<String>? imagePaths,
   }) async {
-    final headers = await _authHeadersMultipart();
+    final headers = await _authHeaders();
 
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/records'),
-    );
-
-    // 헤더 추가
-    request.headers.addAll(headers);
-
-    // 필수 필드 추가
-    request.fields['userId'] = userId.toString();
-    request.fields['gameId'] = gameId;
-    request.fields['seatInfo'] = seatInfo;
-    request.fields['emotionCode'] = emotionCode.toString();
-    request.fields['stadium'] = stadium;
-
-    // 선택적 필드 추가
-    if (comment != null && comment.isNotEmpty) {
-      request.fields['comment'] = comment;
-    }
-    if (longContent != null && longContent.isNotEmpty) {
-      request.fields['longContent'] = longContent;
-    }
-    if (bestPlayer != null && bestPlayer.isNotEmpty) {
-      request.fields['bestPlayer'] = bestPlayer;
-    }
-    if (companions != null && companions.isNotEmpty) {
-      request.fields['companions'] = jsonEncode(companions);
-    }
-    if (foodTags != null && foodTags.isNotEmpty) {
-      request.fields['foodTags'] = jsonEncode(foodTags);
-    }
-
-    // 이미지 파일 추가
+    // 이미지를 Base64로 인코딩
+    List<String> base64Images = [];
     if (imagePaths != null && imagePaths.isNotEmpty) {
-      for (int i = 0; i < imagePaths.length; i++) {
-        final file = File(imagePaths[i]);
+      for (String imagePath in imagePaths) {
+        final file = File(imagePath);
         if (await file.exists()) {
-          request.files.add(
-            await http.MultipartFile.fromPath(
-              'mediaFiles', // 서버에서 기대하는 필드명
-              file.path,
-            ),
-          );
+          try {
+            final bytes = await file.readAsBytes();
+            final base64String = base64Encode(bytes);
+            base64Images.add(base64String);
+            print('📤 이미지 Base64 인코딩 완료: ${imagePath}');
+          } catch (e) {
+            print('❌ 이미지 인코딩 실패: $imagePath, 에러: $e');
+          }
         }
       }
     }
 
-    print('📤 기록 업로드 요청 필드: ${request.fields}');
-    print('📤 기록 업로드 파일 개수: ${request.files.length}');
+    final requestBody = {
+      'userId': userId,
+      'gameId': gameId,
+      'seatInfo': seatInfo,
+      'emotionCode': emotionCode,
+      'stadium': stadium,
+      if (comment != null && comment.isNotEmpty) 'comment': comment,
+      if (longContent != null && longContent.isNotEmpty) 'longContent': longContent,
+      if (bestPlayer != null && bestPlayer.isNotEmpty) 'bestPlayer': bestPlayer,
+      //if (companions != null && companions.isNotEmpty) 'companions': companions, // 수정필요!!!
+      if (foodTags != null && foodTags.isNotEmpty) 'foodTags': foodTags,
+      if (base64Images.isNotEmpty) 'mediaFiles': base64Images,
+    };
 
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
+    print('📤 기록 업로드 요청 본문: ${jsonEncode(requestBody).length} bytes');
+    print('📤 Base64 이미지 개수: ${base64Images.length}');
 
-    print('📥 기록 업로드 응답 코드: ${response.statusCode}');
-    print('📥 기록 업로드 응답 본문: ${response.body}');
+    final res = await http.post(
+      Uri.parse('$baseUrl/records'),
+      headers: headers,
+      body: jsonEncode(requestBody),
+    );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(response.body);
+    print('📥 기록 업로드 응답 코드: ${res.statusCode}');
+    print('📥 기록 업로드 응답 본문: ${res.body}');
+
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
     } else {
-      throw Exception('기록 업로드 실패: ${response.statusCode}');
+      throw Exception('기록 업로드 실패: ${res.statusCode}');
     }
   }
 
@@ -112,21 +94,23 @@ class RecordApi {
   static Future<List<Map<String, dynamic>>> getMyRecords() async {
     final headers = await _authHeaders();
     final res = await http.get(
-      Uri.parse('$baseUrl/records/my'),
+      //Uri.parse('$baseUrl/records/me/feed'),
+      Uri.parse('$baseUrl/records/me/list'),
       headers: headers,
     );
 
     print('📥 내 기록 조회 응답 코드: ${res.statusCode}');
-    print('📥 내 기록 조회 응답 본문: ${res.body}');
+    print('📥 기록 조회 응답 본문: ${res.body}');
 
     if (res.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(res.body);
-      final List<dynamic> records = data['records'] ?? [];
+      // UTF-8 디코딩 추가
+      final List<dynamic> records = jsonDecode(utf8.decode(res.bodyBytes));
       return records.cast<Map<String, dynamic>>();
     } else {
       throw Exception('내 기록 조회 실패: ${res.statusCode}');
     }
   }
+
 
   /// 특정 기록 상세 조회
   static Future<Map<String, dynamic>> getRecordById(String recordId) async {
@@ -137,57 +121,9 @@ class RecordApi {
     );
 
     if (res.statusCode == 200) {
-      return jsonDecode(res.body);
+      return jsonDecode(utf8.decode(res.bodyBytes));
     } else {
       throw Exception('기록 상세 조회 실패: ${res.statusCode}');
-    }
-  }
-
-  /// 기록 수정 (필요한 경우)
-  static Future<Map<String, dynamic>> updateRecord({
-    required String recordId,
-    String? comment,
-    String? longContent,
-    String? bestPlayer,
-    List<String>? companions,
-    List<String>? foodTags,
-    List<String>? imagePaths,
-  }) async {
-    final headers = await _authHeadersMultipart();
-
-    final request = http.MultipartRequest(
-      'PUT',
-      Uri.parse('$baseUrl/records/$recordId'),
-    );
-
-    request.headers.addAll(headers);
-
-    // 수정할 필드만 추가
-    if (comment != null) request.fields['comment'] = comment;
-    if (longContent != null) request.fields['longContent'] = longContent;
-    if (bestPlayer != null) request.fields['bestPlayer'] = bestPlayer;
-    if (companions != null) request.fields['companions'] = jsonEncode(companions);
-    if (foodTags != null) request.fields['foodTags'] = jsonEncode(foodTags);
-
-    // 새 이미지 파일 추가
-    if (imagePaths != null && imagePaths.isNotEmpty) {
-      for (String imagePath in imagePaths) {
-        final file = File(imagePath);
-        if (await file.exists()) {
-          request.files.add(
-            await http.MultipartFile.fromPath('mediaFiles', file.path),
-          );
-        }
-      }
-    }
-
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('기록 수정 실패: ${response.statusCode}');
     }
   }
 
@@ -203,4 +139,34 @@ class RecordApi {
       throw Exception('기록 삭제 실패: ${res.statusCode}');
     }
   }
+
+  /// 다른 엔드포인트들 테스트
+  static Future<void> testAllEndpoints() async {
+    final headers = await _authHeaders();
+
+    // 1. list 엔드포인트 테스트
+    try {
+      final listRes = await http.get(
+        Uri.parse('$baseUrl/records/me/list'),
+        headers: headers,
+      );
+      print('📋 LIST 응답: ${listRes.statusCode} - ${listRes.body}');
+    } catch (e) {
+      print('❌ LIST 오류: $e');
+    }
+
+    // 2. calendar 엔드포인트 테스트
+    try {
+      final calRes = await http.get(
+        Uri.parse('$baseUrl/records/me/calendar'),
+        headers: headers,
+      );
+      print('📅 CALENDAR 응답: ${calRes.statusCode} - ${calRes.body}');
+    } catch (e) {
+      print('❌ CALENDAR 오류: $e');
+    }
+  }
+
 }
+
+

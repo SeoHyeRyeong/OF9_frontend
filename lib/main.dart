@@ -10,6 +10,8 @@ import 'package:frontend/features/upload/emotion_select_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:frontend/features/upload/detail_record_screen.dart';
 import 'package:frontend/features/feed/feed_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:frontend/features/upload/providers/record_state.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,26 +36,28 @@ class MyApp extends StatelessWidget {
   final bool isLoggedIn;
   const MyApp({Key? key, required this.isLoggedIn}) : super(key: key);
 
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Kakao Login',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      debugShowCheckedModeBanner: false, //디버그 리본 숨기기
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ko', 'KR'), // 한국어
-      ],
-      locale: const Locale('ko', 'KR'),
+    return ChangeNotifierProvider(
+      create: (_) => RecordState(),
+      child: MaterialApp(
+        title: 'Flutter Kakao Login',
+        theme: ThemeData(primarySwatch: Colors.blue),
+        debugShowCheckedModeBanner: false, //디버그 리본 숨기기
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('ko', 'KR'), // 한국어
+        ],
+        locale: const Locale('ko', 'KR'),
 
-      // 로그인 여부에 따라 시작 화면 분기
-      home: isLoggedIn ? const FeedScreen() : const LoginScreen(),
-      //home: const LoginScreen(),//MyPageScreen(),
+        // 로그인 여부에 따라 시작 화면 분기
+        home: isLoggedIn ? const FeedScreen() : const LoginScreen(),
+        //home: const LoginScreen(),//MyPageScreen(),
+      ),
     );
   }
 }

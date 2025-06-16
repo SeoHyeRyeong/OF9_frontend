@@ -93,6 +93,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
         for (final file in filesToAdd) {
           selectedImages.add(file.path);
         }
+        print('✔️추가 후 서버로 전송할 이미지 경로: $selectedImages');
         setState(() {});
 
         // Provider에 이미지 경로 저장
@@ -111,6 +112,8 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     setState(() {
       selectedImages.removeAt(index);
     });
+
+    print('🗑️삭제 후 서버로 전송할 이미지 경로: $selectedImages');
 
     // Provider에 업데이트된 이미지 경로 저장
     Provider.of<RecordState>(context, listen: false)

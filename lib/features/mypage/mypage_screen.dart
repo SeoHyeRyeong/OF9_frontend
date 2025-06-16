@@ -8,6 +8,9 @@ import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/api/user_api.dart';
 import 'package:frontend/api/record_api.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({Key? key}) : super(key: key);
@@ -98,10 +101,11 @@ class _MyPageScreenState extends State<MyPageScreen> {
   Future<void> _loadMyRecords() async {
     try {
       // 모든 엔드포인트 테스트
-      await RecordApi.testAllEndpoints();
+      await RecordApi.getMyRecordsList();
+      await RecordApi.getMyRecordsCalendar();
 
       // 기존 피드 조회
-      final records = await RecordApi.getMyRecords();
+      final records = await RecordApi.getMyRecordsFeed();
       setState(() {
         feedList = records;
         isLoadingRecords = false;
@@ -497,17 +501,56 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                 child: Container(
                                   width: wp(112),
                                   height: wp(152),
-                                  child: record['mediaUrls'] != null &&
-                                      record['mediaUrls'].isNotEmpty
-                                      ? Image.network(
+                                  child: Stack(
+                                    children: [
+                                      // base64 이미지 표시
+                                      record['mediaUrls'] != null && record['mediaUrls'].isNotEmpty
+                                          ? Image.memory(
+                                        base64Decode(record['mediaUrls'][0]),
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        errorBuilder: (_, __, ___) => _buildPlaceholder(record),
+                                      )
+                                          : _buildPlaceholder(record),
+
+                                      /*? Image.network(
                                     record['mediaUrls'][0], // 첫 번째 이미지 사용
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => _buildPlaceholder(record),
                                   )
-                                      : _buildPlaceholder(record),
+                                      : _buildPlaceholder(record),*//*? Image.network(
+                                    record['mediaUrls'][0], // 첫 번째 이미지 사용
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => _buildPlaceholder(record),
+                                  )
+                                      : _buildPlaceholder(record),*/
+
+                                      // 날짜 오버레이
+                                      Positioned(
+                                        top: 8,
+                                        left: 10,
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(0.5),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            record['gameDate'] ?? '',
+                                            style: AppFonts.c3_sb(context).copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               );
                             },
+
                           ),
                         ),
                       SizedBox(height: hp(100)), // 하단 내비게이션 바 공간 확보

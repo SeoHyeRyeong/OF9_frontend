@@ -68,7 +68,8 @@ class RecordApi {
       if (bestPlayer != null && bestPlayer.isNotEmpty) 'bestPlayer': bestPlayer,
       //if (companions != null && companions.isNotEmpty) 'companions': companions, // 수정필요!!!
       if (foodTags != null && foodTags.isNotEmpty) 'foodTags': foodTags,
-      if (base64Images.isNotEmpty) 'mediaFiles': base64Images,
+      //if (base64Images.isNotEmpty) 'mediaFiles': base64Images,
+      if (base64Images.isNotEmpty) 'mediaUrls': base64Images,
     };
 
     print('📤 기록 업로드 요청 본문: ${jsonEncode(requestBody).length} bytes');
@@ -90,17 +91,16 @@ class RecordApi {
     }
   }
 
-  /// 내 기록 목록 조회 (마이페이지용)
-  static Future<List<Map<String, dynamic>>> getMyRecords() async {
+  /// 내 피드 조회
+  static Future<List<Map<String, dynamic>>> getMyRecordsFeed() async {
     final headers = await _authHeaders();
     final res = await http.get(
-      //Uri.parse('$baseUrl/records/me/feed'),
-      Uri.parse('$baseUrl/records/me/list'),
+      Uri.parse('$baseUrl/records/me/feed'),
       headers: headers,
     );
 
-    print('📥 내 기록 조회 응답 코드: ${res.statusCode}');
-    print('📥 기록 조회 응답 본문: ${res.body}');
+    print('📷 FEED 응답 코드: ${res.statusCode}');
+    print('📷 FEED 응답: ${res.body}');
 
     if (res.statusCode == 200) {
       // UTF-8 디코딩 추가
@@ -141,7 +141,7 @@ class RecordApi {
   }
 
   /// 다른 엔드포인트들 테스트
-  static Future<void> testAllEndpoints() async {
+  /*static Future<void> testAllEndpoints() async {
     final headers = await _authHeaders();
 
     // 1. list 엔드포인트 테스트
@@ -153,6 +153,7 @@ class RecordApi {
       print('📋 LIST 응답: ${listRes.statusCode} - ${listRes.body}');
     } catch (e) {
       print('❌ LIST 오류: $e');
+
     }
 
     // 2. calendar 엔드포인트 테스트
@@ -165,7 +166,45 @@ class RecordApi {
     } catch (e) {
       print('❌ CALENDAR 오류: $e');
     }
+  }*/
+
+  /// 내 리스트 조회
+  static Future<List<Map<String, dynamic>>> getMyRecordsList() async {
+    final headers = await _authHeaders();
+    final res = await http.get(
+      Uri.parse('$baseUrl/records/me/list'),
+      headers: headers,
+    );
+
+    print('📋 LIST 응답: ${res.statusCode} - ${res.body}');
+
+    if (res.statusCode == 200) {
+      final List<dynamic> records = jsonDecode(utf8.decode(res.bodyBytes)); // UTF-8 처리
+      return records.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('리스트 조회 실패: ${res.statusCode}');
+    }
   }
+
+  /// 내 캘린더 조회
+  static Future<List<Map<String, dynamic>>> getMyRecordsCalendar() async {
+    final headers = await _authHeaders();
+    final res = await http.get(
+      Uri.parse('$baseUrl/records/me/calendar'),
+      headers: headers,
+    );
+
+    print('📅 CALENDAR 응답: ${res.statusCode} - ${res.body}');
+
+    if (res.statusCode == 200) {
+      final List<dynamic> calendarData = jsonDecode(utf8.decode(res.bodyBytes));
+      return calendarData.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('캘린더 조회 실패: ${res.statusCode}');
+    }
+  }
+
+
 
 }
 

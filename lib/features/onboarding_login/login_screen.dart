@@ -9,6 +9,7 @@ import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/favorite_team_screen.dart'; // 추가
 import 'package:frontend/utils/fixed_text.dart';
 
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
@@ -26,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
     {
       'image': AppImages.loginOnboarding1,
       'title': '직관 기록 업로드',
-      'subtitle': '기능설명! 기능설명! 기능설명! 기능설명!\n기능설명! 기능설명! 기능설명! 기능설명!'
+      'subtitle': '티켓 스캔으로 간편하게 직관 기록하고\n나만의 기록 콘텐츠를 만들어 봐요'
     },
     {
       'image': AppImages.loginOnboarding2,

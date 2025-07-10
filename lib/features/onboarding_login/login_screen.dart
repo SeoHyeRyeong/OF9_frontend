@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
     {
       'image': AppImages.loginOnboarding3,
       'title': '친구와 직관 기록 공유',
-      'subtitle': '이제부터 직찍!\n친구와 직관 순간을 나눠 보세요'
+      'subtitle': '그 순간의 감정! 경기를 함께 본\n친구와 직관 경험을 나눠 보세요'
     },
   ];
 
@@ -199,7 +199,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           '카카오로 계속하기',
                           style: AppFonts.b2_b(context).copyWith(
                             color: AppColors.kakao02,
-                            fontSize: 16.sp,
                           ),
                         ),
                       ],

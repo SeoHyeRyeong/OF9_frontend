@@ -15,6 +15,10 @@ class AppImages {
   static const backBlack = 'assets/imgs/ic_back_black_24.svg';
   static const dropdownBlack = 'assets/imgs/ic_dropdown_black.svg';
 
+  // 완료 에셋
+  static const complete = 'assets/imgs/img_complete.png';
+  static const ticket = 'assets/imgs/ic_ticket.svg';
+
   // 야구팀 로고
   static const bears = 'assets/imgs/img_doosan.png';
   static const dinos = 'assets/imgs/img_nc.png';

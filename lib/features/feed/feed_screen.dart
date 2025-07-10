@@ -46,6 +46,7 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   void initState() {
     super.initState();
+
     // 화면 로드 후 팝업 표시
     if (widget.showCompletionPopup) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -70,7 +71,7 @@ class _FeedScreenState extends State<FeedScreen> {
       barrierDismissible: false,
       builder:
           (context) => CustomPopupDialog(
-        imageAsset: AppImages.icAlert,
+        imageAsset: AppImages.ticket,
         title: '$todayDate\n직관 기록이 완료됐어요',
         subtitle: '직관 기록은 마이 페이지에서 확인할 수 있어요',
         firstButtonText: '확인',

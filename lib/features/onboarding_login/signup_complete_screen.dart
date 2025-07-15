@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/features/feed/feed_screen.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
+import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/utils/fixed_text.dart';
@@ -47,14 +48,13 @@ class SignupCompleteScreen extends StatelessWidget {
 
             // 축하 에셋
             Positioned(
-              top: (screenHeight * (319 / baseScreenHeight)) - statusBarHeight,
-              left: (ScreenUtil().screenWidth - 240.h) / 2, // 가운데 정렬
-              child: Container(
-                width: 240.h,
-                height: 240.h,
-                decoration: BoxDecoration(
-                  color: AppColors.gray50,
-                ),
+              top: (screenHeight * (310 / baseScreenHeight)) - statusBarHeight,
+              left: (ScreenUtil().screenWidth - 240.h) / 2 - 10.w, // 가운데 정렬
+              child: Image.asset(
+                AppImages.complete,
+                width: 260.h,
+                height: 260.h,
+                fit: BoxFit.cover, // 또는 BoxFit.contain
               ),
             ),
 

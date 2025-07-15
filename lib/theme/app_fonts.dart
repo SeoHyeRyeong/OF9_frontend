@@ -8,7 +8,7 @@ class AppFonts {
   static TextStyle h1_b(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: scaleFont(28, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(28),
     height: 1.0,
     letterSpacing: -0.84,
   );
@@ -16,7 +16,7 @@ class AppFonts {
   static TextStyle h3_eb(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w800,
-    fontSize: scaleFont(24, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(24),
     height: 1.0,
     letterSpacing: -0.72,
   );
@@ -24,7 +24,7 @@ class AppFonts {
   static TextStyle h3_sb(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: scaleFont(24, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(24),
     height: 1.0,
     letterSpacing: -0.72,
   );
@@ -32,7 +32,7 @@ class AppFonts {
   static TextStyle h4_b(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: scaleFont(22, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(22),
     height: 1.0,
     letterSpacing: -0.66,
   );
@@ -40,7 +40,7 @@ class AppFonts {
   static TextStyle h5_b(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: scaleFont(20, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(20),
     height: 1.0,
     letterSpacing: -0.6,
   );
@@ -48,7 +48,7 @@ class AppFonts {
   static TextStyle h5_sb(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: scaleFont(20, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(20),
     height: 1.0,
     letterSpacing: -0.6,
   );
@@ -57,7 +57,7 @@ class AppFonts {
   static TextStyle b1_b(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: scaleFont(18, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(18),
     height: 1.0,
     letterSpacing: -0.54,
   );
@@ -65,7 +65,7 @@ class AppFonts {
   static TextStyle b1_sb(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: scaleFont(18, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(18),
     height: 1.0,
     letterSpacing: -0.54,
   );
@@ -73,7 +73,7 @@ class AppFonts {
   static TextStyle b2_b(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: scaleFont(16, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(16),
     height: 1.0,
     letterSpacing: -0.48,
   );
@@ -81,7 +81,7 @@ class AppFonts {
   static TextStyle b2_m(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w500,
-    fontSize: scaleFont(16, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(16),
     height: 1.0,
     letterSpacing: -0.48,
   );
@@ -89,7 +89,7 @@ class AppFonts {
   static TextStyle b2_m_long(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w500,
-    fontSize: scaleFont(16, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(16),
     height: 1.6,
     letterSpacing: -0.48,
   );
@@ -97,7 +97,7 @@ class AppFonts {
   static TextStyle b3_sb(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: scaleFont(14, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
@@ -105,7 +105,7 @@ class AppFonts {
   static TextStyle b3_sb_long(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: scaleFont(14, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(14),
     height: 1.6,
     letterSpacing: -0.42,
   );
@@ -113,7 +113,7 @@ class AppFonts {
   static TextStyle b3_m(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w500,
-    fontSize: scaleFont(14, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
@@ -121,7 +121,7 @@ class AppFonts {
   static TextStyle b3_r(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w400,
-    fontSize: scaleFont(14, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
@@ -129,7 +129,7 @@ class AppFonts {
   static TextStyle b3_b(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: scaleFont(14, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
@@ -138,7 +138,7 @@ class AppFonts {
   static TextStyle c1_b(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: scaleFont(12, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(12),
     height: 1.0,
     letterSpacing: -0.36,
   );
@@ -146,7 +146,7 @@ class AppFonts {
   static TextStyle c1_r(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w400,
-    fontSize: scaleFont(12, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(12),
     height: 1.0,
     letterSpacing: -0.36,
   );
@@ -154,7 +154,7 @@ class AppFonts {
   static TextStyle c2_b(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w700,
-    fontSize: scaleFont(10, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(10),
     height: 1.0,
     letterSpacing: -0.3,
   );
@@ -162,7 +162,7 @@ class AppFonts {
   static TextStyle c1_sb(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: scaleFont(12, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(12),
     height: 1.0,
     letterSpacing: -0.36,
   );
@@ -170,7 +170,7 @@ class AppFonts {
   static TextStyle c2_sb(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: scaleFont(10, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(10),
     height: 1.0,
     letterSpacing: -0.3,
   );
@@ -178,7 +178,7 @@ class AppFonts {
   static TextStyle c3_sb(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w600,
-    fontSize: scaleFont(8, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(8),
     height: 1.0,
     letterSpacing: -0.3,
   );
@@ -186,7 +186,7 @@ class AppFonts {
   static TextStyle c2_m(BuildContext context) => TextStyle(
     fontFamily: suit,
     fontWeight: FontWeight.w500,
-    fontSize: scaleFont(10, MediaQuery.of(context).size.height),
+    fontSize: scaleFont(10),
     height: 1.0,
     letterSpacing: -0.3,
   );

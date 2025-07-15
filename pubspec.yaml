@@ -43,7 +43,7 @@ dependencies:
   kakao_flutter_sdk: ^1.9.7+3
   kakao_flutter_sdk_user: ^1.9.7+3
   flutter_secure_storage: ^8.0.0
-  flutter_screenutil: ^5.8.4
+  flutter_screenutil: ^5.9.3
   flutter_svg: ^1.1.6
   camera: ^0.10.5+5
   table_calendar: ^3.0.0

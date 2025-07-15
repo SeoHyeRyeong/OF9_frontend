@@ -32,7 +32,8 @@ class TicketOcrScreen extends StatefulWidget {
   State<TicketOcrScreen> createState() => _TicketOcrScreenState();
 }
 
-class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingObserver {
+class _TicketOcrScreenState extends State<TicketOcrScreen>
+    with WidgetsBindingObserver {
   bool _isCameraInitialized = false;
   bool _isLoading = false;
 
@@ -71,10 +72,37 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
   };
 
   final List<String> teamKeywordsList = [
-    'KIA 타이거즈', '두산 베어스', '롯데 자이언츠', '삼성 라이온즈', '키움 히어로즈', '한화 이글스',
-    'KT WIZ', 'LG 트윈스', 'NC 다이노스', 'SSG 랜더스', '자이언츠', '타이거즈', '라이온즈',
-    '히어로즈', '이글스', '트윈스', '다이노스', '랜더스', '베어스', 'Eagles', 'KIA', '두산',
-    '롯데', '삼성', '키움', '한화', 'KT', 'LG', 'NC', 'SSG', 'WIZ'
+    'KIA 타이거즈',
+    '두산 베어스',
+    '롯데 자이언츠',
+    '삼성 라이온즈',
+    '키움 히어로즈',
+    '한화 이글스',
+    'KT WIZ',
+    'LG 트윈스',
+    'NC 다이노스',
+    'SSG 랜더스',
+    '자이언츠',
+    '타이거즈',
+    '라이온즈',
+    '히어로즈',
+    '이글스',
+    '트윈스',
+    '다이노스',
+    '랜더스',
+    '베어스',
+    'Eagles',
+    'KIA',
+    '두산',
+    '롯데',
+    '삼성',
+    '키움',
+    '한화',
+    'KT',
+    'LG',
+    'NC',
+    'SSG',
+    'WIZ',
   ];
 
   @override
@@ -105,7 +133,6 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
     // 이 상태에서는 시스템이 팝업 띄우고 있을 수 있음 → 아무것도 하지 않음
   }
 
-
   Future<void> _initializeCameraIfNeeded() async {
     final hasPermission = await _requestCameraPermission();
     if (!hasPermission) return;
@@ -130,9 +157,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
     } catch (e) {
       print('카메라 초기화 실패: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('카메라 초기화 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('카메라 초기화 실패: $e')));
       }
     }
   }
@@ -149,7 +176,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
   Future<void> _onGalleryButtonPressed() async {
     final picker = ImagePicker();
     final XFile? pickedFile = await picker.pickImage(
-        source: ImageSource.gallery);
+      source: ImageSource.gallery,
+    );
     if (pickedFile == null) return;
 
     if (!mounted) return;
@@ -183,7 +211,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
   void _showCustomPermissionDialog() {
     showDialog(
       context: context,
-      builder: (context) =>
+      builder:
+          (context) =>
           CustomPopupDialog(
             imageAsset: AppImages.icAlert,
             title: '현재 카메라 사용에 대한\n접근 권한이 없어요',
@@ -194,7 +223,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => const TicketInfoScreen(imagePath: '')),
+                  builder: (_) => const TicketInfoScreen(imagePath: ''),
+                ),
               );
             },
             secondButtonText: '설정으로 이동',
@@ -210,7 +240,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) =>
+      builder:
+          (context) =>
           CustomPopupDialog(
             imageAsset: AppImages.icAlert,
             title: '티켓 속 정보를\n인식하지 못했어요',
@@ -220,11 +251,14 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
               Navigator.pop(context); // 팝업 닫기
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) =>
-                    TicketInfoScreen(
-                      imagePath: imagePath,
-                      skipOcrFailPopup: true,
-                    )),
+                MaterialPageRoute(
+                  builder:
+                      (_) =>
+                      TicketInfoScreen(
+                        imagePath: imagePath,
+                        skipOcrFailPopup: true,
+                      ),
+                ),
               );
             },
             secondButtonText: '다시 촬영하기',
@@ -236,15 +270,18 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
   }
 
   Future<ExtractedTicketInfo> extractTicketInfoFromImage(
-      String imagePath) async {
+      String imagePath,) async {
     final inputImage = InputImage.fromFilePath(imagePath);
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
     final recognizedText = await textRecognizer.processImage(inputImage);
-    final cleanedText = recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ')
-        .trim();
+    final cleanedText =
+    recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ').trim();
 
     final awayTeam = extractAwayTeam(
-        cleanedText, teamToCorpMap, teamKeywordsList);
+      cleanedText,
+      teamToCorpMap,
+      teamKeywordsList,
+    );
     final date = extractDate(cleanedText);
     final time = extractTime(cleanedText);
 
@@ -278,7 +315,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) =>
+            builder:
+                (_) =>
                 TicketInfoScreen(
                   imagePath: file.path,
                   preExtractedAwayTeam: extracted.awayTeam,
@@ -290,9 +328,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('촬영 오류: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('촬영 오류: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -301,39 +339,24 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
-    final statusBarHeight = MediaQuery
-        .of(context)
-        .padding
-        .top;
-    final bottomPadding = MediaQuery
-        .of(context)
-        .padding
-        .bottom;
-    final screenHeight = MediaQuery
-        .of(context)
-        .size
-        .height;
-    const baseScreenHeight = 800;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    final imageHeight = screenHeight * 475 / baseScreenHeight;
-    final extraCameraHeight = 20.h;
-
-    final whitePanelTop = statusBarHeight + imageHeight;
-    final whitePanelHeight = screenHeight - whitePanelTop;
-    final navBarHeight = screenHeight * 86 / baseScreenHeight;
-    final navBarTopInWhite = whitePanelHeight - navBarHeight - bottomPadding;
+    // 기존 비율 계산 (470/800 = 0.5875, 약 58.75%)
+    const imageHeightRatio = 470 / 800;
 
     return Scaffold(
+      backgroundColor: AppColors.gray400,
       body: Stack(
         children: [
-          Container(color: AppColors.gray400),
-          if (_isCameraInitialized && _cameraController.value.isInitialized &&
+          // 카메라 배경 - 흰색 모서리까지 살짝 확장 (원래 높이 + 20.h)
+          if (_isCameraInitialized &&
+              _cameraController.value.isInitialized &&
               _cameraController.value.previewSize != null)
             Positioned(
-              top: statusBarHeight,
+              top: 0,
               left: 0,
               right: 0,
-              height: imageHeight + extraCameraHeight,
+              height: (screenHeight * imageHeightRatio) + 20.h,
               child: ClipRect(
                 child: OverflowBox(
                   alignment: Alignment.center,
@@ -348,106 +371,164 @@ class _TicketOcrScreenState extends State<TicketOcrScreen> with WidgetsBindingOb
                 ),
               ),
             ),
-          Positioned(
-            top: screenHeight * 55 / baseScreenHeight,
-            left: 24.w,
-            child: SvgPicture.asset(
-                AppImages.icCornerTopLeft, width: 24.h, height: 24.h),
-          ),
-          Positioned(
-            top: screenHeight * 55 / baseScreenHeight,
-            right: 24.w,
-            child: SvgPicture.asset(
-                AppImages.icCornerTopRight, width: 24.h, height: 24.h),
-          ),
-          Positioned(
-            top: statusBarHeight + screenHeight * 430 / baseScreenHeight,
-            left: 24.w,
-            child: SvgPicture.asset(
-                AppImages.icCornerBottomLeft, width: 24.h, height: 24.h),
-          ),
-          Positioned(
-            top: statusBarHeight + screenHeight * 430 / baseScreenHeight,
-            right: 24.w,
-            child: SvgPicture.asset(
-                AppImages.icCornerBottomRight, width: 24.h, height: 24.h),
-          ),
-          Positioned(
-            top: whitePanelTop,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20)),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: screenHeight * 33 / baseScreenHeight,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: FixedText('티켓을 스캔해 주세요',
-                          style: AppFonts.h4_b(context).copyWith(
-                              color: Colors.black)),
-                    ),
-                  ),
-                  Positioned(
-                    top: screenHeight * 72 / baseScreenHeight,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: FixedText(
-                        '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
-                        style: AppFonts.b3_r(context).copyWith(
-                            color: AppColors.gray300),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: screenHeight * 132 / baseScreenHeight,
-                    left: 48,
-                    child: GestureDetector(
-                      onTap: _onGalleryButtonPressed,
-                      child: SvgPicture.asset(
-                        AppImages.solar_gallery,
-                        width: 36.w,
-                        height: 36.w,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: screenHeight * 110 / baseScreenHeight,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: GestureDetector(
-                        onTap: _isLoading ? null : _onCameraButtonPressed,
-                        child: Container(
-                          width: 80.h,
-                          height: 80.h,
-                          decoration: const BoxDecoration(
-                            color: AppColors.gray700,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: SvgPicture.asset(
-                              AppImages.camera,
-                              width: 48.h,
-                              height: 48.h,
-                              color: AppColors.gray20,
+
+          // Column 기반 레이아웃
+          Column(
+            children: [
+              // 카메라 영역 - 기존 비율 유지 (58.75%)
+              SizedBox(
+                height: screenHeight * imageHeightRatio,
+                child: Stack(
+                  children: [
+                    // 스캔 가이드 - Positioned 없이 Column 기반
+                    SafeArea(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(20.w, 15.h, 20.w, 15.h),
+                        child: Column(
+                          children: [
+                            // 상단 코너들
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SvgPicture.asset(
+                                  AppImages.icCornerTopLeft,
+                                  width: 24.w,
+                                  height: 24.h,
+                                ),
+                                SvgPicture.asset(
+                                  AppImages.icCornerTopRight,
+                                  width: 24.w,
+                                  height: 24.h,
+                                ),
+                              ],
                             ),
-                          ),
+
+                            // 중간 여백 (자동으로 늘어남)
+                            const Expanded(child: SizedBox()),
+
+                            // 하단 코너들
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SvgPicture.asset(
+                                  AppImages.icCornerBottomLeft,
+                                  width: 24.w,
+                                  height: 24.h,
+                                ),
+                                SvgPicture.asset(
+                                  AppImages.icCornerBottomRight,
+                                  width: 24.w,
+                                  height: 24.h,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+
+              // 하단 컨트롤 영역 - 나머지 공간 (약 41.25%)
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 30.h),
+
+                      // 메인 타이틀
+                      FixedText(
+                        '티켓을 스캔해 주세요',
+                        style: AppFonts.h4_b(context).copyWith(
+                          color: Colors.black,
+                        ),
+                      ),
+
+                      SizedBox(height: 15.h),
+
+                      // 서브타이틀
+                      FixedText(
+                        '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
+                        style: AppFonts.b3_r(context).copyWith(
+                          color: AppColors.gray300,
+                        ),
+                      ),
+
+                      SizedBox(height: 25.h),
+
+                      // 버튼 영역 - 완전 반응형으로 변경
+                      SizedBox(
+                        height: 80.h,
+                        child: Row(
+                          children: [
+                            // 갤러리 버튼 영역
+                            Expanded(
+                              child: Center(
+                                child: GestureDetector(
+                                  onTap: _onGalleryButtonPressed,
+                                  child: SvgPicture.asset(
+                                    AppImages.solar_gallery,
+                                    width: 36.w,
+                                    height: 36.w,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // 카메라 촬영 버튼 (중앙)
+                            GestureDetector(
+                              onTap: _isLoading ? null : _onCameraButtonPressed,
+                              child: Container(
+                                width: 80.h,
+                                height: 80.h,
+                                decoration: BoxDecoration(
+                                  color: _isLoading
+                                      ? AppColors.gray300
+                                      : AppColors.gray700,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: _isLoading
+                                      ? SizedBox(
+                                    width: 24.w,
+                                    height: 24.w,
+                                    child: const CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                      : SvgPicture.asset(
+                                    AppImages.camera,
+                                    width: 48.h,
+                                    height: 48.h,
+                                    color: AppColors.gray20,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // 오른쪽 여백 (대칭을 위해)
+                            const Expanded(child: SizedBox()),
+                          ],
+                        ),
+                      ),
+
+                      // 남은 공간
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

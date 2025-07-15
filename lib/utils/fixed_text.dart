@@ -25,7 +25,7 @@ class FixedText extends StatelessWidget {
       textAlign: textAlign,
       maxLines: maxLines,
       overflow: overflow,
-      textScaleFactor: 1.0, // ✅ 핵심: 시스템 폰트 크기 무시
+      textScaler: TextScaler.linear(1.0), // 새로운 API 사용 (textScaleFactor 대신)
     );
   }
 }

@@ -6,14 +6,18 @@ class AppImages {
   static const logo_large = 'assets/imgs/logo_large.svg';
 
   // 온보딩 그래픽
-  static const loginOnboarding1 = 'assets/imgs/login_onboarding1.jpg';
-  static const loginOnboarding2 = 'assets/imgs/login_onboarding2.jpg';
-  static const loginOnboarding3 = 'assets/imgs/login_onboarding3.jpg';
+  static const loginOnboarding1 = 'assets/imgs/onboarding_1.png';
+  static const loginOnboarding2 = 'assets/imgs/onboarding_2.png';
+  static const loginOnboarding3 = 'assets/imgs/onboarding_3.png';
 
   // 카카오
   static const kakaobrown = 'assets/imgs/ic_kakao_kakaobrown_28.svg';
   static const backBlack = 'assets/imgs/ic_back_black_24.svg';
   static const dropdownBlack = 'assets/imgs/ic_dropdown_black.svg';
+
+  // 완료 에셋
+  static const complete = 'assets/imgs/img_complete.png';
+  static const ticket = 'assets/imgs/ic_ticket.svg';
 
   // 야구팀 로고
   static const bears = 'assets/imgs/img_doosan.png';

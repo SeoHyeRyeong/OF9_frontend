@@ -75,8 +75,8 @@ class CustomBottomNavBar extends StatelessWidget {
       top: false,
       child: Container(
         width: double.infinity,
-        height: 86.h,
-        padding: EdgeInsets.fromLTRB(32, 15, 32, 15),
+        height: 75.h,
+        padding: EdgeInsets.fromLTRB(32, 8, 32, 9),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(

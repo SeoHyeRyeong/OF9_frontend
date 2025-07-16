@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_imgs.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/upload/ticket_info_screen.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -117,7 +118,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _checkPermissionOnly(); // request() 하지 않음
+      _checkPermissionOnly();
     }
   }
 
@@ -129,8 +130,6 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         _initializeCameraIfNeeded();
       }
     }
-
-    // 이 상태에서는 시스템이 팝업 띄우고 있을 수 있음 → 아무것도 하지 않음
   }
 
   Future<void> _initializeCameraIfNeeded() async {
@@ -157,9 +156,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     } catch (e) {
       print('카메라 초기화 실패: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('카메라 초기화 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('카메라 초기화 실패: $e')),
+        );
       }
     }
   }
@@ -181,10 +180,14 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     if (pickedFile == null) return;
 
     if (!mounted) return;
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => TicketInfoScreen(imagePath: pickedFile.path),
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => TicketInfoScreen(
+          imagePath: pickedFile.path,
+        ),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
       ),
     );
   }
@@ -200,19 +203,16 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     final status = await Permission.camera.status;
 
     if (status.isPermanentlyDenied) {
-      // '허용 안함' 눌렀을 때만 커스텀 다이얼로그 표시
-      _showCustomPermissionDialog();
+      _showCustomPermissionDialog(); // '허용 안함' 눌렀을 때만 커스텀 다이얼로그 표시
     }
 
-    // denied 또는 restricted일 경우 false 리턴 (다음 시도 가능)
-    return false;
+    return false; // denied 또는 restricted일 경우 false 리턴 (다음 시도 가능)
   }
 
   void _showCustomPermissionDialog() {
     showDialog(
       context: context,
-      builder:
-          (context) =>
+      builder: (context) =>
           CustomPopupDialog(
             imageAsset: AppImages.icAlert,
             title: '현재 카메라 사용에 대한\n접근 권한이 없어요',
@@ -220,10 +220,12 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
             firstButtonText: '직접 입력',
             firstButtonAction: () {
               Navigator.pop(context);
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const TicketInfoScreen(imagePath: ''),
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const TicketInfoScreen(imagePath: ''),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
                 ),
               );
             },
@@ -240,42 +242,41 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) =>
+      builder: (context) =>
           CustomPopupDialog(
             imageAsset: AppImages.icAlert,
             title: '티켓 속 정보를\n인식하지 못했어요',
             subtitle: '다시 촬영하거나 정보를 직접 입력해 주세요',
             firstButtonText: '직접 입력',
             firstButtonAction: () {
-              Navigator.pop(context); // 팝업 닫기
-              Navigator.push(
+              Navigator.pop(context);
+              Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder:
-                      (_) =>
-                      TicketInfoScreen(
-                        imagePath: imagePath,
-                        skipOcrFailPopup: true,
-                      ),
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => TicketInfoScreen(
+                    imagePath: imagePath,
+                    skipOcrFailPopup: true,
+                  ),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
                 ),
               );
             },
             secondButtonText: '다시 촬영하기',
             secondButtonAction: () {
-              Navigator.pop(context); // 팝업만 닫고 재촬영 가능
+              Navigator.pop(context);
             },
           ),
     );
   }
 
   Future<ExtractedTicketInfo> extractTicketInfoFromImage(
-      String imagePath,) async {
+      String imagePath) async {
     final inputImage = InputImage.fromFilePath(imagePath);
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
     final recognizedText = await textRecognizer.processImage(inputImage);
-    final cleanedText =
-    recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ').trim();
+    final cleanedText = recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ')
+        .trim();
 
     final awayTeam = extractAwayTeam(
       cleanedText,
@@ -314,23 +315,24 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       } else {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder:
-                (_) =>
+          PageRouteBuilder(
+            pageBuilder: (context, animation1, animation2) =>
                 TicketInfoScreen(
                   imagePath: file.path,
                   preExtractedAwayTeam: extracted.awayTeam,
                   preExtractedDate: extracted.date,
                   preExtractedTime: extracted.time,
                 ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('촬영 오류: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('촬영 오류: $e')),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -339,51 +341,48 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    // 기존 비율 계산 (470/800 = 0.5875, 약 58.75%)
-    const imageHeightRatio = 470 / 800;
-
     return Scaffold(
       backgroundColor: AppColors.gray400,
-      body: Stack(
-        children: [
-          // 카메라 배경 - 흰색 모서리까지 살짝 확장 (원래 높이 + 20.h)
-          if (_isCameraInitialized &&
-              _cameraController.value.isInitialized &&
-              _cameraController.value.previewSize != null)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: (screenHeight * imageHeightRatio) + 20.h,
-              child: ClipRect(
-                child: OverflowBox(
-                  alignment: Alignment.center,
-                  child: FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: _cameraController.value.previewSize!.height,
-                      height: _cameraController.value.previewSize!.width,
-                      child: CameraPreview(_cameraController),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenHeight = constraints.maxHeight;
+
+          return Stack(
+            children: [
+              // 카메라 배경 - 하단 흰색 영역까지 확장
+              if (_isCameraInitialized &&
+                  _cameraController.value.isInitialized &&
+                  _cameraController.value.previewSize != null)
+                Container(
+                  height: (screenHeight * 0.696) + scaleHeight(20),
+                  width: double.infinity,
+                  child: ClipRect(
+                    child: OverflowBox(
+                      alignment: Alignment.center,
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: _cameraController.value.previewSize!.height,
+                          height: _cameraController.value.previewSize!.width,
+                          child: CameraPreview(_cameraController),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-          // Column 기반 레이아웃
-          Column(
-            children: [
-              // 카메라 영역 - 기존 비율 유지 (58.75%)
-              SizedBox(
-                height: screenHeight * imageHeightRatio,
-                child: Stack(
-                  children: [
-                    // 스캔 가이드 - Positioned 없이 Column 기반
-                    SafeArea(
+              // Column 기반 UI 레이아웃
+              Column(
+                children: [
+                  // 카메라 영역 - 스캔 가이드
+                  Container(
+                    height: screenHeight * 0.696,
+                    child: SafeArea(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(20.w, 15.h, 20.w, 15.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: scaleWidth(20),
+                          vertical: scaleHeight(15),
+                        ),
                         child: Column(
                           children: [
                             // 상단 코너들
@@ -392,18 +391,17 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                               children: [
                                 SvgPicture.asset(
                                   AppImages.icCornerTopLeft,
-                                  width: 24.w,
-                                  height: 24.h,
+                                  width: scaleWidth(24),
+                                  height: scaleHeight(24),
                                 ),
                                 SvgPicture.asset(
                                   AppImages.icCornerTopRight,
-                                  width: 24.w,
-                                  height: 24.h,
+                                  width: scaleWidth(24),
+                                  height: scaleHeight(24),
                                 ),
                               ],
                             ),
 
-                            // 중간 여백 (자동으로 늘어남)
                             const Expanded(child: SizedBox()),
 
                             // 하단 코너들
@@ -412,13 +410,13 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                               children: [
                                 SvgPicture.asset(
                                   AppImages.icCornerBottomLeft,
-                                  width: 24.w,
-                                  height: 24.h,
+                                  width: scaleWidth(24),
+                                  height: scaleHeight(24),
                                 ),
                                 SvgPicture.asset(
                                   AppImages.icCornerBottomRight,
-                                  width: 24.w,
-                                  height: 24.h,
+                                  width: scaleWidth(24),
+                                  height: scaleHeight(24),
                                 ),
                               ],
                             ),
@@ -426,115 +424,121 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // 하단 컨트롤 영역 - 나머지 공간 (약 41.25%)
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
+                  // 하단 컨트롤 영역
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        child: LayoutBuilder(
+                          builder: (context, contentConstraints) {
+                            return Column(
+                              children: [
+                                const Spacer(flex: 50),
+
+                                // 메인 타이틀
+                                FixedText(
+                                  '티켓을 스캔해 주세요',
+                                  style: AppFonts.h4_b(context).copyWith(
+                                    color: Colors.black,
+                                  ),
+                                ),
+
+                                const Spacer(flex: 25),
+
+                                // 서브타이틀
+                                FixedText(
+                                  '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
+                                  style: AppFonts.b3_r(context).copyWith(
+                                    color: AppColors.gray300,
+                                  ),
+                                ),
+
+                                const Spacer(flex: 40),
+
+                                // 버튼 영역
+                                SizedBox(
+                                  height: scaleHeight(80),
+                                  child: Row(
+                                    children: [
+                                      // 갤러리 버튼
+                                      Expanded(
+                                        child: Center(
+                                          child: GestureDetector(
+                                            onTap: _onGalleryButtonPressed,
+                                            child: SvgPicture.asset(
+                                              AppImages.solar_gallery,
+                                              width: scaleWidth(36),
+                                              height: scaleWidth(36),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      // 카메라 촬영 버튼
+                                      GestureDetector(
+                                        onTap: _isLoading
+                                            ? null
+                                            : _onCameraButtonPressed,
+                                        child: Container(
+                                          width: scaleHeight(80),
+                                          height: scaleHeight(80),
+                                          decoration: BoxDecoration(
+                                            color: _isLoading
+                                                ? AppColors.gray300
+                                                : AppColors.gray700,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Center(
+                                            child: _isLoading
+                                                ? SizedBox(
+                                              width: scaleWidth(24),
+                                              height: scaleWidth(24),
+                                              child: const CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                                : SvgPicture.asset(
+                                              AppImages.camera,
+                                              width: scaleHeight(48),
+                                              height: scaleHeight(48),
+                                              color: AppColors.gray20,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      // 오른쪽 여백
+                                      const Expanded(child: SizedBox()),
+                                    ],
+                                  ),
+                                ),
+
+                                const Spacer(flex: 35),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 30.h),
-
-                      // 메인 타이틀
-                      FixedText(
-                        '티켓을 스캔해 주세요',
-                        style: AppFonts.h4_b(context).copyWith(
-                          color: Colors.black,
-                        ),
-                      ),
-
-                      SizedBox(height: 15.h),
-
-                      // 서브타이틀
-                      FixedText(
-                        '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
-                        style: AppFonts.b3_r(context).copyWith(
-                          color: AppColors.gray300,
-                        ),
-                      ),
-
-                      SizedBox(height: 25.h),
-
-                      // 버튼 영역 - 완전 반응형으로 변경
-                      SizedBox(
-                        height: 80.h,
-                        child: Row(
-                          children: [
-                            // 갤러리 버튼 영역
-                            Expanded(
-                              child: Center(
-                                child: GestureDetector(
-                                  onTap: _onGalleryButtonPressed,
-                                  child: SvgPicture.asset(
-                                    AppImages.solar_gallery,
-                                    width: 36.w,
-                                    height: 36.w,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 카메라 촬영 버튼 (중앙)
-                            GestureDetector(
-                              onTap: _isLoading ? null : _onCameraButtonPressed,
-                              child: Container(
-                                width: 80.h,
-                                height: 80.h,
-                                decoration: BoxDecoration(
-                                  color: _isLoading
-                                      ? AppColors.gray300
-                                      : AppColors.gray700,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: _isLoading
-                                      ? SizedBox(
-                                    width: 24.w,
-                                    height: 24.w,
-                                    child: const CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                      : SvgPicture.asset(
-                                    AppImages.camera,
-                                    width: 48.h,
-                                    height: 48.h,
-                                    color: AppColors.gray20,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 오른쪽 여백 (대칭을 위해)
-                            const Expanded(child: SizedBox()),
-                          ],
-                        ),
-                      ),
-
-                      // 남은 공간
-                      const Spacer(),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: 2,
-      ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
     );
   }
 }

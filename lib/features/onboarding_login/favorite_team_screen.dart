@@ -35,214 +35,215 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
 
   final kakaoAuthService = KakaoAuthService();
 
+  Future<void> _handleComplete() async {
+    final success = await kakaoAuthService.loginAndStoreTokens(_selectedTeam!);
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => const SignupCompleteScreen(),
+          transitionDuration: Duration.zero, // 전환 애니메이션 제거
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('로그인 실패')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height; // 전체 화면 높이 가져오기
-    final statusBarHeight = MediaQuery.of(context).padding.top; // 상태바 높이 가져오기
-    final baseScreenHeight = 800;
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
-          children: [
-            // 뒤로가기 버튼
-            Positioned(
-              top: (screenHeight * (46 / baseScreenHeight)) - statusBarHeight,
-              left: 0,
-              right: 0,
-              child: SizedBox(
-                width: 360.w,
-                height: screenHeight * (60 / baseScreenHeight),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: screenHeight * (18 / baseScreenHeight),
-                      left: 20.w,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginScreen()),
-                          );
-                        },
-                        child: SvgPicture.asset(
-                          AppImages.backBlack,
-                          width: 24.h,
-                          height: 24.h,
-                          fit: BoxFit.contain,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = constraints.maxHeight;
+
+            return Column(
+              children: [
+                // 뒤로가기 영역 - 전체 높이의 7.5% (60/800)
+                SizedBox(
+                  height: screenHeight * 0.075,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(top: screenHeight * 0.0225), // 18/800
+                          child: GestureDetector(
+                            onTap: () => Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            ),
+                            child: SvgPicture.asset(
+                              AppImages.backBlack,
+                              width: scaleHeight(24),
+                              height: scaleHeight(24),
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            // "최애 구단 선택" 텍스트
-            Positioned(
-              top: (screenHeight * (130 / baseScreenHeight)) - statusBarHeight,
-              left: 20.w,
-              child: FixedText(
-                '최애 구단 선택',
-                style: AppFonts.h1_b(context).copyWith(color: Colors.black),
-              ),
-            ),
-
-            // "나중에 마이페이지에서 변경 가능해요" 텍스트
-            Positioned(
-              top: (screenHeight * (174 / baseScreenHeight)) - statusBarHeight,
-              left: 20.w,
-              child: FixedText(
-                '나중에 마이페이지에서 변경 가능해요',
-                style: AppFonts.b2_m(context).copyWith(color: AppColors.gray300),
-              ),
-            ),
-
-            // 구단 선택 그리드
-            Positioned(
-              top: (screenHeight * (202 / baseScreenHeight)) - statusBarHeight,
-              left: 0,
-              right: 0,
-              bottom: (screenHeight * (88 / baseScreenHeight)) + (screenHeight * (24 / baseScreenHeight)),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: GridView.builder(
-                  padding: EdgeInsets.only(top: screenHeight * (20 / baseScreenHeight), bottom: screenHeight * (32 / baseScreenHeight)),
-                  itemCount: _teams.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 8.w,
-                    mainAxisSpacing: screenHeight * (8 / baseScreenHeight),
-                    childAspectRatio: 1.2,
                   ),
-                  itemBuilder: (context, index) {
-                    final team = _teams[index];
-                    final isSelected = _selectedTeam == team['name'];
+                ),
 
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (_selectedTeam == team['name']) {
-                            _selectedTeam = null;
-                          } else {
-                            _selectedTeam = team['name'];
-                          }
-                        });
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.gray50,
-                          border: isSelected
-                              ? Border.all(color: AppColors.pri300, width: 3.w)
-                              : Border.all(color: AppColors.gray50, width: 1.w),
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Stack(
-                          children: [
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    team['image']!,
-                                    width: 60.h,
-                                    height: 60.h,
-                                  ),
-                                  SizedBox(height: screenHeight * (8 / baseScreenHeight)),
-                                  FixedText(
-                                    team['name']!,
-                                    style: AppFonts.b2_b(context).copyWith(
-                                        color: AppColors.gray900),
-                                  ),
-                                ],
+                // 콘텐츠 영역 - 나머지 92.5%
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, contentConstraints) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Spacer(flex: 36),
+
+                          // 제목
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                            child: FixedText(
+                              '최애 구단 선택',
+                              style: AppFonts.h1_b(context).copyWith(color: Colors.black),
+                            ),
+                          ),
+
+                          const Spacer(flex: 18),
+
+                          // 서브타이틀
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                            child: FixedText(
+                              '나중에 마이페이지에서 변경 가능해요',
+                              style: AppFonts.b2_m(context).copyWith(color: AppColors.gray300),
+                            ),
+                          ),
+
+                          const Spacer(flex: 16),
+
+                          // 그리드 영역
+                          Expanded(
+                            flex: 520,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                              child: GridView.builder(
+                                padding: EdgeInsets.only(
+                                  top: screenHeight * 0.02,
+                                  bottom: screenHeight * 0.02,
+                                ),
+                                itemCount: _teams.length,
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: scaleWidth(8),
+                                  mainAxisSpacing: screenHeight * 0.01,
+                                  childAspectRatio: 1.2,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final team = _teams[index];
+                                  final isSelected = _selectedTeam == team['name'];
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        if (_selectedTeam == team['name']) {
+                                          _selectedTeam = null;
+                                        } else {
+                                          _selectedTeam = team['name'];
+                                        }
+                                      });
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: AppColors.gray50,
+                                        border: isSelected
+                                            ? Border.all(color: AppColors.pri300, width: scaleWidth(3))
+                                            : Border.all(color: AppColors.gray50, width: scaleWidth(1)),
+                                        borderRadius: BorderRadius.circular(scaleHeight(12)),
+                                      ),
+                                      child: Stack(
+                                        children: [
+                                          Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Image.asset(
+                                                  team['image']!,
+                                                  width: scaleHeight(60),
+                                                  height: scaleHeight(60),
+                                                ),
+                                                SizedBox(height: screenHeight * 0.01),
+                                                FixedText(
+                                                  team['name']!,
+                                                  style: AppFonts.b2_b(context).copyWith(
+                                                      color: AppColors.gray900),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (isSelected)
+                                            Positioned(
+                                              top: scaleHeight(16),
+                                              left: scaleHeight(16),
+                                              child: Icon(
+                                                Icons.check_circle,
+                                                color: AppColors.pri300,
+                                                size: scaleWidth(24),
+                                              ),
+                                            ),
+                                          if (!isSelected && _selectedTeam != null)
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                color: AppColors.gray50.withOpacity(0.5),
+                                                borderRadius: BorderRadius.circular(scaleHeight(12)),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                            if (isSelected)
-                              Positioned(
-                                top: 16.h,
-                                left: 16.h,
-                                child: Icon(
-                                  Icons.check_circle,
-                                  color: AppColors.pri300,
-                                  size: 24.w,
+                          ),
+
+                          const Spacer(flex: 24),
+
+                          // 완료 버튼
+                          Center(
+                            child: SizedBox(
+                              width: scaleWidth(320),
+                              height: scaleHeight(54),
+                              child: ElevatedButton(
+                                onPressed: _selectedTeam != null ? _handleComplete : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _selectedTeam != null
+                                      ? AppColors.gray700
+                                      : AppColors.gray200,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                  ),
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
+                                ),
+                                child: FixedText(
+                                  '완료',
+                                  style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
                                 ),
                               ),
-                            if (!isSelected && _selectedTeam != null)
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.gray50.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(12.r),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
+                            ),
+                          ),
 
-
-            // 완료 버튼
-            Positioned(
-              top: (screenHeight * (688 / baseScreenHeight)) - statusBarHeight,
-              left: 0,
-              right: 0,
-              child: Container(
-                color: Colors.white,
-                width: 360.w,
-                height: screenHeight * (88 / baseScreenHeight),
-                padding: EdgeInsets.only(
-                  top: screenHeight * (24 / baseScreenHeight),
-                  left: 20.w,
-                  right: 20.w,
-                  bottom: screenHeight * (10 / baseScreenHeight),
-                ),
-                child: Center(
-                  child: SizedBox(
-                    width: 320.w,
-                    height: screenHeight * (54 / baseScreenHeight),
-                    child: ElevatedButton(
-                      onPressed: _selectedTeam != null
-                          ? () async {
-                        final success = await kakaoAuthService
-                            .loginAndStoreTokens(_selectedTeam!);
-                        if (success) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (
-                                context) => const SignupCompleteScreen()),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('로그인 실패')),
-                          );
-                        }
-                      }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedTeam != null ? AppColors
-                            .gray700 : AppColors.gray200,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        elevation: 0,
-                        padding: EdgeInsets.symmetric(horizontal: 18.w),
-                      ),
-                      child: FixedText(
-                        '완료',
-                        style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
-                      ),
-                    ),
+                          const Spacer(flex: 33),
+                        ],
+                      );
+                    },
                   ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );

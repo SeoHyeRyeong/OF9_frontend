@@ -13,91 +13,91 @@ class SignupCompleteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height; // 전체 화면 높이 가져오기
-    final statusBarHeight = MediaQuery.of(context).padding.top; // 상태바 높이 가져오기
-    final baseScreenHeight = 800; // 디자인 기준 높이
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
-          children: [
-            // 회원가입 완료 텍스트
-            Positioned(
-              top: (screenHeight * (182 / baseScreenHeight)) - statusBarHeight,
-              left: 0,
-              right: 0,
-              child: FixedText(
-                '회원가입을 완료했어요!',
-                style: AppFonts.h1_b(context).copyWith(color: Colors.black),
-                textAlign: TextAlign.center,
-              ),
-            ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = constraints.maxHeight;
 
-            // 서브 텍스트
-            Positioned(
-              top: (screenHeight * (226 / baseScreenHeight)) - statusBarHeight,
-              left: 0,
-              right: 0,
-              child: FixedText(
-                '지금부터 당신의 야구 이야기를 기록해 보세요',
-                style: AppFonts.b2_m_long(context).copyWith(color: AppColors.gray300),
-                textAlign: TextAlign.center,
-              ),
-            ),
+            return Column(
+              children: [
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, contentConstraints) {
+                      return Column(
+                        children: [
+                          const Spacer(flex: 238),
 
-            // 축하 에셋
-            Positioned(
-              top: (screenHeight * (310 / baseScreenHeight)) - statusBarHeight,
-              left: (ScreenUtil().screenWidth - 240.h) / 2 - 10.w, // 가운데 정렬
-              child: Image.asset(
-                AppImages.complete,
-                width: 260.h,
-                height: 260.h,
-                fit: BoxFit.cover, // 또는 BoxFit.contain
-              ),
-            ),
-
-            // 완료 버튼 영역
-            Positioned(
-              top: (screenHeight * (688 / baseScreenHeight)) - statusBarHeight, // 10px bottom padding
-              left: 20.w,
-              right: 20.w,
-              child: SizedBox(
-                width: 320.w,
-                height: 88.h,
-                child: Column(
-                  children: [
-                    SizedBox(height: 24.h),
-                    SizedBox(
-                      width: 320.w,
-                      height: 54.h,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => const FeedScreen()),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.gray700,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
+                          FixedText(
+                            '회원가입을 완료했어요!',
+                            style: AppFonts.h1_b(context).copyWith(color: Colors.black),
+                            textAlign: TextAlign.center,
                           ),
-                          padding: EdgeInsets.symmetric(horizontal: 18.w),
-                          elevation: 0,
-                        ),
-                        child: FixedText(
-                          '완료',
-                          style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20,),
-                        ),
-                      ),
-                    ),
-                  ],
+
+                          const Spacer(flex: 30),
+
+                          // 서브 텍스트
+                          FixedText(
+                            '지금부터 당신의 야구 이야기를 기록해 보세요',
+                            style: AppFonts.b2_m_long(context).copyWith(color: AppColors.gray300),
+                            textAlign: TextAlign.center,
+                          ),
+
+                          const Spacer(flex: 85),
+
+                          // 축하 에셋
+                          Image.asset(
+                            AppImages.complete,
+                            width: scaleHeight(260),
+                            height: scaleHeight(260),
+                            fit: BoxFit.contain,
+                          ),
+
+                          const Spacer(flex: 244),
+
+                          // 완료 버튼
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                            child: SizedBox(
+                              width: scaleWidth(320),
+                              height: scaleHeight(54),
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation1, animation2) => const FeedScreen(),
+                                      transitionDuration: Duration.zero, // 전환 애니메이션 제거
+                                      reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션도 제거
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.gray700,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                  ),
+                                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
+                                  elevation: 0,
+                                ),
+                                child: FixedText(
+                                  '완료',
+                                  style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const Spacer(flex: 51),
+                        ],
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );

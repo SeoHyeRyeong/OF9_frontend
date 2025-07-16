@@ -71,7 +71,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const FavoriteTeamScreen()),
+        PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => const FavoriteTeamScreen(),
+          transitionDuration: Duration.zero, // 전환 애니메이션 제거
+          reverseTransitionDuration: Duration.zero,
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

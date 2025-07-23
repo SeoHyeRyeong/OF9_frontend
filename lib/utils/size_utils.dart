@@ -17,7 +17,7 @@ double scaleWidth(double baseWidth) {
 Map<String, double> calculateHeights({
   required double imageBaseHeight,
   required double contentBaseHeight,
-  double baseScreenHeight = 800, 
+  double baseScreenHeight = 800,
 }) {
   double screenHeight = ScreenUtil().screenHeight;
 

@@ -68,8 +68,8 @@ class SignupCompleteScreen extends StatelessWidget {
                                     context,
                                     PageRouteBuilder(
                                       pageBuilder: (context, animation1, animation2) => const FeedScreen(),
-                                      transitionDuration: Duration.zero, // 전환 애니메이션 제거
-                                      reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션도 제거
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
                                     ),
                                   );
                                 },

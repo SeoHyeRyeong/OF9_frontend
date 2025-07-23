@@ -8,9 +8,10 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/utils/fixed_text.dart';
+import 'package:frontend/utils/size_utils.dart';
 import '../../theme/app_imgs.dart';
 
-/// OCR 텍스트에서 날짜 파싱
+/// OCR텍스트에서 날짜 파싱
 DateTime? tryParseDateFromOcr(String rawText) {
   final regex = RegExp(r'(20\d{2})[년\-. ]+(\d{1,2})[월\-. ]+(\d{1,2})');
   final match = regex.firstMatch(rawText);
@@ -38,7 +39,7 @@ DateTime? tryParseDateFromOcr(String rawText) {
   return null;
 }
 
-/// 날짜를 요일 포함 형식으로 변환 (2025 - 04 - 15 (수) 형식)
+///날짜를 요일 포함 형식으로 변환 (2025 - 04 - 15 (수)형식)
 String formatDateWithWeekday(String dateStr, String timeStr) {
   try {
     // extractedDate가 "2025-04-15" 형식으로 온다고 가정
@@ -64,7 +65,7 @@ String formatDateWithWeekday(String dateStr, String timeStr) {
   return '$dateStr $timeStr'; // 실패시 원본 반환
 }
 
-/// 최근 맞대결 날짜 찾기
+///최근 맞대결 날짜 찾기
 DateTime? findRecentMatchDate({
   required List<GameResponse> games,
   required String home,
@@ -82,7 +83,7 @@ DateTime? findRecentMatchDate({
   return matched.last.date;
 }
 
-/// 가장 가까운 경기 날짜 찾기
+///가장 가까운 경기 날짜 찾기
 DateTime? findClosestGameDate(DateTime target, Iterable<DateTime> gameDates) {
   if (gameDates.isEmpty) return null;
   return gameDates.reduce(
@@ -90,7 +91,7 @@ DateTime? findClosestGameDate(DateTime target, Iterable<DateTime> gameDates) {
   );
 }
 
-/// 시간을 한국어 형식으로 변환 (14:00 -> 14시 00분)
+///시간을 한국어 형식으로 변환 (14:00 -> 14시 00분)
 String _formatTimeToKorean(String time) {
   final parts = time.split(':');
   if (parts.length >= 2) {
@@ -101,16 +102,13 @@ String _formatTimeToKorean(String time) {
   return time;
 }
 
-/// 날짜/시간 선택용 BottomSheet 표시
+///날짜/시간 선택용 BottomSheet표시
 Future<String?> showDateTimePicker({
   required BuildContext context,
   String? ocrDateText,
   String? homeTeam,  // fullname으로 받음
   String? opponentTeam,  // fullname으로 받음
 }) async {
-  final screenHeight = MediaQuery.of(context).size.height;
-  const baseH = 800.0;
-
   DateTime focused = DateTime.now();
   DateTime? selectedDay;
   TimeOfDay? selectedTime;
@@ -118,7 +116,7 @@ Future<String?> showDateTimePicker({
   int selectedGameIndex = 0; // 선택된 경기 인덱스 추가
   final events = <DateTime, List<GameResponse>>{};
 
-  /// 해당 달 이벤트 로드
+  ///해당 달 이벤트 로드
   Future<void> loadEvents(DateTime month) async {
     final from = DateTime(month.year, month.month, 1);
     final to = DateTime(month.year, month.month + 1, 0);
@@ -133,7 +131,7 @@ Future<String?> showDateTimePicker({
     }
   }
 
-  /// 선택된 날짜의 경기 시간 가져오기
+  ///선택된 날짜의 경기 시간 가져오기
   Future<void> loadMatchedGames(DateTime selectedDate) async {
     if (homeTeam == null || opponentTeam == null) {
       matchedGames = [];
@@ -235,530 +233,529 @@ Future<String?> showDateTimePicker({
   }
 
   return await showModalBottomSheet<String>(
-    context: Navigator.of(context).context,
+    context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (_) {
-      return Container(
-        width: 360.w,
-        height: screenHeight * (640 / baseH),
-        margin: EdgeInsets.only(top: screenHeight * (180 / baseH)),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-        ),
-        child: StatefulBuilder(
-          builder: (ctx, setState) {
-            // 초기 상태 설정 (OCR 날짜가 있으면 자동 선택)
-            if (initialSelectedDay != null && selectedDay == null) {
-              WidgetsBinding.instance.addPostFrameCallback((_) async {
-                selectedDay = initialSelectedDay;
-                await loadMatchedGames(selectedDay!);
-                setState(() {
-                  selectedGameIndex = 0;
-                });
-              });
-            }
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final screenHeight = constraints.maxHeight; //실제 사용 가능 높이
 
-            // 달 이동
-            void changeMonth(int diff) async {
-              final newFocus = DateTime(focused.year, focused.month + diff, 1);
-              if (newFocus.isBefore(firstDay) || newFocus.isAfter(lastDay)) return;
-              focused = newFocus;
-              await loadEvents(focused);
-              setState(() {
-                selectedDay = null;
-                selectedTime = null;
-                matchedGames = [];
-                selectedGameIndex = 0; // 초기화 추가
-              });
-            }
+          return Container(
+            width: double.infinity,
+            height: screenHeight * 0.775,
+            margin: EdgeInsets.only(top: screenHeight * 0.2),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(scaleHeight(20)),
+              ),
+            ),
+            child: StatefulBuilder(
+              builder: (ctx, setState) {
+                // 초기 상태 설정
+                if (initialSelectedDay != null && selectedDay == null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    selectedDay = initialSelectedDay;
+                    await loadMatchedGames(selectedDay!);
+                    setState(() {
+                      selectedGameIndex = 0;
+                    });
+                  });
+                }
 
-            // 현재 달의 주 수 계산 (5주 또는 6주)
-            final firstOfMonth = DateTime(focused.year, focused.month, 1);
-            final lastOfMonth = DateTime(focused.year, focused.month + 1, 0);
-            final startOfCalendar = firstOfMonth.subtract(Duration(days: firstOfMonth.weekday % 7));
-            final endOfCalendar = lastOfMonth.add(Duration(days: (6 - lastOfMonth.weekday % 7) % 7));
-            final totalWeeks = (endOfCalendar.difference(startOfCalendar).inDays + 1) ~/ 7;
+                // 달 이동 함수
+                void changeMonth(int diff) async {
+                  final newFocus = DateTime(focused.year, focused.month + diff, 1);
+                  if (newFocus.isBefore(firstDay) || newFocus.isAfter(lastDay)) return;
+                  focused = newFocus;
+                  await loadEvents(focused);
+                  setState(() {
+                    selectedDay = null;
+                    selectedTime = null;
+                    matchedGames = [];
+                    selectedGameIndex = 0;
+                  });
+                }
 
-            // 원래대로 5주/6주에 따른 동적 크기 조정 유지
-            final is6Weeks = totalWeeks == 6;
-            final rowHeight = is6Weeks ? screenHeight * (45 / baseH) : screenHeight * (55 / baseH);
-            final cellSize = is6Weeks ? screenHeight * (36 / baseH) : screenHeight * (42 / baseH);
-            final selectedCircleSize = is6Weeks ? screenHeight * (28 / baseH) : screenHeight * (32 / baseH);
+                // 현재 달의 주 수 계산 (5주 또는 6주)
+                final firstOfMonth = DateTime(focused.year, focused.month, 1);
+                final lastOfMonth = DateTime(focused.year, focused.month + 1, 0);
+                final startOfCalendar = firstOfMonth.subtract(
+                    Duration(days: firstOfMonth.weekday % 7));
+                final endOfCalendar = lastOfMonth.add(
+                    Duration(days: (6 - lastOfMonth.weekday % 7) % 7));
+                final totalWeeks = (endOfCalendar.difference(startOfCalendar).inDays + 1) ~/ 7;
 
-            return Stack(
-              children: [
-                // 상단 헤더: 뒤로가기 + "일시"
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 60,
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        top: 18,
-                        left: 20.w,
-                        child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: SvgPicture.asset(
-                            AppImages.backBlack,
-                            width: 24,
-                            height: 24,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 22,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: FixedText('일시', style: AppFonts.b2_b(context)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // 5주/6주에 따른 동적 크기 조정
+                final is6Weeks = totalWeeks == 6;
+                final rowHeight = is6Weeks ? scaleHeight(42.5) : scaleHeight(51.5);
+                final cellSize = is6Weeks ? scaleHeight(36) : scaleHeight(42);
+                final selectedCircleSize = is6Weeks ? scaleHeight(28) : scaleHeight(32);
 
-                // 년/월 네비게이션
-                Positioned(
-                  top: 74,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      width: 142,
-                      height: 18,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                return SafeArea(
+                  top: false,
+                  child: LayoutBuilder(
+                    builder: (context, sheetConstraints) {
+                      return Column(
                         children: [
-                          GestureDetector(
-                            onTap: () => changeMonth(-1),
-                            child: Icon(
-                              Icons.chevron_left,
-                              size: 18,
-                              color: AppColors.gray400,
-                            ),
-                          ),
-                          FixedText(
-                            '${focused.year}년 ${focused.month}월',
-                            style: AppFonts.b1_sb(context).copyWith(color: Colors.black),
-                          ),
-                          GestureDetector(
-                            onTap: () => changeMonth(1),
-                            child: Icon(
-                              Icons.chevron_right,
-                              size: 18,
-                              color: AppColors.gray400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 달력 컨테이너
-                Positioned(
-                  top: 100,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      width: 320.w,
-                      height: is6Weeks ? 350 : 350,
-                      child: Column(
-                        children: [
-                          // 요일 헤더
+                          // 헤더 영역
                           Container(
-                            width: 320.w,
-                            height: 20,
-                            margin: EdgeInsets.only(top: screenHeight * (11 / baseH)),
-                            padding: EdgeInsets.symmetric(horizontal: screenHeight * (22 / baseH)),
+                            height: sheetConstraints.maxHeight * 0.1,
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                for (int i = 0; i < 7; i++)
-                                  FixedText(
-                                    const ['일', '월', '화', '수', '목', '금', '토'][i],
-                                    style: AppFonts.c1_r(context).copyWith(color: AppColors.gray300),
+                                // 뒤로가기 버튼
+                                Padding(
+                                  padding: EdgeInsets.only(left: scaleWidth(20)),
+                                  child: GestureDetector(
+                                    onTap: () => Navigator.pop(context),
+                                    child: SvgPicture.asset(
+                                      AppImages.backBlack,
+                                      width: scaleHeight(24),
+                                      height: scaleHeight(24),
+                                    ),
                                   ),
+                                ),
+
+                                // 중앙 제목
+                                Expanded(
+                                  child: Center(
+                                    child: FixedText(
+                                      '일시',
+                                      style: AppFonts.b2_b(context),
+                                    ),
+                                  ),
+                                ),
+
+                                SizedBox(width: scaleWidth(44)),
                               ],
                             ),
                           ),
 
-                          // 달력 그리드
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: screenHeight * (3 / baseH),
-                                  vertical: screenHeight * (6 / baseH)
-                              ),
-                              child: ClipRect(
-                                child: TableCalendar<GameResponse>(
-                                  firstDay: firstDay,
-                                  lastDay: lastDay,
-                                  focusedDay: focused,
-                                  headerVisible: false,
-                                  daysOfWeekVisible: false,
-                                  calendarFormat: CalendarFormat.month,
-                                  sixWeekMonthsEnforced: false,
-                                  startingDayOfWeek: StartingDayOfWeek.sunday,
-                                  rowHeight: rowHeight,
-                                  eventLoader: (d) => events[d] ?? [],
-                                  calendarStyle: CalendarStyle(
-                                    outsideDaysVisible: false,
-                                    canMarkersOverflow: true,
-                                    cellMargin: EdgeInsets.zero,
-                                  ),
-                                  selectedDayPredicate: (d) => selectedDay != null && isSameDay(d, selectedDay),
-                                  enabledDayPredicate: (date) => true,
-                                  onPageChanged: (fd) => setState(() => focused = fd),
-                                  onDaySelected: (day, _) async {
-                                    if (day.month != focused.month || day.year != focused.year) {
-                                      focused = DateTime(day.year, day.month, 1);
-                                      await loadEvents(focused);
-                                      setState(() {
-                                        if (day.isBefore(DateTime.now()) || isSameDay(day, DateTime.now())) {
-                                          selectedDay = day;
-                                          if ((events[day]?.isNotEmpty ?? false)) {
-                                            final p = events[day]![0].time.split(':');
-                                            selectedTime = TimeOfDay(
-                                              hour: int.parse(p[0]),
-                                              minute: int.parse(p[1]),
-                                            );
-                                          }
-                                        }
-                                      });
-                                      if (selectedDay != null) {
-                                        await loadMatchedGames(selectedDay!);
-                                        setState(() {
-                                          selectedGameIndex = 0; // 새 날짜 선택 시 첫 번째 경기로 초기화
-                                        });
-                                      }
-                                    } else {
-                                      if (day.isBefore(DateTime.now()) || isSameDay(day, DateTime.now())) {
-                                        // 같은 날짜 클릭 시 선택 취소/선택 토글
-                                        if (selectedDay != null && isSameDay(selectedDay!, day)) {
-                                          setState(() {
-                                            selectedDay = null;
-                                            selectedTime = null;
-                                            matchedGames = [];
-                                            selectedGameIndex = 0;
-                                          });
-                                        } else {
-                                          setState(() {
-                                            selectedDay = day;
-                                            if ((events[day]?.isNotEmpty ?? false)) {
-                                              final p = events[day]![0].time.split(':');
-                                              selectedTime = TimeOfDay(
-                                                hour: int.parse(p[0]),
-                                                minute: int.parse(p[1]),
-                                              );
-                                            }
-                                          });
-                                          loadMatchedGames(day).then((_) {
-                                            setState(() {
-                                              selectedGameIndex = 0; // 새 날짜 선택 시 첫 번째 경기로 초기화
-                                            });
-                                          });
-                                        }
-                                      }
-                                    }
-                                  },
-                                  calendarBuilders: CalendarBuilders(
-                                    defaultBuilder: (ctx, date, _) {
-                                      final isBeforeToday = date.isBefore(DateTime.now()) || isSameDay(date, DateTime.now());
-                                      return Container(
-                                        width: cellSize,
-                                        height: cellSize,
-                                        margin: EdgeInsets.zero,
-                                        child: Center(
-                                          child: FixedText(
-                                            '${date.day}',
-                                            style: AppFonts.b2_m_long(ctx).copyWith(
-                                              color: isBeforeToday ? AppColors.gray900 : AppColors.gray200,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    outsideBuilder: (ctx, date, _) {
-                                      return Container(
-                                        width: cellSize,
-                                        height: cellSize,
-                                        margin: EdgeInsets.zero,
-                                        child: Center(
-                                          child: FixedText(
-                                            '${date.day}',
-                                            style: AppFonts.b2_m_long(ctx).copyWith(
-                                              color: AppColors.gray200,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    selectedBuilder: (ctx, date, _) {
-                                      return Container(
-                                        width: cellSize,
-                                        height: cellSize,
-                                        margin: EdgeInsets.zero,
-                                        child: Stack(
-                                          clipBehavior: Clip.none,
-                                          children: [
-                                            Center(
-                                              child: Container(
-                                                width: selectedCircleSize,
-                                                height: selectedCircleSize,
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.pri500,
-                                                  borderRadius: BorderRadius.circular(16),
-                                                ),
-                                                child: Center(
-                                                  child: FixedText(
-                                                    '${date.day}',
-                                                    style: AppFonts.b2_m_long(ctx).copyWith(color: Colors.white),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Positioned(
-                                              bottom: -4,
-                                              left: 0,
-                                              right: 0,
-                                              child: Center(
-                                                child: Container(
-                                                  width: 4,
-                                                  height: 4,
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.gray300,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                    todayBuilder: (ctx, date, _) {
-                                      final isSel = selectedDay != null && isSameDay(date, selectedDay);
-                                      return Container(
-                                        width: cellSize,
-                                        height: cellSize,
-                                        margin: EdgeInsets.zero,
-                                        child: isSel
-                                            ? Stack(
-                                          clipBehavior: Clip.none,
-                                          children: [
-                                            Center(
-                                              child: Container(
-                                                width: selectedCircleSize,
-                                                height: selectedCircleSize,
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.pri500,
-                                                  borderRadius: BorderRadius.circular(16),
-                                                ),
-                                                child: Center(
-                                                  child: FixedText(
-                                                    '${date.day}',
-                                                    style: AppFonts.b2_m_long(ctx).copyWith(color: Colors.white),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Positioned(
-                                              bottom: -4,
-                                              left: 0,
-                                              right: 0,
-                                              child: Center(
-                                                child: Container(
-                                                  width: 4,
-                                                  height: 4,
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.gray300,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                            : Center(
-                                          child: FixedText(
-                                            '${date.day}',
-                                            style: AppFonts.b2_m_long(ctx).copyWith(color: AppColors.gray900),
-                                          ),
-                                        ),
-                                      );
-                                    },
+                          const Spacer(flex: 5),
+
+                          // 년/월 네비게이션
+                          SizedBox(
+                            width: scaleWidth(142),
+                            height: scaleHeight(24),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                GestureDetector(
+                                  onTap: () => changeMonth(-1),
+                                  child: Icon(
+                                    Icons.chevron_left,
+                                    size: scaleHeight(18),
+                                    color: AppColors.gray400,
                                   ),
                                 ),
-                              ),
+                                FixedText(
+                                  '${focused.year}년 ${focused.month}월',
+                                  style: AppFonts.b1_sb(context).copyWith(
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => changeMonth(1),
+                                  child: Icon(
+                                    Icons.chevron_right,
+                                    size: scaleHeight(18),
+                                    color: AppColors.gray400,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
 
-                // 구분선
-                Positioned(
-                  top: screenHeight * (473 / baseH),
-                  left: 20.w,
-                  child: Container(
-                    width: 320.w,
-                    height: 1,
-                    color: AppColors.gray50,
-                  ),
-                ),
+                          const Spacer(flex: 18),
 
-                // 선택 결과 텍스트
-                Positioned(
-                  top: screenHeight * (489 / baseH),
-                  left: 77.w,
-                  child: Container(
-                    width: 204.w,
-                    height: screenHeight * (10 / baseH),
-                    child: Center(
-                      child: FixedText(
-                        selectedDay != null && matchedGames.isNotEmpty
-                            ? () {
-                          // 요일 이름 배열
-                          const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-
-                          // 날짜 포맷: 2025년 4월 6일
-                          final year = selectedDay!.year;
-                          final month = selectedDay!.month;
-                          final day = selectedDay!.day;
-                          final weekday = weekdays[selectedDay!.weekday % 7];
-
-                          // 시간 포맷: 18시 30분
-                          final timeOnly = matchedGames[selectedGameIndex].time.substring(0, 5);
-                          final timeParts = timeOnly.split(':');
-                          final timeKorean = '${timeParts[0]}시 ${timeParts[1]}분';
-
-                          return '현재는 ${year}년 ${month}월 ${day}일 $timeKorean이 선택되어 있어요';
-                        }()
-                            : '일치하는 경기가 없습니다',
-                        style: AppFonts.c2_sb(context).copyWith(color: AppColors.gray400),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 경기 시간 표시 영역
-                if (selectedDay != null && matchedGames.isNotEmpty)
-                  Positioned(
-                    top: screenHeight * (426 / baseH),
-                    left: 22.w,
-                    child: Container(
-                      width: 320.w,
-                      child: Row(
-                        children: [
-                          for (int i = 0; i < matchedGames.length; i++) ...[
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedGameIndex = i;
-                                });
-                              },
-                              child: Container(
-                                width: 75.w,
-                                height: screenHeight * (34 / baseH),
-                                decoration: BoxDecoration(
-                                  color: selectedGameIndex == i
-                                      ? AppColors.pri300
-                                      : AppColors.gray50.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(60.r),
-                                ),
-                                child: Center(
-                                  child: FixedText(
-                                    _formatTimeToKorean(matchedGames[i].time),
-                                    style: AppFonts.b3_sb(context).copyWith(
-                                      color: selectedGameIndex == i ? AppColors.gray20 : AppColors.gray600,
+                          // 달력 영역
+                          Expanded(
+                            flex: 300,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                              child: Column(
+                                children: [
+                                  // 요일 헤더
+                                  Container(
+                                    width: scaleWidth(320),
+                                    height: scaleHeight(20),
+                                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(22)),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        for (int i = 0; i < 7; i++)
+                                          FixedText(
+                                            const ['일', '월', '화', '수', '목', '금', '토'][i],
+                                            style: AppFonts.c1_r(context).copyWith(
+                                              color: AppColors.gray300,
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ),
+
+                                  // 달력 그리드
+                                  Expanded(
+                                    flex: 100,
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: scaleWidth(3),
+                                      ),
+                                      child: ClipRect(
+                                        child: TableCalendar<GameResponse>(
+                                          firstDay: firstDay,
+                                          lastDay: lastDay,
+                                          focusedDay: focused,
+                                          headerVisible: false,
+                                          daysOfWeekVisible: false,
+                                          calendarFormat: CalendarFormat.month,
+                                          sixWeekMonthsEnforced: false,
+                                          startingDayOfWeek: StartingDayOfWeek.sunday,
+                                          rowHeight: rowHeight,
+                                          eventLoader: (d) => events[d] ?? [],
+                                          calendarStyle: CalendarStyle(
+                                            outsideDaysVisible: false,
+                                            canMarkersOverflow: true,
+                                            cellMargin: EdgeInsets.zero,
+                                          ),
+                                          selectedDayPredicate: (d) =>
+                                          selectedDay != null && isSameDay(d, selectedDay),
+                                          enabledDayPredicate: (date) => true,
+                                          onPageChanged: (fd) => setState(() => focused = fd),
+                                          onDaySelected: (day, _) async {
+                                            // 날짜 선택 로직 (기존과 동일)
+                                            if (day.month != focused.month || day.year != focused.year) {
+                                              focused = DateTime(day.year, day.month, 1);
+                                              await loadEvents(focused);
+                                              setState(() {
+                                                if (day.isBefore(DateTime.now()) ||
+                                                    isSameDay(day, DateTime.now())) {
+                                                  selectedDay = day;
+                                                  if ((events[day]?.isNotEmpty ?? false)) {
+                                                    final p = events[day]![0].time.split(':');
+                                                    selectedTime = TimeOfDay(
+                                                      hour: int.parse(p[0]),
+                                                      minute: int.parse(p[1]),
+                                                    );
+                                                  }
+                                                }
+                                              });
+                                              if (selectedDay != null) {
+                                                await loadMatchedGames(selectedDay!);
+                                                setState(() {
+                                                  selectedGameIndex = 0;
+                                                });
+                                              }
+                                            } else {
+                                              if (day.isBefore(DateTime.now()) ||
+                                                  isSameDay(day, DateTime.now())) {
+                                                if (selectedDay != null &&
+                                                    isSameDay(selectedDay!, day)) {
+                                                  setState(() {
+                                                    selectedDay = null;
+                                                    selectedTime = null;
+                                                    matchedGames = [];
+                                                    selectedGameIndex = 0;
+                                                  });
+                                                } else {
+                                                  setState(() {
+                                                    selectedDay = day;
+                                                    if ((events[day]?.isNotEmpty ?? false)) {
+                                                      final p = events[day]![0].time.split(':');
+                                                      selectedTime = TimeOfDay(
+                                                        hour: int.parse(p[0]),
+                                                        minute: int.parse(p[1]),
+                                                      );
+                                                    }
+                                                  });
+                                                  loadMatchedGames(day).then((_) {
+                                                    setState(() {
+                                                      selectedGameIndex = 0;
+                                                    });
+                                                  });
+                                                }
+                                              }
+                                            }
+                                          },
+                                          calendarBuilders: CalendarBuilders(
+                                            // 기본 날짜 빌더
+                                            defaultBuilder: (ctx, date, _) {
+                                              final isBeforeToday = date.isBefore(DateTime.now()) ||
+                                                  isSameDay(date, DateTime.now());
+                                              return Container(
+                                                width: cellSize,
+                                                height: cellSize,
+                                                margin: EdgeInsets.zero,
+                                                child: Center(
+                                                  child: FixedText(
+                                                    '${date.day}',
+                                                    style: AppFonts.b2_m_long(ctx).copyWith(
+                                                      color: isBeforeToday
+                                                          ? AppColors.gray900
+                                                          : AppColors.gray200,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            // 선택된 날짜 빌더
+                                            selectedBuilder: (ctx, date, _) {
+                                              return Container(
+                                                width: cellSize,
+                                                height: cellSize,
+                                                margin: EdgeInsets.zero,
+                                                child: Stack(
+                                                  clipBehavior: Clip.none,
+                                                  children: [
+                                                    Center(
+                                                      child: Container(
+                                                        width: selectedCircleSize,
+                                                        height: selectedCircleSize,
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors.pri500,
+                                                          borderRadius: BorderRadius.circular(
+                                                            scaleHeight(16),
+                                                          ),
+                                                        ),
+                                                        child: Center(
+                                                          child: FixedText(
+                                                            '${date.day}',
+                                                            style: AppFonts.b2_m_long(ctx).copyWith(
+                                                              color: Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    // 하단 점 표시
+                                                    Align(
+                                                      alignment: Alignment.bottomCenter,
+                                                      child: Transform.translate(
+                                                        offset: Offset(0, scaleHeight(4)),
+                                                        child: Container(
+                                                          width: scaleHeight(4),
+                                                          height: scaleHeight(4),
+                                                          decoration: BoxDecoration(
+                                                            color: AppColors.gray300,
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                            // 오늘 날짜 빌더
+                                            todayBuilder: (ctx, date, _) {
+                                              final isSel = selectedDay != null &&
+                                                  isSameDay(date, selectedDay);
+                                              return Container(
+                                                width: cellSize,
+                                                height: cellSize,
+                                                margin: EdgeInsets.zero,
+                                                child: isSel
+                                                    ? Stack(
+                                                  clipBehavior: Clip.none,
+                                                  children: [
+                                                    Center(
+                                                      child: Container(
+                                                        width: selectedCircleSize,
+                                                        height: selectedCircleSize,
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors.pri500,
+                                                          borderRadius: BorderRadius.circular(
+                                                            scaleHeight(16),
+                                                          ),
+                                                        ),
+                                                        child: Center(
+                                                          child: FixedText(
+                                                            '${date.day}',
+                                                            style: AppFonts.b2_m_long(ctx).copyWith(
+                                                              color: Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Align(
+                                                      alignment: Alignment.bottomCenter,
+                                                      child: Transform.translate(
+                                                        offset: Offset(0, scaleHeight(4)),
+                                                        child: Container(
+                                                          width: scaleHeight(4),
+                                                          height: scaleHeight(4),
+                                                          decoration: BoxDecoration(
+                                                            color: AppColors.gray300,
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                                    : Center(
+                                                  child: FixedText(
+                                                    '${date.day}',
+                                                    style: AppFonts.b2_m_long(ctx).copyWith(
+                                                      color: AppColors.gray900,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+
+                          // 경기 시간 표시 영역
+                          if (selectedDay != null && matchedGames.isNotEmpty)
+                            Container(
+                              width: scaleWidth(320),
+                              height: scaleHeight(34),
+                              margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                              child: Row(
+                                children: [
+                                  for (int i = 0; i < matchedGames.length; i++) ...[
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectedGameIndex = i;
+                                        });
+                                      },
+                                      child: Container(
+                                        width: scaleWidth(75),
+                                        height: scaleHeight(34),
+                                        decoration: BoxDecoration(
+                                          color: selectedGameIndex == i
+                                              ? AppColors.pri300
+                                              : AppColors.gray50.withOpacity(0.5),
+                                          borderRadius: BorderRadius.circular(scaleHeight(60)),
+                                        ),
+                                        child: Center(
+                                          child: FixedText(
+                                            _formatTimeToKorean(matchedGames[i].time),
+                                            style: AppFonts.b3_sb(context).copyWith(
+                                              color: selectedGameIndex == i
+                                                  ? AppColors.gray20
+                                                  : AppColors.gray600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (i < matchedGames.length - 1)
+                                      SizedBox(width: scaleWidth(8)),
+                                  ],
+                                ],
+                              ),
+                            ),
+
+                          const Spacer(flex: 15),
+
+                          // 구분선
+                          Container(
+                            width: scaleWidth(320),
+                            height: scaleHeight(1),
+                            color: AppColors.gray50,
+                            margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                          ),
+
+                          const Spacer(flex: 18),
+
+                          // 선택 결과 텍스트
+                          Container(
+                            width: scaleWidth(300),
+                            child: Center(
+                              child: FixedText(
+                                selectedDay != null && matchedGames.isNotEmpty
+                                    ? () {
+                                  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+                                  final year = selectedDay!.year;
+                                  final month = selectedDay!.month;
+                                  final day = selectedDay!.day;
+                                  final weekday = weekdays[selectedDay!.weekday % 7];
+
+                                  final timeOnly = matchedGames[selectedGameIndex].time.substring(0, 5);
+                                  final timeParts = timeOnly.split(':');
+                                  final timeKorean = '${timeParts[0]}시 ${timeParts[1]}분';
+
+                                  return '현재는 ${year}년 ${month}월 ${day}일 $timeKorean이 선택되어 있어요';
+                                }()
+                                    : '일치하는 경기가 없습니다',
+                                style: AppFonts.c2_sb(context).copyWith(
+                                  color: AppColors.gray400,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+
+                          // 완료 버튼
+                          Container(
+                            padding: EdgeInsets.fromLTRB(
+                              scaleWidth(20),
+                              scaleHeight(24),
+                              scaleWidth(20),
+                              scaleHeight(10),
+                            ),
+                            child: SizedBox(
+                              width: scaleWidth(320),
+                              height: scaleHeight(54),
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  if (selectedDay != null && matchedGames.isNotEmpty) {
+                                    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
+                                    final year = selectedDay!.year;
+                                    final month = selectedDay!.month.toString().padLeft(2, '0');
+                                    final day = selectedDay!.day.toString().padLeft(2, '0');
+                                    final weekday = weekdays[selectedDay!.weekday % 7];
+
+                                    final timeOnly = matchedGames[selectedGameIndex].time.substring(0, 5);
+                                    final timeParts = timeOnly.split(':');
+                                    final timeKorean = '${timeParts[0]}시 ${timeParts[1]}분';
+
+                                    final formattedResult = '$year - $month - $day ($weekday) $timeKorean';
+                                    Navigator.pop(context, formattedResult);
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: (selectedDay != null && matchedGames.isNotEmpty)
+                                      ? AppColors.gray700
+                                      : AppColors.gray200,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: FixedText(
+                                  '완료',
+                                  style: AppFonts.b3_sb(context).copyWith(
+                                    color: AppColors.gray20,
+                                  ),
                                 ),
                               ),
                             ),
-                            if (i < matchedGames.length - 1) SizedBox(width: 8.w),
-                          ],
+                          ),
+                          const Spacer(flex: 21),
                         ],
-                      ),
-                    ),
+                      );
+                    },
                   ),
-
-                // 완료 버튼
-                Positioned(
-                  top: screenHeight * (506 / baseH),
-                  left: 0,
-                  right: 0,
-                  height: screenHeight * (88 / baseH),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        top: BorderSide(
-                          color: AppColors.gray20,
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    padding: EdgeInsets.fromLTRB(
-                        screenHeight * (20 / baseH),
-                        screenHeight * (24 / baseH),
-                        screenHeight * (20 / baseH),
-                        screenHeight * (10 / baseH)
-                    ),
-                    child: SizedBox(
-                      width: screenHeight * (320 / baseH),
-                      height: screenHeight * (54 / baseH),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (selectedDay != null && matchedGames.isNotEmpty) {
-                            // 요일 이름 배열
-                            const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-
-                            // 날짜 포맷: 2025 - 04 - 15 (수)
-                            final year = selectedDay!.year;
-                            final month = selectedDay!.month.toString().padLeft(2, '0');
-                            final day = selectedDay!.day.toString().padLeft(2, '0');
-                            final weekday = weekdays[selectedDay!.weekday % 7];
-
-                            // 시간 포맷: 14시 00분
-                            final timeOnly = matchedGames[selectedGameIndex].time.substring(0, 5);
-                            final timeParts = timeOnly.split(':');
-                            final timeKorean = '${timeParts[0]}시 ${timeParts[1]}분';
-
-                            final formattedResult = '$year - $month - $day ($weekday) $timeKorean';
-                            Navigator.pop(context, formattedResult);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: (selectedDay != null && matchedGames.isNotEmpty) ? AppColors.gray700 : AppColors.gray200,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(screenHeight * (8 / baseH)),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: FixedText(
-                          '완료',
-                          style: AppFonts.b3_sb(context).copyWith(
-                            color: AppColors.gray20,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+                );
+              },
+            ),
+          );
+        },
       );
     },
   );

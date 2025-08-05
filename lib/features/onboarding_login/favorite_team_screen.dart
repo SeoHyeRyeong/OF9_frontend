@@ -21,12 +21,12 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
   String? _selectedTeam;
 
   final List<Map<String, String>> _teams = [
-    {'name': 'KIA 타이거즈', 'image': AppImages.tigers},
     {'name': '두산 베어스', 'image': AppImages.bears},
     {'name': '롯데 자이언츠', 'image': AppImages.giants},
     {'name': '삼성 라이온즈', 'image': AppImages.lions},
     {'name': '키움 히어로즈', 'image': AppImages.kiwoom},
     {'name': '한화 이글스', 'image': AppImages.eagles},
+    {'name': 'KIA 타이거즈', 'image': AppImages.tigers},
     {'name': 'KT WIZ', 'image': AppImages.ktwiz},
     {'name': 'LG 트윈스', 'image': AppImages.twins},
     {'name': 'NC 다이노스', 'image': AppImages.dinos},

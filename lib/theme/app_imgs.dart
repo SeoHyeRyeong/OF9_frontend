@@ -51,6 +51,7 @@ class AppImages {
 
   //티켓 정보 확인
   static const dropdown = 'assets/imgs/ic_right_black_24.svg';
+  static const dropdown_calendar = 'assets/imgs/calendar_today.svg';
 
   // 이모지 선택
   static const emotion_1 = 'assets/imgs/ic_emotion/emotion_1.svg';

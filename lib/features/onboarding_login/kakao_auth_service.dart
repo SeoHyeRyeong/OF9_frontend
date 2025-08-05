@@ -36,6 +36,7 @@ class KakaoAuthService {
     final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
     final url = Uri.parse('$backendUrl/auth/kakao');
     final payload = jsonEncode({
+      'accessToken': accessToken,//혜령추가
       'favTeam': favTeam,
     });
 
@@ -47,7 +48,7 @@ class KakaoAuthService {
       final response = await http.post(
         url,
         headers: {
-          'Authorization': 'Bearer $accessToken',
+          //'Authorization': 'Bearer $accessToken', //혜령수정
           'Content-Type': 'application/json',
         },
         body: payload,
@@ -108,5 +109,123 @@ class KakaoAuthService {
 
   Future<String?> getRefreshToken() async {
     return await _secureStorage.read(key: 'refresh_token');
+  }
+
+
+  /// 6) 토큰 갱신 요청
+  Future<Map<String, String>?> refreshTokens() async {
+    final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
+    final url = Uri.parse('$backendUrl/auth/refresh');
+
+    final currentAccessToken = await getAccessToken();
+    final currentRefreshToken = await getRefreshToken();
+
+    if (currentAccessToken == null || currentRefreshToken == null) {
+      print('❌ 저장된 토큰이 없음');
+      return null;
+    }
+
+    final payload = jsonEncode({'refreshToken': currentRefreshToken});
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $currentAccessToken', //헤더에 에세스 토큰
+          'Content-Type': 'application/json',
+        },
+        body: payload, //바디에 리프레시 토큰
+      )
+          .timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final newAccessToken = data['accessToken'] as String?;
+        final newRefreshToken = data['refreshToken'] as String?;
+
+        if (newAccessToken != null && newRefreshToken != null) {
+          await saveTokens(
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+          );
+          print('🔄 토큰 갱신 성공');
+          return {
+            'accessToken': newAccessToken,
+            'refreshToken': newRefreshToken,
+          };
+        }
+      }
+    } catch (e) {
+      print('🔥 토큰 갱신 오류: $e');
+    }
+    return null;
+  }
+
+  /// 7) 인증이 필요한 API 호출 (자동 토큰 갱신 포함) = 자동 재시도 기능
+  Future<http.Response?> authenticatedRequest({
+    required String endpoint,
+    required String method,
+    Map<String, String>? headers,
+    String? body,
+  }) async {
+    final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
+    final url = Uri.parse('$backendUrl$endpoint');
+
+    String? accessToken = await getAccessToken();
+    if (accessToken == null) {
+      print('❌ 액세스 토큰이 없음');
+      return null;
+    }
+
+    final requestHeaders = {
+      'Authorization': 'Bearer $accessToken',
+      'Content-Type': 'application/json',
+      ...?headers,
+    };
+
+    try {
+      http.Response response;
+
+      // HTTP 메서드에 따른 요청
+      switch (method.toUpperCase()) {
+        case 'GET':
+          response = await http.get(url, headers: requestHeaders);
+          break;
+        case 'POST':
+          response = await http.post(url, headers: requestHeaders, body: body);
+          break;
+        default:
+          throw Exception('지원하지 않는 HTTP 메서드: $method');
+      }
+
+      // 401 에러 시 토큰 갱신 후 재시도
+      if (response.statusCode == 401) {
+        print('🔄 토큰 만료, 갱신 시도...');
+        final refreshResult = await refreshTokens();
+
+        if (refreshResult != null) {
+          // 새 토큰으로 재요청
+          requestHeaders['Authorization'] = 'Bearer ${refreshResult['accessToken']}';
+
+          switch (method.toUpperCase()) {
+            case 'GET':
+              response = await http.get(url, headers: requestHeaders);
+              break;
+            case 'POST':
+              response = await http.post(url, headers: requestHeaders, body: body);
+              break;
+          }
+          print('🎉 토큰 갱신 후 재요청 성공');
+        } else {
+          print('❌ 토큰 갱신 실패, 재로그인 필요');
+          return null;
+        }
+      }
+
+      return response;
+    } catch (e) {
+      print('🔥 API 요청 오류: $e');
+      return null;
+    }
   }
 }

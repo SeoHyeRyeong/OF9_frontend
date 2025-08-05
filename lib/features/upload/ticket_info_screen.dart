@@ -712,13 +712,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
           } else if (num.isNotEmpty) {
             // 번호만 있는 경우
             extractedSeat = '${num}번';
-          } else {
-            // 기존 extractSeat 함수 fallback
-            extractedSeat = extractSeat(cleanedText, mappedStadiumForSeat);
           }
-        } else {
-          // 향상된 파싱이 실패하면 기존 함수 사용
-          extractedSeat = extractSeat(cleanedText, mappedStadiumForSeat);
         }
 
         print(

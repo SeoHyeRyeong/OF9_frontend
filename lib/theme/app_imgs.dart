@@ -17,7 +17,7 @@ class AppImages {
 
   // 완료 에셋
   static const complete = 'assets/imgs/img_complete.png';
-  static const ticket = 'assets/imgs/ic_ticket.svg';
+  static const ticket = 'assets/imgs/ic_ticket.png';
 
   // 야구팀 로고
   static const bears = 'assets/imgs/img_doosan.png';

@@ -36,7 +36,7 @@ class KakaoAuthService {
     final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
     final url = Uri.parse('$backendUrl/auth/kakao');
     final payload = jsonEncode({
-      'accessToken': accessToken,  // 추가 (accessToken을 RequestBody에 포함)
+      'accessToken': accessToken,//혜령추가
       'favTeam': favTeam,
     });
 
@@ -48,7 +48,7 @@ class KakaoAuthService {
       final response = await http.post(
         url,
         headers: {
-          //'Authorization': 'Bearer $accessToken',  Authorization 헤더 제거 (RequestBody로 보내므로)
+          //'Authorization': 'Bearer $accessToken', //혜령수정
           'Content-Type': 'application/json',
         },
         body: payload,
@@ -111,6 +111,7 @@ class KakaoAuthService {
     return await _secureStorage.read(key: 'refresh_token');
   }
 
+
   /// 6) 토큰 갱신 요청
   Future<Map<String, String>?> refreshTokens() async {
     final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
@@ -128,13 +129,13 @@ class KakaoAuthService {
 
     try {
       final response = await http.post(
-            url,
-            headers: {
-              'Authorization': 'Bearer $currentAccessToken', //헤더에 에세스 토큰
-              'Content-Type': 'application/json',
-            },
-            body: payload, //바디에 리프레시 토큰
-          )
+        url,
+        headers: {
+          'Authorization': 'Bearer $currentAccessToken', //헤더에 에세스 토큰
+          'Content-Type': 'application/json',
+        },
+        body: payload, //바디에 리프레시 토큰
+      )
           .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {

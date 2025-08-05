@@ -115,12 +115,20 @@ class CustomPopupDialog extends StatelessWidget {
             // 상단 여백
             const Spacer(flex: 20),
 
-            // 아이콘 이미지
-            SvgPicture.asset(
-              imageAsset,
-              width: scaleHeight(82),
-              height: scaleHeight(82),
-            ),
+            // 아이콘 이미지 분기 (svg/png)
+            if (imageAsset.toLowerCase().endsWith('.svg'))
+              SvgPicture.asset(
+                imageAsset,
+                width: scaleHeight(82),
+                height: scaleHeight(82),
+              )
+            else
+              Image.asset(
+                imageAsset,
+                width: scaleHeight(82),
+                height: scaleHeight(82),
+                fit: BoxFit.contain,
+              ),
 
             // 이미지 ↔ 타이틀 간격
             const Spacer(flex: 5),

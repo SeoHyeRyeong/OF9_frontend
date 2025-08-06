@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 추가
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/login_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:frontend/features/upload/ticket_ocr_screen.dart';
-import 'package:frontend/features/upload/emotion_select_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:frontend/features/upload/detail_record_screen.dart';
 import 'package:frontend/features/feed/feed_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
@@ -37,9 +33,11 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // JWT 토큰 존재 여부로 로그인 유지 판단
-  final token = await KakaoAuthService().getAccessToken();
-  final isLoggedIn = token != null;
+// 간단한 로그인 상태 확인 - 토큰만 있으면 OK
+  final authService = KakaoAuthService();
+  final isLoggedIn = await authService.hasStoredTokens();
+
+  print('🚀 앱 시작 - 로그인 상태: $isLoggedIn');
 
   runApp(
     ScreenUtilInit(

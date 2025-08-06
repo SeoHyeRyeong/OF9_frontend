@@ -753,9 +753,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                             children: [
                                               Expanded(
                                                 child: FixedText(
-                                                  selectedStadium ?? '구장 정보를 작성해 주세요',
+                                                  selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium ??  '구장 정보를 작성해 주세요',
                                                   style: AppFonts.b3_sb_long(context).copyWith(
-                                                    color: (selectedStadium == null || selectedStadium!.isEmpty)
+                                                    color: (selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium) == null
                                                         ? AppColors.gray300
                                                         : Colors.black,
                                                   ),

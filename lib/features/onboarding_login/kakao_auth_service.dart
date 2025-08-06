@@ -6,11 +6,23 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 
-/// Secure Storage 인스턴스 (앱 전체에서 재사용)
+/// Secure Storage인스턴스 (앱 전체에서 재사용)
 final _secureStorage = FlutterSecureStorage();
 
 class KakaoAuthService {
-  /// 1) 카카오 로그인 → 액세스 토큰 획득
+  /// 저장된 토큰 존재 여부만 확인 (만료 여부는 신경 안씀)
+  Future<bool> hasStoredTokens() async {
+    try {
+      final accessToken = await _secureStorage.read(key: 'access_token');
+      final refreshToken = await _secureStorage.read(key: 'refresh_token');
+      return accessToken != null && refreshToken != null;
+    } catch (e) {
+      print('❌ 토큰 존재 확인 실패: $e');
+      return false;
+    }
+  }
+
+  /// 1)카카오 로그인 →액세스 토큰 획득
   Future<String?> kakaoLogin() async {
     try {
       OAuthToken token;
@@ -27,8 +39,8 @@ class KakaoAuthService {
     }
   }
 
-  /// 2) 백엔드에 엑세스 토큰 + favTeam 전송 →
-  ///    백엔드에서 AccessToken/RefreshToken 둘 다 수신
+  /// 2)백엔드에 엑세스 토큰 + favTeam전송 →
+  ///백엔드에서 AccessToken/RefreshToken둘 다 수신
   Future<Map<String, String>?> sendTokenToBackend(
       String accessToken,
       String favTeam,
@@ -36,7 +48,7 @@ class KakaoAuthService {
     final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
     final url = Uri.parse('$backendUrl/auth/kakao');
     final payload = jsonEncode({
-      'accessToken': accessToken,//혜령추가
+      'accessToken': accessToken,  // 추가 (accessToken을 RequestBody에 포함)
       'favTeam': favTeam,
     });
 
@@ -48,7 +60,7 @@ class KakaoAuthService {
       final response = await http.post(
         url,
         headers: {
-          //'Authorization': 'Bearer $accessToken', //혜령수정
+          //'Authorization': 'Bearer $accessToken',  Authorization 헤더 제거 (RequestBody로 보내므로)
           'Content-Type': 'application/json',
         },
         body: payload,
@@ -73,7 +85,7 @@ class KakaoAuthService {
     return null;
   }
 
-  /// 3) Secure Storage 에 두 토큰 저장
+  /// 3) Secure Storage에 두 토큰 저장
   Future<void> saveTokens({
     required String accessToken,
     required String refreshToken,
@@ -84,7 +96,7 @@ class KakaoAuthService {
     print('🔐 refresh_token 저장: $refreshToken');
   }
 
-  /// 4) 전체 로그인 + 토큰 저장 플로우
+  /// 4)전체 로그인 +토큰 저장 플로우
   Future<bool> loginAndStoreTokens(String favTeam) async {
     // 1) 카카오 로그인으로 엑세스토큰 획득
     final kakaoAT = await kakaoLogin();
@@ -102,7 +114,7 @@ class KakaoAuthService {
     return true;
   }
 
-  /// 5) 저장된 토큰 읽기
+  /// 5)저장된 토큰 읽기
   Future<String?> getAccessToken() async {
     return await _secureStorage.read(key: 'access_token');
   }
@@ -111,8 +123,7 @@ class KakaoAuthService {
     return await _secureStorage.read(key: 'refresh_token');
   }
 
-
-  /// 6) 토큰 갱신 요청
+  /// 6)토큰 갱신 요청
   Future<Map<String, String>?> refreshTokens() async {
     final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
     final url = Uri.parse('$backendUrl/auth/refresh');
@@ -154,6 +165,10 @@ class KakaoAuthService {
             'refreshToken': newRefreshToken,
           };
         }
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        print('❌ 리프레시 토큰도 만료됨, 재로그인 필요');
+        await clearTokens();
+        return null;
       }
     } catch (e) {
       print('🔥 토큰 갱신 오류: $e');
@@ -161,7 +176,18 @@ class KakaoAuthService {
     return null;
   }
 
-  /// 7) 인증이 필요한 API 호출 (자동 토큰 갱신 포함) = 자동 재시도 기능
+  /// 7)토큰 삭제 (로그아웃 시 사용)
+  Future<void> clearTokens() async {
+    try {
+      await _secureStorage.delete(key: 'access_token');
+      await _secureStorage.delete(key: 'refresh_token');
+      print('🗑️ 모든 토큰 삭제 완료');
+    } catch (e) {
+      print('❌ 토큰 삭제 실패: $e');
+    }
+  }
+
+  /// 8)인증이 필요한 API호출 (자동 토큰 갱신 포함) =자동 재시도 기능
   Future<http.Response?> authenticatedRequest({
     required String endpoint,
     required String method,
@@ -226,6 +252,69 @@ class KakaoAuthService {
     } catch (e) {
       print('🔥 API 요청 오류: $e');
       return null;
+    }
+  }
+
+  /// 9) 로그아웃 (토큰 무효화)
+  Future<void> logout() async {
+    try {
+      // 백엔드에 로그아웃 요청 (토큰 무효화)
+      final response = await authenticatedRequest(
+        endpoint: '/users/me/logout',
+        method: 'POST',
+      );
+
+      if (response?.statusCode == 204) {
+        print('✅ 백엔드 로그아웃 성공');
+      } else {
+        print('⚠️ 백엔드 로그아웃 실패: ${response?.statusCode}');
+      }
+    } catch (e) {
+      print('⚠️ 백엔드 로그아웃 오류: $e');
+    }
+
+    try {
+      // 카카오 로그아웃
+      await UserApi.instance.logout();
+      print('✅ 카카오 로그아웃 성공');
+    } catch (e) {
+      print('⚠️ 카카오 로그아웃 오류: $e');
+    }
+
+    // 로컬 토큰 삭제
+    await clearTokens();
+  }
+
+  /// 10) 회원탈퇴 (계정 완전 삭제)
+  Future<bool> deleteAccount() async {
+    try {
+      // 백엔드에 회원탈퇴 요청
+      final response = await authenticatedRequest(
+        endpoint: '/users/me',
+        method: 'DELETE',
+      );
+
+      if (response?.statusCode == 204) {
+        print('✅ 회원탈퇴 성공');
+
+        // 카카오 연결 끊기 (선택사항)
+        try {
+          await UserApi.instance.unlink();
+          print('✅ 카카오 연결 해제 성공');
+        } catch (e) {
+          print('⚠️ 카카오 연결 해제 오류: $e');
+        }
+
+        // 로컬 토큰 삭제
+        await clearTokens();
+        return true;
+      } else {
+        print('❌ 회원탈퇴 실패: ${response?.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('🔥 회원탈퇴 오류: $e');
+      return false;
     }
   }
 }

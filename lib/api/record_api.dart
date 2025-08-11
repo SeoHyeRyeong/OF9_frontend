@@ -8,6 +8,8 @@ import 'dart:typed_data';
 
 
 class RecordApi {
+  static final _kakaoAuth = KakaoAuthService();
+
   static String get baseUrl {
     final backendUrl = dotenv.env['BACKEND_URL'];
     if (backendUrl == null) throw Exception('백엔드 URL이 설정되지 않았습니다');
@@ -16,11 +18,71 @@ class RecordApi {
 
   /// 공통 Authorization 헤더 생성 (JSON용)
   static Future<Map<String, String>> _authHeaders() async {
-    final token = await KakaoAuthService().getAccessToken();
+    final token = await _kakaoAuth.getAccessToken();
     return {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     };
+  }
+
+  /// 토큰 갱신 후 재시도하는 공통 로직
+  static Future<http.Response> _makeRequestWithRetry({
+    required Uri uri,
+    required String method,
+    String? body,
+  }) async {
+    try {
+      final headers = await _authHeaders();
+      http.Response response;
+
+      // 첫 번째 요청
+      switch (method.toUpperCase()) {
+        case 'GET':
+          response = await http.get(uri, headers: headers);
+          break;
+        case 'POST':
+          response = await http.post(uri, headers: headers, body: body);
+          break;
+        case 'DELETE':
+          response = await http.delete(uri, headers: headers);
+          break;
+        default:
+          throw Exception('지원하지 않는 HTTP 메서드: $method');
+      }
+
+      // 401/403 에러 시 토큰 갱신 후 재시도
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        print('🔄 토큰 만료, 갱신 시도...');
+        final refreshResult = await _kakaoAuth.refreshTokens();
+
+        if (refreshResult != null) {
+          // 새 토큰으로 헤더 재생성
+          final newHeaders = await _authHeaders();
+
+          // 재시도
+          switch (method.toUpperCase()) {
+            case 'GET':
+              response = await http.get(uri, headers: newHeaders);
+              break;
+            case 'POST':
+              response = await http.post(uri, headers: newHeaders, body: body);
+              break;
+            case 'DELETE':
+              response = await http.delete(uri, headers: newHeaders);
+              break;
+          }
+          print('🎉 토큰 갱신 후 재요청 성공');
+        } else {
+          print('❌ 토큰 갱신 실패, 재로그인 필요');
+          throw Exception('토큰 갱신 실패. 재로그인하세요.');
+        }
+      }
+
+      return response;
+    } catch (e) {
+      print('🔥 API 요청 오류: $e');
+      rethrow;
+    }
   }
 
   /// 모든 기록을 한 번에 업로드 (JSON + Base64 방식)
@@ -37,8 +99,6 @@ class RecordApi {
     List<String>? foodTags,
     List<String>? imagePaths,
   }) async {
-    final headers = await _authHeaders();
-
     // 이미지를 Base64로 인코딩
     List<String> base64Images = [];
     if (imagePaths != null && imagePaths.isNotEmpty) {
@@ -75,9 +135,9 @@ class RecordApi {
     print('📤 기록 업로드 요청 본문: ${jsonEncode(requestBody).length} bytes');
     print('📤 Base64 이미지 개수: ${base64Images.length}');
 
-    final res = await http.post(
-      Uri.parse('$baseUrl/records'),
-      headers: headers,
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/records'),
+      method: 'POST',
       body: jsonEncode(requestBody),
     );
 
@@ -93,10 +153,9 @@ class RecordApi {
 
   /// 내 피드 조회
   static Future<List<Map<String, dynamic>>> getMyRecordsFeed() async {
-    final headers = await _authHeaders();
-    final res = await http.get(
-      Uri.parse('$baseUrl/records/me/feed'),
-      headers: headers,
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/records/me/feed'),
+      method: 'GET',
     );
 
     print('📷 FEED 응답 코드: ${res.statusCode}');
@@ -114,10 +173,9 @@ class RecordApi {
 
   /// 특정 기록 상세 조회
   static Future<Map<String, dynamic>> getRecordById(String recordId) async {
-    final headers = await _authHeaders();
-    final res = await http.get(
-      Uri.parse('$baseUrl/records/$recordId'),
-      headers: headers,
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/records/$recordId'),
+      method: 'GET',
     );
 
     if (res.statusCode == 200) {
@@ -129,10 +187,9 @@ class RecordApi {
 
   /// 기록 삭제
   static Future<void> deleteRecord(String recordId) async {
-    final headers = await _authHeaders();
-    final res = await http.delete(
-      Uri.parse('$baseUrl/records/$recordId'),
-      headers: headers,
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/records/$recordId'),
+      method: 'DELETE',
     );
 
     if (res.statusCode != 200 && res.statusCode != 204) {
@@ -140,40 +197,11 @@ class RecordApi {
     }
   }
 
-  /// 다른 엔드포인트들 테스트
-  /*static Future<void> testAllEndpoints() async {
-    final headers = await _authHeaders();
-
-    // 1. list 엔드포인트 테스트
-    try {
-      final listRes = await http.get(
-        Uri.parse('$baseUrl/records/me/list'),
-        headers: headers,
-      );
-      print('📋 LIST 응답: ${listRes.statusCode} - ${listRes.body}');
-    } catch (e) {
-      print('❌ LIST 오류: $e');
-
-    }
-
-    // 2. calendar 엔드포인트 테스트
-    try {
-      final calRes = await http.get(
-        Uri.parse('$baseUrl/records/me/calendar'),
-        headers: headers,
-      );
-      print('📅 CALENDAR 응답: ${calRes.statusCode} - ${calRes.body}');
-    } catch (e) {
-      print('❌ CALENDAR 오류: $e');
-    }
-  }*/
-
   /// 내 리스트 조회
   static Future<List<Map<String, dynamic>>> getMyRecordsList() async {
-    final headers = await _authHeaders();
-    final res = await http.get(
-      Uri.parse('$baseUrl/records/me/list'),
-      headers: headers,
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/records/me/list'),
+      method: 'GET',
     );
 
     print('📋 LIST 응답: ${res.statusCode} - ${res.body}');
@@ -188,10 +216,9 @@ class RecordApi {
 
   /// 내 캘린더 조회
   static Future<List<Map<String, dynamic>>> getMyRecordsCalendar() async {
-    final headers = await _authHeaders();
-    final res = await http.get(
-      Uri.parse('$baseUrl/records/me/calendar'),
-      headers: headers,
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/records/me/calendar'),
+      method: 'GET',
     );
 
     print('📅 CALENDAR 응답: ${res.statusCode} - ${res.body}');
@@ -203,9 +230,4 @@ class RecordApi {
       throw Exception('캘린더 조회 실패: ${res.statusCode}');
     }
   }
-
-
-
 }
-
-

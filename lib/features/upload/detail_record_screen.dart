@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:frontend/theme/app_colors.dart';
@@ -9,8 +8,6 @@ import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/feed/feed_screen.dart';
-import 'package:frontend/components/custom_popup_dialog.dart';
-import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
@@ -125,209 +122,197 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
   /// 갤러리 위젯 빌드
   /// 사진과 영상을 추가해 주세요 기능 구현 + 뷰 디자인
   Widget _buildGallerySection() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double width = constraints.maxWidth;
-
-        if (selectedImages.isEmpty) {
-          return Column(
-            children: [
-              Spacer(flex: 12),
-              GestureDetector(
-                onTap: _pickImages,
-                child: Container(
-                  width: scaleWidth(320.13),
-                  height: scaleHeight(202),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(scaleWidth(18)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0x08000000),
-                        offset: const Offset(0, 0),
-                        blurRadius: 5,
-                        spreadRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SvgPicture.asset(
-                        AppImages.gallery_detail,
-                        width: scaleWidth(44),
-                        height: scaleHeight(37),
-                      ),
-                      SizedBox(height: scaleHeight(10)),
-                      FixedText(
-                        '사진과 영상을 추가해 주세요',
-                        style: AppFonts.b2_b(context).copyWith(
-                            color: AppColors.gray800),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: scaleHeight(8)),
-                      FixedText(
-                        '첫 번째 사진이 대표 사진으로 지정됩니다!',
-                        style: AppFonts.c1_r(context).copyWith(
-                            color: AppColors.gray500),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: scaleHeight(24)),
-                      SvgPicture.asset(
-                        AppImages.plus,
-                        width: scaleWidth(42),
-                        height: scaleHeight(42),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Spacer(flex: 18),
-            ],
-          );
-        }
-
-        // 이미지가 선택된 상태
-        return Column(
-          children: [
-            Spacer(flex: 12),
-            Container(
+    if (selectedImages.isEmpty) {
+      return Column(
+        children: [
+          SizedBox(height: scaleHeight(24)),
+          GestureDetector(
+            onTap: _pickImages,
+            child: Container(
               width: scaleWidth(320.13),
-              height: scaleHeight(152),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    // 선택된 이미지들 (가로 스크롤)
-                    ...selectedImages
-                        .asMap()
-                        .entries
-                        .map((entry) {
-                      final index = entry.key;
-                      final imagePath = entry.value;
+              height: scaleHeight(202),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(scaleWidth(18)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0x08000000),
+                    offset: const Offset(0, 0),
+                    blurRadius: 5,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    AppImages.gallery_detail,
+                    width: scaleWidth(44),
+                    height: scaleHeight(37),
+                  ),
+                  SizedBox(height: scaleHeight(10)),
+                  FixedText(
+                    '사진과 영상을 추가해 주세요',
+                    style: AppFonts.b2_b(context).copyWith(
+                        color: AppColors.gray800),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: scaleHeight(8)),
+                  FixedText(
+                    '첫 번째 사진이 대표 사진으로 지정됩니다!',
+                    style: AppFonts.c1_r(context).copyWith(
+                        color: AppColors.gray500),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: scaleHeight(24)),
+                  SvgPicture.asset(
+                    AppImages.plus,
+                    width: scaleWidth(42),
+                    height: scaleHeight(42),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: scaleHeight(24)),
+        ],
+      );
+    }
 
-                      return Container(
-                        margin: EdgeInsets.only(right: scaleWidth(10)),
-                        child: Stack(
-                          alignment: Alignment.topCenter,
-                          children: [
-                            // 이미지
-                            Container(
-                              width: scaleWidth(112),
-                              height: scaleHeight(152),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                    scaleWidth(8)),
-                                color: Colors.grey[200],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(
-                                    scaleWidth(8)),
-                                child: Image.file(
-                                  File(imagePath),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                ),
-                              ),
+    // 이미지가 선택된 상태
+    return Column(
+      children: [
+        SizedBox(height: scaleHeight(24)),
+        Container(
+          width: scaleWidth(320.13),
+          height: scaleHeight(152),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                // 선택된 이미지들 (가로 스크롤)
+                ...selectedImages
+                    .asMap()
+                    .entries
+                    .map((entry) {
+                  final index = entry.key;
+                  final imagePath = entry.value;
+
+                  return Container(
+                    margin: EdgeInsets.only(right: scaleWidth(10)),
+                    child: Stack(
+                      children: [
+                        // 이미지
+                        Container(
+                          width: scaleWidth(112),
+                          height: scaleHeight(152),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(scaleWidth(8)),
+                            color: Colors.grey[200],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(scaleWidth(8)),
+                            child: Image.file(
+                              File(imagePath),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
                             ),
-                            // 대표 배지 (첫 번째 이미지)
-                            if (index == 0)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
+                          ),
+                        ),
+                        // 대표 배지 (첫 번째 이미지)
+                        if (index == 0)
+                          Container(
+                            width: scaleWidth(112), // Stack과 같은 크기
+                            height: scaleHeight(152), // Stack과 같은 크기
+                            alignment: Alignment.topLeft,
+                            padding: EdgeInsets.only(
+                              top: scaleHeight(8),
+                              left: scaleWidth(7),
+                            ),
+                            child: Container(
+                              width: scaleWidth(40),
+                              height: scaleHeight(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.pri600,
+                                borderRadius: BorderRadius.circular(scaleWidth(11.16)),
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(5), vertical: scaleHeight(3)),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    width: scaleWidth(40),
-                                    height: scaleHeight(16),
-                                    margin: EdgeInsets.fromLTRB(
-                                        scaleWidth(7), scaleHeight(8), 0, 0),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.pri600,
-                                      borderRadius: BorderRadius.circular(
-                                          scaleWidth(11.16)),
-                                    ),
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: scaleWidth(5),
-                                        vertical: scaleHeight(3)),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment
-                                          .center,
-                                      children: [
-                                        SvgPicture.asset(
-                                          AppImages.maincheck,
-                                          width: scaleWidth(10),
-                                          height: scaleHeight(10),
-                                        ),
-                                        SizedBox(width: scaleWidth(2)),
-                                        FixedText(
-                                          '대표',
-                                          style: AppFonts.c2_sb(context)
-                                              .copyWith(
-                                              color: AppColors.gray20),
-                                        ),
-                                      ],
-                                    ),
+                                  SvgPicture.asset(
+                                    AppImages.maincheck,
+                                    width: scaleWidth(10),
+                                    height: scaleHeight(10),
+                                  ),
+                                  SizedBox(width: scaleWidth(2)),
+                                  FixedText(
+                                    '대표',
+                                    style: AppFonts.c2_sb(context).copyWith(color: AppColors.gray20),
                                   ),
                                 ],
                               ),
-                            // 삭제 버튼 (오른쪽)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Container(
-                                  margin: EdgeInsets.only(top: scaleHeight(8)),
-                                  child: GestureDetector(
-                                    onTap: () => _removeImage(index),
-                                    child: Container(
-                                      width: scaleWidth(14),
-                                      height: scaleHeight(14),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.gray400,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.close,
-                                        color: Colors.white,
-                                        size: scaleWidth(10),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    // 추가 버튼 (20개 미만일 때만 표시)
-                    if (selectedImages.length < maxImages) ...[
-                      SizedBox(width: scaleWidth(20)),
-                      GestureDetector(
-                        onTap: _pickImages,
-                        child: Container(
-                          width: scaleWidth(42),
-                          height: scaleHeight(42),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            shape: BoxShape.circle,
                           ),
-                          child: SvgPicture.asset(
-                            AppImages.plus,
-                            width: scaleWidth(24),
-                            height: scaleHeight(24),
+                        // 삭제 버튼 (오른쪽 상단)
+                        Container(
+                          width: scaleWidth(112), // Stack과 같은 크기
+                          height: scaleHeight(152), // Stack과 같은 크기
+                          alignment: Alignment.topRight,
+                          padding: EdgeInsets.only(
+                            top: scaleHeight(8),
+                            right: scaleWidth(7),
+                          ),
+                          child: GestureDetector(
+                            onTap: () => _removeImage(index),
+                            child: Container(
+                              width: scaleWidth(16),
+                              height: scaleHeight(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray400,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: scaleWidth(12),
+                              ),
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                // 추가 버튼 (20개 미만일 때만 표시)
+                if (selectedImages.length < maxImages) ...[
+                  SizedBox(width: scaleWidth(20)),
+                  GestureDetector(
+                    onTap: _pickImages,
+                    child: Container(
+                      width: scaleWidth(42),
+                      height: scaleHeight(42),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        shape: BoxShape.circle,
                       ),
-                    ],
-                  ],
-                ),
-              ),
+                      child: SvgPicture.asset(
+                        AppImages.plus,
+                        width: scaleWidth(24),
+                        height: scaleHeight(24),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-            Spacer(flex: 18),
-          ],
-        );
-      },
+          ),
+        ),
+        SizedBox(height: scaleHeight(24)),
+      ],
     );
   }
 
@@ -340,105 +325,95 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Column(
-              children: [
-                // 1. 뒤로가기 영역
-                _buildBackButtonArea(),
+        child: Column(
+          children: [
+            // 1. 뒤로가기 영역
+            _buildBackButtonArea(),
 
-                // 2. 메인 콘텐츠 영역 (스크롤)
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    child: LayoutBuilder(
-                      builder: (context, contentConstraints) {
-                        return Column(
-                          children: [
-                            // 티켓 사진 카드 상단 여백
-                            SizedBox(height: 30.h),
+            // 2. 메인 콘텐츠 영역 (스크롤)
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                child: Column(
+                  children: [
+                    // 티켓 사진 카드 상단 여백
+                    SizedBox(height: scaleHeight(2)),
 
-                            // 티켓 사진 카드
-                            _buildTicketCard(),
+                    // 티켓 사진 카드
+                    _buildTicketCard(),
 
-                            // 회색 배경 영역
-                            Container(
-                              width: double.infinity,
-                              color: AppColors.gray20,
-                              child: Column(
+                    // 회색 배경 영역
+                    Container(
+                      width: double.infinity,
+                      color: AppColors.gray20,
+                      child: Column(
+                        children: [
+                          // 사진과 영상을 추가해 주세요
+                          _buildGallerySection(),
 
-                                children: [
-                                  const Spacer(flex: 12),
+                          // 직관 한 마디
+                          _buildSection(
+                            builder: () =>
+                                OneWordSectionContent(
+                                  scrollController: _scrollController,
+                                ),
+                            cardWidth: 320.13,
+                            cardHeight: 150,
+                          ),
 
-                                  // 사진과 영상을 추가해 주세요
-                                  _buildGallerySection(),
+                          // 야구 일기
+                          _buildSection(
+                            builder: () =>
+                                DiaryNoteSectionContent(
+                                  scrollController: _scrollController,
+                                ),
+                            cardWidth: 320.13,
+                            // cardHeight 제거 - 다중행일 때 자동 높이 조절
+                          ),
 
-                                  // 직관 한 마디
-                                  _buildSection(
-                                    builder: () =>
-                                        OneWordSectionContent(
-                                          scrollController: _scrollController,
-                                        ),
-                                    cardWidth: 320.13,
-                                    cardHeight: 150,
-                                  ),
+                          // 베스트 플레이어
+                          _buildSection(
+                            builder: () =>
+                                BestPlayerSectionContent(
+                                  scrollController: _scrollController,
+                                ),
+                            cardWidth: 320.13,
+                            cardHeight: 134,
+                          ),
 
-                                  // 야구 일기
-                                  _buildSection(
-                                    builder: () =>
-                                        DiaryNoteSectionContent(
-                                          scrollController: _scrollController,
-                                        ),
-                                    cardWidth: 320.13,
-                                  ),
+                          // 함께 직관한 친구
+                          _buildSection(
+                            builder: () =>
+                                CheerFriendSectionContent(
+                                  scrollController: _scrollController,
+                                ),
+                            cardWidth: 320.13,
+                            cardHeight: 134,
+                          ),
 
-                                  // 베스트 플레이어
-                                  _buildSection(
-                                    builder: () =>
-                                        BestPlayerSectionContent(
-                                          scrollController: _scrollController,
-                                        ),
-                                    cardWidth: 320.13,
-                                    cardHeight: 134,
-                                  ),
+                          // 먹거리 태그
+                          _buildSection(
+                            builder: () =>
+                                FoodTagSectionContent(
+                                  scrollController: _scrollController,
+                                ),
+                            cardWidth: 320.13,
+                            cardHeight: 128,
+                          ),
 
-                                  // 함께 직관한 친구
-                                  _buildSection(
-                                    builder: () =>
-                                        CheerFriendSectionContent(
-                                          scrollController: _scrollController,
-                                        ),
-                                    cardWidth: 320.13,
-                                    cardHeight: 134,
-                                  ),
-
-                                  // 먹거리 태그
-                                  _buildSection(
-                                    builder: () =>
-                                        FoodTagSectionContent(
-                                          scrollController: _scrollController,
-                                        ),
-                                    cardWidth: 320.13,
-                                    cardHeight: 128,
-                                  ),
-
-                                  // 하단 여백 (버튼 위에 보조 여백)
-                                  const Spacer(flex: 44),
-                                ],
-                              ),
-                            ),
-
-                            // 3. 완료 버튼 영역
-                            _buildCompleteButtonArea(),
-                          ],
-                        );
-                      },
+                          // 하단 여백
+                          SizedBox(height: scaleHeight(5)),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            );
-          },
+              ),
+            ),
+
+            // 3. 완료 버튼 영역
+            _buildCompleteButtonArea(),
+          ],
         ),
       ),
     );
@@ -452,7 +427,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
   Widget _buildBackButtonArea() {
     return Container(
       height: scaleHeight(60),
-      padding: EdgeInsets.only(left: scaleWidth(20), top: scaleHeight(5)),
+      padding: EdgeInsets.only(left: scaleWidth(20), top: scaleHeight(10)),
       alignment: Alignment.centerLeft,
       child: GestureDetector(
         onTap: () {
@@ -477,24 +452,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
   // 티켓 사진 카드 위젯
   Widget _buildTicketCard() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(scaleWidth(14)),
-        boxShadow: [
-          const BoxShadow(
-            color: Color(0x08000000),
-            offset: Offset(0, 1),
-            blurRadius: 3,
-            spreadRadius: 0,
-          ),
-        ],
-      ),
       child: Padding(
         padding: EdgeInsets.only(
-          top: scaleHeight(10),
-          left: scaleWidth(14),
-          right: scaleWidth(14),
+          top: scaleHeight(2),
+          left: scaleWidth(15),
           bottom: scaleHeight(12),
         ),
         child: Row(
@@ -538,7 +499,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                     SizedBox(height: scaleHeight(12)),
                     // 홈팀 VS 원정팀
                     FixedText(
-                      '${widget.homeTeam ?? ''} VS ${widget.awayTeam ?? ''}',
+                      '${widget.homeTeam ?? ''}  VS  ${widget.awayTeam ?? ''}',
                       style: AppFonts.b2_b(context).copyWith(
                           color: AppColors.gray800),
                     ),
@@ -767,6 +728,44 @@ Widget _buildInputWithCounter({
   );
 }
 
+// 카운터 없는 단순 입력창
+Widget _buildSimpleInput({
+  required BuildContext context,
+  required TextEditingController controller,
+  required FocusNode focusNode,
+  required bool isActive,
+  required VoidCallback onTap,
+  required String hintText,
+}) {
+  return Container(
+    width: scaleWidth(288),
+    height: scaleHeight(40),
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: AppColors.gray30,
+      borderRadius: BorderRadius.circular(scaleWidth(6)),
+      border: isActive ? Border.all(color: AppColors.pri100, width: 1.0) : null,
+    ),
+    child: TextField(
+      controller: controller,
+      focusNode: focusNode,
+      onTap: onTap,
+      decoration: InputDecoration(
+        isCollapsed: true,
+        contentPadding: EdgeInsets.only(left: scaleWidth(16)),
+        hintText: hintText,
+        hintStyle: AppFonts.c1_r(context).copyWith(color: AppColors.gray200, height: 1.0),
+        border: InputBorder.none,
+      ),
+      textAlignVertical: TextAlignVertical.center,
+      style: AppFonts.c1_r(context).copyWith(
+        color: isActive ? AppColors.gray950 : AppColors.gray200,
+        height: 1.0,
+      ),
+    ),
+  );
+}
+
 // 먹거리 태그 섹션
 Widget _buildFoodTagSection({
   required BuildContext context,
@@ -869,7 +868,6 @@ class _OneWordSectionContentState extends State<OneWordSectionContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: scaleHeight(12)),
         _buildSectionHeader(
           context,
           AppImages.oneword,
@@ -972,7 +970,6 @@ class _DiaryNoteSectionContentState extends State<DiaryNoteSectionContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: scaleHeight(12)),
         _buildSectionHeader(
           context,
           AppImages.diary,
@@ -1056,7 +1053,6 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: scaleHeight(12)),
         _buildSectionHeader(
           context,
           AppImages.bestplayer,
@@ -1064,12 +1060,10 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> {
           '오늘의 베스트 플레이어를 뽑아주세요!',
         ),
         SizedBox(height: scaleHeight(12)),
-        _buildInputWithCounter(
+        _buildSimpleInput(
           context: context,
           controller: _controller,
           focusNode: _focusNode,
-          currentLength: _controller.text.length,
-          maxLength: 30,
           isActive: _controller.text.isNotEmpty,
           onTap: _scrollToTextField,
           hintText: '베스트 플레이어를 검색해 보세요',
@@ -1141,7 +1135,6 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: scaleHeight(12)),
         _buildSectionHeader(
           context,
           AppImages.cheer,
@@ -1149,12 +1142,10 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> {
           '오늘의 경기를 함께 직관한 친구를 적어주세요!',
         ),
         SizedBox(height: scaleHeight(12)),
-        _buildInputWithCounter(
+        _buildSimpleInput(
           context: context,
           controller: _controller,
           focusNode: _focusNode,
-          currentLength: _controller.text.length,
-          maxLength: 30,
           isActive: _controller.text.isNotEmpty,
           onTap: _scrollToTextField,
           hintText: '팔로우 한 친구만 검색 가능해요!',
@@ -1191,4 +1182,3 @@ class _FoodTagSectionContentState extends State<FoodTagSectionContent> {
     );
   }
 }
-

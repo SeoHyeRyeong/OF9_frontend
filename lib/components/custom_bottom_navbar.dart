@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/utils/fixed_text.dart';
@@ -8,6 +7,7 @@ import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/features/feed/feed_screen.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
+import 'package:frontend/utils/size_utils.dart';
 
 // 사용법
 // import 'package:frontend/components/custom_bottom_navbar.dart';
@@ -61,7 +61,7 @@ class CustomBottomNavBar extends StatelessWidget {
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation1, animation2) => target,
-        transitionDuration: Duration.zero, // 전환 애니메이션 제거
+        transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
       ),
     );
@@ -69,18 +69,16 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double screenHeight = MediaQuery.of(context).size.height;
-
     return SafeArea(
       top: false,
       child: Container(
         width: double.infinity,
-        height: 75.h,
-        padding: EdgeInsets.fromLTRB(32, 8, 32, 9),
+        height: scaleHeight(70),
+        padding: EdgeInsets.fromLTRB(scaleWidth(32), scaleHeight(8), scaleWidth(32), scaleHeight(15)),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
-            top: BorderSide(color: AppColors.gray20, width: 0.5),
+            top: BorderSide(color: AppColors.gray100, width: 0.5),
           ),
         ),
         child: Row(
@@ -92,18 +90,18 @@ class CustomBottomNavBar extends StatelessWidget {
               onTap: () => _handleTap(context, index),
               behavior: HitTestBehavior.opaque, // 터치 안 되는 문제 방지
               child: SizedBox(
-                width: 32.w,
-                height: 50.h,
+                width: scaleWidth(32),
+                height: scaleHeight(44),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SvgPicture.asset(
                       item['icon']!,
-                      width: screenHeight * 28 / 800,
-                      height: screenHeight * 28 / 800,
+                      width: scaleHeight(28),
+                      height: scaleHeight(28),
                       color: isActive ? null : AppColors.gray200,
                     ),
-                    SizedBox(height: screenHeight * 6 / 800),
+                    SizedBox(height: scaleHeight(4)),
                     FixedText(
                       item['label']!,
                       style: AppFonts.c1_b(context).copyWith(

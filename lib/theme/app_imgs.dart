@@ -70,7 +70,7 @@ class AppImages {
   static const cheer = 'assets/imgs/ic_detail_record/ic_cheer.svg';
   static const diary = 'assets/imgs/ic_detail_record/ic_diary.svg';
   static const food = 'assets/imgs/ic_detail_record/ic_food.svg';
-  static const gallery_detail = 'assets/imgs/ic_detail_record/ic_gallery.svg';
+  static const gallery_detail = 'assets/imgs/ic_detail_record/ic_gallery.png';
   static const oneword = 'assets/imgs/ic_detail_record/ic_oneword.svg';
   static const plus = 'assets/imgs/ic_detail_record/btn_plus.svg';
   static const foodplus = 'assets/imgs/ic_detail_record/btn_food_plus.svg';

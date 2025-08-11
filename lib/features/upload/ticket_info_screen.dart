@@ -849,7 +849,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                               child: ElevatedButton(
                                 onPressed: isComplete
                                     ? () {
-                                  final String finalStadium = selectedStadium ?? extractedStadium ?? '';
+                                  final String finalStadium = selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium ?? '';
                                   final String finalSeat = selectedSeat ?? extractedSeat ?? '';
                                   final String finalGameId = matchedGames.isNotEmpty ? matchedGames.first.gameId : '';
                                   final int userId = 1;

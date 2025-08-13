@@ -28,8 +28,9 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  lottie: ^3.1.2
   image_picker: ^1.0.4
-  http: ^0.13.6
+  http: ^1.5.0
   flutter:
     sdk: flutter
   provider: ^6.1.1
@@ -56,13 +57,14 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_lints: ^5.0.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -73,11 +75,13 @@ flutter:
   assets:
     - .env
     - assets/imgs/
+    - assets/imgs/ic_onboarding/
     - assets/imgs/ic_emotion/
     - assets/imgs/ic_detail_record/
     - assets/imgs/ic_feed/
     - assets/fonts/
     - assets/tessdata/
+    - assets/animations/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

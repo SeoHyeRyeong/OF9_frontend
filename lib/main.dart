@@ -6,7 +6,7 @@ import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/login_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:frontend/features/feed/feed_screen.dart';
+import 'package:frontend/features/onboarding_login/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
 
@@ -84,8 +84,8 @@ class MyApp extends StatelessWidget {
         ],
         locale: const Locale('ko', 'KR'),
 
-        // 로그인 여부에 따라 시작 화면 분기
-        home: isLoggedIn ? const FeedScreen() : const LoginScreen(),
+        // 로그인 여부에 따라 시작 화면 분기 -> 스플래시 코드에서 처리
+        home: SplashScreen(isLoggedIn: isLoggedIn),
         //home: const LoginScreen(),//MyPageScreen(),
       ),
     );

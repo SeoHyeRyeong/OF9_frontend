@@ -1,6 +1,11 @@
 class AppImages {
   // 이미지 경로 상수 정의
   // 사용법 - Image.asset(AppImages.dinos)
+  // SvgPicture.asset
+  // 스플래시
+  static const splash = 'assets/imgs/ic_onboarding/img_splash.svg';
+  static const dodada = 'assets/imgs/ic_onboarding/text_dodada.svg';
+
   // lookit 로고
   static const logo_small = 'assets/imgs/logo_small.svg';
   static const logo_large = 'assets/imgs/logo_large.svg';

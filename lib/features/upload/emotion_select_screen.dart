@@ -99,7 +99,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                             padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                             child: FixedText(
                               '직관 감정 선택',
-                              style: AppFonts.h1_b(context).copyWith(color: Colors.black),
+                              style: AppFonts.pretendard.h1_b(context).copyWith(color: Colors.black),
                             ),
                           ),
 
@@ -110,7 +110,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                             padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                             child: FixedText(
                               '이번 직관에 대한 내 생생한 감정을 남겨봐요!',
-                              style: AppFonts.b2_m(context).copyWith(color: AppColors.gray300),
+                              style: AppFonts.pretendard.b2_m(context).copyWith(color: AppColors.gray300),
                             ),
                           ),
 
@@ -176,7 +176,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                           SizedBox(height: screenHeight * 0.0085),
                                           FixedText(
                                             emotion['label'],
-                                            style: AppFonts.b2_m_long(context).copyWith(
+                                            style: AppFonts.suite.b2_m_long(context).copyWith(
                                               color: isSelected
                                                   ? AppColors.gray800
                                                   : AppColors.trans700.withOpacity(0.7),
@@ -240,7 +240,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                 ),
                                 child: FixedText(
                                   '다음',
-                                  style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
+                                  style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
                                 ),
                               ),
                             ),

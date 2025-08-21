@@ -2,51 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:frontend/utils/size_utils.dart';
 
 class AppFonts {
-  static const String suit = 'SUIT';
+  static const String suiteFontFamily = 'SUITE';
+  static const String pretendardFontFamily = 'Pretendard';
 
-  // 사용법 - style: AppFonts.h4_b
-  static TextStyle h1_b(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  // SUITE 폰트
+  static final suite = _SuiteFonts();
+  // Pretendard 폰트
+  static final pretendard = _PretendardFonts();
+}
+
+class _SuiteFonts {
+  static const String _fontFamily = AppFonts.suiteFontFamily;
+
+  // Headers
+  TextStyle h1_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w700,
     fontSize: scaleFont(28),
     height: 1.0,
     letterSpacing: -0.84,
   );
 
-  static TextStyle h3_eb(BuildContext context) => TextStyle(
-    fontFamily: suit,
-    fontWeight: FontWeight.w800,
+  TextStyle h3_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w700,
     fontSize: scaleFont(24),
     height: 1.0,
     letterSpacing: -0.72,
   );
 
-  static TextStyle h3_sb(BuildContext context) => TextStyle(
-    fontFamily: suit,
+
+  TextStyle h3_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(24),
     height: 1.0,
     letterSpacing: -0.72,
   );
 
-  static TextStyle h4_b(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle h4_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w700,
     fontSize: scaleFont(22),
     height: 1.0,
     letterSpacing: -0.66,
   );
 
-  static TextStyle h5_b(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle h5_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w700,
     fontSize: scaleFont(20),
     height: 1.0,
     letterSpacing: -0.6,
   );
 
-  static TextStyle h5_sb(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle h5_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(20),
     height: 1.0,
@@ -54,80 +65,80 @@ class AppFonts {
   );
 
   // Body
-  static TextStyle b1_b(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b1_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w700,
     fontSize: scaleFont(18),
     height: 1.0,
     letterSpacing: -0.54,
   );
 
-  static TextStyle b1_sb(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b1_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(18),
     height: 1.0,
     letterSpacing: -0.54,
   );
 
-  static TextStyle b2_b(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b2_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(16),
     height: 1.0,
     letterSpacing: -0.48,
   );
 
-  static TextStyle b2_m(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b2_m(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w500,
     fontSize: scaleFont(16),
     height: 1.0,
     letterSpacing: -0.48,
   );
 
-  static TextStyle b2_m_long(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b2_m_long(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w500,
     fontSize: scaleFont(16),
     height: 1.6,
     letterSpacing: -0.48,
   );
 
-  static TextStyle b3_sb(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b3_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
 
-  static TextStyle b3_sb_long(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b3_sb_long(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(14),
     height: 1.6,
     letterSpacing: -0.42,
   );
 
-  static TextStyle b3_m(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b3_m(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w500,
     fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
 
-  static TextStyle b3_r(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b3_r(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w400,
     fontSize: scaleFont(14),
     height: 1.0,
     letterSpacing: -0.42,
   );
 
-  static TextStyle b3_b(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle b3_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w700,
     fontSize: scaleFont(14),
     height: 1.0,
@@ -135,56 +146,275 @@ class AppFonts {
   );
 
   // Caption
-  static TextStyle c1_b(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle c1_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w700,
     fontSize: scaleFont(12),
     height: 1.0,
     letterSpacing: -0.36,
   );
 
-  static TextStyle c1_r(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle c1_r(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w400,
     fontSize: scaleFont(12),
     height: 1.0,
     letterSpacing: -0.36,
   );
 
-  static TextStyle c2_b(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle c1_m(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(12),
+    height: 1.0,
+    letterSpacing: -0.36,
+  );
+
+  TextStyle c2_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w700,
     fontSize: scaleFont(10),
     height: 1.0,
     letterSpacing: -0.3,
   );
 
-  static TextStyle c1_sb(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle c1_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(12),
     height: 1.0,
     letterSpacing: -0.36,
   );
 
-  static TextStyle c2_sb(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle c2_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(10),
     height: 1.0,
     letterSpacing: -0.3,
   );
 
-  static TextStyle c3_sb(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle c3_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(8),
     height: 1.0,
     letterSpacing: -0.3,
   );
 
-  static TextStyle c2_m(BuildContext context) => TextStyle(
-    fontFamily: suit,
+  TextStyle c2_m(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(10),
+    height: 1.0,
+    letterSpacing: -0.3,
+  );
+}
+
+/// =======================================================
+/// 프리텐다드 class
+/// =======================================================
+class _PretendardFonts {
+  static const String _fontFamily = AppFonts.pretendardFontFamily;
+
+  // Headers
+  TextStyle h1_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: scaleFont(28),
+    height: 1.0,
+    letterSpacing: -0.84,
+  );
+
+  TextStyle h3_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w800,
+    fontSize: scaleFont(24),
+    height: 1.0,
+    letterSpacing: -0.72,
+  );
+
+  TextStyle h3_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(24),
+    height: 1.0,
+    letterSpacing: -0.72,
+  );
+
+  TextStyle h4_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: scaleFont(22),
+    height: 1.0,
+    letterSpacing: -0.66,
+  );
+
+  TextStyle h5_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: scaleFont(20),
+    height: 1.0,
+    letterSpacing: -0.6,
+  );
+
+  TextStyle h5_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(20),
+    height: 1.0,
+    letterSpacing: -0.6,
+  );
+
+  // Body
+  TextStyle b1_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: scaleFont(18),
+    height: 1.0,
+    letterSpacing: -0.54,
+  );
+
+  TextStyle b1_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(18),
+    height: 1.0,
+    letterSpacing: -0.54,
+  );
+
+  TextStyle b2_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(16),
+    height: 1.0,
+    letterSpacing: -0.48,
+  );
+
+  TextStyle b2_m(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(16),
+    height: 1.0,
+    letterSpacing: -0.48,
+  );
+
+  TextStyle b2_m_long(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(16),
+    height: 1.6,
+    letterSpacing: -0.48,
+  );
+
+  TextStyle b3_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: scaleFont(14),
+    height: 1.0,
+    letterSpacing: -0.42,
+  );
+
+
+  TextStyle b3_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(14),
+    height: 1.0,
+    letterSpacing: -0.42,
+  );
+
+  TextStyle b3_sb_long(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(14),
+    height: 1.6,
+    letterSpacing: -0.42,
+  );
+
+  TextStyle b3_m(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(14),
+    height: 1.0,
+    letterSpacing: -0.42,
+  );
+
+  TextStyle b3_r(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(14),
+    height: 1.0,
+    letterSpacing: -0.42,
+  );
+
+  // Caption
+  TextStyle c1_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: scaleFont(12),
+    height: 1.0,
+    letterSpacing: -0.36,
+  );
+
+  TextStyle c1_r(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(12),
+    height: 1.0,
+    letterSpacing: -0.36,
+  );
+
+  TextStyle c2_b(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: scaleFont(10),
+    height: 1.0,
+    letterSpacing: -0.3,
+  );
+
+  TextStyle c2_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(10),
+    height: 1.0,
+    letterSpacing: -0.3,
+  );
+
+  TextStyle c2_sb_long(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(10),
+    height: 1.0,
+    letterSpacing: -0.3,
+  );
+
+  TextStyle c3_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(8),
+    height: 1.0,
+    letterSpacing: -0.3,
+  );
+
+  TextStyle c1_m(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(12),
+    height: 1.0,
+    letterSpacing: -0.36,
+  );
+
+  TextStyle c1_sb(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(12),
+    height: 1.0,
+    letterSpacing: -0.36,
+  );
+
+  TextStyle c2_m(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
     fontWeight: FontWeight.w500,
     fontSize: scaleFont(10),
     height: 1.0,

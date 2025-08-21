@@ -31,7 +31,7 @@ class SignupCompleteScreen extends StatelessWidget {
 
                           FixedText(
                             '회원가입을 완료했어요!',
-                            style: AppFonts.h1_b(context).copyWith(color: Colors.black),
+                            style: AppFonts.suite.h1_b(context).copyWith(color: Colors.black),
                             textAlign: TextAlign.center,
                           ),
 
@@ -40,7 +40,7 @@ class SignupCompleteScreen extends StatelessWidget {
                           // 서브 텍스트
                           FixedText(
                             '지금부터 당신의 야구 이야기를 기록해 보세요',
-                            style: AppFonts.b2_m_long(context).copyWith(color: AppColors.gray300),
+                            style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray300),
                             textAlign: TextAlign.center,
                           ),
 
@@ -76,14 +76,14 @@ class SignupCompleteScreen extends StatelessWidget {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.gray700,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                    borderRadius: BorderRadius.circular(scaleHeight(16)),
                                   ),
                                   padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
                                   elevation: 0,
                                 ),
                                 child: FixedText(
                                   '완료',
-                                  style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
+                                  style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
                                 ),
                               ),
                             ),

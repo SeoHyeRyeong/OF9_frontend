@@ -347,7 +347,7 @@ class _FeedScreenState extends State<FeedScreen> {
             // 요일
             FixedText(
               dayOfWeek,
-              style: AppFonts.c1_r(
+              style: AppFonts.pretendard.c1_r(
                 context,
               ).copyWith(color: isSelected ? Colors.white : AppColors.gray400),
             ),
@@ -355,7 +355,7 @@ class _FeedScreenState extends State<FeedScreen> {
             // 날짜
             FixedText(
               '${date.day}',
-              style: AppFonts.b3_b(
+              style: AppFonts.pretendard.b3_b(
                 context,
               ).copyWith(color: isSelected ? Colors.white : AppColors.gray400),
             ),
@@ -387,10 +387,8 @@ class _FeedScreenState extends State<FeedScreen> {
             filterText,
             style:
             isSelected
-                ? AppFonts.c1_b(context).copyWith(color: AppColors.gray20)
-                : AppFonts.c1_sb(
-              context,
-            ).copyWith(color: AppColors.gray300),
+                ? AppFonts.pretendard.c1_b(context).copyWith(color: AppColors.gray20)
+                : AppFonts.pretendard.c1_sb(context,).copyWith(color: AppColors.gray300),
           ),
         ),
       ),
@@ -464,7 +462,7 @@ class _FeedScreenState extends State<FeedScreen> {
           SizedBox(height: 8.h),
           FixedText(
             '이미지 로드 실패',
-            style: AppFonts.c2_m(context).copyWith(
+            style: AppFonts.pretendard.c2_m(context).copyWith(
               color: AppColors.gray400,
             ),
           ),
@@ -498,14 +496,14 @@ class _FeedScreenState extends State<FeedScreen> {
                         children: [
                           FixedText(
                             '전체',
-                            style: AppFonts.h5_b(
+                            style: AppFonts.pretendard.h5_b(
                               context,
                             ).copyWith(color: Colors.black),
                           ),
                           SizedBox(width: 16.w),
                           FixedText(
                             '팔로잉',
-                            style: AppFonts.h5_b(
+                            style: AppFonts.pretendard.h5_b(
                               context,
                             ).copyWith(color: AppColors.gray300),
                           ),
@@ -631,7 +629,7 @@ class _FeedScreenState extends State<FeedScreen> {
                           return Center(
                             child: FixedText(
                               '기록을 불러오는데 실패했습니다',
-                              style: AppFonts.h5_sb(
+                              style: AppFonts.pretendard.h5_sb(
                                 context,
                               ).copyWith(color: AppColors.gray300),
                             ),
@@ -662,7 +660,7 @@ class _FeedScreenState extends State<FeedScreen> {
                           return Center(
                             child: FixedText(
                               '직관 기록이 없어요',
-                              style: AppFonts.h5_sb(
+                              style: AppFonts.pretendard.h5_sb(
                                 context,
                               ).copyWith(color: AppColors.gray300),
                             ),
@@ -767,7 +765,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                                   // 2. 닉네임 (b3_b 폰트, gray950 색상)
                                                   FixedText(
                                                     nickname,
-                                                    style: AppFonts.b3_b(
+                                                    style: AppFonts.pretendard.b3_b(
                                                       context,
                                                     ).copyWith(
                                                       color: AppColors.gray950,
@@ -779,7 +777,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                                   // 3. 팬 정보 (c1_r 폰트, gray400 색상)
                                                   FixedText(
                                                     '$favTeam 팬',
-                                                    style: AppFonts.c1_r(
+                                                    style: AppFonts.pretendard.c1_r(
                                                       context,
                                                     ).copyWith(
                                                       color: AppColors.gray400,
@@ -791,7 +789,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                                   // 4. 경과 시간 (c2_m 폰트, gray400 색상)
                                                   FixedText(
                                                     _getTimeAgo(createdAt),
-                                                    style: AppFonts.c2_m(
+                                                    style: AppFonts.suite.c2_m(
                                                       context,
                                                     ).copyWith(
                                                       color: AppColors.gray400,
@@ -805,7 +803,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                               // 5. 긴 내용
                                               FixedText(
                                                 longContent,
-                                                style: AppFonts.b3_sb_long(
+                                                style: AppFonts.pretendard.b3_sb_long(
                                                   context,
                                                 ).copyWith(
                                                   color: AppColors.gray400,
@@ -849,7 +847,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                                           // 경기 날짜 및 구장
                                                           FixedText(
                                                             '${_formatGameDate(gameDate)}, ${stadium}에서',
-                                                            style: AppFonts.c2_m(
+                                                            style: AppFonts.suite.c2_m(
                                                               context,
                                                             ).copyWith(
                                                               color:
@@ -904,7 +902,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                                               // 점수
                                                               FixedText(
                                                                 '$homeScore',
-                                                                style: AppFonts.h3_sb(
+                                                                style: AppFonts.pretendard.h3_sb(
                                                                   context,
                                                                 ).copyWith(
                                                                   color:
@@ -919,7 +917,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
                                                               FixedText(
                                                                 ':',
-                                                                style: AppFonts.h3_sb(
+                                                                style: AppFonts.pretendard.h3_sb(
                                                                   context,
                                                                 ).copyWith(
                                                                   color:
@@ -934,7 +932,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
                                                               FixedText(
                                                                 '$awayScore',
-                                                                style: AppFonts.h3_sb(
+                                                                style: AppFonts.pretendard.h3_sb(
                                                                   context,
                                                                 ).copyWith(
                                                                   color:
@@ -1015,7 +1013,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                                           // 8px 위로 이동
                                                           child: FixedText(
                                                             emotionLabel,
-                                                            style: AppFonts.c2_m(
+                                                            style: AppFonts.suite.c2_m(
                                                               context,
                                                             ).copyWith(
                                                               color:

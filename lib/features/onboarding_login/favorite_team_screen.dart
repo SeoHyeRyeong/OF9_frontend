@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_colors.dart';
@@ -42,7 +41,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => const SignupCompleteScreen(),
-          transitionDuration: Duration.zero, // 전환 애니메이션 제거
+          transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
         ),
       );
@@ -105,7 +104,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                             padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                             child: FixedText(
                               '최애 구단 선택',
-                              style: AppFonts.h1_b(context).copyWith(color: Colors.black),
+                              style: AppFonts.suite.h1_b(context).copyWith(color: Colors.black),
                             ),
                           ),
 
@@ -116,7 +115,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                             padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                             child: FixedText(
                               '나중에 마이페이지에서 변경 가능해요',
-                              style: AppFonts.b2_m(context).copyWith(color: AppColors.gray300),
+                              style: AppFonts.suite.b2_m(context).copyWith(color: AppColors.gray300),
                             ),
                           ),
 
@@ -159,7 +158,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                         border: isSelected
                                             ? Border.all(color: AppColors.pri300, width: scaleWidth(3))
                                             : Border.all(color: AppColors.gray50, width: scaleWidth(1)),
-                                        borderRadius: BorderRadius.circular(scaleHeight(12)),
+                                        borderRadius: BorderRadius.circular(scaleHeight(20)),
                                       ),
                                       child: Stack(
                                         children: [
@@ -175,7 +174,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                                 SizedBox(height: screenHeight * 0.01),
                                                 FixedText(
                                                   team['name']!,
-                                                  style: AppFonts.b2_b(context).copyWith(
+                                                  style: AppFonts.suite.b2_b(context).copyWith(
                                                       color: AppColors.gray900),
                                                 ),
                                               ],
@@ -209,7 +208,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
 
                           const Spacer(flex: 24),
 
-                          // 완료 버튼
+                          // 확인 버튼
                           Center(
                             child: SizedBox(
                               width: scaleWidth(320),
@@ -222,14 +221,14 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                       : AppColors.gray200,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                    borderRadius: BorderRadius.circular(scaleHeight(16)),
                                   ),
                                   elevation: 0,
                                   padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
                                 ),
                                 child: FixedText(
-                                  '완료',
-                                  style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
+                                  '확인',
+                                  style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
                                 ),
                               ),
                             ),

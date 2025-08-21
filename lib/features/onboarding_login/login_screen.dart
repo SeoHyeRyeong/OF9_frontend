@@ -149,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // 타이틀
                           FixedText(
                             onboardingData[_currentIndex]['title']!,
-                            style: AppFonts.h3_eb(context).copyWith(
+                            style: AppFonts.suite.h3_b(context).copyWith(
                                 color: AppColors.gray800),
                             textAlign: TextAlign.center,
                           ),
@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // 서브타이틀
                           FixedText(
                             onboardingData[_currentIndex]['subtitle']!,
-                            style: AppFonts.b2_m_long(context).copyWith(
+                            style: AppFonts.suite.b2_m_long(context).copyWith(
                                 color: AppColors.gray300),
                             textAlign: TextAlign.center,
                           ),
@@ -192,8 +192,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     SizedBox(width: scaleWidth(4)),
                                     FixedText(
-                                      '카카오로 계속하기',
-                                      style: AppFonts.b2_b(context).copyWith(
+                                      '카카오로 로그인',
+                                      style: AppFonts.suite.b2_b(context).copyWith(
                                         color: AppColors.kakao02,
                                       ),
                                     ),

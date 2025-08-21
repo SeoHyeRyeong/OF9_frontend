@@ -67,7 +67,7 @@ Future<String?> showStadiumPicker({
                                 padding: EdgeInsets.only(top: sheetHeight * 0.007),
                                 child: FixedText(
                                   title,
-                                  style: AppFonts.b2_b(context).copyWith(color: Colors.black),
+                                  style: AppFonts.pretendard.b2_b(context).copyWith(color: Colors.black),
                                 ),
                               ),
 
@@ -157,7 +157,7 @@ Future<String?> showStadiumPicker({
                                                         Expanded(
                                                           child: FixedText(
                                                             stadium,
-                                                            style: AppFonts.b3_sb(context).copyWith(color: AppColors.gray900),
+                                                            style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.gray900),
                                                           ),
                                                         ),
 
@@ -226,7 +226,7 @@ Future<String?> showStadiumPicker({
                                           ),
                                           child: FixedText(
                                             '완료',
-                                            style: AppFonts.b2_b(context).copyWith(
+                                            style: AppFonts.suite.b2_b(context).copyWith(
                                               color: AppColors.gray20,
                                             ),
                                           ),

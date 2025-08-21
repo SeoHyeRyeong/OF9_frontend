@@ -10,10 +10,48 @@ import 'package:frontend/features/onboarding_login/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
 
+/// 폰트 강제 로드 클래스
+class FontPreloader {
+  static Future<void> preloadFonts() async {
+    try {
+      print('🔤 폰트 강제 로드 시작...');
+
+      // SUITE 폰트 파일들 강제 로드
+      await rootBundle.load('assets/fonts/SUITE-Regular.ttf');
+      await rootBundle.load('assets/fonts/SUITE-Medium.ttf');
+      await rootBundle.load('assets/fonts/SUITE-SemiBold.ttf');
+      await rootBundle.load('assets/fonts/SUITE-Bold.ttf');
+      await rootBundle.load('assets/fonts/SUITE-ExtraBold.ttf');
+
+      print('✅ SUITE 폰트 강제 로드 완료');
+
+      // Pretendard 폰트 파일들도 강제 로드
+      await rootBundle.load('assets/fonts/Pretendard-Regular.ttf');
+      await rootBundle.load('assets/fonts/Pretendard-Medium.ttf');
+      await rootBundle.load('assets/fonts/Pretendard-SemiBold.ttf');
+      await rootBundle.load('assets/fonts/Pretendard-Bold.ttf');
+      await rootBundle.load('assets/fonts/Pretendard-ExtraBold.ttf');
+
+      print('✅ Pretendard 폰트 강제 로드 완료');
+
+    } catch (e) {
+      print('❌ 폰트 강제 로드 실패: $e');
+      print('⚠️ 일부 폰트 파일이 없거나 경로가 잘못되었을 수 있습니다');
+    }
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 환경변수 로드
   await dotenv.load();
+
+  // 카카오 SDK 초기화
   KakaoSdk.init(nativeAppKey: dotenv.env['NATIVE_APP_KEY']);
+
+  // 🔤 폰트 강제 로드 (추가된 부분)
+  await FontPreloader.preloadFonts();
 
   // 시스템 기본 상태바 사용 (항상 표시)
   await SystemChrome.setEnabledSystemUIMode(
@@ -27,13 +65,14 @@ Future<void> main() async {
       statusBarBrightness: Brightness.light,
     ),
   );
+
   // 화면 회전 고정 (세로 방향만)
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-// 간단한 로그인 상태 확인 - 토큰만 있으면 OK
+  // 간단한 로그인 상태 확인 - 토큰만 있으면 OK
   final authService = KakaoAuthService();
   final isLoggedIn = await authService.hasStoredTokens();
 

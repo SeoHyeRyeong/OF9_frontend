@@ -154,14 +154,14 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                   SizedBox(height: scaleHeight(10)),
                   FixedText(
                     '사진과 영상을 추가해 주세요',
-                    style: AppFonts.b2_b(context).copyWith(
+                    style: AppFonts.pretendard.b2_b(context).copyWith(
                         color: AppColors.gray800),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: scaleHeight(8)),
                   FixedText(
                     '첫 번째 사진이 대표 사진으로 지정됩니다!',
-                    style: AppFonts.c1_r(context).copyWith(
+                    style: AppFonts.pretendard.c1_r(context).copyWith(
                         color: AppColors.gray500),
                     textAlign: TextAlign.center,
                   ),
@@ -251,7 +251,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                                   SizedBox(width: scaleWidth(2)),
                                   FixedText(
                                     '대표',
-                                    style: AppFonts.c2_sb(context).copyWith(color: AppColors.gray20),
+                                    style: AppFonts.pretendard.c2_sb(context).copyWith(color: AppColors.gray20),
                                   ),
                                 ],
                               ),
@@ -493,21 +493,21 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                     FixedText(
                       formatDisplayDate(widget.gameDate) ?? widget.gameDate ??
                           '',
-                      style: AppFonts.c1_b(context).copyWith(
+                      style: AppFonts.suite.c1_b(context).copyWith(
                           color: AppColors.gray800),
                     ),
                     SizedBox(height: scaleHeight(12)),
                     // 홈팀 VS 원정팀
                     FixedText(
                       '${widget.homeTeam ?? ''}  VS  ${widget.awayTeam ?? ''}',
-                      style: AppFonts.b2_b(context).copyWith(
+                      style: AppFonts.pretendard.b2_b(context).copyWith(
                           color: AppColors.gray800),
                     ),
                     SizedBox(height: scaleHeight(16)),
                     // 구장
                     FixedText(
                       widget.stadium ?? '',
-                      style: AppFonts.c1_b(context).copyWith(
+                      style: AppFonts.suite.c1_b(context).copyWith(
                           color: AppColors.gray600),
                     ),
                   ],
@@ -629,7 +629,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
         ),
         child: FixedText(
           '작성 완료',
-          style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
+          style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
         ),
       ),
     );
@@ -651,9 +651,9 @@ Widget _buildSectionHeader(BuildContext context, String iconPath, String title, 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FixedText(title, style: AppFonts.b2_b(context).copyWith(color: AppColors.gray800)),
+            FixedText(title, style: AppFonts.pretendard.b2_b(context).copyWith(color: AppColors.gray800)),
             SizedBox(height: scaleHeight(8)),
-            FixedText(description, style: AppFonts.c1_r(context).copyWith(color: AppColors.gray500)),
+            FixedText(description, style: AppFonts.pretendard.c1_r(context).copyWith(color: AppColors.gray500)),
           ],
         ),
       ),
@@ -699,11 +699,11 @@ Widget _buildInputWithCounter({
                 ? EdgeInsets.all(scaleWidth(16))
                 : EdgeInsets.only(left: scaleWidth(16)),
             hintText: hintText,
-            hintStyle: AppFonts.c1_r(context).copyWith(color: AppColors.gray200, height: 1.0),
+            hintStyle: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.gray200, height: 1.0),
             border: InputBorder.none,
           ),
           textAlignVertical: isMultiLine ? TextAlignVertical.top : TextAlignVertical.center,
-          style: AppFonts.c1_r(context).copyWith(
+          style: AppFonts.pretendard.c1_m(context).copyWith(
             color: isActive ? AppColors.gray950 : AppColors.gray200,
             height: 1.0,
           ),
@@ -717,7 +717,7 @@ Widget _buildInputWithCounter({
           children: [
             FixedText(
               '$currentLength/$maxLength',
-              style: AppFonts.c2_sb(context).copyWith(
+              style: AppFonts.suite.c2_m(context).copyWith(
                 color: isActive ? AppColors.pri400 : AppColors.gray300,
               ),
             ),
@@ -754,11 +754,11 @@ Widget _buildSimpleInput({
         isCollapsed: true,
         contentPadding: EdgeInsets.only(left: scaleWidth(16)),
         hintText: hintText,
-        hintStyle: AppFonts.c1_r(context).copyWith(color: AppColors.gray200, height: 1.0),
+        hintStyle: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.gray200, height: 1.0),
         border: InputBorder.none,
       ),
       textAlignVertical: TextAlignVertical.center,
-      style: AppFonts.c1_r(context).copyWith(
+      style: AppFonts.pretendard.c1_m(context).copyWith(
         color: isActive ? AppColors.gray950 : AppColors.gray200,
         height: 1.0,
       ),
@@ -937,7 +937,7 @@ class _DiaryNoteSectionContentState extends State<DiaryNoteSectionContent> {
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
         text: _controller.text,
-        style: AppFonts.c1_r(context).copyWith(color: AppColors.gray950, height: 1.0),
+        style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.gray950, height: 1.0),
       ),
       textDirection: ui.TextDirection.ltr,
       maxLines: 1,

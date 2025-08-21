@@ -320,7 +320,7 @@ Future<String?> showDateTimePicker({
                               child: Center(
                                 child: FixedText(
                                   '일시',
-                                  style: AppFonts.b2_b(context),
+                                  style: AppFonts.pretendard.b2_b(context),
                                 ),
                               ),
                             ),
@@ -347,7 +347,7 @@ Future<String?> showDateTimePicker({
                             ),
                             FixedText(
                               '${focused.year}년 ${focused.month}월',
-                              style: AppFonts.b1_sb(context).copyWith(
+                              style: AppFonts.pretendard.b1_sb(context).copyWith(
                                 color: Colors.black,
                               ),
                             ),
@@ -382,7 +382,7 @@ Future<String?> showDateTimePicker({
                                     for (int i = 0; i < 7; i++)
                                       FixedText(
                                         const ['일', '월', '화', '수', '목', '금', '토'][i],
-                                        style: AppFonts.c1_r(context).copyWith(
+                                        style: AppFonts.pretendard.c1_r(context).copyWith(
                                           color: AppColors.gray300,
                                         ),
                                       ),
@@ -486,7 +486,7 @@ Future<String?> showDateTimePicker({
                                             child: Center(
                                               child: FixedText(
                                                 '${date.day}',
-                                                style: AppFonts.b2_m_long(ctx).copyWith(
+                                                style: AppFonts.suite.b2_m_long(ctx).copyWith(
                                                   color: isBeforeToday
                                                       ? AppColors.gray900
                                                       : AppColors.gray200,
@@ -517,7 +517,7 @@ Future<String?> showDateTimePicker({
                                                     child: Center(
                                                       child: FixedText(
                                                         '${date.day}',
-                                                        style: AppFonts.b2_m_long(ctx).copyWith(
+                                                        style: AppFonts.suite.b2_m_long(ctx).copyWith(
                                                           color: Colors.white,
                                                         ),
                                                       ),
@@ -568,7 +568,7 @@ Future<String?> showDateTimePicker({
                                                     child: Center(
                                                       child: FixedText(
                                                         '${date.day}',
-                                                        style: AppFonts.b2_m_long(ctx).copyWith(
+                                                        style: AppFonts.suite.b2_m_long(ctx).copyWith(
                                                           color: Colors.white,
                                                         ),
                                                       ),
@@ -594,7 +594,7 @@ Future<String?> showDateTimePicker({
                                                 : Center(
                                               child: FixedText(
                                                 '${date.day}',
-                                                style: AppFonts.b2_m_long(ctx).copyWith(
+                                                style: AppFonts.suite.b2_m_long(ctx).copyWith(
                                                   color: AppColors.gray900,
                                                 ),
                                               ),
@@ -639,7 +639,7 @@ Future<String?> showDateTimePicker({
                                       child: Center(
                                         child: FixedText(
                                           _formatTimeToKorean(matchedGames[i].time),
-                                          style: AppFonts.b3_sb(context).copyWith(
+                                          style: AppFonts.pretendard.b3_sb(context).copyWith(
                                             color: selectedGameIndex == i
                                                 ? AppColors.gray20
                                                 : AppColors.gray600,
@@ -687,7 +687,7 @@ Future<String?> showDateTimePicker({
                               return '현재는 ${year}년 ${month}월 ${day}일 $timeKorean이 선택되어 있어요';
                             }()
                                 : '일치하는 경기가 없습니다',
-                            style: AppFonts.c2_sb(context).copyWith(
+                            style: AppFonts.pretendard.c2_sb(context).copyWith(
                               color: AppColors.gray400,
                             ),
                             textAlign: TextAlign.center,
@@ -737,7 +737,7 @@ Future<String?> showDateTimePicker({
                             ),
                             child: FixedText(
                               '완료',
-                              style: AppFonts.b3_sb(context).copyWith(
+                              style: AppFonts.suite.b3_sb(context).copyWith(
                                 color: AppColors.gray20,
                               ),
                             ),

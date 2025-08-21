@@ -104,7 +104,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     SizedBox(height: scaleHeight(4)),
                     FixedText(
                       item['label']!,
-                      style: AppFonts.c1_b(context).copyWith(
+                      style: AppFonts.suite.c2_m(context).copyWith(
                         color: isActive ? Colors.black : AppColors.gray200,
                       ),
                     ),

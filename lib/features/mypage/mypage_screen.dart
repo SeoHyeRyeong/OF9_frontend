@@ -10,6 +10,7 @@ import 'package:frontend/api/user_api.dart';
 import 'package:frontend/api/record_api.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:frontend/features/mypage/settings_screen.dart';
 
 
 class MyPageScreen extends StatefulWidget {
@@ -180,10 +181,20 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         alignment: Alignment.topRight,
                         child: Padding(
                           padding: EdgeInsets.only(top: hp(10), right: wp(20)),
-                          child: SvgPicture.asset(
-                            AppImages.Setting,
-                            width: wp(24),
-                            height: wp(24),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsScreen(),
+                                ),
+                              );
+                            },
+                            child: SvgPicture.asset(
+                              AppImages.Setting,
+                              width: wp(24),
+                              height: wp(24),
+                            ),
                           ),
                         ),
                       ),

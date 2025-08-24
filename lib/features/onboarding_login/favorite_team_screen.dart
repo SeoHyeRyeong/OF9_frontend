@@ -97,7 +97,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Spacer(flex: 36),
+                          const Spacer(flex: 33),
 
                           // 제목
                           Padding(
@@ -171,7 +171,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                                   width: scaleHeight(60),
                                                   height: scaleHeight(60),
                                                 ),
-                                                SizedBox(height: screenHeight * 0.01),
+                                                SizedBox(height: scaleHeight(8)),
                                                 FixedText(
                                                   team['name']!,
                                                   style: AppFonts.suite.b2_b(context).copyWith(
@@ -181,13 +181,18 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                             ),
                                           ),
                                           if (isSelected)
-                                            Positioned(
-                                              top: scaleHeight(16),
-                                              left: scaleHeight(16),
-                                              child: Icon(
-                                                Icons.check_circle,
-                                                color: AppColors.pri300,
-                                                size: scaleWidth(24),
+                                            Align(
+                                              alignment: Alignment.topLeft,
+                                              child: Padding(
+                                                padding: EdgeInsets.only(
+                                                  top: scaleHeight(15),
+                                                  left: scaleHeight(15),
+                                                ),
+                                                child: Icon(
+                                                  Icons.check_circle,
+                                                  color: AppColors.pri300,
+                                                  size: scaleWidth(24),
+                                                ),
                                               ),
                                             ),
                                           if (!isSelected && _selectedTeam != null)

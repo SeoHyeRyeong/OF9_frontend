@@ -62,13 +62,21 @@ class KakaoAuthService {
     try {
       print('🚀 카카오 로그인 시작...');
       OAuthToken token;
+
       if (await isKakaoTalkInstalled()) {
-        print('📱 카카오톡 앱으로 로그인 시도');
-        token = await UserApi.instance.loginWithKakaoTalk();
+        try {
+          print('📱 카카오톡 앱으로 로그인 시도');
+          token = await UserApi.instance.loginWithKakaoTalk();
+        } catch (e) {
+          print('⚠️ 카카오톡 로그인 실패, 웹 로그인으로 전환: $e');
+          print('🌐 카카오 계정으로 로그인 시도');
+          token = await UserApi.instance.loginWithKakaoAccount();
+        }
       } else {
         print('🌐 카카오 계정으로 로그인 시도');
         token = await UserApi.instance.loginWithKakaoAccount();
       }
+
       print('✅ 카카오 로그인 성공, accessToken: ${token.accessToken?.substring(0, 20)}...');
       return token.accessToken;
     } catch (e) {

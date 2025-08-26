@@ -140,7 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Row(
                         children: [
                           Padding(
-                            padding: EdgeInsets.only(top: screenHeight * 0.0225),
+                            padding: EdgeInsets.only(top: screenHeight * 0.031),
                             child: GestureDetector(
                               onTap: () {
                                 Navigator.pushReplacement(

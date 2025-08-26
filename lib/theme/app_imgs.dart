@@ -21,7 +21,8 @@ class AppImages {
   static const dropdownBlack = 'assets/imgs/ic_dropdown_black.svg';
 
   // 완료 에셋
-  static const complete = 'assets/imgs/img_complete.png';
+  static const welcome = 'assets/imgs/ic_onboarding/img_welcome.png';
+  static const img_ticket = 'assets/imgs/ic_onboarding/img_ticket.png';
   static const ticket = 'assets/imgs/ic_ticket.png';
 
   // 야구팀 로고

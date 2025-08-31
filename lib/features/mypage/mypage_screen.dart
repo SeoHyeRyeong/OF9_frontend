@@ -50,15 +50,16 @@ class _MyPageScreenState extends State<MyPageScreen> {
   /// 사용자 정보 불러오기
   Future<void> _loadUserInfo() async {
     try {
-      final userInfo = await UserApi.getMyInfo();
+      final response = await UserApi.getMyProfile();
+      final userInfo = response['data'];
       setState(() {
         nickname = userInfo['nickname'] ?? '알 수 없음';
         favTeam = userInfo['favTeam'] ?? '응원팀 없음';
         profileImageUrl = userInfo['profileImageUrl'];
-        postCount = userInfo['postCount'] ?? 0;
+        postCount = userInfo['recordCount'] ?? 0;
         followingCount = userInfo['followingCount'] ?? 0;
         followerCount = userInfo['followerCount'] ?? 0;
-        isPrivate = userInfo['private'] ?? false;
+        isPrivate = userInfo['isPrivate'] ?? false;
         isLoading = false;
       });
     } catch (e) {
@@ -185,8 +186,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (context) => const SettingsScreen(),
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation1, animation2) => const SettingsScreen(),
+                                  transitionDuration: Duration.zero, // 전환 애니메이션 제거
+                                  reverseTransitionDuration: Duration.zero,
                                 ),
                               );
                             },

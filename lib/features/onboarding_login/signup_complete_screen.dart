@@ -97,16 +97,15 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
 
                     SizedBox(width: scaleWidth(40)),
 
-                    // 팀 정보
+                    // 팀 이미지
                     if (widget.selectedTeam != null) ...[
-                      // 팀 이미지
                       Image.asset(
                         _teamImages[widget.selectedTeam!]!,
-                        width: scaleWidth(40),
-                        height: scaleHeight(40),
+                        width: scaleWidth(38),
+                        height: scaleHeight(38),
                       ),
 
-                      SizedBox(width: scaleWidth(10)),
+                      SizedBox(width: scaleWidth(9)),
 
                       // 팀 이름
                       FixedText(
@@ -119,7 +118,7 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
               ),
             ),
 
-            SizedBox(height: scaleHeight(50)),
+            Spacer(),
 
             // 완료 버튼
             Padding(
@@ -153,6 +152,8 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
                 ),
               ),
             ),
+
+            SizedBox(height: scaleHeight(30)),
           ],
         ),
       ),

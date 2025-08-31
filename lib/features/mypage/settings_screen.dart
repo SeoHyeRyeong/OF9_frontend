@@ -8,6 +8,7 @@ import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/api/user_api.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
+import 'package:frontend/features/mypage/edit_profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -38,11 +39,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// 사용자 정보 불러오기
   Future<void> _loadUserInfo() async {
     try {
-      final userInfo = await UserApi.getMyInfo();
+      final response = await UserApi.getMyProfile();
+      final userInfo = response['data'];
       setState(() {
         nickname = userInfo['nickname'] ?? '알 수 없음';
         favTeam = userInfo['favTeam'] ?? '응원팀 없음';
         profileImageUrl = userInfo['profileImageUrl'];
+        isAccountPublic = !(userInfo['isPrivate'] ?? false);  //계정 공개/비공개 설정
         isLoading = false;
       });
     } catch (e) {
@@ -140,7 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Row(
                         children: [
                           Padding(
-                            padding: EdgeInsets.only(top: screenHeight * 0.031),
+                            padding: EdgeInsets.only(top: screenHeight * 0.0325),
                             child: GestureDetector(
                               onTap: () {
                                 Navigator.pushReplacement(
@@ -215,8 +218,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // 내 정보 수정 버튼
                       GestureDetector(
                         onTap: () {
-                          // 내 정보 수정 페이지로 이동하는 로직 추가
-                          print('내 정보 수정 버튼 클릭');
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation1, animation2) => const EditProfileScreen(),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
+                            ),
+                          );
                         },
                         child: Container(
                           width: scaleWidth(76),

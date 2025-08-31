@@ -104,4 +104,7 @@ class AppImages {
   static const month11 = 'assets/imgs/ic_feed/11.svg';
   static const month12 = 'assets/imgs/ic_feed/12.svg';
   static const search = 'assets/imgs/ic_feed/ic_search.svg';
+
+  //마이페이지
+  static const btn_camera = 'assets/imgs/btn_camera_24.svg';
 }

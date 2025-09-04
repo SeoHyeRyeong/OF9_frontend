@@ -10,40 +10,7 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 final _secureStorage = FlutterSecureStorage();
 
 class KakaoAuthService {
-  /// 🔍 토큰 상태 디버깅 (문제 해결용)
-  Future<void> debugTokenStatus() async {
-    try {
-      print('🔍 ===== 토큰 상태 디버깅 시작 =====');
-
-      final hasTokens = await hasStoredTokens();
-      final accessToken = await getAccessToken();
-      final refreshToken = await getRefreshToken();
-
-      print('  hasStoredTokens(): $hasTokens');
-      print('  accessToken 존재: ${accessToken != null}');
-      print('  refreshToken 존재: ${refreshToken != null}');
-
-      if (accessToken != null) {
-        print('  accessToken 길이: ${accessToken.length}');
-        print('  accessToken 앞부분: ${accessToken.substring(0, accessToken.length > 20 ? 20 : accessToken.length)}...');
-      }
-
-      if (refreshToken != null) {
-        print('  refreshToken 길이: ${refreshToken.length}');
-        print('  refreshToken 앞부분: ${refreshToken.substring(0, refreshToken.length > 20 ? 20 : refreshToken.length)}...');
-      }
-
-      // SecureStorage 전체 키 확인
-      final allKeys = await _secureStorage.readAll();
-      print('  SecureStorage에 저장된 모든 키: ${allKeys.keys.toList()}');
-
-      print('🔍 ===== 토큰 상태 디버깅 끝 =====');
-    } catch (e) {
-      print('🔥 토큰 상태 확인 오류: $e');
-    }
-  }
-
-  /// 저장된 토큰 존재 여부만 확인 (만료 여부는 신경 안씀)
+  ///저장된 토큰 존재 여부만 확인 (만료 여부는 신경 안씀)
   Future<bool> hasStoredTokens() async {
     try {
       final accessToken = await _secureStorage.read(key: 'access_token');
@@ -57,7 +24,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 1)카카오 로그인 →액세스 토큰 획득
+  /// 1) 카카오 로그인 → 액세스 토큰 획득
   Future<String?> kakaoLogin() async {
     try {
       print('🚀 카카오 로그인 시작...');
@@ -86,7 +53,7 @@ class KakaoAuthService {
   }
 
   /// 2)백엔드에 엑세스 토큰 + favTeam전송 →
-  ///백엔드에서 AccessToken/RefreshToken둘 다 수신
+  /// 백엔드에서 AccessToken/RefreshToken 둘 다 수신
   Future<Map<String, String>?> sendTokenToBackend(
       String accessToken,
       String favTeam,
@@ -114,17 +81,23 @@ class KakaoAuthService {
       print('⬅️ [HTTP ${response.statusCode}] ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final at = data['accessToken']  as String?;
-        final rt = data['refreshToken'] as String?;
-        if (at != null && rt != null) {
-          print('🎉 백엔드 토큰 수신: accessToken=${at.substring(0, 20)}..., refreshToken=${rt.substring(0, 20)}...');
-          return {'accessToken': at, 'refreshToken': rt};
+        final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+        // data 필드에서 토큰 추출
+        final data = responseData['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          final at = data['accessToken'] as String?;
+          final rt = data['refreshToken'] as String?;
+
+          if (at != null && rt != null) {
+            print('🎉 백엔드 토큰 수신: accessToken=${at.substring(0, 20)}..., refreshToken=${rt.substring(0, 20)}...');
+            return {'accessToken': at, 'refreshToken': rt};
+          } else {
+            print('❌ data 내부에 토큰이 없음: $data');
+          }
         } else {
-          print('❌ 백엔드 응답에 토큰이 없음: $data');
+          print('❌ 백엔드 응답에 data 필드가 없음: $responseData');
         }
-      } else {
-        print('⚠️ 백엔드 인증 실패: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       print('🔥 백엔드 통신 오류: $e');
@@ -209,7 +182,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 6)토큰 갱신 요청 (개선된 디버깅 포함)
+  /// 6)토큰 갱신 요청
   Future<Map<String, String>?> refreshTokens() async {
     print('🔄 ===== 토큰 갱신 시작 =====');
 
@@ -235,7 +208,6 @@ class KakaoAuthService {
 
     if (currentAccessToken == null || currentRefreshToken == null) {
       print('❌ 저장된 토큰이 없음 - 재로그인 필요');
-      await debugTokenStatus(); // 추가 디버깅
       return null;
     }
 
@@ -305,7 +277,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 8)인증이 필요한 API호출 (자동 토큰 갱신 포함) =자동 재시도 기능
+  /// 8)인증이 필요한 API호출 (자동 토큰 갱신 포함) = 자동 재시도 기능
   Future<http.Response?> authenticatedRequest({
     required String endpoint,
     required String method,
@@ -318,7 +290,6 @@ class KakaoAuthService {
     final hasTokens = await hasStoredTokens();
     if (!hasTokens) {
       print('❌ 토큰이 없어서 API 요청 불가');
-      await debugTokenStatus();
       return null;
     }
 

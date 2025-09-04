@@ -138,7 +138,7 @@ class UserApi {
     }
   }
 
-  /// 3. 중복 닉네임 확인
+  /// 3. 닉네임 중복 확인
   static Future<Map<String, dynamic>> checkNickname(String nickname) async {
     final uri = Uri.parse('$baseUrl/users/nickname/check').replace(
       queryParameters: {'nickname': nickname},

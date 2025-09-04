@@ -316,9 +316,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     );
   }
 
-  ///===============================================================================
-  ///===============================================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -418,10 +415,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
       ),
     );
   }
-
-  ///===============================================================================
-  ///===============================================================================
-  /// UI 배치 위젯
 
   // 뒤로가기 위젯
   Widget _buildBackButtonArea() {
@@ -592,7 +585,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
               comment: recordState.comment,
               longContent: recordState.longContent,
               bestPlayer: recordState.bestPlayer,
-              companions: recordState.companions,
+              companionIds: recordState.companions, // companions -> companionIds로 변경
               foodTags: recordState.foodTags,
               imagePaths: recordState.imagePaths,
             );
@@ -1073,8 +1066,7 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> {
   }
 }
 
-
-///함께 직관한 친구
+/// 함께 직관한 친구
 class CheerFriendSectionContent extends StatefulWidget {
   final ScrollController scrollController;
   const CheerFriendSectionContent({required this.scrollController});
@@ -1087,6 +1079,7 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
+  List<int> selectedCompanionIds = []; // 선택된 친구들의 ID 목록
 
   @override
   void initState() {
@@ -1106,9 +1099,9 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> {
 
   void _updateState() {
     setState(() {});
-    final companions = _controller.text.isNotEmpty ? [_controller.text] : <String>[];
+    // 현재는 실제 친구 선택 기능이 없으므로 빈 리스트로 처리
     Provider.of<RecordState>(context, listen: false)
-        .updateCompanions(companions);
+        .updateCompanions(selectedCompanionIds);
   }
 
   void _scrollToTextField() {
@@ -1154,7 +1147,6 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> {
     );
   }
 }
-
 
 /// 먹거리 태그
 class FoodTagSectionContent extends StatefulWidget {

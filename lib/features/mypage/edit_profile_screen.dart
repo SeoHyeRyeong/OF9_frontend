@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:frontend/theme/app_imgs.dart';
@@ -22,10 +23,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? profileImageUrl;
   bool isLoading = true;
 
+  // 닉네임 입력 관련
+  final TextEditingController _nicknameController = TextEditingController();
+  final FocusNode _nicknameFocusNode = FocusNode();
+  int _currentLength = 0;
+  final int _maxLength = 15;
+
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+    _nicknameController.addListener(_updateCharacterCount);
+    _nicknameFocusNode.addListener(_updateFocusState);
+  }
+
+  @override
+  void dispose() {
+    _nicknameController.removeListener(_updateCharacterCount);
+    _nicknameFocusNode.removeListener(_updateFocusState);
+    _nicknameController.dispose();
+    _nicknameFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _updateCharacterCount() {
+    setState(() {
+      _currentLength = _nicknameController.text.length;
+    });
+  }
+
+  void _updateFocusState() {
+    setState(() {});
   }
 
   /// 사용자 정보 불러오기
@@ -37,6 +65,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         nickname = userInfo['nickname'] ?? '알 수 없음';
         favTeam = userInfo['favTeam'] ?? '응원팀 없음';
         profileImageUrl = userInfo['profileImageUrl'];
+
+        // 닉네임 컨트롤러에 현재 닉네임 설정
+        _nicknameController.text = nickname;
+        _currentLength = nickname.length;
+
         isLoading = false;
       });
     } catch (e) {
@@ -60,6 +93,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             return SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 뒤로가기 영역 + 타이틀
                   SizedBox(
@@ -102,8 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ),
                             ),
                           ),
-                          // 뒤로가기 버튼과 균형을 맞추기 위한 빈 공간
-                          SizedBox(width: scaleHeight(24)),
+                          SizedBox(width: scaleHeight(24)), //균형을 위한 공간(크게 상관x)
                         ],
                       ),
                     ),
@@ -114,9 +147,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // 프로필 이미지 영역
                   Center(
                     child: Stack(
-                      clipBehavior: Clip.none, // Stack 영역을 넘어서도 표시되도록
+                      clipBehavior: Clip.none,
                       children: [
-                        // 프로필 이미지 (중앙에 자연스럽게 배치)
+                        // 프로필 이미지
                         ClipRRect(
                           borderRadius: BorderRadius.circular(scaleHeight(29.6)),
                           child: profileImageUrl != null
@@ -160,6 +193,91 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
 
+                  SizedBox(height: scaleHeight(36)),
+
+                  // 닉네임 라벨
+                  Padding(
+                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    child: Row(
+                      children: [
+                        FixedText(
+                          "닉네임",
+                          style: AppFonts.suite.b3_sb(context).copyWith(
+                            color: AppColors.gray600,
+                          ),
+                        ),
+                        SizedBox(width: scaleWidth(2)),
+                        FixedText(
+                          "*",
+                          style: AppFonts.suite.c1_b(context).copyWith(
+                            color: AppColors.pri200,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: scaleHeight(8)),
+
+                  // 닉네임 입력 필드
+                  Padding(
+                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: scaleWidth(320),
+                          height: scaleHeight(54),
+                          decoration: BoxDecoration(
+                            color: AppColors.gray30,
+                            borderRadius: BorderRadius.circular(scaleWidth(8)),
+                          ),
+                          child: TextField(
+                            controller: _nicknameController,
+                            focusNode: _nicknameFocusNode,
+                            maxLength: _maxLength,
+                            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                            decoration: InputDecoration(
+                              isCollapsed: true,
+                              contentPadding: EdgeInsets.only(
+                                left: scaleWidth(16),
+                                top: scaleHeight(15),
+                                bottom: scaleHeight(15),
+                              ),
+                              border: InputBorder.none,
+                            ),
+                            textAlignVertical: TextAlignVertical.center,
+                            style: AppFonts.pretendard.b3_sb_long(context).copyWith(
+                              color: AppColors.black,
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: scaleHeight(8)),
+
+                        // 글자수 카운터
+                        Container(
+                          width: scaleWidth(320),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              FixedText(
+                                '$_currentLength',
+                                style: AppFonts.suite.c1_m(context).copyWith(
+                                  color: AppColors.pri900,
+                                ),
+                              ),
+                              FixedText(
+                                ' / $_maxLength',
+                                style: AppFonts.suite.c1_m(context).copyWith(
+                                  color: AppColors.gray300,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );

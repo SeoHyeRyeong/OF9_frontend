@@ -47,3 +47,4 @@ app.*.map.json
 # 민감정보처리
 key.properties
 .env
+.env

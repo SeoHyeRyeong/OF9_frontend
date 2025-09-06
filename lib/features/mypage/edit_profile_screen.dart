@@ -94,18 +94,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() {});
   }
 
-  /// 닉네임이 비어있는지 확인
+  ///닉네임이 비어있는지 확인
   bool _isNicknameEmpty() {
     return _nicknameController.text.trim().isEmpty;
   }
 
-  /// 닉네임에 오류가 있는지 확인 (로딩 중이면 에러 아님)
+  ///닉네임에 오류가 있는지 확인 (로딩 중이면 에러 아님)
   bool _hasNicknameError() {
     if (isLoading) return false; // 로딩 중에는 에러 표시 안함
     return _isNicknameEmpty() || !_isNicknameAvailable;
   }
 
-  /// 닉네임 중복 확인
+  ///닉네임 중복 확인
   Future<void> _checkNicknameAvailability() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty || nickname == originalNickname.trim()) {
@@ -133,18 +133,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  /// 완료 버튼 활성화 조건 확인
+  ///완료 버튼 활성화 조건 확인
   bool _canComplete() {
     return !_isNicknameEmpty() && _isNicknameAvailable && _hasChanges();
   }
 
-  /// 정보가 변경되었는지 확인
+  ///정보가 변경되었는지 확인
   bool _hasChanges() {
     return _nicknameController.text != originalNickname ||
         favTeam != originalFavTeam;
   }
 
-  /// 사용자 정보 불러오기
+  ///사용자 정보 불러오기
   Future<void> _loadUserInfo() async {
     try {
       final response = await UserApi.getMyProfile();
@@ -176,7 +176,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  /// 최애구단 선택
+  ///최애구단 선택
   Future<void> _selectFavTeam() async {
     final selectedTeam = await showTeamPicker(
       context: context,
@@ -193,7 +193,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  /// 완료 버튼 클릭 시 실행될 함수
+  ///완료 버튼 클릭 시 실행될 함수
   Future<void> _onCompletePressed() async {
     if (!_canComplete()) {
       return;
@@ -508,7 +508,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: ElevatedButton(
                       onPressed: canComplete ? _onCompletePressed : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: canComplete ? AppColors.gray700 : AppColors.gray200,
+                        backgroundColor: canComplete ? AppColors.gray700: AppColors.gray200,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(scaleHeight(16)),
                         ),

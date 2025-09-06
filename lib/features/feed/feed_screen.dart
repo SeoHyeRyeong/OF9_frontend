@@ -12,6 +12,8 @@ import 'package:frontend/api/record_api.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:frontend/features/feed/search_screen.dart';
+
 
 class FeedScreen extends StatefulWidget {
   final bool showCompletionPopup;
@@ -509,10 +511,23 @@ class _FeedScreenState extends State<FeedScreen> {
                           ),
                         ],
                       ),
-                      SvgPicture.asset(
+                      /*SvgPicture.asset(
                         AppImages.search,
                         width: 24.w,
                         height: 24.w,
+                      ),*/
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SearchScreen()),
+                          );
+                        },
+                        child: SvgPicture.asset(
+                          AppImages.search,
+                          width: 24.w,
+                          height: 24.w,
+                        ),
                       ),
                     ],
                   ),

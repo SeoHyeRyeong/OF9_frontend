@@ -130,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SizedBox(height: screenHeight * 0.3),
+                    SizedBox(height: screenHeight * 0.29),
 
                     // Lottie 애니메이션
                     Center(

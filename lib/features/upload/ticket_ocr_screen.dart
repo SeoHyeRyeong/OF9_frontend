@@ -448,7 +448,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                                 // 메인 타이틀
                                 FixedText(
                                   '티켓을 스캔해 주세요',
-                                  style: AppFonts.h4_b(context).copyWith(
+                                  style: AppFonts.pretendard.h4_b(context).copyWith(
                                     color: Colors.black,
                                   ),
                                 ),
@@ -458,7 +458,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                                 // 서브타이틀
                                 FixedText(
                                   '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
-                                  style: AppFonts.b3_r(context).copyWith(
+                                  style: AppFonts.pretendard.b3_r(context).copyWith(
                                     color: AppColors.gray300,
                                   ),
                                 ),

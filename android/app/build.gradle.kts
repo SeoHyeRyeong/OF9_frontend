@@ -6,6 +6,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// .env 파일 읽기 함수 추가
+fun loadEnvFile(): Properties {
+    val envFile = file("../../.env")
+    val properties = Properties()
+    if (envFile.exists()) {
+        envFile.inputStream().use { properties.load(it) }
+    }
+    return properties
+}
+
 val keyProperties = Properties()
 val keyPropertiesFile = rootProject.file("key.properties")
 if (keyPropertiesFile.exists()) {
@@ -33,14 +43,28 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["NATIVE_APP_KEY"] = keyProperties["NATIVE_APP_KEY"] ?: ""
+
+        // .env에서 값들 읽어오기
+        val envProps = loadEnvFile()
+        val backendUrl = envProps.getProperty("BACKEND_URL") ?: "http://localhost:8080"
+        val nativeAppKey = keyProperties["NATIVE_APP_KEY"]?.toString() ?: ""
+
+        // URL에서 호스트만 추출
+        val backendHost = backendUrl.replace(Regex("^https?://"), "").replace(Regex(":.*$"), "")
+
+        manifestPlaceholders["NATIVE_APP_KEY"] = nativeAppKey
+        manifestPlaceholders["BACKEND_HOST"] = backendHost
+
+        println("🔧 Build config:")
+        println("   Backend URL: $backendUrl")
+        println("   Backend Host: $backendHost")
+        println("   Native App Key: ${if (nativeAppKey.isNotEmpty()) "설정됨" else "미설정"}")
     }
 
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = true // 프로가드(난독화) ON/OFF 스위치
-            isShrinkResources = true // 사용하지 않는 리소스(이미지 등)도 같이 삭제할지 여부
-
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

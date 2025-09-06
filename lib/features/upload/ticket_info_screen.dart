@@ -465,7 +465,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                             padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                             child: FixedText(
                               '티켓 정보 확인',
-                              style: AppFonts.h1_b(context).copyWith(color: Colors.black),
+                              style: AppFonts.pretendard.h1_b(context).copyWith(color: Colors.black),
                             ),
                           ),
 
@@ -476,7 +476,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                             padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                             child: FixedText(
                               '스캔한 정보와 다른 부분이 있다면 수정해 주세요.',
-                              style: AppFonts.b2_m(context).copyWith(color: AppColors.gray300),
+                              style: AppFonts.pretendard.b2_m(context).copyWith(color: AppColors.gray300),
                             ),
                           ),
 
@@ -533,9 +533,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                             Row(
                                               children: [
                                                 SizedBox(height: scaleHeight(1)),
-                                                FixedText('홈 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                                                FixedText('홈 구단', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400)),
                                                 SizedBox(width: scaleWidth(2)),
-                                                FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200)),
+                                                FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200)),
                                               ],
                                             ),
                                             SizedBox(height: scaleHeight(8)),
@@ -563,7 +563,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                                     Expanded(
                                                       child: FixedText(
                                                         (selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '')) ?? '구단을 선택해 주세요',
-                                                        style: AppFonts.b3_sb_long(context).copyWith(
+                                                        style: AppFonts.pretendard.b3_sb_long(context).copyWith(
                                                           color: ((selectedHome ?? extractedHomeTeam) == null ||
                                                               (selectedHome ?? extractedHomeTeam)!.isEmpty)
                                                               ? AppColors.gray300
@@ -589,9 +589,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                             // 원정 구단
                                             Row(
                                               children: [
-                                                FixedText('원정 구단', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                                                FixedText('원정 구단', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400)),
                                                 SizedBox(width: scaleWidth(2)),
-                                                FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200)),
+                                                FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200)),
                                               ],
                                             ),
                                             SizedBox(height: scaleHeight(8)),
@@ -619,7 +619,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                                     Expanded(
                                                       child: FixedText(
                                                         (selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '')) ?? '구단을 선택해 주세요',
-                                                        style: AppFonts.b3_sb_long(context).copyWith(
+                                                        style: AppFonts.pretendard.b3_sb_long(context).copyWith(
                                                           color: ((selectedAway ?? extractedAwayTeam) == null ||
                                                               (selectedAway ?? extractedAwayTeam)!.isEmpty)
                                                               ? AppColors.gray300
@@ -652,9 +652,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                     children: [
                                       Row(
                                         children: [
-                                          FixedText('일시', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                                          FixedText('일시', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400)),
                                           SizedBox(width: scaleWidth(2)),
-                                          FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200)),
+                                          FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200)),
                                         ],
                                       ),
                                       SizedBox(height: scaleHeight(8)),
@@ -693,7 +693,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                                 child: FixedText(
                                                   selectedDateTime ?? formatKoreanDateTime(extractedDate, extractedTime)
                                                       ?? '경기 날짜를 선택해 주세요',
-                                                  style: AppFonts.b3_sb_long(context).copyWith(
+                                                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(
                                                     color: (selectedDateTime == null && extractedDate == null && extractedTime == null)
                                                         ? AppColors.gray300
                                                         : Colors.black,
@@ -722,9 +722,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                     children: [
                                       Row(
                                         children: [
-                                          FixedText('구장', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                                          FixedText('구장', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400)),
                                           SizedBox(width: scaleWidth(2)),
-                                          FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200)),
+                                          FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200)),
                                         ],
                                       ),
                                       SizedBox(height: scaleHeight(8)),
@@ -754,7 +754,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                               Expanded(
                                                 child: FixedText(
                                                   selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium ??  '구장 정보를 작성해 주세요',
-                                                  style: AppFonts.b3_sb_long(context).copyWith(
+                                                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(
                                                     color: (selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium) == null
                                                         ? AppColors.gray300
                                                         : Colors.black,
@@ -775,7 +775,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                       SizedBox(height: scaleHeight(8)),
                                       FixedText(
                                         '*홈 구장과 실제 경기 구장이 다를 경우 직접 작성해 주세요',
-                                        style: AppFonts.c2_sb(context).copyWith(color: AppColors.gray300),
+                                        style: AppFonts.suite.c2_sb(context).copyWith(color: AppColors.gray300),
                                       ),
                                     ],
                                   ),
@@ -788,9 +788,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                     children: [
                                       Row(
                                         children: [
-                                          FixedText('좌석', style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400)),
+                                          FixedText('좌석', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400)),
                                           SizedBox(width: scaleWidth(2)),
-                                          FixedText('*', style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200)),
+                                          FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200)),
                                         ],
                                       ),
                                       SizedBox(height: scaleHeight(8)),
@@ -816,7 +816,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                           ),
                                           child: FixedText(
                                             selectedSeat ?? extractedSeat ?? '좌석 정보를 작성해 주세요',
-                                            style: AppFonts.b3_sb_long(context).copyWith(
+                                            style: AppFonts.pretendard.b3_sb_long(context).copyWith(
                                               color: ((selectedSeat ?? extractedSeat) == null ||
                                                   (selectedSeat ?? extractedSeat)!.isEmpty)
                                                   ? AppColors.gray300
@@ -828,7 +828,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                       SizedBox(height: scaleHeight(8)),
                                       FixedText(
                                         '*상세 좌석 정보는 나에게만 보여요',
-                                        style: AppFonts.c2_sb(context).copyWith(color: AppColors.gray300),
+                                        style: AppFonts.suite.c2_sb(context).copyWith(color: AppColors.gray300),
                                       ),
                                     ],
                                   ),
@@ -888,7 +888,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                 ),
                                 child: FixedText(
                                   '완료',
-                                  style: AppFonts.b2_b(context).copyWith(color: AppColors.gray20),
+                                  style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
                                 ),
                               ),
                             ),

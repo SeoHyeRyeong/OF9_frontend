@@ -12,7 +12,7 @@ class RecordState extends ChangeNotifier {
   String? _comment;
   String? _longContent;
   String? _bestPlayer;
-  List<String> _companions = [];
+  List<int> _companions = [];
   List<String> _foodTags = [];
   List<String> _imagePaths = [];
 
@@ -25,7 +25,7 @@ class RecordState extends ChangeNotifier {
   String? get comment => _comment;
   String? get longContent => _longContent;
   String? get bestPlayer => _bestPlayer;
-  List<String> get companions => _companions;
+  List<int> get companions => _companions;
   List<String> get foodTags => _foodTags;
   List<String> get imagePaths => _imagePaths;
 
@@ -50,7 +50,7 @@ class RecordState extends ChangeNotifier {
     String? comment,
     String? longContent,
     String? bestPlayer,
-    List<String>? companions,
+    List<int>? companions,
     List<String>? foodTags,
     List<String>? imagePaths,
   }) {
@@ -79,7 +79,7 @@ class RecordState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateCompanions(List<String> companions) {
+  void updateCompanions(List<int> companions) {
     _companions = companions;
     notifyListeners();
   }

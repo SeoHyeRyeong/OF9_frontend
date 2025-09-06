@@ -136,7 +136,7 @@ class CustomPopupDialog extends StatelessWidget {
             // 타이틀
             FixedText(
               title,
-              style: AppFonts.h5_b(context).copyWith(
+              style: AppFonts.pretendard.h5_b(context).copyWith(
                 color: AppColors.gray950,
                 decoration: TextDecoration.none,
                 height: 1.4,
@@ -150,7 +150,7 @@ class CustomPopupDialog extends StatelessWidget {
               const Spacer(flex: 12),
               FixedText(
                 subtitle!,
-                style: AppFonts.b3_r(context).copyWith(
+                style: AppFonts.pretendard.b3_r(context).copyWith(
                   color: AppColors.gray300,
                   decoration: TextDecoration.none,
                   height: 1.3,
@@ -184,7 +184,7 @@ class CustomPopupDialog extends StatelessWidget {
                       ),
                       child: FixedText(
                         firstButtonText,
-                        style: AppFonts.b3_sb(context).copyWith(
+                        style: AppFonts.pretendard.b3_sb(context).copyWith(
                           color: AppColors.gray600,
                         ),
                       ),
@@ -207,7 +207,7 @@ class CustomPopupDialog extends StatelessWidget {
                       ),
                       child: FixedText(
                         secondButtonText!,
-                        style: AppFonts.b3_sb(context).copyWith(
+                        style: AppFonts.pretendard.b3_sb(context).copyWith(
                           color: AppColors.gray20,
                         ),
                       ),
@@ -230,7 +230,7 @@ class CustomPopupDialog extends StatelessWidget {
                 ),
                 child: FixedText(
                   firstButtonText,
-                  style: AppFonts.b3_sb(context).copyWith(
+                  style: AppFonts.pretendard.b3_sb(context).copyWith(
                     color: AppColors.gray20,
                   ),
                 ),

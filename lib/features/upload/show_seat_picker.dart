@@ -566,7 +566,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                           padding: EdgeInsets.only(top: widget.sheetHeight * 0.007),
                           child: FixedText(
                             '좌석',
-                            style: AppFonts.b2_b(context).copyWith(color: Colors.black),
+                            style: AppFonts.pretendard.b2_b(context).copyWith(color: Colors.black),
                           ),
                         ),
                         const Spacer(),
@@ -597,12 +597,12 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                     children: [
                                       FixedText(
                                         '구역',
-                                        style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400),
+                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
                                       ),
                                       SizedBox(width: scaleWidth(2)),
                                       FixedText(
                                         '*',
-                                        style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200),
+                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
                                       ),
                                     ],
                                   ),
@@ -635,7 +635,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                             Expanded(
                                               child: FixedText(
                                                 selectedZone ?? '구역을 선택해 주세요',
-                                                style: AppFonts.b3_sb_long(context).copyWith(
+                                                style: AppFonts.pretendard.b3_sb_long(context).copyWith(
                                                   color: selectedZone != null ? AppColors.trans900: AppColors.gray300,
                                                 ),
                                               ),
@@ -669,9 +669,9 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                           focusNode: _zoneTextFocusNode,
                                           decoration: InputDecoration.collapsed(
                                             hintText: '구역을 입력해 주세요',
-                                            hintStyle: AppFonts.b3_sb_long(context).copyWith(color: AppColors.gray300),
+                                            hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
                                           ),
-                                          style: AppFonts.b3_sb_long(context).copyWith(color: AppColors.trans900),
+                                          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
                                           onChanged: (value) => setState(() {}),
                                         ),
                                       ),
@@ -684,12 +684,12 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                     children: [
                                       FixedText(
                                         '블럭',
-                                        style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400),
+                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
                                       ),
                                       SizedBox(width: scaleWidth(2)),
                                       FixedText(
                                         '*',
-                                        style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200),
+                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
                                       ),
                                     ],
                                   ),
@@ -725,7 +725,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                             Expanded(
                                               child: FixedText(
                                                 selectedBlock ?? '블럭을 선택해 주세요',
-                                                style: AppFonts.b3_sb_long(context).copyWith(
+                                                style: AppFonts.pretendard.b3_sb_long(context).copyWith(
                                                   color: selectedBlock != null ? AppColors.trans900: AppColors.gray300,
                                                 ),
                                               ),
@@ -761,9 +761,9 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                           focusNode: _blockTextFocusNode,
                                           decoration: InputDecoration.collapsed(
                                             hintText: '블럭을 입력해 주세요',
-                                            hintStyle: AppFonts.b3_sb_long(context).copyWith(color: AppColors.gray300),
+                                            hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
                                           ),
-                                          style: AppFonts.b3_sb_long(context).copyWith(color: AppColors.trans900),
+                                          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
                                           onChanged: (value) => setState(() {}),
                                         ),
                                       ),
@@ -780,7 +780,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                           children: [
                                             FixedText(
                                               '열',
-                                              style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400),
+                                              style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
                                             ),
                                             SizedBox(height: scaleHeight(8)),
                                             Container(height: scaleHeight(52),
@@ -796,9 +796,9 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                                   focusNode: _rowFocusNode,
                                                   decoration: InputDecoration.collapsed(
                                                     hintText: '열',
-                                                    hintStyle: AppFonts.b3_sb_long(context).copyWith(color: AppColors.gray300),
+                                                    hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
                                                   ),
-                                                  style: AppFonts.b3_sb_long(context).copyWith(color: AppColors.gray950),
+                                                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray950),
                                                   onChanged: (value) => setState(() {}),
                                                 ),
                                               ),
@@ -818,12 +818,12 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                               children: [
                                                 FixedText(
                                                   '번호',
-                                                  style: AppFonts.c1_b(context).copyWith(color: AppColors.gray400),
+                                                  style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
                                                 ),
                                                 SizedBox(width: scaleWidth(2)),
                                                 FixedText(
                                                   '*',
-                                                  style: AppFonts.c1_b(context).copyWith(color: AppColors.pri200),
+                                                  style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
                                                 ),
                                               ],
                                             ),
@@ -842,10 +842,10 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                                   focusNode: _numFocusNode,
                                                   decoration: InputDecoration.collapsed(
                                                     hintText: '번호',
-                                                    hintStyle: AppFonts.b3_sb_long(context).copyWith(
+                                                    hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(
                                                         color: AppColors.gray300),
                                                   ),
-                                                  style: AppFonts.b3_sb_long(context).copyWith(color: AppColors.gray950),
+                                                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray950),
                                                   onChanged: (value) {
                                                     setState(() {});
                                                   },
@@ -906,7 +906,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                     ),
                                     child: FixedText(
                                       '완료',
-                                      style: AppFonts.b2_b(context).copyWith(
+                                      style: AppFonts.suite.b2_b(context).copyWith(
                                         color: AppColors.gray20,
                                       ),
                                     ),
@@ -968,7 +968,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                           horizontal: scaleWidth(16)),
                                       child: FixedText(
                                         zone,
-                                        style: AppFonts.b3_sb_long(context).copyWith(color: AppColors.trans900),
+                                        style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
                                       ),
                                     ),
                                   );
@@ -1025,7 +1025,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                       padding: EdgeInsets.symmetric(vertical: scaleHeight(12), horizontal: scaleWidth(16)),
                                       child: FixedText(
                                         block,
-                                        style: AppFonts.b3_sb_long(context).copyWith(color: AppColors.trans900),
+                                        style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
                                       ),
                                     ),
                                   );

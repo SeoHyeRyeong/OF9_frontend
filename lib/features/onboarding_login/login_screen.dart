@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              width: scaleHeight(10),   // 정사각형이므로 높이 기준으로 통일
+              width: scaleHeight(10),
               height: scaleHeight(10),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             if (index != onboardingData.length - 1)
-              SizedBox(width: scaleWidth(16)), // 수평 간격은 너비 기준
+              SizedBox(width: scaleWidth(16)),
           ],
         );
       }),
@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => const FavoriteTeamScreen(),
-          transitionDuration: Duration.zero, // 전환 애니메이션 제거
+          transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
         ),
       );
@@ -149,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // 타이틀
                           FixedText(
                             onboardingData[_currentIndex]['title']!,
-                            style: AppFonts.h3_eb(context).copyWith(
+                            style: AppFonts.suite.h3_b(context).copyWith(
                                 color: AppColors.gray800),
                             textAlign: TextAlign.center,
                           ),
@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // 서브타이틀
                           FixedText(
                             onboardingData[_currentIndex]['subtitle']!,
-                            style: AppFonts.b2_m_long(context).copyWith(
+                            style: AppFonts.suite.b2_m_long(context).copyWith(
                                 color: AppColors.gray300),
                             textAlign: TextAlign.center,
                           ),
@@ -192,8 +192,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     SizedBox(width: scaleWidth(4)),
                                     FixedText(
-                                      '카카오로 계속하기',
-                                      style: AppFonts.b2_b(context).copyWith(
+                                      '카카오로 로그인',
+                                      style: AppFonts.suite.b2_b(context).copyWith(
                                         color: AppColors.kakao02,
                                       ),
                                     ),

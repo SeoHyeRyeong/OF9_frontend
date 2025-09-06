@@ -43,6 +43,9 @@ class RecordApi {
         case 'POST':
           response = await http.post(uri, headers: headers, body: body);
           break;
+        case 'PATCH':
+          response = await http.patch(uri, headers: headers, body: body);
+          break;
         case 'DELETE':
           response = await http.delete(uri, headers: headers);
           break;
@@ -67,6 +70,9 @@ class RecordApi {
             case 'POST':
               response = await http.post(uri, headers: newHeaders, body: body);
               break;
+            case 'PATCH':
+              response = await http.patch(uri, headers: newHeaders, body: body);
+              break;
             case 'DELETE':
               response = await http.delete(uri, headers: newHeaders);
               break;
@@ -85,6 +91,11 @@ class RecordApi {
     }
   }
 
+  //=====================================================================================
+  // 직관 기록
+  //=====================================================================================
+
+  /// 직관 기록 등록
   /// 모든 기록을 한 번에 업로드 (JSON + Base64 방식)
   static Future<Map<String, dynamic>> createCompleteRecord({
     required int userId,
@@ -95,7 +106,94 @@ class RecordApi {
     String? comment,
     String? longContent,
     String? bestPlayer,
-    List<String>? companions,
+    List<int>? companionIds,
+    List<String>? foodTags,
+    List<String>? imagePaths,
+  }) async {
+    // 이미지를 Base64로 인코딩
+    List<String> base64Images = [];
+    if (imagePaths != null && imagePaths.isNotEmpty) {
+      for (String imagePath in imagePaths) {
+        final file = File(imagePath);
+        if (await file.exists()) {
+          try {
+            final bytes = await file.readAsBytes();
+            final base64String = base64Encode(bytes);
+            base64Images.add(base64String);
+            print('📤 이미지 Base64 인코딩 완료: ${imagePath}');
+          } catch (e) {
+            print('❌이미지 인코딩 실패: $imagePath, 에러: $e');
+          }
+        }
+      }
+    }
+
+    final requestBody = {
+      'userId': userId,
+      'gameId': gameId,
+      'seatInfo': seatInfo,
+      'emotionCode': emotionCode,
+      'stadium': stadium,
+      if (comment != null && comment.isNotEmpty) 'comment': comment,
+      if (longContent != null && longContent.isNotEmpty) 'longContent': longContent,
+      if (bestPlayer != null && bestPlayer.isNotEmpty) 'bestPlayer': bestPlayer,
+      if (companionIds != null && companionIds.isNotEmpty) 'companions': companionIds,
+      if (foodTags != null && foodTags.isNotEmpty) 'foodTags': foodTags,
+      if (base64Images.isNotEmpty) 'mediaUrls': base64Images,
+    };
+
+    print('📤 기록 업로드 요청 본문: ${jsonEncode(requestBody).length} bytes');
+    print('📤 Base64 이미지 개수: ${base64Images.length}');
+
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/records'),
+      method: 'POST',
+      body: jsonEncode(requestBody),
+    );
+
+    print('📥 기록 업로드 응답 코드: ${res.statusCode}');
+    print('📥 기록 업로드 응답 본문: ${res.body}');
+
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      final responseData = jsonDecode(utf8.decode(res.bodyBytes));
+      return responseData['data'];
+    } else {
+      throw Exception('기록 업로드 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 맞팔 친구 검색
+  static Future<List<Map<String, dynamic>>> getMutualFriends({String? query}) async {
+    Uri uri;
+    if (query != null && query.isNotEmpty) {
+      uri = Uri.parse('$baseUrl/records/me/mutual-friends?query=${Uri.encodeComponent(query)}');
+    } else {
+      uri = Uri.parse('$baseUrl/records/me/mutual-friends');
+    }
+
+    final res = await _makeRequestWithRetry(
+      uri: uri,
+      method: 'GET',
+    );
+
+    print('👥 맞팔 친구 응답: ${res.statusCode} - ${res.body}');
+
+    if (res.statusCode == 200) {
+      final responseData = jsonDecode(utf8.decode(res.bodyBytes));
+      final List<dynamic> friends = responseData['data'];
+      return friends.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('맞팔 친구 조회 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 직관 기록 수정 (디테일한 정보 추가)
+  static Future<Map<String, dynamic>> updateRecord({
+    required String recordId,
+    String? comment,
+    String? longContent,
+    String? bestPlayer,
+    List<int>? companionIds,
     List<String>? foodTags,
     List<String>? imagePaths,
   }) async {
@@ -118,40 +216,71 @@ class RecordApi {
     }
 
     final requestBody = {
-      'userId': userId,
-      'gameId': gameId,
-      'seatInfo': seatInfo,
-      'emotionCode': emotionCode,
-      'stadium': stadium,
-      if (comment != null && comment.isNotEmpty) 'comment': comment,
-      if (longContent != null && longContent.isNotEmpty) 'longContent': longContent,
-      if (bestPlayer != null && bestPlayer.isNotEmpty) 'bestPlayer': bestPlayer,
-      //if (companions != null && companions.isNotEmpty) 'companions': companions, // 수정필요!!!
-      if (foodTags != null && foodTags.isNotEmpty) 'foodTags': foodTags,
-      //if (base64Images.isNotEmpty) 'mediaFiles': base64Images,
+      if (comment != null) 'comment': comment,
+      if (longContent != null) 'longContent': longContent,
+      if (bestPlayer != null) 'bestPlayer': bestPlayer,
+      if (companionIds != null) 'companions': companionIds,
+      if (foodTags != null) 'foodTags': foodTags,
       if (base64Images.isNotEmpty) 'mediaUrls': base64Images,
     };
 
-    print('📤 기록 업로드 요청 본문: ${jsonEncode(requestBody).length} bytes');
-    print('📤 Base64 이미지 개수: ${base64Images.length}');
+    print('📤 기록 수정 요청 본문: ${jsonEncode(requestBody)}');
 
     final res = await _makeRequestWithRetry(
-      uri: Uri.parse('$baseUrl/records'),
-      method: 'POST',
+      uri: Uri.parse('$baseUrl/records/$recordId'),
+      method: 'PATCH',
       body: jsonEncode(requestBody),
     );
 
-    print('📥 기록 업로드 응답 코드: ${res.statusCode}');
-    print('📥 기록 업로드 응답 본문: ${res.body}');
+    print('📥 기록 수정 응답 코드: ${res.statusCode}');
+    print('📥 기록 수정 응답 본문: ${res.body}');
 
-    if (res.statusCode == 200 || res.statusCode == 201) {
-      return jsonDecode(utf8.decode(res.bodyBytes));
+    if (res.statusCode == 200) {
+      final responseData = jsonDecode(utf8.decode(res.bodyBytes));
+      return responseData['data']; // ApiResponse의 data 필드 반환
     } else {
-      throw Exception('기록 업로드 실패: ${res.statusCode}');
+      throw Exception('기록 수정 실패: ${res.statusCode}');
     }
   }
 
-  /// 내 피드 조회
+  /// 하나의 직관 기록 조회
+  static Future<Map<String, dynamic>> getRecordDetail(String recordId) async {
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/records/$recordId/details'),
+      method: 'GET',
+    );
+
+    print('📋 기록 상세 응답 코드: ${res.statusCode}');
+    print('📋 기록 상세 응답: ${res.body}');
+
+    if (res.statusCode == 200) {
+      final responseData = jsonDecode(utf8.decode(res.bodyBytes));
+      return responseData['data']; // ApiResponse의 data 필드 반환
+    } else {
+      throw Exception('기록 상세 조회 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 직관 기록 삭제
+  static Future<void> deleteRecord(String recordId) async {
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/records/$recordId'),
+      method: 'DELETE',
+    );
+
+    print('🗑️ 기록 삭제 응답 코드: ${res.statusCode}');
+
+    if (res.statusCode != 200 && res.statusCode != 204) {
+      throw Exception('기록 삭제 실패: ${res.statusCode}');
+    }
+  }
+
+
+  //=====================================================================================
+  // 마이페이지
+  //=====================================================================================
+
+  /// 내 피드 조회 (전체)
   static Future<List<Map<String, dynamic>>> getMyRecordsFeed() async {
     final res = await _makeRequestWithRetry(
       uri: Uri.parse('$baseUrl/records/me/feed'),
@@ -162,38 +291,11 @@ class RecordApi {
     print('📷 FEED 응답: ${res.body}');
 
     if (res.statusCode == 200) {
-      // UTF-8 디코딩 추가
-      final List<dynamic> records = jsonDecode(utf8.decode(res.bodyBytes));
+      final responseData = jsonDecode(utf8.decode(res.bodyBytes));
+      final List<dynamic> records = responseData['data'];
       return records.cast<Map<String, dynamic>>();
     } else {
       throw Exception('내 기록 조회 실패: ${res.statusCode}');
-    }
-  }
-
-
-  /// 특정 기록 상세 조회
-  static Future<Map<String, dynamic>> getRecordById(String recordId) async {
-    final res = await _makeRequestWithRetry(
-      uri: Uri.parse('$baseUrl/records/$recordId'),
-      method: 'GET',
-    );
-
-    if (res.statusCode == 200) {
-      return jsonDecode(utf8.decode(res.bodyBytes));
-    } else {
-      throw Exception('기록 상세 조회 실패: ${res.statusCode}');
-    }
-  }
-
-  /// 기록 삭제
-  static Future<void> deleteRecord(String recordId) async {
-    final res = await _makeRequestWithRetry(
-      uri: Uri.parse('$baseUrl/records/$recordId'),
-      method: 'DELETE',
-    );
-
-    if (res.statusCode != 200 && res.statusCode != 204) {
-      throw Exception('기록 삭제 실패: ${res.statusCode}');
     }
   }
 
@@ -207,7 +309,8 @@ class RecordApi {
     print('📋 LIST 응답: ${res.statusCode} - ${res.body}');
 
     if (res.statusCode == 200) {
-      final List<dynamic> records = jsonDecode(utf8.decode(res.bodyBytes)); // UTF-8 처리
+      final responseData = jsonDecode(utf8.decode(res.bodyBytes));
+      final List<dynamic> records = responseData['data'];
       return records.cast<Map<String, dynamic>>();
     } else {
       throw Exception('리스트 조회 실패: ${res.statusCode}');
@@ -224,10 +327,18 @@ class RecordApi {
     print('📅 CALENDAR 응답: ${res.statusCode} - ${res.body}');
 
     if (res.statusCode == 200) {
-      final List<dynamic> calendarData = jsonDecode(utf8.decode(res.bodyBytes));
+      final responseData = jsonDecode(utf8.decode(res.bodyBytes));
+      final List<dynamic> calendarData = responseData['data'];
       return calendarData.cast<Map<String, dynamic>>();
     } else {
       throw Exception('캘린더 조회 실패: ${res.statusCode}');
     }
+  }
+
+
+  /// 기존 getRecordById 메서드는 getRecordDetail로 통일했으므로 제거하거나 별칭으로 유지
+  @Deprecated('Use getRecordDetail instead')
+  static Future<Map<String, dynamic>> getRecordById(String recordId) async {
+    return getRecordDetail(recordId);
   }
 }

@@ -10,6 +10,7 @@ import 'package:frontend/api/user_api.dart';
 import 'package:frontend/api/record_api.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:frontend/features/mypage/settings_screen.dart';
 
 
 class MyPageScreen extends StatefulWidget {
@@ -49,15 +50,16 @@ class _MyPageScreenState extends State<MyPageScreen> {
   /// 사용자 정보 불러오기
   Future<void> _loadUserInfo() async {
     try {
-      final userInfo = await UserApi.getMyInfo();
+      final response = await UserApi.getMyProfile();
+      final userInfo = response['data'];
       setState(() {
         nickname = userInfo['nickname'] ?? '알 수 없음';
         favTeam = userInfo['favTeam'] ?? '응원팀 없음';
         profileImageUrl = userInfo['profileImageUrl'];
-        postCount = userInfo['postCount'] ?? 0;
+        postCount = userInfo['recordCount'] ?? 0;
         followingCount = userInfo['followingCount'] ?? 0;
         followerCount = userInfo['followerCount'] ?? 0;
-        isPrivate = userInfo['private'] ?? false;
+        isPrivate = userInfo['isPrivate'] ?? false;
         isLoading = false;
       });
     } catch (e) {
@@ -180,10 +182,22 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         alignment: Alignment.topRight,
                         child: Padding(
                           padding: EdgeInsets.only(top: hp(10), right: wp(20)),
-                          child: SvgPicture.asset(
-                            AppImages.Setting,
-                            width: wp(24),
-                            height: wp(24),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation1, animation2) => const SettingsScreen(),
+                                  transitionDuration: Duration.zero, // 전환 애니메이션 제거
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
+                            child: SvgPicture.asset(
+                              AppImages.Setting,
+                              width: wp(24),
+                              height: wp(24),
+                            ),
                           ),
                         ),
                       ),
@@ -222,7 +236,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           ? CircularProgressIndicator()
                           : FixedText(
                         nickname,
-                        style: AppFonts.b1_b(context).copyWith(color: AppColors.black),
+                        style: AppFonts.pretendard.b1_b(context).copyWith(color: AppColors.black),
                       ),
                       // 구단명
                       SizedBox(height: hp(224 - 196 - 16)),
@@ -230,7 +244,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           ? Container()
                           : FixedText(
                         "$favTeam 팬",
-                        style: AppFonts.c1_b(context).copyWith(color: AppColors.gray300),
+                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray300),
                       ),
                       // 게시글/팔로잉/팔로워
                       SizedBox(height: hp(256 - 224 - 16)),
@@ -242,12 +256,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             children: [
                               FixedText(
                                 postCount.toString(),
-                                style: AppFonts.b2_b(context),
+                                style: AppFonts.pretendard.b2_b(context),
                               ),
                               SizedBox(height: hp(4)),
                               FixedText(
                                 "게시글",
-                                style: AppFonts.b3_m(context).copyWith(color: AppColors.gray400),
+                                style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
                               ),
                             ],
                           ),
@@ -257,12 +271,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             children: [
                               FixedText(
                                 followingCount.toString(),
-                                style: AppFonts.b2_b(context),
+                                style: AppFonts.pretendard.b2_b(context),
                               ),
                               SizedBox(height: hp(4)),
                               FixedText(
                                 "팔로잉",
-                                style: AppFonts.b3_m(context).copyWith(color: AppColors.gray400),
+                                style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
                               ),
                             ],
                           ),
@@ -274,12 +288,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                 followerCount >= 1000
                                     ? "${(followerCount / 1000).toStringAsFixed(1)}K"
                                     : followerCount.toString(),
-                                style: AppFonts.b2_b(context),
+                                style: AppFonts.pretendard.b2_b(context),
                               ),
                               SizedBox(height: hp(4)),
                               FixedText(
                                 "팔로워",
-                                style: AppFonts.b3_m(context).copyWith(color: AppColors.gray400),
+                                style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
                               ),
                             ],
                           ),
@@ -311,7 +325,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                 SizedBox(width: wp(11)),
                                 FixedText(
                                   "프로필 공유하기",
-                                  style: AppFonts.b3_sb(context).copyWith(color: AppColors.white),
+                                  style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.white),
                                 ),
                               ],
                             ),
@@ -378,7 +392,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                   children: [
                                     FixedText(
                                       "경기 구단",
-                                      style: AppFonts.c2_sb(context).copyWith(color: Color(0xFF96A0B1)),
+                                      style: AppFonts.pretendard.c1_m(context).copyWith(color: Color(0xFF96A0B1)),
                                     ),
                                     SvgPicture.asset(
                                       AppImages.dropdownBlack,
@@ -407,7 +421,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                   children: [
                                     FixedText(
                                       "구장",
-                                      style: AppFonts.c2_sb(context).copyWith(color: Color(0xFF96A0B1)),
+                                      style: AppFonts.pretendard.c1_m(context).copyWith(color: Color(0xFF96A0B1)),
                                     ),
                                     SvgPicture.asset(
                                       AppImages.dropdownBlack,
@@ -436,7 +450,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                   children: [
                                     FixedText(
                                       "승패 여부",
-                                      style: AppFonts.c2_sb(context).copyWith(color: Color(0xFF96A0B1)),
+                                      style: AppFonts.pretendard.c1_m(context).copyWith(color: Color(0xFF96A0B1)),
                                     ),
                                     SvgPicture.asset(
                                       AppImages.dropdownBlack,
@@ -475,7 +489,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           padding: EdgeInsets.all(wp(50)),
                           child: Text(
                             '작성한 기록이 없습니다.',
-                            style: AppFonts.b3_m(context).copyWith(color: AppColors.gray400),
+                            style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
                           ),
                         )
                       else
@@ -538,7 +552,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                           ),
                                           child: Text(
                                             record['gameDate'] ?? '',
-                                            style: AppFonts.c3_sb(context).copyWith(
+                                            style: AppFonts.pretendard.c3_sb(context).copyWith(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -583,7 +597,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
             SizedBox(height: hp(4)),
             Text(
               record['gameDate'] ?? '',
-              style: AppFonts.c2_b(context),
+              style: AppFonts.pretendard.c2_b(context),
               textAlign: TextAlign.center,
             ),
             /*Text(

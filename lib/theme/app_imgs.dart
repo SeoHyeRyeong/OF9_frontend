@@ -21,7 +21,8 @@ class AppImages {
   static const dropdownBlack = 'assets/imgs/ic_dropdown_black.svg';
 
   // 완료 에셋
-  static const complete = 'assets/imgs/img_complete.png';
+  static const welcome = 'assets/imgs/ic_onboarding/img_welcome.png';
+  static const img_ticket = 'assets/imgs/ic_onboarding/img_ticket.png';
   static const ticket = 'assets/imgs/ic_ticket.png';
 
   // 야구팀 로고
@@ -103,4 +104,7 @@ class AppImages {
   static const month11 = 'assets/imgs/ic_feed/11.svg';
   static const month12 = 'assets/imgs/ic_feed/12.svg';
   static const search = 'assets/imgs/ic_feed/ic_search.svg';
+
+  //마이페이지
+  static const btn_camera = 'assets/imgs/btn_camera_24.svg';
 }

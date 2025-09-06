@@ -196,7 +196,7 @@ Future<String?> showTeamPicker({
                                                 ? AppColors.gray700
                                                 : AppColors.gray200,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                              borderRadius: BorderRadius.circular(scaleHeight(16)),
                                             ),
                                             padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
                                             elevation: 0,

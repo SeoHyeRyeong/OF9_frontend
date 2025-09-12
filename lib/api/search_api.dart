@@ -3,10 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 
-// ---------------------------
-// --- API 응답 모델 클래스 ---
-// ---------------------------
-
 // 검색 결과 - 직관 기록 모델
 class Record {
   final int recordId;
@@ -121,11 +117,6 @@ class PopularSearch {
         count = json['count'];
 }
 
-
-// ---------------------------
-// --- SearchApi 클래스 ---
-// ---------------------------
-
 class SearchApi {
   static final _kakaoAuth = KakaoAuthService();
 
@@ -144,12 +135,11 @@ class SearchApi {
     };
   }
 
-  /// API 요청 및 응답 파싱을 위한 공통 헬퍼
+  /// API 응답 및 응답 파싱을 위한 공통 헬퍼
   static Future<T> _processResponse<T>(http.Response response, T Function(dynamic) fromJson) async {
-    if (response.statusCode >= 200 && response.statusCode < 300) { // 성공 상태 코드 범위 확장
+    if (response.statusCode >= 200 && response.statusCode < 300) {
       final decodedBody = jsonDecode(utf8.decode(response.bodyBytes));
       if (decodedBody['success'] == true) {
-        // data가 null일 수 있는 경우도 처리
         return fromJson(decodedBody['data']);
       } else {
         throw Exception('API 응답 실패: ${decodedBody['message']}');
@@ -187,8 +177,8 @@ class SearchApi {
       }
 
       if (response.statusCode == 401 || response.statusCode == 403) {
-        print('🔄 토큰 만료, 갱신 시도...');
-        final refreshResult = await _kakaoAuth.refreshTokens(); // KakaoAuthService에 구현 필요
+        print('토큰 만료, 갱신 시도...');
+        final refreshResult = await _kakaoAuth.refreshTokens();
 
         if (refreshResult != null) {
           final newHeaders = await _authHeaders();
@@ -206,42 +196,37 @@ class SearchApi {
               response = await http.delete(uri, headers: newHeaders, body: body);
               break;
           }
-          print('🎉 토큰 갱신 후 재요청 성공');
+          print('토큰 갱신 후 재요청 성공');
         } else {
-          print('❌ 토큰 갱신 실패, 재로그인 필요');
+          print('토큰 갱신 실패, 재로그인 필요');
           throw Exception('토큰 갱신 실패. 재로그인하세요.');
         }
       }
       return response;
     } catch (e) {
-      print('🔥 API 요청 오류: $e');
+      print('API 요청 오류: $e');
       rethrow;
     }
   }
 
-
   /// 1. 통합 검색 (기록 + 사용자)
   static Future<SearchResult> search(String query) async {
     final uri = Uri.parse('$baseUrl/search').replace(queryParameters: {'query': query});
-    final headers = await _authHeaders();
-    final response = await http.get(uri, headers: headers);
+    final response = await _makeRequestWithRetry(uri: uri, method: 'GET');
     return _processResponse(response, (data) => SearchResult.fromJson(data));
   }
 
   /// 2. 최근 검색어 조회
   static Future<List<String>> getRecentSearches() async {
     final uri = Uri.parse('$baseUrl/search/recent');
-    final headers = await _authHeaders();
-    final response = await http.get(uri, headers: headers);
+    final response = await _makeRequestWithRetry(uri: uri, method: 'GET');
     return _processResponse(response, (data) => List<String>.from(data));
   }
 
   /// 3. 특정 최근 검색어 삭제
   static Future<void> deleteRecentSearch(String query) async {
     final uri = Uri.parse('$baseUrl/search/recent').replace(queryParameters: {'query': query});
-    final headers = await _authHeaders();
-    // API 명세서에는 명시되지 않았지만, 삭제는 보통 DELETE 메서드를 사용합니다.
-    final response = await http.delete(uri, headers: headers);
+    final response = await _makeRequestWithRetry(uri: uri, method: 'DELETE');
     if (response.statusCode != 200) {
       throw Exception('최근 검색어 삭제 실패: ${response.statusCode}');
     }
@@ -250,8 +235,7 @@ class SearchApi {
   /// 4. 모든 최근 검색어 삭제
   static Future<void> deleteAllRecentSearches() async {
     final uri = Uri.parse('$baseUrl/search/recent/all');
-    final headers = await _authHeaders();
-    final response = await http.delete(uri, headers: headers);
+    final response = await _makeRequestWithRetry(uri: uri, method: 'DELETE');
     if (response.statusCode != 200) {
       throw Exception('모든 최근 검색어 삭제 실패: ${response.statusCode}');
     }
@@ -260,8 +244,7 @@ class SearchApi {
   /// 5. 인기 검색어 조회
   static Future<List<PopularSearch>> getPopularSearches() async {
     final uri = Uri.parse('$baseUrl/search/popular');
-    final headers = await _authHeaders();
-    final response = await http.get(uri, headers: headers);
+    final response = await _makeRequestWithRetry(uri: uri, method: 'GET');
     return _processResponse(response, (data) {
       return (data as List).map((item) => PopularSearch.fromJson(item)).toList();
     });

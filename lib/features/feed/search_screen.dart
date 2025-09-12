@@ -326,8 +326,8 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   Widget _buildUserTile(UserSearchResult user) {
     // TODO: 실제 팔로우 상태에 따라 버튼 UI 변경
     final isFollowing = user.followStatus == 'FOLLOWING';
-    final buttonColor = isFollowing ? AppColors.gray200 : AppColors.gray700;
-    final textColor = isFollowing ? AppColors.gray400 : Colors.white;
+    final buttonColor = isFollowing ? AppColors.gray200: AppColors.gray700;
+    final textColor = isFollowing ? AppColors.gray400: Colors.white;
     final buttonText = isFollowing ? '팔로잉' : '팔로우';
 
     return Container(

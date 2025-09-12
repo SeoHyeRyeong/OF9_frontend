@@ -9,9 +9,9 @@ import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/api/user_api.dart';
 import 'package:frontend/api/record_api.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:frontend/features/mypage/settings_screen.dart';
-
+import 'package:frontend/features/mypage/follower_screen.dart';
+import 'package:frontend/features/mypage/following_screen.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({Key? key}) : super(key: key);
@@ -267,35 +267,59 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           ),
                           SizedBox(width: wp(44.5)),
                           // 팔로잉
-                          Column(
-                            children: [
-                              FixedText(
-                                followingCount.toString(),
-                                style: AppFonts.pretendard.b2_b(context),
-                              ),
-                              SizedBox(height: hp(4)),
-                              FixedText(
-                                "팔로잉",
-                                style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
-                              ),
-                            ],
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation1, animation2) => const FollowingScreen(),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
+                            child: Column(
+                              children: [
+                                FixedText(
+                                  followingCount.toString(),
+                                  style: AppFonts.pretendard.b2_b(context),
+                                ),
+                                SizedBox(height: hp(4)),
+                                FixedText(
+                                  "팔로잉",
+                                  style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
+                                ),
+                              ],
+                            ),
                           ),
                           SizedBox(width: wp(44.5)),
                           // 팔로워
-                          Column(
-                            children: [
-                              FixedText(
-                                followerCount >= 1000
-                                    ? "${(followerCount / 1000).toStringAsFixed(1)}K"
-                                    : followerCount.toString(),
-                                style: AppFonts.pretendard.b2_b(context),
-                              ),
-                              SizedBox(height: hp(4)),
-                              FixedText(
-                                "팔로워",
-                                style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
-                              ),
-                            ],
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation1, animation2) => const FollowerScreen(),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
+                            child: Column(
+                              children: [
+                                FixedText(
+                                  followerCount >= 1000
+                                      ? "${(followerCount / 1000).toStringAsFixed(1)}K"
+                                      : followerCount.toString(),
+                                  style: AppFonts.pretendard.b2_b(context),
+                                ),
+                                SizedBox(height: hp(4)),
+                                FixedText(
+                                  "팔로워",
+                                  style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),

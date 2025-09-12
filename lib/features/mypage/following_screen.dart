@@ -1,0 +1,296 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:frontend/features/mypage/mypage_screen.dart';
+import 'package:frontend/theme/app_imgs.dart';
+import 'package:frontend/utils/size_utils.dart';
+import 'package:frontend/theme/app_colors.dart';
+import 'package:frontend/theme/app_fonts.dart';
+import 'package:frontend/utils/fixed_text.dart';
+import 'package:frontend/components/custom_bottom_navbar.dart';
+import 'package:frontend/api/user_api.dart';
+
+class FollowingScreen extends StatefulWidget {
+  const FollowingScreen({Key? key}) : super(key: key);
+
+  @override
+  State<FollowingScreen> createState() => _FollowingScreenState();
+}
+
+class _FollowingScreenState extends State<FollowingScreen> {
+  // 팔로잉 목록
+  List<Map<String, dynamic>> followings = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFollowings();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 화면이 다시 표시될 때마다 데이터 새로고침
+    _loadFollowings();
+  }
+
+  // 팔로잉 목록 불러오기
+  Future<void> _loadFollowings() async {
+    try {
+      // 먼저 내 정보를 가져와서 userId를 얻기
+      final myProfile = await UserApi.getMyProfile();
+      final myUserId = myProfile['data']['id'];
+
+      // 내 팔로잉 목록 조회
+      final response = await UserApi.getFollowing(myUserId);
+      final followingsData = response['data'] as List<dynamic>? ?? [];
+
+      setState(() {
+        followings = followingsData.map((following) => {
+          'userId': following['id'] ?? following['userId'],
+          'nickname': following['nickname'] ?? '알 수 없음',
+          'favTeam': following['favTeam'] ?? '응원팀 없음',
+          'profileImageUrl': following['profileImageUrl'],
+          'isFollowing': true, // 팔로잉 목록이므로 기본적으로 true
+        }).toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      print('❌ 팔로잉 목록 불러오기 실패: $e');
+      setState(() {
+        followings = [];
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('팔로잉 목록을 불러오는데 실패했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // 언팔로우 처리
+  Future<void> _handleUnfollow(int index) async {
+    try {
+      final following = followings[index];
+      final userId = following['userId'];
+
+      // 언팔로우
+      await UserApi.unfollowUser(userId);
+
+      setState(() {
+        followings[index]['isFollowing'] = false;
+      });
+    } catch (e) {
+      print('❌ 언팔로우 처리 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('언팔로우 처리에 실패했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = constraints.maxHeight;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 뒤로가기 영역 + 타이틀 - 360*60 크기
+                Container(
+                  width: scaleWidth(360),
+                  height: scaleHeight(60),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushReplacement(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
+                                transitionDuration: Duration.zero,
+                                reverseTransitionDuration: Duration.zero,
+                              ),
+                            );
+                          },
+                          child: Container(
+                            alignment: Alignment.center,
+                            child: SvgPicture.asset(
+                              AppImages.backBlack,
+                              width: scaleHeight(24),
+                              height: scaleHeight(24),
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Center(
+                            child: FixedText(
+                              "팔로잉",
+                              style: AppFonts.suite.b2_b(context).copyWith(
+                                color: AppColors.gray950,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: scaleHeight(24)), // 균형을 위한 오른쪽 여백
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 팔로잉 목록 또는 빈 상태
+                Expanded(
+                  child: isLoading
+                      ? Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.pri900,
+                    ),
+                  )
+                      : followings.isEmpty
+                      ? _buildEmptyState()
+                      : _buildFollowingList(),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: CustomBottomNavBar(currentIndex: 4),
+    );
+  }
+
+  // 빈 상태 위젯
+  Widget _buildEmptyState() {
+    return Center(
+      child: FixedText(
+        "아직 팔로잉하는 사람이 없어요",
+        style: AppFonts.suite.h3_b(context).copyWith(
+          color: AppColors.gray300,
+        ),
+      ),
+    );
+  }
+
+  // 팔로잉 목록 위젯
+  Widget _buildFollowingList() {
+    return ListView.builder(
+      itemCount: followings.length,
+      itemBuilder: (context, index) {
+        final following = followings[index];
+        return _buildFollowingItem(following, index);
+      },
+    );
+  }
+
+  // 팔로잉 아이템 위젯 - 360*74 크기 영역
+  Widget _buildFollowingItem(Map<String, dynamic> following, int index) {
+    return Container(
+      width: scaleWidth(360),
+      height: scaleHeight(74),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: scaleWidth(19)),
+        child: Row(
+          children: [
+            // 프로필 이미지 - 54*54 크기
+            ClipRRect(
+              borderRadius: BorderRadius.circular(scaleHeight(27)), // 54/2 = 27
+              child: following['profileImageUrl'] != null
+                  ? Image.network(
+                following['profileImageUrl']!,
+                width: scaleHeight(54),
+                height: scaleHeight(54),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => SvgPicture.asset(
+                  AppImages.profile,
+                  width: scaleHeight(54),
+                  height: scaleHeight(54),
+                  fit: BoxFit.cover,
+                ),
+              )
+                  : SvgPicture.asset(
+                AppImages.profile,
+                width: scaleHeight(54),
+                height: scaleHeight(54),
+                fit: BoxFit.cover,
+              ),
+            ),
+
+            SizedBox(width: scaleWidth(18)), // 프로필에서 18px 떨어진 곳
+
+            // 닉네임과 최애구단 컬럼
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(top: scaleHeight(20)), // 영역 상단에서 20px 아래
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 닉네임
+                    FixedText(
+                      following['nickname'] ?? '알 수 없음',
+                      style: AppFonts.pretendard.b2_b(context).copyWith(
+                        color: AppColors.gray800,
+                      ),
+                    ),
+
+                    SizedBox(height: scaleHeight(8)), // 닉네임 8px 아래
+
+                    // 최애구단
+                    FixedText(
+                      "${following['favTeam'] ?? '응원팀 없음'} 팬",
+                      style: AppFonts.suite.c2_m(context).copyWith(
+                        color: AppColors.gray300,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 팔로잉/팔로우 버튼 - 79*36px, radius 8px (본인이 아닐 때만 표시)
+            following['isMe'] == true
+                ? SizedBox(width: scaleWidth(79)) // 본인일 때는 빈 공간
+                : Container(
+              width: scaleWidth(79),
+              height: scaleHeight(36),
+              child: ElevatedButton(
+                onPressed: () => _handleUnfollow(index),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: following['isFollowing']
+                      ? AppColors.gray50  // 팔로잉 상태일 때 (기본값)
+                      : AppColors.gray600, // 언팔로우된 상태일 때
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                  ),
+                  elevation: 0,
+                  padding: EdgeInsets.zero,
+                ),
+                child: Center(
+                  child: FixedText(
+                    following['isFollowing'] ? '팔로잉' : '팔로우',
+                    style: AppFonts.suite.c1_b(context).copyWith(
+                      color: following['isFollowing']
+                          ? AppColors.gray600  // 팔로잉 상태일 때 gray600
+                          : AppColors.gray20,  // 언팔로우된 상태일 때 gray20
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -52,7 +52,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 2)백엔드에 엑세스 토큰 + favTeam전송 →
+  /// 2) 백엔드에 액세스 토큰 + favTeam 전송 →
   /// 백엔드에서 AccessToken/RefreshToken 둘 다 수신
   Future<Map<String, String>?> sendTokenToBackend(
       String accessToken,
@@ -83,7 +83,7 @@ class KakaoAuthService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
-        // data 필드에서 토큰 추출
+        // ✅ 수정: data 필드에서 토큰을 정확히 추출
         final data = responseData['data'] as Map<String, dynamic>?;
         if (data != null) {
           final at = data['accessToken'] as String?;
@@ -182,7 +182,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 6)토큰 갱신 요청
+  /// 6) 토큰 갱신 요청
   Future<Map<String, String>?> refreshTokens() async {
     print('🔄 ===== 토큰 갱신 시작 =====');
 
@@ -228,22 +228,31 @@ class KakaoAuthService {
       print('   응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final newAccessToken = data['accessToken'] as String?;
-        final newRefreshToken = data['refreshToken'] as String?;
+        final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
-        if (newAccessToken != null && newRefreshToken != null) {
-          await saveTokens(
-            accessToken: newAccessToken,
-            refreshToken: newRefreshToken,
-          );
-          print('🔄 토큰 갱신 성공');
-          return {
-            'accessToken': newAccessToken,
-            'refreshToken': newRefreshToken,
-          };
+        // ✅ 수정: data 필드에서 토큰을 정확히 추출
+        final data = responseData['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          final newAccessToken = data['accessToken'] as String?;
+          final newRefreshToken = data['refreshToken'] as String?; // 백엔드가 새 리프레시 토큰을 줄 수도 있으므로 함께 처리
+
+          if (newAccessToken != null && newRefreshToken != null) {
+            await saveTokens(
+              accessToken: newAccessToken,
+              refreshToken: newRefreshToken,
+            );
+            print('🔄 토큰 갱신 성공');
+            return {
+              'accessToken': newAccessToken,
+              'refreshToken': newRefreshToken,
+            };
+          } else {
+            print('❌ data 내부에 새 토큰이 없음: $data');
+            print('   newAccessToken: $newAccessToken');
+            print('   newRefreshToken: $newRefreshToken');
+          }
         } else {
-          print('❌ 응답에 새 토큰이 없음: $data');
+          print('❌ 갱신 응답에 data 필드가 없음: $responseData');
         }
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         print('❌ 리프레시 토큰도 만료됨, 재로그인 필요');

@@ -520,7 +520,11 @@ class _FeedScreenState extends State<FeedScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const SearchScreen()),
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation1, animation2) => const SearchScreen(),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
+                            ),
                           );
                         },
                         child: SvgPicture.asset(

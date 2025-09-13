@@ -229,11 +229,10 @@ class KakaoAuthService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
-        // ✅ 수정: data 필드에서 토큰을 정확히 추출
         final data = responseData['data'] as Map<String, dynamic>?;
         if (data != null) {
           final newAccessToken = data['accessToken'] as String?;
-          final newRefreshToken = data['refreshToken'] as String?; // 백엔드가 새 리프레시 토큰을 줄 수도 있으므로 함께 처리
+          final newRefreshToken = data['refreshToken'] as String?;
 
           if (newAccessToken != null && newRefreshToken != null) {
             await saveTokens(
@@ -354,7 +353,66 @@ class KakaoAuthService {
   }
 
   //==================================================================================
-  /// 8) 토큰 삭제 (로그아웃, 탈퇴 시 사용)
+  // 로그아웃
+  // UserApi.logout() → kakaoAuthService.clearTokens() → 온보딩 화면
+  // 다시 로그인: checkExistingUser() → true → loginExistingUser() → 피드
+  //==================================================================================
+  // 회원 탈퇴
+  // UserApi.deleteAccount() → kakaoAuthService.unlinkKakaoAccount() → clearTokens() → 온보딩 화면
+  // 다시 로그인: checkExistingUser() → false → 회원가입 플로우
+
+  /// 기존 사용자 확인
+  Future<bool> checkExistingUser(String kakaoAccessToken) async {
+    try {
+      final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
+      final url = Uri.parse('$backendUrl/auth/kakao/check');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'accessToken': kakaoAccessToken}),
+      );
+
+      print('🔍 기존 사용자 확인 응답: ${response.statusCode}');
+      print('🔍 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData['data']['exists'] ?? false;
+      }
+
+      return false;
+    } catch (e) {
+      print('❌ 기존 사용자 확인 실패: $e');
+      return false;
+    }
+  }
+
+  /// 기존 사용자 로그인
+  Future<bool> loginExistingUser(String kakaoAccessToken) async {
+    try {
+      print('🔄 기존 사용자 로그인 시작');
+
+      final tokens = await sendTokenToBackend(kakaoAccessToken, 'KIA 타이거즈');
+
+      if (tokens != null) {
+        await saveTokens(
+          accessToken: tokens['accessToken']!,
+          refreshToken: tokens['refreshToken']!,
+        );
+        print('✅ 기존 사용자 로그인 성공');
+        return true;
+      }
+
+      print('❌ 기존 사용자 로그인 실패');
+      return false;
+    } catch (e) {
+      print('❌ 기존 사용자 로그인 오류: $e');
+      return false;
+    }
+  }
+
+  /// 토큰 삭제 (로그아웃, 탈퇴)
   Future<void> clearTokens() async {
     try {
       print('🗑️ 토큰 삭제 시작...');
@@ -371,50 +429,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 기존 사용자 로그인 (토큰 교환만)
-  Future<bool> loginExistingUser(String kakaoAccessToken) async {
-    try {
-      print('🔄 기존 사용자 로그인 시작');
-
-      final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
-      final url = Uri.parse('$backendUrl/auth/kakao/login');
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'accessToken': kakaoAccessToken}),
-      );
-
-      print('⬅️ 기존 사용자 로그인 응답: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final data = responseData['data'];
-
-        if (data != null) {
-          final accessToken = data['accessToken'];
-          final refreshToken = data['refreshToken'];
-
-          if (accessToken != null && refreshToken != null) {
-            await saveTokens(
-              accessToken: accessToken,
-              refreshToken: refreshToken,
-            );
-            print('✅ 기존 사용자 로그인 성공');
-            return true;
-          }
-        }
-      }
-
-      print('❌ 기존 사용자 로그인 실패');
-      return false;
-    } catch (e) {
-      print('❌ 기존 사용자 로그인 오류: $e');
-      return false;
-    }
-  }
-
-  /// 카카오 연결 해제 (회원탈퇴용)
+  /// 카카오 연결 해제 (탈퇴)
   Future<bool> unlinkKakaoAccount() async {
     try {
       print('🔗 카카오 연결 해제 시작');

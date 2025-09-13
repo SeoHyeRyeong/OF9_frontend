@@ -76,20 +76,7 @@ class GameApi {
     }
   }
 
-  /// 월별 경기 목록 조회
-  static Future<List<GameResponse>> listByMonth(String yearMonth) async {
-    final uri = Uri.parse('$baseUrl/games/month/$yearMonth');
-    final res = await _makeRequestWithRetry(uri: uri, method: 'GET');
-
-    if (res.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(res.body);
-      return data.map((e) => GameResponse.fromJson(e)).toList();
-    } else {
-      throw Exception('월별 경기 불러오기 실패: ${res.statusCode}');
-    }
-  }
-
-  /// 기간별 경기 목록 조회
+  /// 1. 특정 기간 경기 목록 조회
   static Future<List<GameResponse>> listByDateRange({
     required String from,
     required String to,
@@ -110,7 +97,7 @@ class GameApi {
     }
   }
 
-  /// 특정 경기 단일 조회
+  /// 2. 단일 경기 상세
   static Future<GameResponse> getById(String gameId) async {
     final uri = Uri.parse('$baseUrl/games/$gameId');
     final res = await _makeRequestWithRetry(uri: uri, method: 'GET');
@@ -119,6 +106,19 @@ class GameApi {
       return GameResponse.fromJson(jsonDecode(res.body));
     } else {
       throw Exception('단일 경기 조회 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 월별 경기 목록 조회
+  static Future<List<GameResponse>> listByMonth(String yearMonth) async {
+    final uri = Uri.parse('$baseUrl/games/month/$yearMonth');
+    final res = await _makeRequestWithRetry(uri: uri, method: 'GET');
+
+    if (res.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(res.body);
+      return data.map((e) => GameResponse.fromJson(e)).toList();
+    } else {
+      throw Exception('월별 경기 불러오기 실패: ${res.statusCode}');
     }
   }
 

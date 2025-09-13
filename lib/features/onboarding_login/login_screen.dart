@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/favorite_team_screen.dart';
+import 'package:frontend/features/feed/feed_screen.dart';
 import 'package:frontend/utils/fixed_text.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -64,21 +65,59 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleKakaoLogin() async {
     setState(() => isLoading = true);
-    final result = await kakaoAuthService.kakaoLogin();
-    setState(() => isLoading = false);
 
-    if (result != null) {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => const FavoriteTeamScreen(),
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-        ),
-      );
-    } else {
+    try {
+      // 1. 카카오 로그인으로 액세스 토큰 획득
+      final kakaoAccessToken = await kakaoAuthService.kakaoLogin();
+
+      if (kakaoAccessToken == null) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('카카오 로그인 실패')),
+        );
+        return;
+      }
+
+      // 2. 기존 사용자인지 확인
+      final isExistingUser = await kakaoAuthService.checkExistingUser(kakaoAccessToken);
+
+      setState(() => isLoading = false);
+
+      if (isExistingUser) {
+        // 기존 사용자: 바로 로그인 후 피드로 이동
+        final loginSuccess = await kakaoAuthService.loginExistingUser(kakaoAccessToken);
+
+        if (loginSuccess) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1, animation2) => const FeedScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('로그인 실패')),
+          );
+        }
+      } else {
+        // 신규 사용자: 회원가입 플로우로 이동
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation1, animation2) =>
+                FavoriteTeamScreen(kakaoAccessToken: kakaoAccessToken),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      print('로그인 처리 오류: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('카카오 로그인 실패')),
+        const SnackBar(content: Text('로그인 처리 중 오류가 발생했습니다')),
       );
     }
   }
@@ -172,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: scaleWidth(320),
                               height: scaleHeight(54),
                               child: ElevatedButton(
-                                onPressed: _handleKakaoLogin,
+                                onPressed: isLoading ? null : _handleKakaoLogin,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.kakao01,
                                   foregroundColor: Colors.black,
@@ -181,7 +220,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   elevation: 0,
                                 ),
-                                child: Row(
+                                child: isLoading
+                                    ? CircularProgressIndicator(color: AppColors.kakao02)
+                                    : Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     SvgPicture.asset(

@@ -9,6 +9,9 @@ import 'package:frontend/api/user_api.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:frontend/features/mypage/edit_profile_screen.dart';
+import 'package:frontend/features/onboarding_login/login_screen.dart';
+import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -30,6 +33,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // 계정 공개 토글 상태
   bool isAccountPublic = false;
 
+  final kakaoAuthService = KakaoAuthService();
+
   @override
   void initState() {
     super.initState();
@@ -45,7 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         nickname = userInfo['nickname'] ?? '알 수 없음';
         favTeam = userInfo['favTeam'] ?? '응원팀 없음';
         profileImageUrl = userInfo['profileImageUrl'];
-        isAccountPublic = !(userInfo['isPrivate'] ?? false);  //계정 공개/비공개 설정
+        isAccountPublic = !(userInfo['isPrivate'] ?? false);  // 계정 공개/비공개 설정
         isLoading = false;
       });
     } catch (e) {
@@ -65,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       await UserApi.updateMyProfile(
         nickname: nickname,
-        favTeam: favTeam.replaceAll(' 팬', ''), // ' 팬' 제거하여 원본 팀명만 전송
+        favTeam: favTeam.replaceAll(' 팬', ''),
         profileImageUrl: profileImageUrl,
         isPrivate: !isPublic, // isPublic의 반대값을 isPrivate로 전송
       );
@@ -81,6 +86,115 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         isAccountPublic = !isPublic;
       });
+    }
+  }
+
+  /// 로그아웃 처리
+  Future<void> _handleLogout() async {
+    try {
+      print('🚪 로그아웃 시작');
+
+      await UserApi.logout();
+      print('1. 백엔드 로그아웃 성공');
+
+      await kakaoAuthService.clearTokens();
+      print('2. 로컬 토큰 삭제 완료');
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+      );
+
+      print('3. 로그아웃 완료');
+    } catch (e) {
+      print('❌ 로그아웃 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('로그아웃에 실패했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// 회원 탈퇴 처리
+  Future<void> _handleAccountDeletion() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('회원 탈퇴'),
+          content: const Text('정말로 탈퇴하시겠습니까?\n탈퇴 후 모든 데이터가 삭제되며 복구할 수 없습니다.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('탈퇴', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      print('🗑️ 회원탈퇴 시작');
+
+      await UserApi.deleteAccount();
+      print('1. 백엔드 회원탈퇴 성공');
+
+      await kakaoAuthService.unlinkKakaoAccount();
+      print('2. 카카오 연결 해제 완료');
+
+      await kakaoAuthService.clearTokens();
+      print('3. 로컬 토큰 삭제 완료');
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+      );
+
+      print('4. 회원탈퇴 완료');
+    } catch (e) {
+      print('❌ 회원탈퇴 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('회원탈퇴에 실패했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// URL 실행 메서드
+  Future<void> _launchUrl(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        print('URL을 열 수 없습니다: $url');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('링크를 열 수 없습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('URL 실행 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('링크를 열 수 없습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -284,7 +398,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         // 테마 변경 메뉴
                         GestureDetector(
                           onTap: () {
-                            // 테마 변경 페이지로 이동하는 로직 추가
                             print('테마 변경 버튼 클릭');
                           },
                           child: Container(
@@ -439,7 +552,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         // 이용 약관
                         GestureDetector(
                           onTap: () {
-                            print('이용 약관 버튼 클릭');
+                            _launchUrl('https://www.notion.so/24bf22b2f4cd8027bf3ada45e3970e9e?source=copy_link');
                           },
                           child: Container(
                             width: scaleWidth(320),
@@ -461,7 +574,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         // 개인정보 처리방침
                         GestureDetector(
                           onTap: () {
-                            print('개인정보 처리방침 버튼 클릭');
+                            _launchUrl('https://www.notion.so/24bf22b2f4cd80f0a0efeab79c6861ae?source=copy_link');
                           },
                           child: Container(
                             width: scaleWidth(320),
@@ -482,9 +595,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         // 로그아웃
                         GestureDetector(
-                          onTap: () {
-                            print('로그아웃 버튼 클릭');
-                          },
+                          onTap: _handleLogout,
                           child: Container(
                             width: scaleWidth(320),
                             height: scaleHeight(54),
@@ -504,9 +615,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         // 회원 탈퇴
                         GestureDetector(
-                          onTap: () {
-                            print('회원 탈퇴 버튼 클릭');
-                          },
+                          onTap: _handleAccountDeletion,
                           child: Container(
                             width: scaleWidth(320),
                             height: scaleHeight(54),

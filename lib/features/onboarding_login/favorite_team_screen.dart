@@ -10,7 +10,9 @@ import 'package:frontend/features/onboarding_login/signup_complete_screen.dart';
 import 'package:frontend/utils/fixed_text.dart';
 
 class FavoriteTeamScreen extends StatefulWidget {
-  const FavoriteTeamScreen({Key? key}) : super(key: key);
+  final String? kakaoAccessToken; // 추가
+
+  const FavoriteTeamScreen({Key? key, this.kakaoAccessToken}) : super(key: key);
 
   @override
   State<FavoriteTeamScreen> createState() => _FavoriteTeamScreenState();
@@ -35,20 +37,33 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
   final kakaoAuthService = KakaoAuthService();
 
   Future<void> _handleComplete() async {
-    final success = await kakaoAuthService.loginAndStoreTokens(_selectedTeam!);
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => SignupCompleteScreen(selectedTeam: _selectedTeam),
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-        ),
+    if (widget.kakaoAccessToken != null && _selectedTeam != null) {
+      // 신규 회원가입: sendTokenToBackend 사용
+      final tokens = await kakaoAuthService.sendTokenToBackend(
+          widget.kakaoAccessToken!,
+          _selectedTeam!
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인 실패')),
-      );
+
+      if (tokens != null) {
+        await kakaoAuthService.saveTokens(
+          accessToken: tokens['accessToken']!,
+          refreshToken: tokens['refreshToken']!,
+        );
+
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation1, animation2) =>
+                SignupCompleteScreen(selectedTeam: _selectedTeam),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('회원가입 실패')),
+        );
+      }
     }
   }
 

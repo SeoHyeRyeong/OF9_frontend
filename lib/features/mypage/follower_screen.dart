@@ -46,12 +46,19 @@ class _FollowerScreenState extends State<FollowerScreen> {
       final followersData = response['data'] as List<dynamic>? ?? [];
 
       setState(() {
-        followers = followersData.map((follower) => {
-          'userId': follower['id'] ?? follower['userId'],
-          'nickname': follower['nickname'] ?? '알 수 없음',
-          'favTeam': follower['favTeam'] ?? '응원팀 없음',
-          'profileImageUrl': follower['profileImageUrl'],
-          'isFollowing': follower['isFollowing'] ?? false,
+        followers = followersData.map((follower) {
+          // followStatus를 기반으로 상태 결정
+          String followStatus = follower['followStatus'] ?? 'NOT_FOLLOWING';
+
+          return {
+            'userId': follower['id'] ?? follower['userId'],
+            'nickname': follower['nickname'] ?? '알 수 없음',
+            'favTeam': follower['favTeam'] ?? '응원팀 없음',
+            'profileImageUrl': follower['profileImageUrl'],
+            'followStatus': followStatus,
+            'isFollowing': followStatus == 'FOLLOWING',
+            'isRequested': followStatus == 'REQUESTED',
+          };
         }).toList();
         isLoading = false;
       });
@@ -75,18 +82,43 @@ class _FollowerScreenState extends State<FollowerScreen> {
     try {
       final follower = followers[index];
       final userId = follower['userId'];
+      final currentStatus = follower['followStatus'];
 
-      if (follower['isFollowing']) {
+      if (currentStatus == 'FOLLOWING') {
         // 언팔로우
         await UserApi.unfollowUser(userId);
-      } else {
-        // 팔로우
-        await UserApi.followUser(userId);
-      }
+        setState(() {
+          followers[index]['followStatus'] = 'NOT_FOLLOWING';
+          followers[index]['isFollowing'] = false;
+          followers[index]['isRequested'] = false;
+        });
+      } else if (currentStatus == 'NOT_FOLLOWING') {
+        // 팔로우 요청
+        final response = await UserApi.followUser(userId);
+        final responseData = response['data'];
 
-      setState(() {
-        followers[index]['isFollowing'] = !followers[index]['isFollowing'];
-      });
+        setState(() {
+          if (responseData['pending'] == true) {
+            // 비공개 계정 - 요청 상태
+            followers[index]['followStatus'] = 'REQUESTED';
+            followers[index]['isFollowing'] = false;
+            followers[index]['isRequested'] = true;
+          } else {
+            // 공개 계정 - 즉시 팔로우
+            followers[index]['followStatus'] = 'FOLLOWING';
+            followers[index]['isFollowing'] = true;
+            followers[index]['isRequested'] = false;
+          }
+        });
+      } else if (currentStatus == 'REQUESTED') {
+        // 요청 취소 (언팔로우 API 사용)
+        await UserApi.unfollowUser(userId);
+        setState(() {
+          followers[index]['followStatus'] = 'NOT_FOLLOWING';
+          followers[index]['isFollowing'] = false;
+          followers[index]['isRequested'] = false;
+        });
+      }
     } catch (e) {
       print('❌ 팔로우 처리 실패: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -201,7 +233,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
     );
   }
 
-  // 팔로워 아이템 위젯 - 360*74 크기 영역
+  // 팔로워 아이템 위젯
   Widget _buildFollowerItem(Map<String, dynamic> follower, int index) {
     return Container(
       width: scaleWidth(360),
@@ -253,7 +285,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
 
                     SizedBox(height: scaleHeight(8)),
 
-                    // 최애구단
+                    // 최애 구단
                     FixedText(
                       "${follower['favTeam'] ?? '응원팀 없음'} 팬",
                       style: AppFonts.suite.c2_m(context).copyWith(
@@ -272,9 +304,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
               child: ElevatedButton(
                 onPressed: () => _handleFollow(index),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: follower['isFollowing']
-                      ? AppColors.gray50  // 팔로잉 상태일 때
-                      : AppColors.gray600, // 팔로우 안 한 상태일 때
+                  backgroundColor: _getButtonBackgroundColor(follower),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(scaleHeight(8)),
                   ),
@@ -283,11 +313,9 @@ class _FollowerScreenState extends State<FollowerScreen> {
                 ),
                 child: Center(
                   child: FixedText(
-                    follower['isFollowing'] ? '팔로잉' : '팔로우',
+                    _getButtonText(follower),
                     style: AppFonts.suite.c1_b(context).copyWith(
-                      color: follower['isFollowing']
-                          ? AppColors.gray600  // 팔로잉 상태일 때 gray600
-                          : AppColors.gray20,  // 팔로우 안 한 상태일 때 gray20
+                      color: _getButtonTextColor(follower),
                     ),
                   ),
                 ),
@@ -297,5 +325,47 @@ class _FollowerScreenState extends State<FollowerScreen> {
         ),
       ),
     );
+  }
+
+  // 버튼 배경색 결정
+  Color _getButtonBackgroundColor(Map<String, dynamic> follower) {
+    final followStatus = follower['followStatus'] ?? 'NOT_FOLLOWING';
+
+    switch (followStatus) {
+      case 'FOLLOWING':
+        return AppColors.gray50;  // 팔로잉 상태
+      case 'REQUESTED':
+        return AppColors.gray50;  // 요청됨 상태 (팔로잉과 동일)
+      default:
+        return AppColors.gray600; // 팔로우 안 한 상태
+    }
+  }
+
+  // 버튼 텍스트 결정
+  String _getButtonText(Map<String, dynamic> follower) {
+    final followStatus = follower['followStatus'] ?? 'NOT_FOLLOWING';
+
+    switch (followStatus) {
+      case 'FOLLOWING':
+        return '팔로잉';
+      case 'REQUESTED':
+        return '요청됨';
+      default:
+        return '팔로우';
+    }
+  }
+
+  // 버튼 텍스트 색상 결정
+  Color _getButtonTextColor(Map<String, dynamic> follower) {
+    final followStatus = follower['followStatus'] ?? 'NOT_FOLLOWING';
+
+    switch (followStatus) {
+      case 'FOLLOWING':
+        return AppColors.gray600;  // 팔로잉 상태일 때
+      case 'REQUESTED':
+        return AppColors.gray600;  // 요청됨 상태일 때
+      default:
+        return AppColors.gray20;   // 팔로우 안 한 상태일 때
+    }
   }
 }

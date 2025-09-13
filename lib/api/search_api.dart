@@ -209,21 +209,21 @@ class SearchApi {
     }
   }
 
-  /// 1. 통합 검색 (기록 + 사용자)
+  /// 1. 통합 검색 (게시글 + 사용자)
   static Future<SearchResult> search(String query) async {
     final uri = Uri.parse('$baseUrl/search').replace(queryParameters: {'query': query});
     final response = await _makeRequestWithRetry(uri: uri, method: 'GET');
     return _processResponse(response, (data) => SearchResult.fromJson(data));
   }
 
-  /// 2. 최근 검색어 조회
+  /// 2. 최근 검색어 조회 (max 10개)
   static Future<List<String>> getRecentSearches() async {
     final uri = Uri.parse('$baseUrl/search/recent');
     final response = await _makeRequestWithRetry(uri: uri, method: 'GET');
     return _processResponse(response, (data) => List<String>.from(data));
   }
 
-  /// 3. 특정 최근 검색어 삭제
+  /// 3. 최근 검색어 개별 삭제
   static Future<void> deleteRecentSearch(String query) async {
     final uri = Uri.parse('$baseUrl/search/recent').replace(queryParameters: {'query': query});
     final response = await _makeRequestWithRetry(uri: uri, method: 'DELETE');
@@ -232,7 +232,7 @@ class SearchApi {
     }
   }
 
-  /// 4. 모든 최근 검색어 삭제
+  /// 4. 최근 검색어 전체 삭제
   static Future<void> deleteAllRecentSearches() async {
     final uri = Uri.parse('$baseUrl/search/recent/all');
     final response = await _makeRequestWithRetry(uri: uri, method: 'DELETE');

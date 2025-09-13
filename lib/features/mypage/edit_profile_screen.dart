@@ -83,8 +83,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _isNicknameAvailable = true;
       });
     } else {
-      // 2초 후 중복 확인
-      _debounceTimer = Timer(Duration(seconds: 2), () {
+      // 중복 확인
+      _debounceTimer = Timer(Duration(milliseconds: 300), ()  {
         _checkNicknameAvailability();
       });
     }

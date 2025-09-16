@@ -84,7 +84,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
     } else {
       // 중복 확인
-      _debounceTimer = Timer(Duration(milliseconds: 300), ()  {
+      _debounceTimer = Timer(Duration(milliseconds: 300), () {
         _checkNicknameAvailability();
       });
     }
@@ -219,12 +219,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => const SettingsScreen(),
+          pageBuilder:
+              (context, animation1, animation2) => const SettingsScreen(),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
         ),
       );
-
     } catch (e) {
       print('프로필 수정 실패: $e');
 
@@ -241,294 +241,342 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     final bool canComplete = _canComplete();
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final screenHeight = constraints.maxHeight;
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder:
+                  (context, animation1, animation2) => const SettingsScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenHeight = constraints.maxHeight;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 뒤로가기 영역 + 타이틀
-                SizedBox(
-                  height: screenHeight * 0.075,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(top: screenHeight * 0.0225),
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.pushReplacement(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation1, animation2) => const SettingsScreen(),
-                                  transitionDuration: Duration.zero,
-                                  reverseTransitionDuration: Duration.zero,
-                                ),
-                              );
-                            },
-                            child: SvgPicture.asset(
-                              AppImages.backBlack,
-                              width: scaleHeight(24),
-                              height: scaleHeight(24),
-                              fit: BoxFit.contain,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 뒤로가기 영역 + 타이틀
+                  SizedBox(
+                    height: screenHeight * 0.075,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                      child: Row(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: screenHeight * 0.0225,
+                            ),
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder:
+                                        (context, animation1, animation2) =>
+                                            const SettingsScreen(),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
+                                  ),
+                                );
+                              },
+                              child: SvgPicture.asset(
+                                AppImages.backBlack,
+                                width: scaleHeight(24),
+                                height: scaleHeight(24),
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(top: screenHeight * 0.0225),
-                            child: Center(
-                              child: FixedText(
-                                "내 정보 수정",
-                                style: AppFonts.suite.b2_b(context).copyWith(
-                                  color: AppColors.gray950,
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                top: screenHeight * 0.0225,
+                              ),
+                              child: Center(
+                                child: FixedText(
+                                  "내 정보 수정",
+                                  style: AppFonts.suite
+                                      .b2_b(context)
+                                      .copyWith(color: AppColors.gray950),
                                 ),
                               ),
                             ),
                           ),
+                          SizedBox(width: scaleHeight(24)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: scaleHeight(22)),
+
+                  // 프로필 이미지 영역 (수정 불가능한 표시용)
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(scaleHeight(29.6)),
+                      child:
+                          profileImageUrl != null
+                              ? Image.network(
+                                profileImageUrl!,
+                                width: scaleWidth(100),
+                                height: scaleHeight(100),
+                                fit: BoxFit.cover,
+                                errorBuilder:
+                                    (_, __, ___) => SvgPicture.asset(
+                                      AppImages.profile,
+                                      width: scaleWidth(100),
+                                      height: scaleHeight(100),
+                                      fit: BoxFit.cover,
+                                    ),
+                              )
+                              : SvgPicture.asset(
+                                AppImages.profile,
+                                width: scaleWidth(100),
+                                height: scaleHeight(100),
+                                fit: BoxFit.cover,
+                              ),
+                    ),
+                  ),
+
+                  SizedBox(height: scaleHeight(40)),
+
+                  // 닉네임 라벨
+                  Padding(
+                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    child: Row(
+                      children: [
+                        FixedText(
+                          "닉네임",
+                          style: AppFonts.suite
+                              .b3_sb(context)
+                              .copyWith(color: AppColors.gray600),
                         ),
-                        SizedBox(width: scaleHeight(24)),
+                        SizedBox(width: scaleWidth(2)),
+                        FixedText(
+                          "*",
+                          style: AppFonts.suite
+                              .c1_b(context)
+                              .copyWith(color: AppColors.pri200),
+                        ),
                       ],
                     ),
                   ),
-                ),
+                  SizedBox(height: scaleHeight(8)),
 
-                SizedBox(height: scaleHeight(22)),
+                  // 닉네임 입력 필드
+                  Padding(
+                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: scaleWidth(320),
+                          height: scaleHeight(54),
+                          decoration: BoxDecoration(
+                            color: AppColors.gray30,
+                            borderRadius: BorderRadius.circular(scaleWidth(8)),
+                            border:
+                                _hasNicknameError()
+                                    ? Border.all(
+                                      color: AppColors.error,
+                                      width: 1,
+                                    )
+                                    : null,
+                          ),
+                          child: TextField(
+                            controller: _nicknameController,
+                            focusNode: _nicknameFocusNode,
+                            maxLength: _maxLength,
+                            buildCounter:
+                                (
+                                  context, {
+                                  required currentLength,
+                                  required isFocused,
+                                  maxLength,
+                                }) => null,
+                            decoration: InputDecoration(
+                              isCollapsed: true,
+                              contentPadding: EdgeInsets.only(
+                                left: scaleWidth(16),
+                                top: scaleHeight(15),
+                                bottom: scaleHeight(15),
+                              ),
+                              border: InputBorder.none,
+                            ),
+                            textAlignVertical: TextAlignVertical.center,
+                            style: AppFonts.pretendard
+                                .b3_r_long(context)
+                                .copyWith(color: AppColors.black),
+                          ),
+                        ),
 
-                // 프로필 이미지 영역 (수정 불가능한 표시용)
-                Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(scaleHeight(29.6)),
-                    child: profileImageUrl != null
-                        ? Image.network(
-                      profileImageUrl!,
-                      width: scaleWidth(100),
-                      height: scaleHeight(100),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => SvgPicture.asset(
-                        AppImages.profile,
-                        width: scaleWidth(100),
-                        height: scaleHeight(100),
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                        : SvgPicture.asset(
-                      AppImages.profile,
-                      width: scaleWidth(100),
-                      height: scaleHeight(100),
-                      fit: BoxFit.cover,
+                        SizedBox(height: scaleHeight(8)),
+
+                        // 에러 메시지와 글자수 카운터 같은 줄
+                        Container(
+                          width: scaleWidth(320),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // 에러 메시지 (좌측)
+                              _hasNicknameError()
+                                  ? FixedText(
+                                    _isNicknameEmpty()
+                                        ? '닉네임을 작성해 주세요.'
+                                        : '이미 등록된 닉네임이에요.',
+                                    style: AppFonts.pretendard
+                                        .c1_m(context)
+                                        .copyWith(color: AppColors.error),
+                                  )
+                                  : SizedBox.shrink(),
+                              // 글자수 카운터 (우측)
+                              _hasNicknameError()
+                                  ? FixedText(
+                                    '$_currentLength / $_maxLength',
+                                    style: AppFonts.pretendard
+                                        .c1_m(context)
+                                        .copyWith(color: AppColors.error),
+                                  )
+                                  : FixedText(
+                                    '$_currentLength / $_maxLength',
+                                    style: AppFonts.suite
+                                        .c1_m(context)
+                                        .copyWith(color: AppColors.pri900),
+                                  ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
 
-                SizedBox(height: scaleHeight(40)),
+                  SizedBox(height: scaleHeight(24)),
 
-                // 닉네임 라벨
-                Padding(
-                  padding: EdgeInsets.only(left: scaleWidth(20)),
-                  child: Row(
-                    children: [
-                      FixedText(
-                        "닉네임",
-                        style: AppFonts.suite.b3_sb(context).copyWith(
-                          color: AppColors.gray600,
+                  // 최애 구단 라벨
+                  Padding(
+                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    child: Row(
+                      children: [
+                        FixedText(
+                          "최애 구단",
+                          style: AppFonts.suite
+                              .b3_sb(context)
+                              .copyWith(color: AppColors.gray600),
                         ),
-                      ),
-                      SizedBox(width: scaleWidth(2)),
-                      FixedText(
-                        "*",
-                        style: AppFonts.suite.c1_b(context).copyWith(
-                          color: AppColors.pri200,
+                        SizedBox(width: scaleWidth(2)),
+                        FixedText(
+                          "*",
+                          style: AppFonts.suite
+                              .c1_b(context)
+                              .copyWith(color: AppColors.pri200),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                SizedBox(height: scaleHeight(8)),
+                  SizedBox(height: scaleHeight(8)),
 
-                // 닉네임 입력 필드
-                Padding(
-                  padding: EdgeInsets.only(left: scaleWidth(20)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
+                  // 최애구단 선택 필드
+                  Padding(
+                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    child: GestureDetector(
+                      onTap: _selectFavTeam,
+                      child: Container(
                         width: scaleWidth(320),
                         height: scaleHeight(54),
                         decoration: BoxDecoration(
                           color: AppColors.gray30,
                           borderRadius: BorderRadius.circular(scaleWidth(8)),
-                          border: _hasNicknameError()
-                              ? Border.all(color: AppColors.error, width: 1)
-                              : null,
                         ),
-                        child: TextField(
-                          controller: _nicknameController,
-                          focusNode: _nicknameFocusNode,
-                          maxLength: _maxLength,
-                          buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                          decoration: InputDecoration(
-                            isCollapsed: true,
-                            contentPadding: EdgeInsets.only(
-                              left: scaleWidth(16),
-                              top: scaleHeight(15),
-                              bottom: scaleHeight(15),
-                            ),
-                            border: InputBorder.none,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: scaleWidth(16),
                           ),
-                          textAlignVertical: TextAlignVertical.center,
-                          style: AppFonts.pretendard.b3_r_long(context).copyWith(
-                            color: AppColors.black,
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: scaleHeight(8)),
-
-                      // 에러 메시지와 글자수 카운터 같은 줄
-                      Container(
-                        width: scaleWidth(320),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // 에러 메시지 (좌측)
-                            _hasNicknameError()
-                                ? FixedText(
-                              _isNicknameEmpty()
-                                  ? '닉네임을 작성해 주세요.'
-                                  : '이미 등록된 닉네임이에요.',
-                              style: AppFonts.pretendard.c1_m(context).copyWith(
-                                color: AppColors.error,
-                              ),
-                            )
-                                : SizedBox.shrink(),
-                            // 글자수 카운터 (우측)
-                            _hasNicknameError()
-                                ? FixedText(
-                              '$_currentLength / $_maxLength',
-                              style: AppFonts.pretendard.c1_m(context).copyWith(
-                                color: AppColors.error,
-                              ),
-                            )
-                                : FixedText(
-                              '$_currentLength / $_maxLength',
-                              style: AppFonts.suite.c1_m(context).copyWith(
-                                color: AppColors.pri900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                SizedBox(height: scaleHeight(24)),
-
-                // 최애 구단 라벨
-                Padding(
-                  padding: EdgeInsets.only(left: scaleWidth(20)),
-                  child: Row(
-                    children: [
-                      FixedText(
-                        "최애 구단",
-                        style: AppFonts.suite.b3_sb(context).copyWith(
-                          color: AppColors.gray600,
-                        ),
-                      ),
-                      SizedBox(width: scaleWidth(2)),
-                      FixedText(
-                        "*",
-                        style: AppFonts.suite.c1_b(context).copyWith(
-                          color: AppColors.pri200,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: scaleHeight(8)),
-
-                // 최애구단 선택 필드
-                Padding(
-                  padding: EdgeInsets.only(left: scaleWidth(20)),
-                  child: GestureDetector(
-                    onTap: _selectFavTeam,
-                    child: Container(
-                      width: scaleWidth(320),
-                      height: scaleHeight(54),
-                      decoration: BoxDecoration(
-                        color: AppColors.gray30,
-                        borderRadius: BorderRadius.circular(scaleWidth(8)),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: FixedText(
-                                favTeam == "정보 불러오기 실패" ? "최애 구단을 선택해주세요" : favTeam,
-                                style: AppFonts.pretendard.b3_r_long(context).copyWith(
-                                  color: favTeam == "정보 불러오기 실패"
-                                      ? AppColors.gray400
-                                      : AppColors.black,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FixedText(
+                                  favTeam == "정보 불러오기 실패"
+                                      ? "최애 구단을 선택해주세요"
+                                      : favTeam,
+                                  style: AppFonts.pretendard
+                                      .b3_r_long(context)
+                                      .copyWith(
+                                        color:
+                                            favTeam == "정보 불러오기 실패"
+                                                ? AppColors.gray400
+                                                : AppColors.black,
+                                      ),
                                 ),
                               ),
-                            ),
-                            Transform.rotate(
-                              angle: -1.5708,
-                              child: SvgPicture.asset(
-                                AppImages.backBlack,
-                                width: scaleWidth(20),
-                                height: scaleHeight(20),
-                                fit: BoxFit.contain,
+                              Transform.rotate(
+                                angle: -1.5708,
+                                child: SvgPicture.asset(
+                                  AppImages.backBlack,
+                                  width: scaleWidth(20),
+                                  height: scaleHeight(20),
+                                  fit: BoxFit.contain,
+                                ),
                               ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Spacer로 공간 확보
+                  Spacer(),
+
+                  // 완료 버튼
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                    child: SizedBox(
+                      width: scaleWidth(320),
+                      height: scaleHeight(54),
+                      child: ElevatedButton(
+                        onPressed: canComplete ? _onCompletePressed : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              canComplete
+                                  ? AppColors.gray700
+                                  : AppColors.gray200,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              scaleHeight(16),
                             ),
-                          ],
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: scaleWidth(18),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: FixedText(
+                          '완료',
+                          style: AppFonts.suite
+                              .b2_b(context)
+                              .copyWith(color: AppColors.gray20),
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                // Spacer로 공간 확보
-                Spacer(),
-
-                // 완료 버튼
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                  child: SizedBox(
-                    width: scaleWidth(320),
-                    height: scaleHeight(54),
-                    child: ElevatedButton(
-                      onPressed: canComplete ? _onCompletePressed : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: canComplete ? AppColors.gray700: AppColors.gray200,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(scaleHeight(16)),
-                        ),
-                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
-                        elevation: 0,
-                      ),
-                      child: FixedText(
-                        '완료',
-                        style: AppFonts.suite.b2_b(context).copyWith(
-                          color: AppColors.gray20,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: scaleHeight(30)),
-              ],
-            );
-          },
+                  SizedBox(height: scaleHeight(30)),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

@@ -95,79 +95,94 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final screenHeight = constraints.maxHeight;
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenHeight = constraints.maxHeight;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 뒤로가기 영역 + 타이틀 - 360*60 크기
-                Container(
-                  width: scaleWidth(360),
-                  height: scaleHeight(60),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushReplacement(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
-                                transitionDuration: Duration.zero,
-                                reverseTransitionDuration: Duration.zero,
-                              ),
-                            );
-                          },
-                          child: Container(
-                            alignment: Alignment.center,
-                            child: SvgPicture.asset(
-                              AppImages.backBlack,
-                              width: scaleHeight(24),
-                              height: scaleHeight(24),
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Center(
-                            child: FixedText(
-                              "팔로잉",
-                              style: AppFonts.suite.b2_b(context).copyWith(
-                                color: AppColors.gray950,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 뒤로가기 영역 + 타이틀 - 360*60 크기
+                  Container(
+                    width: scaleWidth(360),
+                    height: scaleHeight(60),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
+                            child: Container(
+                              alignment: Alignment.center,
+                              child: SvgPicture.asset(
+                                AppImages.backBlack,
+                                width: scaleHeight(24),
+                                height: scaleHeight(24),
+                                fit: BoxFit.contain,
                               ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: scaleHeight(24)), // 균형을 위한 오른쪽 여백
-                      ],
+                          Expanded(
+                            child: Center(
+                              child: FixedText(
+                                "팔로잉",
+                                style: AppFonts.suite.b2_b(context).copyWith(
+                                  color: AppColors.gray950,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: scaleHeight(24)), // 균형을 위한 오른쪽 여백
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                // 팔로잉 목록 또는 빈 상태
-                Expanded(
-                  child: isLoading
-                      ? Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.pri900,
-                    ),
-                  )
-                      : followings.isEmpty
-                      ? _buildEmptyState()
-                      : _buildFollowingList(),
-                ),
-              ],
-            );
-          },
+                  // 팔로잉 목록 또는 빈 상태
+                  Expanded(
+                    child: isLoading
+                        ? Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.pri900,
+                      ),
+                    )
+                        : followings.isEmpty
+                        ? _buildEmptyState()
+                        : _buildFollowingList(),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
+        bottomNavigationBar: CustomBottomNavBar(currentIndex: 4),
       ),
-      bottomNavigationBar: CustomBottomNavBar(currentIndex: 4),
     );
   }
 

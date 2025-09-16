@@ -14,12 +14,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:frontend/features/feed/search_screen.dart';
 
-
 class FeedScreen extends StatefulWidget {
   final bool showCompletionPopup;
 
   const FeedScreen({Key? key, this.showCompletionPopup = false})
-      : super(key: key);
+    : super(key: key);
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
@@ -80,16 +79,16 @@ class _FeedScreenState extends State<FeedScreen> {
       barrierDismissible: false,
       builder:
           (context) => CustomPopupDialog(
-        imageAsset: AppImages.ticket,
-        title: '$todayDate\n직관 기록이 완료됐어요',
-        subtitle: '직관 기록은 마이 페이지에서 확인할 수 있어요',
-        firstButtonText: '확인',
-        firstButtonAction: () {
-          Navigator.pop(context); // 팝업만 닫기
-        },
-        secondButtonText: '',
-        secondButtonAction: () {},
-      ),
+            imageAsset: AppImages.ticket,
+            title: '$todayDate\n직관 기록이 완료됐어요',
+            subtitle: '직관 기록은 마이 페이지에서 확인할 수 있어요',
+            firstButtonText: '확인',
+            firstButtonAction: () {
+              Navigator.pop(context); // 팝업만 닫기
+            },
+            secondButtonText: '',
+            secondButtonAction: () {},
+          ),
     );
   }
 
@@ -256,8 +255,8 @@ class _FeedScreenState extends State<FeedScreen> {
 
   /// 선택된 날짜에 맞는 기록들을 필터링하는 함수
   List<Map<String, dynamic>> _filterRecordsBySelectedDate(
-      List<Map<String, dynamic>> records,
-      ) {
+    List<Map<String, dynamic>> records,
+  ) {
     final List<DateTime> allDates = _generateAllDates();
     if (selectedDateIndex >= allDates.length) return [];
 
@@ -293,8 +292,8 @@ class _FeedScreenState extends State<FeedScreen> {
 
   /// 선택된 필터(홈팀)에 맞는 기록들을 필터링하는 함수
   List<Map<String, dynamic>> _filterRecordsByTeam(
-      List<Map<String, dynamic>> records,
-      ) {
+    List<Map<String, dynamic>> records,
+  ) {
     if (selectedFilterIndex == 0) return records; // 'ALL' 선택시 전체 반환
 
     final String selectedTeam = _filters[selectedFilterIndex];
@@ -308,8 +307,8 @@ class _FeedScreenState extends State<FeedScreen> {
 
   /// 날짜와 홈팀 필터를 모두 적용하는 함수
   List<Map<String, dynamic>> _applyAllFilters(
-      List<Map<String, dynamic>> records,
-      ) {
+    List<Map<String, dynamic>> records,
+  ) {
     // 1. 먼저 날짜 필터링
     List<Map<String, dynamic>> dateFiltered = _filterRecordsBySelectedDate(
       records,
@@ -349,17 +348,21 @@ class _FeedScreenState extends State<FeedScreen> {
             // 요일
             FixedText(
               dayOfWeek,
-              style: AppFonts.pretendard.c1_r(
-                context,
-              ).copyWith(color: isSelected ? Colors.white : AppColors.gray400),
+              style: AppFonts.pretendard
+                  .c1_r(context)
+                  .copyWith(
+                    color: isSelected ? Colors.white : AppColors.gray400,
+                  ),
             ),
             SizedBox(height: 6.h),
             // 날짜
             FixedText(
               '${date.day}',
-              style: AppFonts.pretendard.b3_b(
-                context,
-              ).copyWith(color: isSelected ? Colors.white : AppColors.gray400),
+              style: AppFonts.pretendard
+                  .b3_b(context)
+                  .copyWith(
+                    color: isSelected ? Colors.white : AppColors.gray400,
+                  ),
             ),
           ],
         ),
@@ -388,9 +391,13 @@ class _FeedScreenState extends State<FeedScreen> {
           child: FixedText(
             filterText,
             style:
-            isSelected
-                ? AppFonts.pretendard.c1_b(context).copyWith(color: AppColors.gray20)
-                : AppFonts.pretendard.c1_sb(context,).copyWith(color: AppColors.gray300),
+                isSelected
+                    ? AppFonts.pretendard
+                        .c1_b(context)
+                        .copyWith(color: AppColors.gray20)
+                    : AppFonts.pretendard
+                        .c1_sb(context)
+                        .copyWith(color: AppColors.gray300),
           ),
         ),
       ),
@@ -417,10 +424,13 @@ class _FeedScreenState extends State<FeedScreen> {
           );
         } catch (e) {
           print('❌ Base64 디코딩 실패: $e');
-          print('📊 mediaData 내용: ${mediaData.substring(0, mediaData.length > 100 ? 100 : mediaData.length)}...');
+          print(
+            '📊 mediaData 내용: ${mediaData.substring(0, mediaData.length > 100 ? 100 : mediaData.length)}...',
+          );
 
           // Base64 디코딩이 실패하면 URL로 시도
-          if (mediaData.startsWith('http://') || mediaData.startsWith('https://')) {
+          if (mediaData.startsWith('http://') ||
+              mediaData.startsWith('https://')) {
             return Image.network(
               mediaData,
               width: width,
@@ -456,17 +466,13 @@ class _FeedScreenState extends State<FeedScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.image,
-            size: 40.w,
-            color: AppColors.gray400,
-          ),
+          Icon(Icons.image, size: 40.w, color: AppColors.gray400),
           SizedBox(height: 8.h),
           FixedText(
             '이미지 로드 실패',
-            style: AppFonts.pretendard.c2_m(context).copyWith(
-              color: AppColors.gray400,
-            ),
+            style: AppFonts.pretendard
+                .c2_m(context)
+                .copyWith(color: AppColors.gray400),
           ),
         ],
       ),
@@ -477,658 +483,705 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     final List<DateTime> allDates = _generateAllDates();
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 헤더 영역
-            Container(
-              width: double.infinity,
-              height: 64.h,
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Column(
-                children: [
-                  SizedBox(height: 24.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Row(
-                        children: [
-                          FixedText(
-                            '전체',
-                            style: AppFonts.pretendard.h5_b(
-                              context,
-                            ).copyWith(color: Colors.black),
-                          ),
-                          SizedBox(width: 16.w),
-                          FixedText(
-                            '팔로잉',
-                            style: AppFonts.pretendard.h5_b(
-                              context,
-                            ).copyWith(color: AppColors.gray300),
-                          ),
-                        ],
-                      ),
-                      /*SvgPicture.asset(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // 헤더 영역
+              Container(
+                width: double.infinity,
+                height: 64.h,
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Column(
+                  children: [
+                    SizedBox(height: 24.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            FixedText(
+                              '전체',
+                              style: AppFonts.pretendard
+                                  .h5_b(context)
+                                  .copyWith(color: Colors.black),
+                            ),
+                            SizedBox(width: 16.w),
+                            FixedText(
+                              '팔로잉',
+                              style: AppFonts.pretendard
+                                  .h5_b(context)
+                                  .copyWith(color: AppColors.gray300),
+                            ),
+                          ],
+                        ),
+                        /*SvgPicture.asset(
                         AppImages.search,
                         width: 24.w,
                         height: 24.w,
                       ),*/
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (context, animation1, animation2) => const SearchScreen(),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero,
-                            ),
-                          );
-                        },
-                        child: SvgPicture.asset(
-                          AppImages.search,
-                          width: 24.w,
-                          height: 24.w,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // 나머지 컨텐츠 영역
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 6.h),
-
-                  // 달력 및 날짜 영역
-                  Padding(
-                    padding: EdgeInsets.only(left: 20.w, right: 15.w),
-                    child: Container(
-                      height: 46.h,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // 달력 레이아웃 (고정)
-                          Container(
-                            width: 36.w,
-                            height: 46.h,
-                            padding: EdgeInsets.only(
-                              top: 6.h,
-                              right: 10.w,
-                              bottom: 6.h,
-                            ),
-                            child: SvgPicture.asset(
-                              _getMonthIcon(_visibleMonth.month),
-                              width: 25.w,
-                              height: 33.h,
-                            ),
-                          ),
-
-                          SizedBox(width: 10.w),
-
-                          // 세로선
-                          Container(
-                            width: 1.w,
-                            height: 41.h,
-                            color: AppColors.gray100,
-                          ),
-
-                          SizedBox(width: 10.w),
-
-                          // 스크롤 가능한 날짜 리스트
-                          Expanded(
-                            child: ListView.builder(
-                              controller: _scrollController,
-                              scrollDirection: Axis.horizontal,
-                              reverse: true,
-                              // 오늘부터 시작하여 과거로 스크롤
-                              padding: EdgeInsets.zero,
-                              itemCount: allDates.length,
-                              itemBuilder: (context, index) {
-                                return _buildDateWidget(allDates[index], index);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // 12px 간격
-                  SizedBox(height: 12.h),
-
-                  // 회색 구분선 (360*1 크기, gray50 색상)
-                  Container(width: 360.w, height: 1.h, color: AppColors.gray50),
-
-                  // 12px 간격
-                  SizedBox(height: 12.h),
-
-                  // 필터 영역
-                  Container(
-                    height: 36.h,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: EdgeInsets.only(left: 20.w, right: 20.w),
-                      itemCount: _filters.length,
-                      itemBuilder: (context, index) {
-                        return Container(
-                          margin: EdgeInsets.only(
-                            right: index == _filters.length - 1 ? 0 : 8.w,
-                          ),
-                          child: _buildFilterWidget(_filters[index], index),
-                        );
-                      },
-                    ),
-                  ),
-
-                  // 24px 간격
-                  SizedBox(height: 24.h),
-
-                  // 피드 컨텐츠
-                  Expanded(
-                    child: FutureBuilder<List<Map<String, dynamic>>>(
-                      future: RecordApi.getMyRecordsList(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.pri400,
-                            ),
-                          );
-                        }
-
-                        if (snapshot.hasError) {
-                          return Center(
-                            child: FixedText(
-                              '기록을 불러오는데 실패했습니다',
-                              style: AppFonts.pretendard.h5_sb(
-                                context,
-                              ).copyWith(color: AppColors.gray300),
-                            ),
-                          );
-                        }
-
-                        final List<Map<String, dynamic>> records =
-                            snapshot.data ?? [];
-                        // 최신 기록이 위로 오도록 정렬 (createdAt 기준 내림차순)
-                        records.sort((a, b) {
-                          try {
-                            final DateTime timeA = DateTime.parse(
-                              (a['createdAt'] ?? '').replaceAll(' ', 'T'),
-                            );
-                            final DateTime timeB = DateTime.parse(
-                              (b['createdAt'] ?? '').replaceAll(' ', 'T'),
-                            );
-                            return timeB.compareTo(timeA); // 내림차순 (최신이 위로)
-                          } catch (e) {
-                            return 0;
-                          }
-                        });
-
-                        final List<Map<String, dynamic>> filteredRecords =
-                        _applyAllFilters(records);
-
-                        if (filteredRecords.isEmpty) {
-                          return Center(
-                            child: FixedText(
-                              '직관 기록이 없어요',
-                              style: AppFonts.pretendard.h5_sb(
-                                context,
-                              ).copyWith(color: AppColors.gray300),
-                            ),
-                          );
-                        }
-
-                        return ListView.builder(
-                          padding: EdgeInsets.only(top: 0),
-                          itemCount: filteredRecords.length * 2 - 1, // 구분선 포함
-                          itemBuilder: (context, index) {
-                            // 구분선 아이템
-                            if (index.isOdd) {
-                              return Column(
-                                children: [
-                                  SizedBox(height: 25.h),
-                                  Container(
-                                    width: 320.w,
-                                    height: 1.h,
-                                    color: AppColors.gray50,
-                                  ),
-                                  SizedBox(height: 20.h),
-                                ],
-                              );
-                            }
-
-                            // 기록 아이템
-                            final recordIndex = index ~/ 2;
-                            final record = filteredRecords[recordIndex];
-                            final String nickname = record['nickname'] ?? '';
-                            final String favTeam = record['favTeam'] ?? '';
-                            final String profileImageUrl =
-                                record['profileImageUrl'] ?? '';
-                            final String createdAt = record['createdAt'] ?? '';
-                            final String longContent =
-                                record['longContent'] ?? '';
-                            final String gameDate = record['gameDate'] ?? '';
-                            final String stadium = record['stadium'] ?? '';
-                            final String homeTeam = record['homeTeam'] ?? '';
-                            final String awayTeam = record['awayTeam'] ?? '';
-                            final int homeScore = record['homeScore'] ?? 0;
-                            final int awayScore = record['awayScore'] ?? 0;
-                            final int emotionCode = record['emotionCode'] ?? 1;
-                            final String emotionLabel =
-                                record['emotionLabel'] ?? '';
-
-                            return Container(
-                              margin: EdgeInsets.symmetric(horizontal: 20.w),
-                              decoration: BoxDecoration(color: Colors.white),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16.h),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // 사용자 정보 헤더 (1~4번)
-                                    Row(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        // 1. 프로필 이미지 (36*36, 원형)
-                                        Container(
-                                          width: 36.w,
-                                          height: 36.h,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color:
-                                            profileImageUrl.isNotEmpty
-                                                ? null
-                                                : AppColors.gray50,
-                                            image:
-                                            profileImageUrl.isNotEmpty
-                                                ? DecorationImage(
-                                              image: NetworkImage(
-                                                profileImageUrl,
-                                              ),
-                                              fit: BoxFit.cover,
-                                            )
-                                                : null,
-                                          ),
-                                          child:
-                                          profileImageUrl.isEmpty
-                                              ? ClipOval(
-                                            child: SvgPicture.asset(
-                                              AppImages.profile,
-                                              width: 36.w,
-                                              height: 36.h,
-                                            ),
-                                          )
-                                              : null,
-                                        ),
-
-                                        SizedBox(width: 8.w),
-
-                                        // 텍스트 영역을 Expanded로 감싸기
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                            children: [
-                                              // 2, 3, 4번을 한 줄에 배치
-                                              Row(
-                                                children: [
-                                                  // 2. 닉네임 (b3_b 폰트, gray950 색상)
-                                                  FixedText(
-                                                    nickname,
-                                                    style: AppFonts.pretendard.b3_b(
-                                                      context,
-                                                    ).copyWith(
-                                                      color: AppColors.gray950,
-                                                    ),
-                                                  ),
-
-                                                  SizedBox(width: 8.w),
-
-                                                  // 3. 팬 정보 (c1_r 폰트, gray400 색상)
-                                                  FixedText(
-                                                    '$favTeam 팬',
-                                                    style: AppFonts.pretendard.c1_r(
-                                                      context,
-                                                    ).copyWith(
-                                                      color: AppColors.gray400,
-                                                    ),
-                                                  ),
-
-                                                  Spacer(),
-
-                                                  // 4. 경과 시간 (c2_m 폰트, gray400 색상)
-                                                  FixedText(
-                                                    _getTimeAgo(createdAt),
-                                                    style: AppFonts.suite.c2_m(
-                                                      context,
-                                                    ).copyWith(
-                                                      color: AppColors.gray400,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-
-                                              SizedBox(height: 8.h),
-
-                                              // 5. 긴 내용
-                                              FixedText(
-                                                longContent,
-                                                style: AppFonts.pretendard.b3_sb_long(
-                                                  context,
-                                                ).copyWith(
-                                                  color: AppColors.gray400,
-                                                ),
-                                                maxLines:
-                                                null, // 여러 줄 허용 (다음줄로 넘어가는 형태)
-                                              ),
-
-                                              SizedBox(height: 10.h),
-
-                                              // 경기 정보 카드
-                                              Container(
-                                                width: 276.w,
-                                                height: 88.h,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white,
-                                                  borderRadius:
-                                                  BorderRadius.circular(
-                                                    12.r,
-                                                  ),
-                                                  border: Border.all(
-                                                    color: AppColors.gray30,
-                                                    width: 1,
-                                                  ),
-                                                ),
-                                                padding: EdgeInsets.only(
-                                                  top: 16.h,
-                                                  left: 20.w,
-                                                  right: 20.w,
-                                                  bottom: 0.h,
-                                                ),
-                                                child: Row(
-                                                  children: [
-                                                    // 왼쪽: 경기 정보
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                        children: [
-                                                          // 경기 날짜 및 구장
-                                                          FixedText(
-                                                            '${_formatGameDate(gameDate)}, ${stadium}에서',
-                                                            style: AppFonts.suite.c2_m(
-                                                              context,
-                                                            ).copyWith(
-                                                              color:
-                                                              AppColors
-                                                                  .gray400,
-                                                            ),
-                                                          ),
-
-                                                          SizedBox(
-                                                            height: 10.h,
-                                                          ),
-
-                                                          // 점수 및 팀 로고
-                                                          Row(
-                                                            children: [
-                                                              // 홈팀 로고
-                                                              Container(
-                                                                width: 31.w,
-                                                                child: Image.asset(
-                                                                  _getTeamLogo(
-                                                                    homeTeam,
-                                                                  ),
-                                                                  width: 30.w,
-                                                                  fit:
-                                                                  BoxFit
-                                                                      .contain,
-                                                                  errorBuilder: (
-                                                                      context,
-                                                                      error,
-                                                                      stackTrace,
-                                                                      ) {
-                                                                    return Container(
-                                                                      width:
-                                                                      30.w,
-                                                                      height:
-                                                                      30.w,
-                                                                      decoration: BoxDecoration(
-                                                                        color:
-                                                                        AppColors.gray200,
-                                                                        shape:
-                                                                        BoxShape.circle,
-                                                                      ),
-                                                                    );
-                                                                  },
-                                                                ),
-                                                              ),
-
-                                                              SizedBox(
-                                                                width: 17.w,
-                                                              ),
-
-                                                              // 점수
-                                                              FixedText(
-                                                                '$homeScore',
-                                                                style: AppFonts.pretendard.h3_sb(
-                                                                  context,
-                                                                ).copyWith(
-                                                                  color:
-                                                                  AppColors
-                                                                      .gray500,
-                                                                ),
-                                                              ),
-
-                                                              SizedBox(
-                                                                width: 12.w,
-                                                              ),
-
-                                                              FixedText(
-                                                                ':',
-                                                                style: AppFonts.pretendard.h3_sb(
-                                                                  context,
-                                                                ).copyWith(
-                                                                  color:
-                                                                  AppColors
-                                                                      .gray500,
-                                                                ),
-                                                              ),
-
-                                                              SizedBox(
-                                                                width: 12.w,
-                                                              ),
-
-                                                              FixedText(
-                                                                '$awayScore',
-                                                                style: AppFonts.pretendard.h3_sb(
-                                                                  context,
-                                                                ).copyWith(
-                                                                  color:
-                                                                  AppColors
-                                                                      .gray500,
-                                                                ),
-                                                              ),
-
-                                                              SizedBox(
-                                                                width: 17.w,
-                                                              ),
-
-                                                              // 원정팀 로고
-                                                              Container(
-                                                                width: 30.w,
-                                                                child: Image.asset(
-                                                                  _getTeamLogo(
-                                                                    awayTeam,
-                                                                  ),
-                                                                  width: 30.w,
-                                                                  fit:
-                                                                  BoxFit
-                                                                      .contain,
-                                                                  errorBuilder: (
-                                                                      context,
-                                                                      error,
-                                                                      stackTrace,
-                                                                      ) {
-                                                                    return Container(
-                                                                      width:
-                                                                      30.w,
-                                                                      height:
-                                                                      30.w,
-                                                                      decoration: BoxDecoration(
-                                                                        color:
-                                                                        AppColors.gray200,
-                                                                        shape:
-                                                                        BoxShape.circle,
-                                                                      ),
-                                                                    );
-                                                                  },
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-
-                                                    // 오른쪽: 감정 표현
-                                                    Column(
-                                                      mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .start,
-                                                      children: [
-                                                        // 감정 이모지 (위로 올리기)
-                                                        Transform.translate(
-                                                          offset: Offset(
-                                                            0, -7.h,
-                                                          ),
-                                                          child: Container(
-                                                            width: 54.w,
-                                                            height: 54.h,
-                                                            child: SvgPicture.asset(
-                                                              _getEmotionImage(
-                                                                emotionCode,
-                                                              ),
-                                                              width: 54.w,
-                                                              height: 54.h,
-                                                              fit: BoxFit.contain,
-                                                            ),
-                                                          ),
-                                                        ),
-
-                                                        // 감정 라벨 (위로 더 올리기)
-                                                        Transform.translate(
-                                                          offset: Offset(0, -8.h,),
-                                                          // 8px 위로 이동
-                                                          child: FixedText(
-                                                            emotionLabel,
-                                                            style: AppFonts.suite.c2_m(
-                                                              context,
-                                                            ).copyWith(
-                                                              color:
-                                                              AppColors
-                                                                  .gray200,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-
-                                              SizedBox(height: 12.h),
-
-                                              // 미디어 이미지들 (가로 스크롤) - 수정된 부분
-                                              if ((record['mediaUrls']
-                                              as List<dynamic>?)
-                                                  ?.isNotEmpty ??
-                                                  false) ...[
-                                                Container(
-                                                  height: 188.h,
-                                                  child: ListView.builder(
-                                                    scrollDirection:
-                                                    Axis.horizontal,
-                                                    itemCount:
-                                                    (record['mediaUrls']
-                                                    as List<
-                                                        dynamic
-                                                    >)
-                                                        .length,
-                                                    itemBuilder: (
-                                                        context,
-                                                        mediaIndex,
-                                                        ) {
-                                                      final mediaData =
-                                                      (record['mediaUrls']
-                                                      as List<
-                                                          dynamic
-                                                      >)[mediaIndex];
-
-                                                      return Container(
-                                                        width: 210.w,
-                                                        height: 188.h,
-                                                        margin: EdgeInsets.only(
-                                                          right:
-                                                          mediaIndex ==
-                                                              (record['mediaUrls']
-                                                              as List<dynamic>)
-                                                                  .length -
-                                                                  1
-                                                              ? 0
-                                                              : 12.w,
-                                                        ),
-                                                        decoration: BoxDecoration(
-                                                          borderRadius:
-                                                          BorderRadius.circular(
-                                                            12.r,
-                                                          ),
-                                                          color:
-                                                          AppColors.gray100,
-                                                        ),
-                                                        child: ClipRRect(
-                                                          borderRadius:
-                                                          BorderRadius.circular(
-                                                            12.r,
-                                                          ),
-                                                          child: _buildMediaImage(mediaData, 210.w, 188.h),
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder:
+                                    (context, animation1, animation2) =>
+                                        const SearchScreen(),
+                                transitionDuration: Duration.zero,
+                                reverseTransitionDuration: Duration.zero,
                               ),
                             );
                           },
-                        );
-                      },
+                          child: SvgPicture.asset(
+                            AppImages.search,
+                            width: 24.w,
+                            height: 24.w,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              // 나머지 컨텐츠 영역
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 6.h),
+
+                    // 달력 및 날짜 영역
+                    Padding(
+                      padding: EdgeInsets.only(left: 20.w, right: 15.w),
+                      child: Container(
+                        height: 46.h,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // 달력 레이아웃 (고정)
+                            Container(
+                              width: 36.w,
+                              height: 46.h,
+                              padding: EdgeInsets.only(
+                                top: 6.h,
+                                right: 10.w,
+                                bottom: 6.h,
+                              ),
+                              child: SvgPicture.asset(
+                                _getMonthIcon(_visibleMonth.month),
+                                width: 25.w,
+                                height: 33.h,
+                              ),
+                            ),
+
+                            SizedBox(width: 10.w),
+
+                            // 세로선
+                            Container(
+                              width: 1.w,
+                              height: 41.h,
+                              color: AppColors.gray100,
+                            ),
+
+                            SizedBox(width: 10.w),
+
+                            // 스크롤 가능한 날짜 리스트
+                            Expanded(
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                scrollDirection: Axis.horizontal,
+                                reverse: true,
+                                // 오늘부터 시작하여 과거로 스크롤
+                                padding: EdgeInsets.zero,
+                                itemCount: allDates.length,
+                                itemBuilder: (context, index) {
+                                  return _buildDateWidget(
+                                    allDates[index],
+                                    index,
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // 12px 간격
+                    SizedBox(height: 12.h),
+
+                    // 회색 구분선 (360*1 크기, gray50 색상)
+                    Container(
+                      width: 360.w,
+                      height: 1.h,
+                      color: AppColors.gray50,
+                    ),
+
+                    // 12px 간격
+                    SizedBox(height: 12.h),
+
+                    // 필터 영역
+                    Container(
+                      height: 36.h,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.only(left: 20.w, right: 20.w),
+                        itemCount: _filters.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            margin: EdgeInsets.only(
+                              right: index == _filters.length - 1 ? 0 : 8.w,
+                            ),
+                            child: _buildFilterWidget(_filters[index], index),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // 24px 간격
+                    SizedBox(height: 24.h),
+
+                    // 피드 컨텐츠
+                    Expanded(
+                      child: FutureBuilder<List<Map<String, dynamic>>>(
+                        future: RecordApi.getMyRecordsList(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.pri400,
+                              ),
+                            );
+                          }
+
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: FixedText(
+                                '기록을 불러오는데 실패했습니다',
+                                style: AppFonts.pretendard
+                                    .h5_sb(context)
+                                    .copyWith(color: AppColors.gray300),
+                              ),
+                            );
+                          }
+
+                          final List<Map<String, dynamic>> records =
+                              snapshot.data ?? [];
+                          // 최신 기록이 위로 오도록 정렬 (createdAt 기준 내림차순)
+                          records.sort((a, b) {
+                            try {
+                              final DateTime timeA = DateTime.parse(
+                                (a['createdAt'] ?? '').replaceAll(' ', 'T'),
+                              );
+                              final DateTime timeB = DateTime.parse(
+                                (b['createdAt'] ?? '').replaceAll(' ', 'T'),
+                              );
+                              return timeB.compareTo(timeA); // 내림차순 (최신이 위로)
+                            } catch (e) {
+                              return 0;
+                            }
+                          });
+
+                          final List<Map<String, dynamic>> filteredRecords =
+                              _applyAllFilters(records);
+
+                          if (filteredRecords.isEmpty) {
+                            return Center(
+                              child: FixedText(
+                                '직관 기록이 없어요',
+                                style: AppFonts.pretendard
+                                    .h5_sb(context)
+                                    .copyWith(color: AppColors.gray300),
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            padding: EdgeInsets.only(top: 0),
+                            itemCount: filteredRecords.length * 2 - 1, // 구분선 포함
+                            itemBuilder: (context, index) {
+                              // 구분선 아이템
+                              if (index.isOdd) {
+                                return Column(
+                                  children: [
+                                    SizedBox(height: 25.h),
+                                    Container(
+                                      width: 320.w,
+                                      height: 1.h,
+                                      color: AppColors.gray50,
+                                    ),
+                                    SizedBox(height: 20.h),
+                                  ],
+                                );
+                              }
+
+                              // 기록 아이템
+                              final recordIndex = index ~/ 2;
+                              final record = filteredRecords[recordIndex];
+                              final String nickname = record['nickname'] ?? '';
+                              final String favTeam = record['favTeam'] ?? '';
+                              final String profileImageUrl =
+                                  record['profileImageUrl'] ?? '';
+                              final String createdAt =
+                                  record['createdAt'] ?? '';
+                              final String longContent =
+                                  record['longContent'] ?? '';
+                              final String gameDate = record['gameDate'] ?? '';
+                              final String stadium = record['stadium'] ?? '';
+                              final String homeTeam = record['homeTeam'] ?? '';
+                              final String awayTeam = record['awayTeam'] ?? '';
+                              final int homeScore = record['homeScore'] ?? 0;
+                              final int awayScore = record['awayScore'] ?? 0;
+                              final int emotionCode =
+                                  record['emotionCode'] ?? 1;
+                              final String emotionLabel =
+                                  record['emotionLabel'] ?? '';
+
+                              return Container(
+                                margin: EdgeInsets.symmetric(horizontal: 20.w),
+                                decoration: BoxDecoration(color: Colors.white),
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // 사용자 정보 헤더 (1~4번)
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // 1. 프로필 이미지 (36*36, 원형)
+                                          Container(
+                                            width: 36.w,
+                                            height: 36.h,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color:
+                                                  profileImageUrl.isNotEmpty
+                                                      ? null
+                                                      : AppColors.gray50,
+                                              image:
+                                                  profileImageUrl.isNotEmpty
+                                                      ? DecorationImage(
+                                                        image: NetworkImage(
+                                                          profileImageUrl,
+                                                        ),
+                                                        fit: BoxFit.cover,
+                                                      )
+                                                      : null,
+                                            ),
+                                            child:
+                                                profileImageUrl.isEmpty
+                                                    ? ClipOval(
+                                                      child: SvgPicture.asset(
+                                                        AppImages.profile,
+                                                        width: 36.w,
+                                                        height: 36.h,
+                                                      ),
+                                                    )
+                                                    : null,
+                                          ),
+
+                                          SizedBox(width: 8.w),
+
+                                          // 텍스트 영역을 Expanded로 감싸기
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                // 2, 3, 4번을 한 줄에 배치
+                                                Row(
+                                                  children: [
+                                                    // 2. 닉네임 (b3_b 폰트, gray950 색상)
+                                                    FixedText(
+                                                      nickname,
+                                                      style: AppFonts.pretendard
+                                                          .b3_b(context)
+                                                          .copyWith(
+                                                            color:
+                                                                AppColors
+                                                                    .gray950,
+                                                          ),
+                                                    ),
+
+                                                    SizedBox(width: 8.w),
+
+                                                    // 3. 팬 정보 (c1_r 폰트, gray400 색상)
+                                                    FixedText(
+                                                      '$favTeam 팬',
+                                                      style: AppFonts.pretendard
+                                                          .c1_r(context)
+                                                          .copyWith(
+                                                            color:
+                                                                AppColors
+                                                                    .gray400,
+                                                          ),
+                                                    ),
+
+                                                    Spacer(),
+
+                                                    // 4. 경과 시간 (c2_m 폰트, gray400 색상)
+                                                    FixedText(
+                                                      _getTimeAgo(createdAt),
+                                                      style: AppFonts.suite
+                                                          .c2_m(context)
+                                                          .copyWith(
+                                                            color:
+                                                                AppColors
+                                                                    .gray400,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                                SizedBox(height: 8.h),
+
+                                                // 5. 긴 내용
+                                                FixedText(
+                                                  longContent,
+                                                  style: AppFonts.pretendard
+                                                      .b3_sb_long(context)
+                                                      .copyWith(
+                                                        color:
+                                                            AppColors.gray400,
+                                                      ),
+                                                  maxLines:
+                                                      null, // 여러 줄 허용 (다음줄로 넘어가는 형태)
+                                                ),
+
+                                                SizedBox(height: 10.h),
+
+                                                // 경기 정보 카드
+                                                Container(
+                                                  width: 276.w,
+                                                  height: 88.h,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12.r,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: AppColors.gray30,
+                                                      width: 1,
+                                                    ),
+                                                  ),
+                                                  padding: EdgeInsets.only(
+                                                    top: 16.h,
+                                                    left: 20.w,
+                                                    right: 20.w,
+                                                    bottom: 0.h,
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      // 왼쪽: 경기 정보
+                                                      Expanded(
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            // 경기 날짜 및 구장
+                                                            FixedText(
+                                                              '${_formatGameDate(gameDate)}, ${stadium}에서',
+                                                              style: AppFonts
+                                                                  .suite
+                                                                  .c2_m(context)
+                                                                  .copyWith(
+                                                                    color:
+                                                                        AppColors
+                                                                            .gray400,
+                                                                  ),
+                                                            ),
+
+                                                            SizedBox(
+                                                              height: 10.h,
+                                                            ),
+
+                                                            // 점수 및 팀 로고
+                                                            Row(
+                                                              children: [
+                                                                // 홈팀 로고
+                                                                Container(
+                                                                  width: 31.w,
+                                                                  child: Image.asset(
+                                                                    _getTeamLogo(
+                                                                      homeTeam,
+                                                                    ),
+                                                                    width: 30.w,
+                                                                    fit:
+                                                                        BoxFit
+                                                                            .contain,
+                                                                    errorBuilder: (
+                                                                      context,
+                                                                      error,
+                                                                      stackTrace,
+                                                                    ) {
+                                                                      return Container(
+                                                                        width:
+                                                                            30.w,
+                                                                        height:
+                                                                            30.w,
+                                                                        decoration: BoxDecoration(
+                                                                          color:
+                                                                              AppColors.gray200,
+                                                                          shape:
+                                                                              BoxShape.circle,
+                                                                        ),
+                                                                      );
+                                                                    },
+                                                                  ),
+                                                                ),
+
+                                                                SizedBox(
+                                                                  width: 17.w,
+                                                                ),
+
+                                                                // 점수
+                                                                FixedText(
+                                                                  '$homeScore',
+                                                                  style: AppFonts
+                                                                      .pretendard
+                                                                      .h3_sb(
+                                                                        context,
+                                                                      )
+                                                                      .copyWith(
+                                                                        color:
+                                                                            AppColors.gray500,
+                                                                      ),
+                                                                ),
+
+                                                                SizedBox(
+                                                                  width: 12.w,
+                                                                ),
+
+                                                                FixedText(
+                                                                  ':',
+                                                                  style: AppFonts
+                                                                      .pretendard
+                                                                      .h3_sb(
+                                                                        context,
+                                                                      )
+                                                                      .copyWith(
+                                                                        color:
+                                                                            AppColors.gray500,
+                                                                      ),
+                                                                ),
+
+                                                                SizedBox(
+                                                                  width: 12.w,
+                                                                ),
+
+                                                                FixedText(
+                                                                  '$awayScore',
+                                                                  style: AppFonts
+                                                                      .pretendard
+                                                                      .h3_sb(
+                                                                        context,
+                                                                      )
+                                                                      .copyWith(
+                                                                        color:
+                                                                            AppColors.gray500,
+                                                                      ),
+                                                                ),
+
+                                                                SizedBox(
+                                                                  width: 17.w,
+                                                                ),
+
+                                                                // 원정팀 로고
+                                                                Container(
+                                                                  width: 30.w,
+                                                                  child: Image.asset(
+                                                                    _getTeamLogo(
+                                                                      awayTeam,
+                                                                    ),
+                                                                    width: 30.w,
+                                                                    fit:
+                                                                        BoxFit
+                                                                            .contain,
+                                                                    errorBuilder: (
+                                                                      context,
+                                                                      error,
+                                                                      stackTrace,
+                                                                    ) {
+                                                                      return Container(
+                                                                        width:
+                                                                            30.w,
+                                                                        height:
+                                                                            30.w,
+                                                                        decoration: BoxDecoration(
+                                                                          color:
+                                                                              AppColors.gray200,
+                                                                          shape:
+                                                                              BoxShape.circle,
+                                                                        ),
+                                                                      );
+                                                                    },
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+
+                                                      // 오른쪽: 감정 표현
+                                                      Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          // 감정 이모지 (위로 올리기)
+                                                          Transform.translate(
+                                                            offset: Offset(
+                                                              0,
+                                                              -7.h,
+                                                            ),
+                                                            child: Container(
+                                                              width: 54.w,
+                                                              height: 54.h,
+                                                              child: SvgPicture.asset(
+                                                                _getEmotionImage(
+                                                                  emotionCode,
+                                                                ),
+                                                                width: 54.w,
+                                                                height: 54.h,
+                                                                fit:
+                                                                    BoxFit
+                                                                        .contain,
+                                                              ),
+                                                            ),
+                                                          ),
+
+                                                          // 감정 라벨 (위로 더 올리기)
+                                                          Transform.translate(
+                                                            offset: Offset(
+                                                              0,
+                                                              -8.h,
+                                                            ),
+                                                            // 8px 위로 이동
+                                                            child: FixedText(
+                                                              emotionLabel,
+                                                              style: AppFonts
+                                                                  .suite
+                                                                  .c2_m(context)
+                                                                  .copyWith(
+                                                                    color:
+                                                                        AppColors
+                                                                            .gray200,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+
+                                                SizedBox(height: 12.h),
+
+                                                // 미디어 이미지들 (가로 스크롤) - 수정된 부분
+                                                if ((record['mediaUrls']
+                                                            as List<dynamic>?)
+                                                        ?.isNotEmpty ??
+                                                    false) ...[
+                                                  Container(
+                                                    height: 188.h,
+                                                    child: ListView.builder(
+                                                      scrollDirection:
+                                                          Axis.horizontal,
+                                                      itemCount:
+                                                          (record['mediaUrls']
+                                                                  as List<
+                                                                    dynamic
+                                                                  >)
+                                                              .length,
+                                                      itemBuilder: (
+                                                        context,
+                                                        mediaIndex,
+                                                      ) {
+                                                        final mediaData =
+                                                            (record['mediaUrls']
+                                                                as List<
+                                                                  dynamic
+                                                                >)[mediaIndex];
+
+                                                        return Container(
+                                                          width: 210.w,
+                                                          height: 188.h,
+                                                          margin: EdgeInsets.only(
+                                                            right:
+                                                                mediaIndex ==
+                                                                        (record['mediaUrls']
+                                                                                    as List<dynamic>)
+                                                                                .length -
+                                                                            1
+                                                                    ? 0
+                                                                    : 12.w,
+                                                          ),
+                                                          decoration: BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12.r,
+                                                                ),
+                                                            color:
+                                                                AppColors
+                                                                    .gray100,
+                                                          ),
+                                                          child: ClipRRect(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12.r,
+                                                                ),
+                                                            child:
+                                                                _buildMediaImage(
+                                                                  mediaData,
+                                                                  210.w,
+                                                                  188.h,
+                                                                ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+        bottomNavigationBar: CustomBottomNavBar(currentIndex: 0),
       ),
-      bottomNavigationBar: CustomBottomNavBar(currentIndex: 0),
     );
   }
 }

@@ -319,103 +319,130 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 1. 뒤로가기 영역
-            _buildBackButtonArea(),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          final recordState = Provider.of<RecordState>(context, listen: false);
 
-            // 2. 메인 콘텐츠 영역 (스크롤)
-            Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Column(
-                  children: [
-                    // 티켓 사진 카드 상단 여백
-                    SizedBox(height: scaleHeight(2)),
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => EmotionSelectScreen(
+                userId: recordState.userId ?? 0,
+                gameId: recordState.gameId ?? '',
+                seatInfo: recordState.seatInfo ?? '',
+                stadium: recordState.stadium ?? '',
+                imagePath: widget.imagePath,
+                homeTeam: widget.homeTeam,
+                awayTeam: widget.awayTeam,
+                gameDate: widget.gameDate,
+              ),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // 1. 뒤로가기 영역
+              _buildBackButtonArea(),
 
-                    // 티켓 사진 카드
-                    _buildTicketCard(),
+              // 2. 메인 콘텐츠 영역 (스크롤)
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    children: [
+                      // 티켓 사진 카드 상단 여백
+                      SizedBox(height: scaleHeight(2)),
 
-                    // 회색 배경 영역
-                    Container(
-                      width: double.infinity,
-                      color: AppColors.gray20,
-                      child: Column(
-                        children: [
-                          // 사진과 영상을 추가해 주세요
-                          _buildGallerySection(),
+                      // 티켓 사진 카드
+                      _buildTicketCard(),
 
-                          // 직관 한 마디
-                          _buildSection(
-                            builder: () =>
-                                OneWordSectionContent(
-                                  scrollController: _scrollController,
-                                ),
-                            cardWidth: 320.13,
-                            cardHeight: 150,
-                          ),
+                      // 회색 배경 영역
+                      Container(
+                        width: double.infinity,
+                        color: AppColors.gray20,
+                        child: Column(
+                          children: [
+                            // 사진과 영상을 추가해 주세요
+                            _buildGallerySection(),
 
-                          // 야구 일기
-                          _buildSection(
-                            builder: () =>
-                                DiaryNoteSectionContent(
-                                  scrollController: _scrollController,
-                                ),
-                            cardWidth: 320.13,
-                            // cardHeight 제거 - 다중행일 때 자동 높이 조절
-                          ),
+                            // 직관 한 마디
+                            _buildSection(
+                              builder: () =>
+                                  OneWordSectionContent(
+                                    scrollController: _scrollController,
+                                  ),
+                              cardWidth: 320.13,
+                              cardHeight: 150,
+                            ),
 
-                          // 베스트 플레이어
-                          _buildSection(
-                            builder: () =>
-                                BestPlayerSectionContent(
-                                  scrollController: _scrollController,
-                                ),
-                            cardWidth: 320.13,
-                            cardHeight: 134,
-                          ),
+                            // 야구 일기
+                            _buildSection(
+                              builder: () =>
+                                  DiaryNoteSectionContent(
+                                    scrollController: _scrollController,
+                                  ),
+                              cardWidth: 320.13,
+                              // cardHeight 제거 - 다중행일 때 자동 높이 조절
+                            ),
 
-                          // 함께 직관한 친구
-                          _buildSection(
-                            builder: () =>
-                                CheerFriendSectionContent(
-                                  scrollController: _scrollController,
-                                ),
-                            cardWidth: 320.13,
-                            cardHeight: 134,
-                          ),
+                            // 베스트 플레이어
+                            _buildSection(
+                              builder: () =>
+                                  BestPlayerSectionContent(
+                                    scrollController: _scrollController,
+                                  ),
+                              cardWidth: 320.13,
+                              cardHeight: 134,
+                            ),
 
-                          // 먹거리 태그
-                          _buildSection(
-                            builder: () =>
-                                FoodTagSectionContent(
-                                  scrollController: _scrollController,
-                                ),
-                            cardWidth: 320.13,
-                            cardHeight: 128,
-                          ),
+                            // 함께 직관한 친구
+                            _buildSection(
+                              builder: () =>
+                                  CheerFriendSectionContent(
+                                    scrollController: _scrollController,
+                                  ),
+                              cardWidth: 320.13,
+                              cardHeight: 134,
+                            ),
 
-                          // 하단 여백
-                          SizedBox(height: scaleHeight(5)),
-                        ],
+                            // 먹거리 태그
+                            _buildSection(
+                              builder: () =>
+                                  FoodTagSectionContent(
+                                    scrollController: _scrollController,
+                                  ),
+                              cardWidth: 320.13,
+                              cardHeight: 128,
+                            ),
+
+                            // 하단 여백
+                            SizedBox(height: scaleHeight(5)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // 3. 완료 버튼 영역
-            _buildCompleteButtonArea(),
-          ],
+              // 3. 완료 버튼 영역
+              _buildCompleteButtonArea(),
+            ],
+          ),
         ),
       ),
     );
   }
+
 
   // 뒤로가기 위젯
   Widget _buildBackButtonArea() {

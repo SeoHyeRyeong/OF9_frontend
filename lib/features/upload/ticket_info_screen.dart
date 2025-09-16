@@ -717,6 +717,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                   const Spacer(flex: 28), // 일시-구장 간격
 
                                   // 구장
+                                  // 구장 선택 부분
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -730,14 +731,25 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                       SizedBox(height: scaleHeight(8)),
                                       GestureDetector(
                                         onTap: () async {
+                                          final previousStadium = selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium;
+
                                           final stadium = await showStadiumPicker(
                                             context: context,
                                             title: '구장',
                                             stadiums: stadiumListWithImages,
-                                            initial: selectedStadium ?? mapStadiumName(extractedStadium),
+                                            initial: previousStadium,
                                           );
+
                                           if (stadium != null) {
-                                            setState(() => selectedStadium = stadium);
+                                            setState(() {
+                                              selectedStadium = stadium;
+
+                                              // 구장이 변경되었다면 모든 좌석 정보 리셋 (OCR 포함)
+                                              if (stadium != previousStadium) {
+                                                selectedSeat = null;
+                                                extractedSeat = null; // OCR로 인식된 좌석도 리셋
+                                              }
+                                            });
                                           }
                                         },
                                         child: Container(
@@ -753,7 +765,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                             children: [
                                               Expanded(
                                                 child: FixedText(
-                                                  selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium ??  '구장 정보를 작성해 주세요',
+                                                  selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium ?? '구장 정보를 작성해 주세요',
                                                   style: AppFonts.pretendard.b3_sb_long(context).copyWith(
                                                     color: (selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium) == null
                                                         ? AppColors.gray300
@@ -782,7 +794,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
 
                                   const Spacer(flex: 37), // 구장-좌석 간격
 
-                                  // 좌석
+// 좌석 선택 부분
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -798,10 +810,12 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                         onTap: () async {
                                           FocusScope.of(context).unfocus();
                                           final currentStadium = selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium;
+
                                           final seat = await showSeatInputDialog(
                                             context,
                                             initial: selectedSeat ?? extractedSeat,
                                             stadium: currentStadium,
+                                            previousStadium: currentStadium, // 현재 구장을 이전 구장으로 전달 (바텀시트에서는 구장 변경 감지 불필요)
                                           );
                                           if (seat != null) setState(() => selectedSeat = seat);
                                         },

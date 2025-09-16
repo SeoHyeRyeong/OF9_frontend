@@ -325,6 +325,21 @@ Map<String, String>? parseSeatStringWithMapping(String? text, {String? stadium})
           }
         }
       }
+
+      // 정의된 블럭을 찾지 못한 경우, 블럭 앞 텍스트를 직접 추출
+      if (foundBlock == null) {
+        print('🔍 정의된 블럭을 찾지 못함. 블럭 앞 텍스트 추출 시도...');
+
+        // "XXX블럭" 패턴에서 XXX 추출
+        final blockPattern = RegExp(r'(\S+)블럭');
+        final match = blockPattern.firstMatch(text);
+
+        if (match != null) {
+          foundBlock = match.group(1);
+          print('✅ 블럭 앞 텍스트로 블럭 발견: $foundBlock');
+        }
+      }
+
       break;
     }
   }
@@ -389,43 +404,42 @@ Map<String, String>? parseSeatStringWithMapping(String? text, {String? stadium})
 
 //===========================================================================================
 //===========================================================================================
-/// 좌석 선택용 BottomSheet
-Future<String?> showSeatInputDialog(BuildContext context, {
-  String? initial,
-  String? stadium,
-}) async {
+/// 좌석 선택용 BottomSheet - 완전한 버전
+Future<String?> showSeatInputDialog(
+    BuildContext context, {
+      String? initial,
+      String? stadium,
+      String? previousStadium, // 이전 구장 정보 추가
+    }) async {
   final screenHeight = MediaQuery.of(context).size.height;
   final sheetHeight = screenHeight * 0.7;
 
-  final mappedStadium = StadiumSeatInfo.mapOcrStadiumToSeatKey(stadium);
-  print('🏟️ 원본 구장명: $stadium → 매핑된 구장명: $mappedStadium');
-
-  final parsed = parseSeatStringWithMapping(initial, stadium: mappedStadium);
-
-  return showModalBottomSheet<String>(
+  final result = await showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
     backgroundColor: AppColors.trans700.withOpacity(0.7),
     useSafeArea: false,
     builder: (_) => _SeatInputBottomSheet(
-      mappedStadium: mappedStadium,
-      stadium: stadium,
-      parsed: parsed,
+      currentStadium: stadium,
+      previousStadium: previousStadium,
+      initialSeatString: initial,
       sheetHeight: sheetHeight,
     ),
   );
+
+  return result;
 }
 
 class _SeatInputBottomSheet extends StatefulWidget {
-  final String? mappedStadium;
-  final String? stadium;
-  final Map<String, String>? parsed;
+  final String? currentStadium;
+  final String? previousStadium;
+  final String? initialSeatString;
   final double sheetHeight;
 
   const _SeatInputBottomSheet({
-    required this.mappedStadium,
-    required this.stadium,
-    required this.parsed,
+    required this.currentStadium,
+    required this.previousStadium,
+    required this.initialSeatString,
     required this.sheetHeight,
   });
 
@@ -457,6 +471,9 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
   late bool isDefinedStadium;
   bool hasBlocksForSelectedZone = false;
 
+  // 구장 변경 감지를 위한 변수
+  bool wasStadiumChanged = false;
+
   @override
   void initState() {
     super.initState();
@@ -467,26 +484,14 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     _rowFocusNode = FocusNode();
     _numFocusNode = FocusNode();
 
-    // Controllers 초기화 - 모든 파싱된 값을 우선 설정
-    _zoneController = TextEditingController(text: widget.parsed?['zone'] ?? '');
-    _blockController = TextEditingController(text: widget.parsed?['block'] ?? '');
-    _rowController = TextEditingController(text: widget.parsed?['row'] ?? '');
-    _numController = TextEditingController(text: widget.parsed?['num'] ?? '');
+    // 구장 변경 감지 (이전 구장과 현재 구장 비교)
+    wasStadiumChanged = widget.previousStadium != null &&
+        widget.previousStadium != widget.currentStadium;
 
-    // 초기 상태 설정
-    selectedZone = widget.parsed?['zone'];
-    selectedBlock = widget.parsed?['block'];
+    print('🏟️ 구장 변경 여부: $wasStadiumChanged (${widget.previousStadium} → ${widget.currentStadium})');
 
-    zones = StadiumSeatInfo.getZones(widget.mappedStadium ?? widget.stadium);
-    blocks = StadiumSeatInfo.getBlocks(widget.mappedStadium ?? widget.stadium, selectedZone);
-    isDefinedStadium = widget.mappedStadium != null && StadiumSeatInfo.stadiumSeats.containsKey(widget.mappedStadium);
-
-    // 디버그 정보
-    print('🏟️ mappedStadium: ${widget.mappedStadium}');
-    print('🏟️ isDefinedStadium: $isDefinedStadium');
-
-    // 선택된 구역에 블럭이 있는지 확인
-    _updateBlocksForZone();
+    // 초기화
+    _initializeSeatData();
 
     // 포커스 리스너 추가
     _zoneTextFocusNode.addListener(() {
@@ -501,6 +506,39 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     _numFocusNode.addListener(() {
       if (_numFocusNode.hasFocus) _closeDropdowns();
     });
+  }
+
+  void _initializeSeatData() {
+    final mappedStadium = StadiumSeatInfo.mapOcrStadiumToSeatKey(widget.currentStadium);
+
+    // 구장 변경되지 않았다면 기존 좌석 정보 파싱 (재매칭)
+    // 구장이 변경되었다면 좌석 정보 초기화
+    Map<String, String>? parsed;
+    if (!wasStadiumChanged && widget.initialSeatString != null) {
+      parsed = parseSeatStringWithMapping(widget.initialSeatString, stadium: mappedStadium);
+      print('🎫 좌석 재매칭 수행: ${widget.initialSeatString} → $parsed');
+    } else if (wasStadiumChanged) {
+      print('🏟️ 구장 변경으로 인한 좌석 정보 초기화');
+    }
+
+    // Controllers 초기화
+    _zoneController = TextEditingController(text: parsed?['zone'] ?? '');
+    _blockController = TextEditingController(text: parsed?['block'] ?? '');
+    _rowController = TextEditingController(text: parsed?['row'] ?? '');
+    _numController = TextEditingController(text: parsed?['num'] ?? '');
+
+    // 초기 상태 설정
+    selectedZone = parsed?['zone'];
+    selectedBlock = parsed?['block'];
+
+    zones = StadiumSeatInfo.getZones(mappedStadium ?? widget.currentStadium);
+    blocks = StadiumSeatInfo.getBlocks(mappedStadium ?? widget.currentStadium, selectedZone);
+    isDefinedStadium = mappedStadium != null && StadiumSeatInfo.stadiumSeats.containsKey(mappedStadium);
+
+    print('🏟️ mappedStadium: $mappedStadium');
+    print('🏟️ isDefinedStadium: $isDefinedStadium');
+
+    _updateBlocksForZone();
   }
 
   @override
@@ -526,28 +564,24 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
   }
 
   void _updateBlocksForZone() {
+    final mappedStadium = StadiumSeatInfo.mapOcrStadiumToSeatKey(widget.currentStadium);
     if (isDefinedStadium && selectedZone != null) {
-      hasBlocksForSelectedZone = StadiumSeatInfo.hasBlocks(widget.mappedStadium ?? widget.stadium, selectedZone);
-      blocks = StadiumSeatInfo.getBlocks(widget.mappedStadium ?? widget.stadium, selectedZone);
+      hasBlocksForSelectedZone = StadiumSeatInfo.hasBlocks(mappedStadium ?? widget.currentStadium, selectedZone);
+      blocks = StadiumSeatInfo.getBlocks(mappedStadium ?? widget.currentStadium, selectedZone);
     } else {
       hasBlocksForSelectedZone = false;
       blocks = [];
     }
   }
 
-  // 수정된 완료 조건
   bool get isComplete {
     if (isDefinedStadium) {
-      // 정의된 구장의 경우
       if (hasBlocksForSelectedZone) {
-        // 블럭이 있는 구역: 구역, 블럭, 번호 모두 필요
         return selectedZone != null && selectedBlock != null && _numController.text.isNotEmpty;
       } else {
-        // 블럭이 없는 구역: 구역, 번호만 필요 (블럭은 선택사항)
         return selectedZone != null && _numController.text.isNotEmpty;
       }
     } else {
-      // 정의되지 않은 구장: 구역, 번호만 필요 (블럭은 선택사항)
       return _zoneController.text.isNotEmpty && _numController.text.isNotEmpty;
     }
   }
@@ -557,7 +591,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return AnimatedPadding(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 100),
       padding: EdgeInsets.only(bottom: keyboardHeight * 0.4),
       child: Container(
         height: widget.sheetHeight,
@@ -610,6 +644,38 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                           ),
                         ),
 
+                        // 구장 변경 안내 메시지 (구장이 변경된 경우에만 표시)
+                        if (wasStadiumChanged) ...[
+                          Container(
+                            margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                            padding: EdgeInsets.all(scaleWidth(12)),
+                            decoration: BoxDecoration(
+                              color: AppColors.pri50,
+                              borderRadius: BorderRadius.circular(scaleHeight(8)),
+                              border: Border.all(color: AppColors.pri200, width: 1),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  size: scaleWidth(16),
+                                  color: AppColors.pri300,
+                                ),
+                                SizedBox(width: scaleWidth(8)),
+                                Expanded(
+                                  child: FixedText(
+                                    '구장이 변경되어 좌석 정보가 초기화되었습니다.',
+                                    style: AppFonts.pretendard.c1_r(context).copyWith(
+                                      color: AppColors.pri400,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: scaleHeight(16)),
+                        ],
+
                         // 콘텐츠 영역
                         Expanded(
                           child: SafeArea(
@@ -619,12 +685,12 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                 // 폼 영역
                                 Expanded(
                                   flex: 470,
-                                  child: SingleChildScrollView(
+                                  child: Padding(
                                     padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        SizedBox(height: scaleHeight(26)),
+                                        SizedBox(height: scaleHeight(wasStadiumChanged ? 10 : 26)),
 
                                         // 구역 섹션
                                         Row(
@@ -642,7 +708,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                         ),
                                         SizedBox(height: scaleHeight(8)),
 
-                                        // 구역 입력 필드
                                         if (isDefinedStadium)
                                           _buildZoneDropdown()
                                         else
@@ -650,7 +715,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
 
                                         SizedBox(height: scaleHeight(28)),
 
-                                        // 블럭 섹션 - 수정된 부분
+                                        // 블럭 섹션
                                         Row(
                                           children: [
                                             FixedText(
@@ -658,7 +723,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                               style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
                                             ),
                                             SizedBox(width: scaleWidth(2)),
-                                            // 정의된 구장이고 선택된 구역에 블럭이 있는 경우에만 * 표시
                                             if (isDefinedStadium && hasBlocksForSelectedZone)
                                               FixedText(
                                                 '*',
@@ -668,12 +732,9 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                         ),
                                         SizedBox(height: scaleHeight(8)),
 
-                                        // 블럭 입력 필드 - 조건부 렌더링
                                         if (isDefinedStadium && hasBlocksForSelectedZone)
-                                        // 정의된 구장이고 블럭이 있는 경우: 드롭다운
                                           _buildBlockDropdown()
                                         else
-                                        // 정의되지 않은 구장이거나 블럭이 없는 경우: 텍스트 필드 (항상 표시)
                                           _buildBlockTextField(),
 
                                         SizedBox(height: scaleHeight(28)),
@@ -681,7 +742,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                         // 열/번호 섹션
                                         Row(
                                           children: [
-                                            // 열 입력
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -696,7 +756,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                               ),
                                             ),
                                             SizedBox(width: scaleWidth(12)),
-                                            // 번호 입력
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -722,7 +781,8 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                           ],
                                         ),
 
-                                        SizedBox(height: scaleHeight(100)),
+                                        // 남은 공간을 모두 차지하도록 Spacer 추가
+                                        Spacer(),
                                       ],
                                     ),
                                   ),
@@ -754,7 +814,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                         }
                                             : null,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: isComplete ? AppColors.gray700 : AppColors.gray200,
+                                          backgroundColor: isComplete ? AppColors.gray700: AppColors.gray200,
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(scaleHeight(16)),
                                           ),
@@ -791,7 +851,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     );
   }
 
-  // 구역 드롭다운 위젯
   Widget _buildZoneDropdown() {
     return GestureDetector(
       onTap: () {
@@ -818,7 +877,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
               child: FixedText(
                 selectedZone ?? '구역을 선택해 주세요',
                 style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                  color: selectedZone != null ? AppColors.trans900 : AppColors.gray300,
+                  color: selectedZone != null ? AppColors.trans900: AppColors.gray300,
                 ),
               ),
             ),
@@ -837,7 +896,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     );
   }
 
-  // 구역 텍스트필드 위젯
   Widget _buildZoneTextField() {
     return Container(
       width: scaleWidth(320),
@@ -863,7 +921,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     );
   }
 
-  // 블럭 드롭다운 위젯
   Widget _buildBlockDropdown() {
     return GestureDetector(
       onTap: () {
@@ -895,7 +952,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
               child: FixedText(
                 selectedBlock ?? '블럭을 선택해 주세요',
                 style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                  color: selectedBlock != null ? AppColors.trans900 : AppColors.gray300,
+                  color: selectedBlock != null ? AppColors.trans900: AppColors.gray300,
                 ),
               ),
             ),
@@ -914,7 +971,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     );
   }
 
-  // 블럭 텍스트필드 위젯
   Widget _buildBlockTextField() {
     return Container(
       width: scaleWidth(320),
@@ -940,7 +996,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     );
   }
 
-  // 열 텍스트필드 위젯
   Widget _buildRowTextField() {
     return Container(
       height: scaleHeight(52),
@@ -965,7 +1020,6 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     );
   }
 
-  // 번호 텍스트필드 위젯
   Widget _buildNumberTextField() {
     return Container(
       height: scaleHeight(52),
@@ -990,157 +1044,159 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     );
   }
 
-  // 좌석 텍스트 생성 함수
   String _buildSeatText() {
+    final mappedStadium = StadiumSeatInfo.mapOcrStadiumToSeatKey(widget.currentStadium);
+
+    // 키워드 제거 함수
+    String cleanText(String text, String keyword) {
+      return text.replaceAll(RegExp('$keyword\$'), '').trim();
+    }
+
     if (isDefinedStadium) {
       if (hasBlocksForSelectedZone) {
-        // 블럭이 있는 경우 (필수)
-        return _rowController.text.isEmpty
-            ? '$selectedZone ${selectedBlock}블럭 ${_numController.text}번'
-            : '$selectedZone ${selectedBlock}블럭 ${_rowController.text}열 ${_numController.text}번';
+        final cleanBlock = cleanText(_blockController.text.isEmpty ? selectedBlock ?? '' : _blockController.text, '블럭');
+        final cleanRow = cleanText(_rowController.text, '열');
+        final cleanNum = cleanText(_numController.text, '번');
+
+        return cleanRow.isEmpty
+            ? '$selectedZone ${cleanBlock}블럭 ${cleanNum}번'
+            : '$selectedZone ${cleanBlock}블럭 ${cleanRow}열 ${cleanNum}번';
       } else {
-        // 블럭이 없는 경우 (선택사항이지만 작성했다면 포함)
-        if (_blockController.text.isNotEmpty) {
-          return _rowController.text.isEmpty
-              ? '$selectedZone ${_blockController.text}블럭 ${_numController.text}번'
-              : '$selectedZone ${_blockController.text}블럭 ${_rowController.text}열 ${_numController.text}번';
+        final cleanBlock = cleanText(_blockController.text, '블럭');
+        final cleanRow = cleanText(_rowController.text, '열');
+        final cleanNum = cleanText(_numController.text, '번');
+
+        if (cleanBlock.isNotEmpty) {
+          return cleanRow.isEmpty
+              ? '$selectedZone ${cleanBlock}블럭 ${cleanNum}번'
+              : '$selectedZone ${cleanBlock}블럭 ${cleanRow}열 ${cleanNum}번';
         } else {
-          return _rowController.text.isEmpty
-              ? '$selectedZone ${_numController.text}번'
-              : '$selectedZone ${_rowController.text}열 ${_numController.text}번';
+          return cleanRow.isEmpty
+              ? '$selectedZone ${cleanNum}번'
+              : '$selectedZone ${cleanRow}열 ${cleanNum}번';
         }
       }
     } else {
-      // 정의되지 않은 구장 (블럭은 선택사항이지만 작성했다면 포함)
-      if (_blockController.text.isNotEmpty) {
-        return _rowController.text.isEmpty
-            ? '${_zoneController.text} ${_blockController.text}블럭 ${_numController.text}번'
-            : '${_zoneController.text} ${_blockController.text}블럭 ${_rowController.text}열 ${_numController.text}번';
+      final cleanZone = cleanText(_zoneController.text, '석');
+      final cleanBlock = cleanText(_blockController.text, '블럭');
+      final cleanRow = cleanText(_rowController.text, '열');
+      final cleanNum = cleanText(_numController.text, '번');
+
+      if (cleanBlock.isNotEmpty) {
+        return cleanRow.isEmpty
+            ? '${cleanZone} ${cleanBlock}블럭 ${cleanNum}번'
+            : '${cleanZone} ${cleanBlock}블럭 ${cleanRow}열 ${cleanNum}번';
       } else {
-        return _rowController.text.isEmpty
-            ? '${_zoneController.text} ${_numController.text}번'
-            : '${_zoneController.text} ${_rowController.text}열 ${_numController.text}번';
+        return cleanRow.isEmpty
+            ? '${cleanZone} ${cleanNum}번'
+            : '${cleanZone} ${cleanRow}열 ${cleanNum}번';
       }
     }
   }
 
-  // 구역 드롭다운 오버레이
   Widget _buildZoneDropdownOverlay() {
+    final topPosition = wasStadiumChanged
+        ? scaleHeight(60 + 16 + 44 + 16 + 10 + 18 + 8 + 48 + 2)
+        : scaleHeight(60 + 26 + 18 + 8 + 48 + 2);
+
     return Positioned(
-      top: scaleHeight(60 + 26 + 18 + 8 + 48 + 6),
+      top: topPosition,
       left: scaleWidth(20),
       right: scaleWidth(20),
-      child: Material(
-        elevation: 8,
-        borderRadius: BorderRadius.circular(scaleHeight(8)),
-        child: Container(
-          width: scaleWidth(320),
-          constraints: BoxConstraints(maxHeight: scaleHeight(220)),
-          decoration: BoxDecoration(
-            color: AppColors.gray50,
-            borderRadius: BorderRadius.circular(scaleHeight(8)),
-            border: Border.all(color: AppColors.gray100, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            itemCount: zones.length,
-            separatorBuilder: (context, index) {
-              return Container(
-                height: 1,
-                color: AppColors.gray100,
-                margin: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
-              );
-            },
-            itemBuilder: (context, index) {
-              final zone = zones[index];
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedZone = zone;
-                    selectedBlock = null;
-                    blocks = StadiumSeatInfo.getBlocks(widget.mappedStadium ?? widget.stadium, zone);
-                    isZoneDropdownOpen = false;
-                    // 구역 변경 시 블럭 유무 재확인
-                    _updateBlocksForZone();
-                  });
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: scaleHeight(12), horizontal: scaleWidth(16)),
-                  child: FixedText(
-                    zone,
-                    style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
-                  ),
+      child: Container(
+        width: scaleWidth(320),
+        constraints: BoxConstraints(maxHeight: scaleHeight(220)),
+        decoration: BoxDecoration(
+          color: AppColors.gray50,
+          borderRadius: BorderRadius.circular(scaleHeight(8)),
+          border: Border.all(color: AppColors.gray100, width: 1),
+        ),
+        child: ListView.separated(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          itemCount: zones.length,
+          separatorBuilder: (context, index) {
+            return Container(
+              height: 1,
+              color: AppColors.gray100,
+              margin: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
+            );
+          },
+          itemBuilder: (context, index) {
+            final zone = zones[index];
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedZone = zone;
+                  selectedBlock = null;
+                  blocks = StadiumSeatInfo.getBlocks(
+                      StadiumSeatInfo.mapOcrStadiumToSeatKey(widget.currentStadium) ?? widget.currentStadium,
+                      zone
+                  );
+                  isZoneDropdownOpen = false;
+                  _updateBlocksForZone();
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: scaleHeight(12), horizontal: scaleWidth(16)),
+                child: FixedText(
+                  zone,
+                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  // 블럭 드롭다운 오버레이
   Widget _buildBlockDropdownOverlay() {
+    final topPosition = wasStadiumChanged
+        ? scaleHeight(60 + 16 + 44 + 16 + 10 + 18 + 8 + 48 + 28 + 18 + 8 + 45)
+        : scaleHeight(60 + 26 + 18 + 8 + 48 + 28 + 18 + 8 + 45);
+
     return Positioned(
-      top: scaleHeight(60 + 26 + 18 + 8 + 48 + 28 + 18 + 8 + 48 + 6),
+      top: topPosition,
       left: scaleWidth(20),
       right: scaleWidth(20),
-      child: Material(
-        elevation: 12,
-        borderRadius: BorderRadius.circular(scaleHeight(8)),
-        child: Container(
-          width: scaleWidth(320),
-          constraints: BoxConstraints(maxHeight: scaleHeight(220)),
-          decoration: BoxDecoration(
-            color: AppColors.gray50,
-            borderRadius: BorderRadius.circular(scaleHeight(8)),
-            border: Border.all(color: AppColors.gray100, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            itemCount: blocks.length,
-            separatorBuilder: (context, index) {
-              return Container(
-                height: 1,
-                color: AppColors.gray100,
-                margin: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
-              );
-            },
-            itemBuilder: (context, index) {
-              final block = blocks[index];
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedBlock = block;
-                    isBlockDropdownOpen = false;
-                  });
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: scaleHeight(12), horizontal: scaleWidth(16)),
-                  child: FixedText(
-                    block,
-                    style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
-                  ),
+      child: Container(
+        width: scaleWidth(320),
+        constraints: BoxConstraints(maxHeight: scaleHeight(220)),
+        decoration: BoxDecoration(
+          color: AppColors.gray50,
+          borderRadius: BorderRadius.circular(scaleHeight(8)),
+          border: Border.all(color: AppColors.gray100, width: 1),
+        ),
+        child: ListView.separated(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          itemCount: blocks.length,
+          separatorBuilder: (context, index) {
+            return Container(
+              height: 1,
+              color: AppColors.gray100,
+              margin: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
+            );
+          },
+          itemBuilder: (context, index) {
+            final block = blocks[index];
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedBlock = block;
+                  isBlockDropdownOpen = false;
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: scaleHeight(12), horizontal: scaleWidth(16)),
+                child: FixedText(
+                  block,
+                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

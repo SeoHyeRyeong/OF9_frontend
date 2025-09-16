@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:frontend/features/upload/emotion_select_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
@@ -424,10 +425,17 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
       alignment: Alignment.centerLeft,
       child: GestureDetector(
         onTap: () {
+          final recordState = Provider.of<RecordState>(context, listen: false);
+
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (_, __, ___) => const TicketOcrScreen(),
+              pageBuilder: (_, __, ___) => EmotionSelectScreen(
+                userId: recordState.userId ?? 0,
+                gameId: recordState.gameId ?? '',
+                seatInfo: recordState.seatInfo ?? '',
+                stadium: recordState.stadium ?? '',
+              ),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),

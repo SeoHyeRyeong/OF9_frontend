@@ -28,8 +28,7 @@ Future<String?> showTeamPicker({
             height: sheetHeight,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(scaleHeight(20)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(scaleHeight(20)),
               ),
             ),
             child: SafeArea(
@@ -42,35 +41,30 @@ Future<String?> showTeamPicker({
                     children: [
                       // 헤더 영역
                       SizedBox(
-                        height: sheetHeight * 0.1,
+                        height: scaleHeight(60),
                         child: Padding(
                           padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                           child: Row(
                             children: [
-                              Padding(
-                                padding: EdgeInsets.only(top: sheetHeight * 0.007),
-                                child: GestureDetector(
-                                  onTap: () => Navigator.pop(context),
-                                  child: SvgPicture.asset(
-                                    AppImages.backBlack,
-                                    width: scaleWidth(24),
-                                    height: scaleHeight(24),
-                                    fit: BoxFit.contain,
+                              // 뒤로가기 버튼
+                              GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: SvgPicture.asset(
+                                  AppImages.backBlack,
+                                  width: scaleWidth(24),
+                                  height: scaleHeight(24),
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+
+                              Expanded(
+                                child: Center(
+                                  child: FixedText(
+                                    title,
+                                    style: AppFonts.pretendard.b2_b(context).copyWith(color: Colors.black),
                                   ),
                                 ),
                               ),
-
-                              const Spacer(),
-
-                              Padding(
-                                padding: EdgeInsets.only(top: sheetHeight * 0.007),
-                                child: FixedText(
-                                  title,
-                                  style: AppFonts.pretendard.b2_b(context).copyWith(color: Colors.black),
-                                ),
-                              ),
-
-                              const Spacer(),
 
                               SizedBox(width: scaleWidth(24)),
                             ],

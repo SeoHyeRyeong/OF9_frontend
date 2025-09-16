@@ -39,7 +39,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
   Future<void> _handleComplete() async {
     if (widget.kakaoAccessToken != null && _selectedTeam != null) {
       // 신규 회원가입: sendTokenToBackend 사용
-      final tokens = await kakaoAuthService.sendTokenToBackend(
+      final tokens = await kakaoAuthService.sendKakaoTokenToBackend(
           widget.kakaoAccessToken!,
           _selectedTeam!
       );
@@ -88,10 +88,16 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                         Padding(
                           padding: EdgeInsets.only(top: screenHeight * 0.0225), // 18/800
                           child: GestureDetector(
-                            onTap: () => Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const LoginScreen()),
-                            ),
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation1, animation2) => const LoginScreen(),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
                             child: SvgPicture.asset(
                               AppImages.backBlack,
                               width: scaleHeight(24),

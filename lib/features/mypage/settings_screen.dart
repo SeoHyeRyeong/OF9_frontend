@@ -288,7 +288,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               onTap: () {
                                 Navigator.pushReplacement(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const MyPageScreen()),
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
+                                  ),
                                 );
                               },
                               child: SvgPicture.asset(

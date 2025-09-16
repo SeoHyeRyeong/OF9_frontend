@@ -731,7 +731,7 @@ Future<String?> showDateTimePicker({
                                   ? AppColors.gray700
                                   : AppColors.gray200,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                borderRadius: BorderRadius.circular(scaleHeight(16)),
                               ),
                               elevation: 0,
                             ),

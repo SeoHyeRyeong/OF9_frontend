@@ -33,9 +33,8 @@ class CustomBottomNavBar extends StatelessWidget {
   ];
 
   void _handleTap(BuildContext context, int index) {
-    if (index == currentIndex) return; // 현재 탭이면 무시
+    Widget? target;
 
-    Widget target;
     switch (index) {
       case 0:
         target = const FeedScreen();
@@ -57,14 +56,16 @@ class CustomBottomNavBar extends StatelessWidget {
         return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation1, animation2) => target,
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-      ),
-    );
+    if (target != null) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => target!,
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    }
   }
 
   @override

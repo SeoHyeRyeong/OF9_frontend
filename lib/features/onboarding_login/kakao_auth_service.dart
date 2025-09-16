@@ -1,5 +1,3 @@
-// kakao_auth_service.dart
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -24,7 +22,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 1) 카카오 로그인 → 액세스 토큰 획득
+  /// 1) 카카오 로그인 → 액세스 토큰 획득 (기존 로직 유지)
   Future<String?> kakaoLogin() async {
     try {
       print('🚀 카카오 로그인 시작...');
@@ -52,16 +50,17 @@ class KakaoAuthService {
     }
   }
 
-  /// 2) 백엔드에 액세스 토큰 + favTeam 전송 →
-  /// 백엔드에서 AccessToken/RefreshToken 둘 다 수신
-  Future<Map<String, String>?> sendTokenToBackend(
-      String accessToken,
+  /// 2) 백엔드에 카카오 액세스 토큰 + favTeam 전송 →
+  /// 백엔드에서 우리 서비스의 AccessToken/RefreshToken 수신
+  Future<Map<String, String>?> sendKakaoTokenToBackend(
+      String kakaoAccessToken,
       String favTeam,
       ) async {
     final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
-    final url = Uri.parse('$backendUrl/auth/kakao');
+    final url = Uri.parse('$backendUrl/auth/kakao/login?platform=app');
+
     final payload = jsonEncode({
-      'accessToken': accessToken,
+      'token': kakaoAccessToken,
       'favTeam': favTeam,
     });
 
@@ -85,12 +84,12 @@ class KakaoAuthService {
 
         final data = responseData['data'] as Map<String, dynamic>?;
         if (data != null) {
-          final at = data['accessToken'] as String?;
-          final rt = data['refreshToken'] as String?;
+          final ourAccessToken = data['accessToken'] as String?;
+          final ourRefreshToken = data['refreshToken'] as String?;
 
-          if (at != null && rt != null) {
-            print('🎉 백엔드 토큰 수신: accessToken=${at.substring(0, 20)}..., refreshToken=${rt.substring(0, 20)}...');
-            return {'accessToken': at, 'refreshToken': rt};
+          if (ourAccessToken != null && ourRefreshToken != null) {
+            print('🎉 백엔드 토큰 수신: ourAccessToken=${ourAccessToken.substring(0, 20)}..., ourRefreshToken=${ourRefreshToken.substring(0, 20)}...');
+            return {'accessToken': ourAccessToken, 'refreshToken': ourRefreshToken};
           } else {
             print('❌ data 내부에 토큰이 없음: $data');
           }
@@ -126,35 +125,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 4)전체 로그인 +토큰 저장 플로우
-  Future<bool> loginAndStoreTokens(String favTeam) async {
-    print('🚀 전체 로그인 플로우 시작...');
-
-    // 1) 카카오 로그인으로 엑세스토큰 획득
-    final kakaoAT = await kakaoLogin();
-    if (kakaoAT == null) {
-      print('❌ 1단계 실패: 카카오 로그인');
-      return false;
-    }
-
-    // 2) 백엔드로 보내고 액세스·리프레시 토큰 수신
-    final tokens = await sendTokenToBackend(kakaoAT, favTeam);
-    if (tokens == null) {
-      print('❌ 2단계 실패: 백엔드 토큰 교환');
-      return false;
-    }
-
-    // 3) secure storage 에 저장
-    await saveTokens(
-      accessToken:  tokens['accessToken']!,
-      refreshToken: tokens['refreshToken']!,
-    );
-
-    print('✅ 전체 로그인 플로우 완료');
-    return true;
-  }
-
-  /// 5)저장된 토큰 읽기
+  /// 4) 저장된 토큰 읽기
   Future<String?> getAccessToken() async {
     try {
       final token = await _secureStorage.read(key: 'access_token');
@@ -181,7 +152,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 6) 토큰 갱신 요청
+  /// 5) 토큰 갱신 요청
   Future<Map<String, String>?> refreshTokens() async {
     print('🔄 ===== 토큰 갱신 시작 =====');
 
@@ -267,7 +238,7 @@ class KakaoAuthService {
     return null;
   }
 
-  /// 7)인증이 필요한 API호출 (자동 토큰 갱신 포함) = 자동 재시도 기능
+  /// 6)인증이 필요한 API호출 (자동 토큰 갱신 포함) = 자동 재시도 기능
   Future<http.Response?> authenticatedRequest({
     required String endpoint,
     required String method,
@@ -352,15 +323,6 @@ class KakaoAuthService {
     }
   }
 
-  //==================================================================================
-  // 로그아웃
-  // UserApi.logout() → kakaoAuthService.clearTokens() → 온보딩 화면
-  // 다시 로그인: checkExistingUser() → true → loginExistingUser() → 피드
-  //==================================================================================
-  // 회원 탈퇴
-  // UserApi.deleteAccount() → kakaoAuthService.unlinkKakaoAccount() → clearTokens() → 온보딩 화면
-  // 다시 로그인: checkExistingUser() → false → 회원가입 플로우
-
   /// 기존 사용자 확인
   Future<bool> checkExistingUser(String kakaoAccessToken) async {
     try {
@@ -393,12 +355,12 @@ class KakaoAuthService {
     try {
       print('🔄 기존 사용자 로그인 시작');
 
-      final tokens = await sendTokenToBackend(kakaoAccessToken, 'KIA 타이거즈');
+      final ourTokens = await sendKakaoTokenToBackend(kakaoAccessToken, 'KIA 타이거즈');
 
-      if (tokens != null) {
+      if (ourTokens != null) {
         await saveTokens(
-          accessToken: tokens['accessToken']!,
-          refreshToken: tokens['refreshToken']!,
+          accessToken: ourTokens['accessToken']!,
+          refreshToken: ourTokens['refreshToken']!,
         );
         print('✅ 기존 사용자 로그인 성공');
         return true;
@@ -441,4 +403,5 @@ class KakaoAuthService {
       return false;
     }
   }
+
 }

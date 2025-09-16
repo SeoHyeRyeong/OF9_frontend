@@ -248,8 +248,6 @@ class StadiumSeatInfo {
       }
     }
 
-
-
     // stadiumSeats의 키들과 부분 일치 검색
     for (final key in stadiumSeats.keys) {
       if (cleaned.toLowerCase().contains(key.toLowerCase()) ||
@@ -277,6 +275,12 @@ class StadiumSeatInfo {
     final seatInfo =stadiumSeats[mappedStadium];
     if (seatInfo == null) return [];
     return seatInfo[zone] ?? [];
+  }
+
+  // 블럭이 있는지 찾는 함수
+  static bool hasBlocks(String? stadium, String? zone) {
+  final blocks = getBlocks(stadium, zone);
+  return blocks.isNotEmpty;
   }
 }
 
@@ -382,7 +386,10 @@ Map<String, String>? parseSeatStringWithMapping(String? text, {String? stadium})
   return result.isNotEmpty ? result : null;
 }
 
-///좌석 선택용 BottomSheet
+
+//===========================================================================================
+//===========================================================================================
+/// 좌석 선택용 BottomSheet
 Future<String?> showSeatInputDialog(BuildContext context, {
   String? initial,
   String? stadium,
@@ -398,7 +405,7 @@ Future<String?> showSeatInputDialog(BuildContext context, {
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+    backgroundColor: AppColors.trans700.withOpacity(0.7),
     useSafeArea: false,
     builder: (_) => _SeatInputBottomSheet(
       mappedStadium: mappedStadium,
@@ -427,7 +434,7 @@ class _SeatInputBottomSheet extends StatefulWidget {
 }
 
 class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
-  // FocusNodes - 각 필드별 개별 관리
+  // FocusNodes
   late FocusNode _zoneTextFocusNode;
   late FocusNode _blockTextFocusNode;
   late FocusNode _rowFocusNode;
@@ -448,6 +455,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
   late List<String> zones;
   late List<String> blocks;
   late bool isDefinedStadium;
+  bool hasBlocksForSelectedZone = false;
 
   @override
   void initState() {
@@ -459,7 +467,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     _rowFocusNode = FocusNode();
     _numFocusNode = FocusNode();
 
-    // Controllers 초기화
+    // Controllers 초기화 - 모든 파싱된 값을 우선 설정
     _zoneController = TextEditingController(text: widget.parsed?['zone'] ?? '');
     _blockController = TextEditingController(text: widget.parsed?['block'] ?? '');
     _rowController = TextEditingController(text: widget.parsed?['row'] ?? '');
@@ -471,10 +479,16 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
 
     zones = StadiumSeatInfo.getZones(widget.mappedStadium ?? widget.stadium);
     blocks = StadiumSeatInfo.getBlocks(widget.mappedStadium ?? widget.stadium, selectedZone);
-    isDefinedStadium = widget.mappedStadium != null &&
-        StadiumSeatInfo.stadiumSeats.containsKey(widget.mappedStadium);
+    isDefinedStadium = widget.mappedStadium != null && StadiumSeatInfo.stadiumSeats.containsKey(widget.mappedStadium);
 
-    // 포커스 리스너 추가 - 드롭다운만 닫기
+    // 디버그 정보
+    print('🏟️ mappedStadium: ${widget.mappedStadium}');
+    print('🏟️ isDefinedStadium: $isDefinedStadium');
+
+    // 선택된 구역에 블럭이 있는지 확인
+    _updateBlocksForZone();
+
+    // 포커스 리스너 추가
     _zoneTextFocusNode.addListener(() {
       if (_zoneTextFocusNode.hasFocus) _closeDropdowns();
     });
@@ -511,19 +525,40 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
     }
   }
 
+  void _updateBlocksForZone() {
+    if (isDefinedStadium && selectedZone != null) {
+      hasBlocksForSelectedZone = StadiumSeatInfo.hasBlocks(widget.mappedStadium ?? widget.stadium, selectedZone);
+      blocks = StadiumSeatInfo.getBlocks(widget.mappedStadium ?? widget.stadium, selectedZone);
+    } else {
+      hasBlocksForSelectedZone = false;
+      blocks = [];
+    }
+  }
+
+  // 수정된 완료 조건
   bool get isComplete {
-    return isDefinedStadium
-        ? (selectedZone != null && selectedBlock != null && _numController.text.isNotEmpty)
-        : (_zoneController.text.isNotEmpty && _blockController.text.isNotEmpty && _numController.text.isNotEmpty);
+    if (isDefinedStadium) {
+      // 정의된 구장의 경우
+      if (hasBlocksForSelectedZone) {
+        // 블럭이 있는 구역: 구역, 블럭, 번호 모두 필요
+        return selectedZone != null && selectedBlock != null && _numController.text.isNotEmpty;
+      } else {
+        // 블럭이 없는 구역: 구역, 번호만 필요 (블럭은 선택사항)
+        return selectedZone != null && _numController.text.isNotEmpty;
+      }
+    } else {
+      // 정의되지 않은 구장: 구역, 번호만 필요 (블럭은 선택사항)
+      return _zoneController.text.isNotEmpty && _numController.text.isNotEmpty;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
-    return Padding(
-      // 키보드 높이만큼 패딩으로 바텀시트만 올리기
-      padding: EdgeInsets.only(bottom: keyboardHeight),
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 200),
+      padding: EdgeInsets.only(bottom: keyboardHeight * 0.4),
       child: Container(
         height: widget.sheetHeight,
         decoration: BoxDecoration(
@@ -536,509 +571,575 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
           top: false,
           child: GestureDetector(
             onTap: () {
-              // 드롭다운 닫기 + 포커스 해제
               _closeDropdowns();
               FocusScope.of(context).unfocus();
             },
-            child: Column(
-              children: [
-                // 헤더 영역
-                SizedBox(
-                  height: widget.sheetHeight * 0.1,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                    child: Row(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  children: [
+                    Column(
                       children: [
-                        Padding(
-                          padding: EdgeInsets.only(top: widget.sheetHeight * 0.007),
-                          child: GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: SvgPicture.asset(
-                              AppImages.backBlack,
-                              width: scaleWidth(24),
-                              height: scaleHeight(24),
-                              fit: BoxFit.contain,
+                        // 헤더 영역
+                        SizedBox(
+                          height: scaleHeight(60),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                            child: Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () => Navigator.pop(context),
+                                  child: SvgPicture.asset(
+                                    AppImages.backBlack,
+                                    width: scaleWidth(24),
+                                    height: scaleHeight(24),
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Center(
+                                    child: FixedText(
+                                      '좌석',
+                                      style: AppFonts.pretendard.b2_b(context).copyWith(color: Colors.black),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: scaleWidth(24)),
+                              ],
                             ),
                           ),
                         ),
-                        const Spacer(),
-                        Padding(
-                          padding: EdgeInsets.only(top: widget.sheetHeight * 0.007),
-                          child: FixedText(
-                            '좌석',
-                            style: AppFonts.pretendard.b2_b(context).copyWith(color: Colors.black),
-                          ),
-                        ),
-                        const Spacer(),
-                        SizedBox(width: scaleWidth(24)),
-                      ],
-                    ),
-                  ),
-                ),
 
-                // 콘텐츠 영역
-                Expanded(
-                  child: Stack(
-                    children: [
-                      // 메인 콘텐츠 (스크롤 없음)
-                      Column(
-                        children: [
-                          // 콘텐츠 영역
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(height: scaleHeight(20)),
+                        // 콘텐츠 영역
+                        Expanded(
+                          child: SafeArea(
+                            top: false,
+                            child: Column(
+                              children: [
+                                // 폼 영역
+                                Expanded(
+                                  flex: 470,
+                                  child: SingleChildScrollView(
+                                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        SizedBox(height: scaleHeight(26)),
 
-                                  // 구역 섹션
-                                  Row(
-                                    children: [
-                                      FixedText(
-                                        '구역',
-                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
-                                      ),
-                                      SizedBox(width: scaleWidth(2)),
-                                      FixedText(
-                                        '*',
-                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: scaleHeight(8)),
-
-                                  if (isDefinedStadium)
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          isZoneDropdownOpen = !isZoneDropdownOpen;
-                                          if (isZoneDropdownOpen) {
-                                            isBlockDropdownOpen = false;
-                                          }
-                                        });
-                                        FocusScope.of(context).unfocus();
-                                      },
-                                      child: Container(
-                                        width: scaleWidth(320),
-                                        height: scaleHeight(48),
-                                        padding: EdgeInsets.only(
-                                            left: scaleWidth(12),
-                                            right: scaleWidth(16)),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.gray50,
-                                          borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                        ),
-                                        child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Expanded(
-                                              child: FixedText(
-                                                selectedZone ?? '구역을 선택해 주세요',
-                                                style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                                                  color: selectedZone != null ? AppColors.trans900: AppColors.gray300,
-                                                ),
-                                              ),
-                                            ),
-                                            Transform.rotate(
-                                              angle: isZoneDropdownOpen ? 3.14159 : 0,
-                                              child: SvgPicture.asset(
-                                                AppImages.dropdown,
-                                                width: scaleWidth(24),
-                                                height: scaleHeight(24),
-                                                color: AppColors.gray300,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    )
-                                  else
-                                    Container(
-                                      width: scaleWidth(320),
-                                      height: scaleHeight(48),
-                                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(16), vertical: scaleHeight(12)),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.gray50,
-                                        borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                      ),
-                                      child: MediaQuery(
-                                        data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-                                        child: TextField(
-                                          controller: _zoneController,
-                                          focusNode: _zoneTextFocusNode,
-                                          decoration: InputDecoration.collapsed(
-                                            hintText: '구역을 입력해 주세요',
-                                            hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
-                                          ),
-                                          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
-                                          onChanged: (value) => setState(() {}),
-                                        ),
-                                      ),
-                                    ),
-
-                                  SizedBox(height: scaleHeight(24)),
-
-                                  // 블럭 섹션
-                                  Row(
-                                    children: [
-                                      FixedText(
-                                        '블럭',
-                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
-                                      ),
-                                      SizedBox(width: scaleWidth(2)),
-                                      FixedText(
-                                        '*',
-                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: scaleHeight(8)),
-
-                                  if (isDefinedStadium)
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (selectedZone == null) {
-                                          _showSnackBar('구역을 먼저 선택해 주세요');
-                                          return;
-                                        }
-
-                                        setState(() {
-                                          isBlockDropdownOpen = !isBlockDropdownOpen;
-                                          if (isBlockDropdownOpen) {
-                                            isZoneDropdownOpen = false;
-                                          }
-                                        });
-                                        FocusScope.of(context).unfocus();
-                                      },
-                                      child: Container(
-                                        width: scaleWidth(320),
-                                        height: scaleHeight(48),
-                                        padding: EdgeInsets.only(left: scaleWidth(12), right: scaleWidth(16)),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.gray50,
-                                          borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                        ),
-                                        child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Expanded(
-                                              child: FixedText(
-                                                selectedBlock ?? '블럭을 선택해 주세요',
-                                                style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                                                  color: selectedBlock != null ? AppColors.trans900: AppColors.gray300,
-                                                ),
-                                              ),
-                                            ),
-                                            Transform.rotate(
-                                              angle: isBlockDropdownOpen ? 3.14159 : 0,
-                                              child: SvgPicture.asset(
-                                                AppImages.dropdown,
-                                                width: scaleWidth(24),
-                                                height: scaleHeight(24),
-                                                color: AppColors.gray300,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    )
-                                  else
-                                    Container(
-                                      width: scaleWidth(320),
-                                      height: scaleHeight(48),
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: scaleWidth(16),
-                                          vertical: scaleHeight(12)),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.gray50,
-                                        borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                      ),
-                                      child: MediaQuery(
-                                        data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-                                        child: TextField(
-                                          controller: _blockController,
-                                          focusNode: _blockTextFocusNode,
-                                          decoration: InputDecoration.collapsed(
-                                            hintText: '블럭을 입력해 주세요',
-                                            hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
-                                          ),
-                                          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
-                                          onChanged: (value) => setState(() {}),
-                                        ),
-                                      ),
-                                    ),
-
-                                  SizedBox(height: scaleHeight(24)),
-
-                                  // 열/번호 섹션
-                                  Row(
-                                    children: [
-                                      // 열 입력
-                                      Expanded(
-                                        child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                                        // 구역 섹션
+                                        Row(
                                           children: [
                                             FixedText(
-                                              '열',
+                                              '구역',
                                               style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
                                             ),
-                                            SizedBox(height: scaleHeight(8)),
-                                            Container(height: scaleHeight(52),
-                                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(16), vertical: scaleHeight(15)),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.gray50,
-                                                borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                              ),
-                                              child: MediaQuery(
-                                                data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-                                                child: TextField(
-                                                  controller: _rowController,
-                                                  focusNode: _rowFocusNode,
-                                                  decoration: InputDecoration.collapsed(
-                                                    hintText: '열',
-                                                    hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
-                                                  ),
-                                                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray950),
-                                                  onChanged: (value) => setState(() {}),
-                                                ),
-                                              ),
+                                            SizedBox(width: scaleWidth(2)),
+                                            FixedText(
+                                              '*',
+                                              style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
                                             ),
                                           ],
                                         ),
-                                      ),
+                                        SizedBox(height: scaleHeight(8)),
 
-                                      SizedBox(width: scaleWidth(12)),
+                                        // 구역 입력 필드
+                                        if (isDefinedStadium)
+                                          _buildZoneDropdown()
+                                        else
+                                          _buildZoneTextField(),
 
-                                      // 번호 입력
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                        SizedBox(height: scaleHeight(28)),
+
+                                        // 블럭 섹션 - 수정된 부분
+                                        Row(
                                           children: [
-                                            Row(
-                                              children: [
-                                                FixedText(
-                                                  '번호',
-                                                  style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
-                                                ),
-                                                SizedBox(width: scaleWidth(2)),
-                                                FixedText(
-                                                  '*',
-                                                  style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
-                                                ),
-                                              ],
+                                            FixedText(
+                                              '블럭',
+                                              style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
                                             ),
-                                            SizedBox(height: scaleHeight(8)),
-                                            Container(
-                                              height: scaleHeight(52),
-                                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(16), vertical: scaleHeight(15)),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.gray50,
-                                                borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                            SizedBox(width: scaleWidth(2)),
+                                            // 정의된 구장이고 선택된 구역에 블럭이 있는 경우에만 * 표시
+                                            if (isDefinedStadium && hasBlocksForSelectedZone)
+                                              FixedText(
+                                                '*',
+                                                style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
                                               ),
-                                              child: MediaQuery(
-                                                data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-                                                child: TextField(
-                                                  controller: _numController,
-                                                  focusNode: _numFocusNode,
-                                                  decoration: InputDecoration.collapsed(
-                                                    hintText: '번호',
-                                                    hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                                                        color: AppColors.gray300),
+                                          ],
+                                        ),
+                                        SizedBox(height: scaleHeight(8)),
+
+                                        // 블럭 입력 필드 - 조건부 렌더링
+                                        if (isDefinedStadium && hasBlocksForSelectedZone)
+                                        // 정의된 구장이고 블럭이 있는 경우: 드롭다운
+                                          _buildBlockDropdown()
+                                        else
+                                        // 정의되지 않은 구장이거나 블럭이 없는 경우: 텍스트 필드 (항상 표시)
+                                          _buildBlockTextField(),
+
+                                        SizedBox(height: scaleHeight(28)),
+
+                                        // 열/번호 섹션
+                                        Row(
+                                          children: [
+                                            // 열 입력
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  FixedText(
+                                                    '열',
+                                                    style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
                                                   ),
-                                                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray950),
-                                                  onChanged: (value) {
-                                                    setState(() {});
-                                                  },
-                                                ),
+                                                  SizedBox(height: scaleHeight(8)),
+                                                  _buildRowTextField(),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(width: scaleWidth(12)),
+                                            // 번호 입력
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      FixedText(
+                                                        '번호',
+                                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400),
+                                                      ),
+                                                      SizedBox(width: scaleWidth(2)),
+                                                      FixedText(
+                                                        '*',
+                                                        style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: scaleHeight(8)),
+                                                  _buildNumberTextField(),
+                                                ],
                                               ),
                                             ),
                                           ],
                                         ),
-                                      ),
-                                    ],
-                                  ),
 
-                                  // 키보드 공간 확보
-                                  SizedBox(height: scaleHeight(100)),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          // 완료 버튼 (화면 하단 고정)
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: Container(
-                              color: Colors.white,
-                              padding: EdgeInsets.fromLTRB(
-                                scaleWidth(20),
-                                scaleHeight(24),
-                                scaleWidth(20),
-                                scaleHeight(10) + MediaQuery.of(context).padding.bottom,
-                              ),
-                              child: Center(
-                                child: SizedBox(
-                                  width: scaleWidth(320),
-                                  height: scaleHeight(54),
-                                  child: ElevatedButton(
-                                    onPressed: isComplete ? () {
-                                      String seatText;
-                                      if (isDefinedStadium) {
-                                        seatText = _rowController.text.isEmpty
-                                            ? '$selectedZone ${selectedBlock}블럭 ${_numController.text}번'
-                                            : '$selectedZone ${selectedBlock}블럭 ${_rowController.text}열 ${_numController.text}번';
-                                      } else {
-                                        seatText = _rowController.text.isEmpty
-                                            ? '${_zoneController.text} ${_blockController.text}블럭 ${_numController.text}번'
-                                            : '${_zoneController.text} ${_blockController.text}블럭 ${_rowController.text}열 ${_numController.text}번';
-                                      }
-                                      Navigator.pop(context, seatText);
-                                    } : null,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: isComplete ? AppColors.gray700: AppColors.gray200,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                      ),
-                                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
-                                      elevation: 0,
+                                        SizedBox(height: scaleHeight(100)),
+                                      ],
                                     ),
-                                    child: FixedText(
-                                      '완료',
-                                      style: AppFonts.suite.b2_b(context).copyWith(
-                                        color: AppColors.gray20,
+                                  ),
+                                ),
+
+                                // 완료 버튼
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border(
+                                      top: BorderSide(color: AppColors.gray20, width: 1),
+                                    ),
+                                  ),
+                                  padding: EdgeInsets.fromLTRB(
+                                    scaleWidth(20),
+                                    scaleHeight(24),
+                                    scaleWidth(20),
+                                    scaleHeight(10),
+                                  ),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: scaleWidth(320),
+                                      height: scaleHeight(54),
+                                      child: ElevatedButton(
+                                        onPressed: isComplete
+                                            ? () {
+                                          String seatText = _buildSeatText();
+                                          Navigator.pop(context, seatText);
+                                        }
+                                            : null,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: isComplete ? AppColors.gray700 : AppColors.gray200,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(scaleHeight(16)),
+                                          ),
+                                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
+                                          elevation: 0,
+                                        ),
+                                        child: FixedText(
+                                          '완료',
+                                          style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
 
-                      // 구역 드롭다운 오버레이 (최상위 레이어)
-                      if (isDefinedStadium && isZoneDropdownOpen)
-                        Positioned(
-                          top: scaleHeight(96),
-                          left: scaleWidth(20),
-                          right: scaleWidth(20),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Container(
-                              width: scaleWidth(320),
-                              constraints: BoxConstraints(maxHeight: scaleHeight(250)),
-                              decoration: BoxDecoration(
-                                color: AppColors.gray50,
-                                borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                border: Border.all(color: AppColors.gray100, width: 1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: ListView.separated(
-                                shrinkWrap: true,
-                                padding: EdgeInsets.zero,
-                                itemCount: zones.length,
-                                separatorBuilder: (context, index) {
-                                  return Container(
-                                    height: 1,
-                                    color: AppColors.gray100,
-                                    margin: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
-                                  );
-                                },
-                                itemBuilder: (context, index) {
-                                  final zone = zones[index];
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedZone = zone;
-                                        selectedBlock = null;
-                                        blocks = StadiumSeatInfo.getBlocks(widget.mappedStadium ?? widget.stadium, zone);
-                                        isZoneDropdownOpen = false;
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(vertical: scaleHeight(12),
-                                          horizontal: scaleWidth(16)),
-                                      child: FixedText(
-                                        zone,
-                                        style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
+                                const Spacer(flex: 26),
+                              ],
                             ),
                           ),
                         ),
+                      ],
+                    ),
 
-                      // 블럭 드롭다운 오버레이 (최상위 레이어)
-                      if (isDefinedStadium && isBlockDropdownOpen)
-                        Positioned(
-                          top: scaleHeight(192),
-                          left: scaleWidth(20),
-                          right: scaleWidth(20),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Container(
-                              width: scaleWidth(320),
-                              constraints: BoxConstraints(maxHeight: scaleHeight(250)),
-                              decoration: BoxDecoration(
-                                color: AppColors.gray50,
-                                borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                border: Border.all(color: AppColors.gray100, width: 1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: ListView.separated(
-                                shrinkWrap: true,
-                                padding: EdgeInsets.zero,
-                                itemCount: blocks.length,
-                                separatorBuilder: (context, index) {
-                                  return Container(
-                                    height: 1,
-                                    color: AppColors.gray100,
-                                    margin: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
-                                  );
-                                },
-                                itemBuilder: (context, index) {
-                                  final block = blocks[index];
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedBlock = block;
-                                        isBlockDropdownOpen = false;
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(vertical: scaleHeight(12), horizontal: scaleWidth(16)),
-                                      child: FixedText(
-                                        block,
-                                        style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                    // 드롭다운 오버레이들
+                    if (isDefinedStadium && isZoneDropdownOpen) _buildZoneDropdownOverlay(),
+                    if (isDefinedStadium && isBlockDropdownOpen && hasBlocksForSelectedZone) _buildBlockDropdownOverlay(),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 구역 드롭다운 위젯
+  Widget _buildZoneDropdown() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isZoneDropdownOpen = !isZoneDropdownOpen;
+          if (isZoneDropdownOpen) {
+            isBlockDropdownOpen = false;
+          }
+        });
+        FocusScope.of(context).unfocus();
+      },
+      child: Container(
+        width: scaleWidth(320),
+        height: scaleHeight(48),
+        padding: EdgeInsets.only(left: scaleWidth(12), right: scaleWidth(16)),
+        decoration: BoxDecoration(
+          color: AppColors.gray50,
+          borderRadius: BorderRadius.circular(scaleHeight(8)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: FixedText(
+                selectedZone ?? '구역을 선택해 주세요',
+                style: AppFonts.pretendard.b3_sb_long(context).copyWith(
+                  color: selectedZone != null ? AppColors.trans900 : AppColors.gray300,
+                ),
+              ),
+            ),
+            Transform.rotate(
+              angle: isZoneDropdownOpen ? 3.14159 : 0,
+              child: SvgPicture.asset(
+                AppImages.dropdown,
+                width: scaleWidth(24),
+                height: scaleHeight(24),
+                color: AppColors.gray300,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 구역 텍스트필드 위젯
+  Widget _buildZoneTextField() {
+    return Container(
+      width: scaleWidth(320),
+      height: scaleHeight(48),
+      padding: EdgeInsets.symmetric(horizontal: scaleWidth(16), vertical: scaleHeight(12)),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(scaleHeight(8)),
+      ),
+      child: MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+        child: TextField(
+          controller: _zoneController,
+          focusNode: _zoneTextFocusNode,
+          decoration: InputDecoration.collapsed(
+            hintText: '구역을 입력해 주세요',
+            hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
+          ),
+          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
+          onChanged: (value) => setState(() {}),
+        ),
+      ),
+    );
+  }
+
+  // 블럭 드롭다운 위젯
+  Widget _buildBlockDropdown() {
+    return GestureDetector(
+      onTap: () {
+        if (selectedZone == null) {
+          _showSnackBar('구역을 먼저 선택해 주세요');
+          return;
+        }
+
+        setState(() {
+          isBlockDropdownOpen = !isBlockDropdownOpen;
+          if (isBlockDropdownOpen) {
+            isZoneDropdownOpen = false;
+          }
+        });
+        FocusScope.of(context).unfocus();
+      },
+      child: Container(
+        width: scaleWidth(320),
+        height: scaleHeight(48),
+        padding: EdgeInsets.only(left: scaleWidth(12), right: scaleWidth(16)),
+        decoration: BoxDecoration(
+          color: AppColors.gray50,
+          borderRadius: BorderRadius.circular(scaleHeight(8)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: FixedText(
+                selectedBlock ?? '블럭을 선택해 주세요',
+                style: AppFonts.pretendard.b3_sb_long(context).copyWith(
+                  color: selectedBlock != null ? AppColors.trans900 : AppColors.gray300,
+                ),
+              ),
+            ),
+            Transform.rotate(
+              angle: isBlockDropdownOpen ? 3.14159 : 0,
+              child: SvgPicture.asset(
+                AppImages.dropdown,
+                width: scaleWidth(24),
+                height: scaleHeight(24),
+                color: AppColors.gray300,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 블럭 텍스트필드 위젯
+  Widget _buildBlockTextField() {
+    return Container(
+      width: scaleWidth(320),
+      height: scaleHeight(48),
+      padding: EdgeInsets.symmetric(horizontal: scaleWidth(16), vertical: scaleHeight(12)),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(scaleHeight(8)),
+      ),
+      child: MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+        child: TextField(
+          controller: _blockController,
+          focusNode: _blockTextFocusNode,
+          decoration: InputDecoration.collapsed(
+            hintText: '블럭을 입력해 주세요',
+            hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
+          ),
+          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
+          onChanged: (value) => setState(() {}),
+        ),
+      ),
+    );
+  }
+
+  // 열 텍스트필드 위젯
+  Widget _buildRowTextField() {
+    return Container(
+      height: scaleHeight(52),
+      padding: EdgeInsets.symmetric(horizontal: scaleWidth(16), vertical: scaleHeight(15)),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(scaleHeight(8)),
+      ),
+      child: MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+        child: TextField(
+          controller: _rowController,
+          focusNode: _rowFocusNode,
+          decoration: InputDecoration.collapsed(
+            hintText: '열',
+            hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
+          ),
+          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray950),
+          onChanged: (value) => setState(() {}),
+        ),
+      ),
+    );
+  }
+
+  // 번호 텍스트필드 위젯
+  Widget _buildNumberTextField() {
+    return Container(
+      height: scaleHeight(52),
+      padding: EdgeInsets.symmetric(horizontal: scaleWidth(16), vertical: scaleHeight(15)),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(scaleHeight(8)),
+      ),
+      child: MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+        child: TextField(
+          controller: _numController,
+          focusNode: _numFocusNode,
+          decoration: InputDecoration.collapsed(
+            hintText: '번호',
+            hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
+          ),
+          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray950),
+          onChanged: (value) => setState(() {}),
+        ),
+      ),
+    );
+  }
+
+  // 좌석 텍스트 생성 함수
+  String _buildSeatText() {
+    if (isDefinedStadium) {
+      if (hasBlocksForSelectedZone) {
+        // 블럭이 있는 경우 (필수)
+        return _rowController.text.isEmpty
+            ? '$selectedZone ${selectedBlock}블럭 ${_numController.text}번'
+            : '$selectedZone ${selectedBlock}블럭 ${_rowController.text}열 ${_numController.text}번';
+      } else {
+        // 블럭이 없는 경우 (선택사항이지만 작성했다면 포함)
+        if (_blockController.text.isNotEmpty) {
+          return _rowController.text.isEmpty
+              ? '$selectedZone ${_blockController.text}블럭 ${_numController.text}번'
+              : '$selectedZone ${_blockController.text}블럭 ${_rowController.text}열 ${_numController.text}번';
+        } else {
+          return _rowController.text.isEmpty
+              ? '$selectedZone ${_numController.text}번'
+              : '$selectedZone ${_rowController.text}열 ${_numController.text}번';
+        }
+      }
+    } else {
+      // 정의되지 않은 구장 (블럭은 선택사항이지만 작성했다면 포함)
+      if (_blockController.text.isNotEmpty) {
+        return _rowController.text.isEmpty
+            ? '${_zoneController.text} ${_blockController.text}블럭 ${_numController.text}번'
+            : '${_zoneController.text} ${_blockController.text}블럭 ${_rowController.text}열 ${_numController.text}번';
+      } else {
+        return _rowController.text.isEmpty
+            ? '${_zoneController.text} ${_numController.text}번'
+            : '${_zoneController.text} ${_rowController.text}열 ${_numController.text}번';
+      }
+    }
+  }
+
+  // 구역 드롭다운 오버레이
+  Widget _buildZoneDropdownOverlay() {
+    return Positioned(
+      top: scaleHeight(60 + 26 + 18 + 8 + 48 + 6),
+      left: scaleWidth(20),
+      right: scaleWidth(20),
+      child: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(scaleHeight(8)),
+        child: Container(
+          width: scaleWidth(320),
+          constraints: BoxConstraints(maxHeight: scaleHeight(220)),
+          decoration: BoxDecoration(
+            color: AppColors.gray50,
+            borderRadius: BorderRadius.circular(scaleHeight(8)),
+            border: Border.all(color: AppColors.gray100, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: zones.length,
+            separatorBuilder: (context, index) {
+              return Container(
+                height: 1,
+                color: AppColors.gray100,
+                margin: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
+              );
+            },
+            itemBuilder: (context, index) {
+              final zone = zones[index];
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedZone = zone;
+                    selectedBlock = null;
+                    blocks = StadiumSeatInfo.getBlocks(widget.mappedStadium ?? widget.stadium, zone);
+                    isZoneDropdownOpen = false;
+                    // 구역 변경 시 블럭 유무 재확인
+                    _updateBlocksForZone();
+                  });
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: scaleHeight(12), horizontal: scaleWidth(16)),
+                  child: FixedText(
+                    zone,
+                    style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
                   ),
                 ),
-              ],
-            ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 블럭 드롭다운 오버레이
+  Widget _buildBlockDropdownOverlay() {
+    return Positioned(
+      top: scaleHeight(60 + 26 + 18 + 8 + 48 + 28 + 18 + 8 + 48 + 6),
+      left: scaleWidth(20),
+      right: scaleWidth(20),
+      child: Material(
+        elevation: 12,
+        borderRadius: BorderRadius.circular(scaleHeight(8)),
+        child: Container(
+          width: scaleWidth(320),
+          constraints: BoxConstraints(maxHeight: scaleHeight(220)),
+          decoration: BoxDecoration(
+            color: AppColors.gray50,
+            borderRadius: BorderRadius.circular(scaleHeight(8)),
+            border: Border.all(color: AppColors.gray100, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: blocks.length,
+            separatorBuilder: (context, index) {
+              return Container(
+                height: 1,
+                color: AppColors.gray100,
+                margin: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
+              );
+            },
+            itemBuilder: (context, index) {
+              final block = blocks[index];
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedBlock = block;
+                    isBlockDropdownOpen = false;
+                  });
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: scaleHeight(12), horizontal: scaleWidth(16)),
+                  child: FixedText(
+                    block,
+                    style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.trans900),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

@@ -103,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
+            (route) => false,
       );
 
       print('3. 로그아웃 완료');
@@ -157,7 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
+            (route) => false,
       );
 
       print('4. 회원탈퇴 완료');
@@ -225,37 +225,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   height: scaleHeight(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(
-                      isOn ? scaleHeight(92.31) : scaleHeight(100),
-                    ),
-                    boxShadow:
-                        isOn
-                            ? [
-                              BoxShadow(
-                                color: const Color(0x26000000),
-                                blurRadius: scaleHeight(7.38),
-                                offset: Offset(0, scaleHeight(2.77)),
-                              ),
-                              BoxShadow(
-                                color: const Color(0x0A000000),
-                                blurRadius: 0,
-                                offset: Offset(0, 0),
-                                spreadRadius: scaleHeight(0.92),
-                              ),
-                            ]
-                            : [
-                              BoxShadow(
-                                color: const Color(0x26000000),
-                                blurRadius: scaleHeight(8),
-                                offset: Offset(0, scaleHeight(3)),
-                              ),
-                              BoxShadow(
-                                color: const Color(0x0A000000),
-                                blurRadius: 0,
-                                offset: Offset(0, 0),
-                                spreadRadius: scaleHeight(1),
-                              ),
-                            ],
+                    borderRadius: BorderRadius.circular(isOn ? scaleHeight(92.31) : scaleHeight(100)),
+                    boxShadow: isOn ? [
+                      BoxShadow(
+                        color: const Color(0x26000000),
+                        blurRadius: scaleHeight(7.38),
+                        offset: Offset(0, scaleHeight(2.77)),
+                      ),
+                      BoxShadow(
+                        color: const Color(0x0A000000),
+                        blurRadius: 0,
+                        offset: Offset(0, 0),
+                        spreadRadius: scaleHeight(0.92),
+                      ),
+                    ] : [
+                      BoxShadow(
+                        color: const Color(0x26000000),
+                        blurRadius: scaleHeight(8),
+                        offset: Offset(0, scaleHeight(3)),
+                      ),
+                      BoxShadow(
+                        color: const Color(0x0A000000),
+                        blurRadius: 0,
+                        offset: Offset(0, 0),
+                        spreadRadius: scaleHeight(1),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -275,8 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder:
-                  (context, animation1, animation2) => const MyPageScreen(),
+              pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
@@ -297,23 +291,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SizedBox(
                       height: screenHeight * 0.075,
                       child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: scaleWidth(20),
-                        ),
+                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                         child: Row(
                           children: [
                             Padding(
-                              padding: EdgeInsets.only(
-                                top: screenHeight * 0.0325,
-                              ),
+                              padding: EdgeInsets.only(top: screenHeight * 0.0325),
                               child: GestureDetector(
                                 onTap: () {
                                   Navigator.pushReplacement(
                                     context,
                                     PageRouteBuilder(
-                                      pageBuilder:
-                                          (context, animation1, animation2) =>
-                                              const MyPageScreen(),
+                                      pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
                                       transitionDuration: Duration.zero,
                                       reverseTransitionDuration: Duration.zero,
                                     ),
@@ -334,38 +322,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     // 프로필 영역
                     Transform(
-                      transform: Matrix4.translationValues(
-                        0,
-                        -scaleHeight(10),
-                        0,
-                      ),
+                      transform: Matrix4.translationValues(0, -scaleHeight(10), 0),
                       child: Column(
                         children: [
                           // 프로필 이미지
                           Center(
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(40),
-                              child:
-                                  profileImageUrl != null
-                                      ? Image.network(
-                                        profileImageUrl!,
-                                        width: scaleWidth(100),
-                                        height: scaleHeight(100),
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (_, __, ___) => SvgPicture.asset(
-                                              AppImages.profile,
-                                              width: scaleWidth(100),
-                                              height: scaleHeight(100),
-                                              fit: BoxFit.cover,
-                                            ),
-                                      )
-                                      : SvgPicture.asset(
-                                        AppImages.profile,
-                                        width: scaleWidth(100),
-                                        height: scaleHeight(100),
-                                        fit: BoxFit.cover,
-                                      ),
+                              child: profileImageUrl != null
+                                  ? Image.network(
+                                profileImageUrl!,
+                                width: scaleWidth(100),
+                                height: scaleHeight(100),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => SvgPicture.asset(
+                                  AppImages.profile,
+                                  width: scaleWidth(100),
+                                  height: scaleHeight(100),
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                                  : SvgPicture.asset(
+                                AppImages.profile,
+                                width: scaleWidth(100),
+                                height: scaleHeight(100),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
 
@@ -375,11 +357,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           isLoading
                               ? CircularProgressIndicator()
                               : FixedText(
-                                nickname,
-                                style: AppFonts.pretendard
-                                    .h5_sb(context)
-                                    .copyWith(color: AppColors.black),
-                              ),
+                            nickname,
+                            style: AppFonts.pretendard.h5_sb(context).copyWith(color: AppColors.black),
+                          ),
 
                           SizedBox(height: scaleHeight(12)),
 
@@ -387,11 +367,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           isLoading
                               ? Container()
                               : FixedText(
-                                "$favTeam 팬",
-                                style: AppFonts.pretendard
-                                    .b3_r(context)
-                                    .copyWith(color: AppColors.gray300),
-                              ),
+                            "$favTeam 팬",
+                            style: AppFonts.pretendard.b3_r(context).copyWith(color: AppColors.gray300),
+                          ),
 
                           SizedBox(height: scaleHeight(12)),
 
@@ -401,9 +379,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                  pageBuilder:
-                                      (context, animation1, animation2) =>
-                                          const EditProfileScreen(),
+                                  pageBuilder: (context, animation1, animation2) => const EditProfileScreen(),
                                   transitionDuration: Duration.zero,
                                   reverseTransitionDuration: Duration.zero,
                                 ),
@@ -425,9 +401,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: Center(
                                 child: FixedText(
                                   "내 정보 수정",
-                                  style: AppFonts.pretendard
-                                      .c1_sb(context)
-                                      .copyWith(color: AppColors.gray500),
+                                  style: AppFonts.pretendard.c1_sb(context).copyWith(color: AppColors.gray500),
                                 ),
                               ),
                             ),
@@ -452,9 +426,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 alignment: Alignment.centerLeft,
                                 child: FixedText(
                                   "테마 변경",
-                                  style: AppFonts.suite
-                                      .b3_sb(context)
-                                      .copyWith(color: AppColors.gray900),
+                                  style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
                                 ),
                               ),
                             ),
@@ -471,26 +443,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: scaleWidth(16),
-                              ),
+                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
                               child: Row(
                                 children: [
                                   FixedText(
                                     "푸시 알림",
-                                    style: AppFonts.suite
-                                        .b3_sb(context)
-                                        .copyWith(color: AppColors.gray900),
+                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
                                   ),
                                   const Spacer(),
                                   _buildCustomToggle(isPushNotificationOn, () {
                                     setState(() {
-                                      isPushNotificationOn =
-                                          !isPushNotificationOn;
+                                      isPushNotificationOn = !isPushNotificationOn;
                                     });
-                                    print(
-                                      '푸시 알림 토글: ${isPushNotificationOn ? 'ON' : 'OFF'}',
-                                    );
+                                    print('푸시 알림 토글: ${isPushNotificationOn ? 'ON' : 'OFF'}');
                                   }),
                                 ],
                               ),
@@ -514,24 +479,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   width: scaleWidth(320),
                                   height: scaleHeight(56),
                                   child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: scaleWidth(16),
-                                    ),
+                                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
                                     child: Row(
                                       children: [
                                         FixedText(
                                           "계정 공개",
-                                          style: AppFonts.suite
-                                              .b3_sb(context)
-                                              .copyWith(
-                                                color: AppColors.gray900,
-                                              ),
+                                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
                                         ),
                                         const Spacer(),
                                         _buildCustomToggle(isAccountPublic, () {
-                                          _updateAccountPrivacy(
-                                            !isAccountPublic,
-                                          );
+                                          _updateAccountPrivacy(!isAccountPublic);
                                         }),
                                       ],
                                     ),
@@ -548,16 +505,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: Align(
                                       alignment: Alignment.centerLeft,
                                       child: Padding(
-                                        padding: EdgeInsets.only(
-                                          left: scaleWidth(16),
-                                        ),
+                                        padding: EdgeInsets.only(left: scaleWidth(16)),
                                         child: FixedText(
                                           "차단된 계정",
-                                          style: AppFonts.suite
-                                              .b3_sb(context)
-                                              .copyWith(
-                                                color: AppColors.gray900,
-                                              ),
+                                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
                                         ),
                                       ),
                                     ),
@@ -593,14 +544,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: Align(
                                 alignment: Alignment.centerLeft,
                                 child: Padding(
-                                  padding: EdgeInsets.only(
-                                    left: scaleWidth(16),
-                                  ),
+                                  padding: EdgeInsets.only(left: scaleWidth(16)),
                                   child: FixedText(
                                     "버전 정보",
-                                    style: AppFonts.suite
-                                        .b3_sb(context)
-                                        .copyWith(color: AppColors.gray900),
+                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
                                   ),
                                 ),
                               ),
@@ -609,9 +556,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           // 이용 약관
                           GestureDetector(
                             onTap: () {
-                              _launchUrl(
-                                'https://www.notion.so/24bf22b2f4cd8027bf3ada45e3970e9e?source=copy_link',
-                              );
+                              _launchUrl('https://www.notion.so/24bf22b2f4cd8027bf3ada45e3970e9e?source=copy_link');
                             },
                             child: Container(
                               width: scaleWidth(320),
@@ -619,14 +564,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: Align(
                                 alignment: Alignment.centerLeft,
                                 child: Padding(
-                                  padding: EdgeInsets.only(
-                                    left: scaleWidth(16),
-                                  ),
+                                  padding: EdgeInsets.only(left: scaleWidth(16)),
                                   child: FixedText(
                                     "이용 약관",
-                                    style: AppFonts.suite
-                                        .b3_sb(context)
-                                        .copyWith(color: AppColors.gray900),
+                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
                                   ),
                                 ),
                               ),
@@ -635,9 +576,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           // 개인정보 처리방침
                           GestureDetector(
                             onTap: () {
-                              _launchUrl(
-                                'https://www.notion.so/24bf22b2f4cd80f0a0efeab79c6861ae?source=copy_link',
-                              );
+                              _launchUrl('https://www.notion.so/24bf22b2f4cd80f0a0efeab79c6861ae?source=copy_link');
                             },
                             child: Container(
                               width: scaleWidth(320),
@@ -645,14 +584,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: Align(
                                 alignment: Alignment.centerLeft,
                                 child: Padding(
-                                  padding: EdgeInsets.only(
-                                    left: scaleWidth(16),
-                                  ),
+                                  padding: EdgeInsets.only(left: scaleWidth(16)),
                                   child: FixedText(
                                     "개인정보 처리방침",
-                                    style: AppFonts.suite
-                                        .b3_sb(context)
-                                        .copyWith(color: AppColors.gray900),
+                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
                                   ),
                                 ),
                               ),
@@ -667,14 +602,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: Align(
                                 alignment: Alignment.centerLeft,
                                 child: Padding(
-                                  padding: EdgeInsets.only(
-                                    left: scaleWidth(16),
-                                  ),
+                                  padding: EdgeInsets.only(left: scaleWidth(16)),
                                   child: FixedText(
                                     "로그아웃",
-                                    style: AppFonts.suite
-                                        .b3_sb(context)
-                                        .copyWith(color: AppColors.gray900),
+                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
                                   ),
                                 ),
                               ),
@@ -689,14 +620,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: Align(
                                 alignment: Alignment.centerLeft,
                                 child: Padding(
-                                  padding: EdgeInsets.only(
-                                    left: scaleWidth(16),
-                                  ),
+                                  padding: EdgeInsets.only(left: scaleWidth(16)),
                                   child: FixedText(
                                     "회원 탈퇴",
-                                    style: AppFonts.suite
-                                        .b3_sb(context)
-                                        .copyWith(color: AppColors.gray900),
+                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
                                   ),
                                 ),
                               ),

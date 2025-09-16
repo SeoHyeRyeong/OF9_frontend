@@ -55,6 +55,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
   Widget build(BuildContext context) {
     final recordState = Provider.of<RecordState>(context, listen: false);
     selectedEmotionCode ??= recordState.emotionCode;
+
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {
@@ -62,13 +63,14 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => TicketInfoScreen(
-                imagePath: widget.imagePath ?? '',
-                skipOcrFailPopup: false,
-                preExtractedAwayTeam: null,
-                preExtractedDate: null,
-                preExtractedTime: null,
-              ),
+              pageBuilder: (context, animation1, animation2) =>
+                  TicketInfoScreen(
+                    imagePath: widget.imagePath ?? '',
+                    skipOcrFailPopup: false,
+                    preExtractedAwayTeam: null,
+                    preExtractedDate: null,
+                    preExtractedTime: null,
+                  ),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
@@ -99,13 +101,15 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                 Navigator.pushReplacement(
                                   context,
                                   PageRouteBuilder(
-                                    pageBuilder: (context, animation1, animation2) => TicketInfoScreen(
-                                      imagePath: widget.imagePath ?? '',
-                                      skipOcrFailPopup: false,
-                                      preExtractedAwayTeam: null,
-                                      preExtractedDate: null,
-                                      preExtractedTime: null,
-                                    ),
+                                    pageBuilder: (context, animation1,
+                                        animation2) =>
+                                        TicketInfoScreen(
+                                          imagePath: widget.imagePath ?? '',
+                                          skipOcrFailPopup: false,
+                                          preExtractedAwayTeam: null,
+                                          preExtractedDate: null,
+                                          preExtractedTime: null,
+                                        ),
                                     transitionDuration: Duration.zero,
                                     reverseTransitionDuration: Duration.zero,
                                   ),
@@ -132,18 +136,15 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Spacer(flex: 32),
-
                             // 제목
                             Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: scaleWidth(20)),
+                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                               child: FixedText(
                                 '직관 감정 선택',
                                 style: AppFonts.pretendard.h1_b(context)
                                     .copyWith(color: Colors.black),
                               ),
                             ),
-
                             const Spacer(flex: 20),
 
                             // 서브타이틀
@@ -156,15 +157,13 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                     .copyWith(color: AppColors.gray300),
                               ),
                             ),
-
                             const Spacer(flex: 35),
 
                             // 이모션 그리드 영역
                             Expanded(
                               flex: 520,
                               child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: scaleWidth(20)),
+                                padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                                 child: GridView.builder(
                                   padding: EdgeInsets.only(
                                     top: screenHeight * 0.01,
@@ -203,11 +202,9 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
                                                 color: Colors.white,
-                                                boxShadow: isSelected
-                                                    ? [
+                                                boxShadow: isSelected ? [
                                                   BoxShadow(
-                                                    color: const Color(
-                                                        0x0D000000),
+                                                    color: const Color(0x0D000000),
                                                     blurRadius: 7,
                                                     offset: const Offset(0, 2),
                                                   ),
@@ -220,8 +217,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                                 height: scaleHeight(88),
                                               ),
                                             ),
-                                            SizedBox(
-                                                height: screenHeight * 0.0085),
+                                            SizedBox(height: screenHeight * 0.0085),
                                             FixedText(
                                               emotion['label'],
                                               style: AppFonts.suite.b2_m_long(
@@ -240,7 +236,6 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                 ),
                               ),
                             ),
-
                             const Spacer(flex: 24),
 
                             // 완료 버튼
@@ -249,11 +244,9 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                 width: scaleWidth(320),
                                 height: scaleHeight(54),
                                 child: ElevatedButton(
-                                  onPressed: selectedEmotionCode != null
-                                      ? () {
+                                  onPressed: selectedEmotionCode != null ? () {
                                     // 상태에 기본 정보 저장
-                                    final recordState = Provider.of<
-                                        RecordState>(context, listen: false);
+                                    final recordState = Provider.of<RecordState>(context, listen: false);
                                     recordState.setBasicInfo(
                                       userId: widget.userId,
                                       gameId: widget.gameId,
@@ -265,8 +258,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                     Navigator.push(
                                       context,
                                       PageRouteBuilder(
-                                        pageBuilder: (context, animation1,
-                                            animation2) =>
+                                        pageBuilder: (context, animation1, animation2) =>
                                             DetailRecordScreen(
                                               imagePath: widget.imagePath,
                                               gameDate: widget.gameDate,
@@ -275,8 +267,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                               stadium: widget.stadium,
                                             ),
                                         transitionDuration: Duration.zero,
-                                        reverseTransitionDuration: Duration
-                                            .zero,
+                                        reverseTransitionDuration: Duration.zero,
                                       ),
                                     );
                                   }
@@ -287,22 +278,17 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                                         : AppColors.gray200,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          scaleHeight(8)),
-                                    ),
+                                        borderRadius: BorderRadius.circular(scaleHeight(8))),
                                     elevation: 0,
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: scaleWidth(18)),
+                                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
                                   ),
                                   child: FixedText(
                                     '다음',
-                                    style: AppFonts.suite.b2_b(context)
-                                        .copyWith(color: AppColors.gray20),
+                                    style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
                                   ),
                                 ),
                               ),
                             ),
-
                             const Spacer(flex: 33),
                           ],
                         );

@@ -284,8 +284,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   context,
                                   PageRouteBuilder(
                                     pageBuilder:
-                                        (context, animation1, animation2) =>
-                                            const SettingsScreen(),
+                                        (context, animation1, animation2) => const SettingsScreen(),
                                     transitionDuration: Duration.zero,
                                     reverseTransitionDuration: Duration.zero,
                                   ),
@@ -307,9 +306,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               child: Center(
                                 child: FixedText(
                                   "내 정보 수정",
-                                  style: AppFonts.suite
-                                      .b2_b(context)
-                                      .copyWith(color: AppColors.gray950),
+                                  style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray950),
                                 ),
                               ),
                             ),
@@ -359,16 +356,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       children: [
                         FixedText(
                           "닉네임",
-                          style: AppFonts.suite
-                              .b3_sb(context)
-                              .copyWith(color: AppColors.gray600),
+                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray600),
                         ),
                         SizedBox(width: scaleWidth(2)),
                         FixedText(
                           "*",
-                          style: AppFonts.suite
-                              .c1_b(context)
-                              .copyWith(color: AppColors.pri200),
+                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
                         ),
                       ],
                     ),
@@ -390,8 +383,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             border:
                                 _hasNicknameError()
                                     ? Border.all(
-                                      color: AppColors.error,
-                                      width: 1,
+                                      color: AppColors.error, width: 1,
                                     )
                                     : null,
                           ),
@@ -416,9 +408,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               border: InputBorder.none,
                             ),
                             textAlignVertical: TextAlignVertical.center,
-                            style: AppFonts.pretendard
-                                .b3_r_long(context)
-                                .copyWith(color: AppColors.black),
+                            style: AppFonts.pretendard.b3_r_long(context).copyWith(color: AppColors.black),
                           ),
                         ),
 
@@ -433,27 +423,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               // 에러 메시지 (좌측)
                               _hasNicknameError()
                                   ? FixedText(
-                                    _isNicknameEmpty()
-                                        ? '닉네임을 작성해 주세요.'
-                                        : '이미 등록된 닉네임이에요.',
-                                    style: AppFonts.pretendard
-                                        .c1_m(context)
-                                        .copyWith(color: AppColors.error),
+                                    _isNicknameEmpty() ? '닉네임을 작성해 주세요.' : '이미 등록된 닉네임이에요.',
+                                    style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.error),
                                   )
                                   : SizedBox.shrink(),
                               // 글자수 카운터 (우측)
                               _hasNicknameError()
                                   ? FixedText(
                                     '$_currentLength / $_maxLength',
-                                    style: AppFonts.pretendard
-                                        .c1_m(context)
-                                        .copyWith(color: AppColors.error),
+                                    style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.error),
                                   )
                                   : FixedText(
                                     '$_currentLength / $_maxLength',
-                                    style: AppFonts.suite
-                                        .c1_m(context)
-                                        .copyWith(color: AppColors.pri900),
+                                    style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri900),
                                   ),
                             ],
                           ),
@@ -471,16 +453,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       children: [
                         FixedText(
                           "최애 구단",
-                          style: AppFonts.suite
-                              .b3_sb(context)
-                              .copyWith(color: AppColors.gray600),
+                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray600),
                         ),
                         SizedBox(width: scaleWidth(2)),
                         FixedText(
                           "*",
-                          style: AppFonts.suite
-                              .c1_b(context)
-                              .copyWith(color: AppColors.pri200),
+                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
                         ),
                       ],
                     ),
@@ -507,16 +485,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             children: [
                               Expanded(
                                 child: FixedText(
-                                  favTeam == "정보 불러오기 실패"
-                                      ? "최애 구단을 선택해주세요"
-                                      : favTeam,
-                                  style: AppFonts.pretendard
-                                      .b3_r_long(context)
-                                      .copyWith(
+                                  favTeam == "정보 불러오기 실패" ? "최애 구단을 선택해주세요" : favTeam,
+                                  style: AppFonts.pretendard.b3_r_long(context).copyWith(
                                         color:
-                                            favTeam == "정보 불러오기 실패"
-                                                ? AppColors.gray400
-                                                : AppColors.black,
+                                            favTeam == "정보 불러오기 실패" ? AppColors.gray400 : AppColors.black,
                                       ),
                                 ),
                               ),
@@ -549,9 +521,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         onPressed: canComplete ? _onCompletePressed : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
-                              canComplete
-                                  ? AppColors.gray700
-                                  : AppColors.gray200,
+                              canComplete ? AppColors.gray700 : AppColors.gray200,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               scaleHeight(16),
@@ -564,9 +534,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         child: FixedText(
                           '완료',
-                          style: AppFonts.suite
-                              .b2_b(context)
-                              .copyWith(color: AppColors.gray20),
+                          style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
                         ),
                       ),
                     ),

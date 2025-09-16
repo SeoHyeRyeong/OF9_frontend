@@ -194,9 +194,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
                             child: Center(
                               child: FixedText(
                                 "팔로워",
-                                style: AppFonts.suite.b2_b(context).copyWith(
-                                  color: AppColors.gray950,
-                                ),
+                                style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray950),
                               ),
                             ),
                           ),
@@ -210,9 +208,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
                   Expanded(
                     child: isLoading
                         ? Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.pri900,
-                      ),
+                      child: CircularProgressIndicator(color: AppColors.pri900),
                     )
                         : followers.isEmpty
                         ? _buildEmptyState()
@@ -233,9 +229,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
     return Center(
       child: FixedText(
         "아직 팔로워가 없어요",
-        style: AppFonts.suite.h3_b(context).copyWith(
-          color: AppColors.gray300,
-        ),
+        style: AppFonts.suite.h3_b(context).copyWith(color: AppColors.gray300),
       ),
     );
   }
@@ -296,19 +290,13 @@ class _FollowerScreenState extends State<FollowerScreen> {
                     // 닉네임
                     FixedText(
                       follower['nickname'] ?? '알 수 없음',
-                      style: AppFonts.pretendard.b3_m(context).copyWith(
-                        color: AppColors.gray800,
-                      ),
+                      style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray800),
                     ),
-
                     SizedBox(height: scaleHeight(8)),
-
                     // 최애 구단
                     FixedText(
                       "${follower['favTeam'] ?? '응원팀 없음'} 팬",
-                      style: AppFonts.suite.c2_m(context).copyWith(
-                        color: AppColors.gray300,
-                      ),
+                      style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray300),
                     ),
                   ],
                 ),
@@ -323,18 +311,14 @@ class _FollowerScreenState extends State<FollowerScreen> {
                 onPressed: () => _handleFollow(index),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _getButtonBackgroundColor(follower),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(scaleHeight(8)),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(scaleHeight(8))),
                   elevation: 0,
                   padding: EdgeInsets.zero,
                 ),
                 child: Center(
                   child: FixedText(
                     _getButtonText(follower),
-                    style: AppFonts.suite.c1_b(context).copyWith(
-                      color: _getButtonTextColor(follower),
-                    ),
+                    style: AppFonts.suite.c1_b(context).copyWith(color: _getButtonTextColor(follower)),
                   ),
                 ),
               ),
@@ -351,9 +335,9 @@ class _FollowerScreenState extends State<FollowerScreen> {
 
     switch (followStatus) {
       case 'FOLLOWING':
-        return AppColors.gray50;  // 팔로잉 상태
+        return AppColors.gray50; // 팔로잉 상태
       case 'REQUESTED':
-        return AppColors.gray50;  // 요청됨 상태 (팔로잉과 동일)
+        return AppColors.gray50; // 요청됨 상태 (팔로잉과 동일)
       default:
         return AppColors.gray600; // 팔로우 안 한 상태
     }
@@ -379,11 +363,11 @@ class _FollowerScreenState extends State<FollowerScreen> {
 
     switch (followStatus) {
       case 'FOLLOWING':
-        return AppColors.gray600;  // 팔로잉 상태일 때
+        return AppColors.gray600; // 팔로잉 상태일 때
       case 'REQUESTED':
-        return AppColors.gray600;  // 요청됨 상태일 때
+        return AppColors.gray600; // 요청됨 상태일 때
       default:
-        return AppColors.gray20;   // 팔로우 안 한 상태일 때
+        return AppColors.gray20; // 팔로우 안 한 상태일 때
     }
   }
 }

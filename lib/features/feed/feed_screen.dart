@@ -17,8 +17,7 @@ import 'package:frontend/features/feed/search_screen.dart';
 class FeedScreen extends StatefulWidget {
   final bool showCompletionPopup;
 
-  const FeedScreen({Key? key, this.showCompletionPopup = false})
-    : super(key: key);
+  const FeedScreen({Key? key, this.showCompletionPopup = false}) : super(key: key);
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
@@ -77,18 +76,17 @@ class _FeedScreenState extends State<FeedScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => CustomPopupDialog(
-            imageAsset: AppImages.ticket,
-            title: '$todayDate\n직관 기록이 완료됐어요',
-            subtitle: '직관 기록은 마이 페이지에서 확인할 수 있어요',
-            firstButtonText: '확인',
-            firstButtonAction: () {
-              Navigator.pop(context); // 팝업만 닫기
-            },
-            secondButtonText: '',
-            secondButtonAction: () {},
-          ),
+      builder: (context) => CustomPopupDialog(
+        imageAsset: AppImages.ticket,
+        title: '$todayDate\n직관 기록이 완료됐어요',
+        subtitle: '직관 기록은 마이 페이지에서 확인할 수 있어요',
+        firstButtonText: '확인',
+        firstButtonAction: () {
+          Navigator.pop(context); // 팝업만 닫기
+        },
+        secondButtonText: '',
+        secondButtonAction: () {},
+      ),
     );
   }
 
@@ -135,54 +133,33 @@ class _FeedScreenState extends State<FeedScreen> {
   /// 감정 코드에 따른 이모지 이미지 경로를 반환하는 함수
   String _getEmotionImage(int emotionCode) {
     switch (emotionCode) {
-      case 1:
-        return AppImages.emotion_1;
-      case 2:
-        return AppImages.emotion_2;
-      case 3:
-        return AppImages.emotion_3;
-      case 4:
-        return AppImages.emotion_4;
-      case 5:
-        return AppImages.emotion_5;
-      case 6:
-        return AppImages.emotion_6;
-      case 7:
-        return AppImages.emotion_7;
-      case 8:
-        return AppImages.emotion_8;
-      case 9:
-        return AppImages.emotion_9;
-      default:
-        return AppImages.emotion_1;
+      case 1: return AppImages.emotion_1;
+      case 2: return AppImages.emotion_2;
+      case 3: return AppImages.emotion_3;
+      case 4: return AppImages.emotion_4;
+      case 5: return AppImages.emotion_5;
+      case 6: return AppImages.emotion_6;
+      case 7: return AppImages.emotion_7;
+      case 8: return AppImages.emotion_8;
+      case 9: return AppImages.emotion_9;
+      default: return AppImages.emotion_1;
     }
   }
 
   /// 팀명에 따른 로고 이미지 경로를 반환하는 함수
   String _getTeamLogo(String teamName) {
     switch (teamName) {
-      case 'KIA 타이거즈':
-        return AppImages.tigers;
-      case '두산 베어스':
-        return AppImages.bears;
-      case '롯데 자이언츠':
-        return AppImages.giants;
-      case '삼성 라이온즈':
-        return AppImages.lions;
-      case '키움 히어로즈':
-        return AppImages.kiwoom;
-      case '한화 이글스':
-        return AppImages.eagles;
-      case 'KT WIZ':
-        return AppImages.ktwiz;
-      case 'LG 트윈스':
-        return AppImages.twins;
-      case 'NC 다이노스':
-        return AppImages.dinos;
-      case 'SSG 랜더스':
-        return AppImages.landers;
-      default:
-        return AppImages.tigers; // 기본 로고
+      case 'KIA 타이거즈': return AppImages.tigers;
+      case '두산 베어스': return AppImages.bears;
+      case '롯데 자이언츠': return AppImages.giants;
+      case '삼성 라이온즈': return AppImages.lions;
+      case '키움 히어로즈': return AppImages.kiwoom;
+      case '한화 이글스': return AppImages.eagles;
+      case 'KT WIZ': return AppImages.ktwiz;
+      case 'LG 트윈스': return AppImages.twins;
+      case 'NC 다이노스': return AppImages.dinos;
+      case 'SSG 랜더스': return AppImages.landers;
+      default: return AppImages.tigers; // 기본 로고
     }
   }
 
@@ -193,12 +170,9 @@ class _FeedScreenState extends State<FeedScreen> {
     final int visibleItemIndex = (offset / itemWidth).round();
 
     final DateTime today = DateTime.now();
-    final DateTime visibleDate = today.subtract(
-      Duration(days: visibleItemIndex),
-    );
+    final DateTime visibleDate = today.subtract(Duration(days: visibleItemIndex));
 
-    if (_visibleMonth.month != visibleDate.month ||
-        _visibleMonth.year != visibleDate.year) {
+    if (_visibleMonth.month != visibleDate.month || _visibleMonth.year != visibleDate.year) {
       setState(() {
         _visibleMonth = DateTime(visibleDate.year, visibleDate.month);
       });
@@ -208,32 +182,19 @@ class _FeedScreenState extends State<FeedScreen> {
   // 특정 월에 맞는 달력 아이콘을 반환하는 메서드
   String _getMonthIcon(int month) {
     switch (month) {
-      case 1:
-        return AppImages.month1;
-      case 2:
-        return AppImages.month2;
-      case 3:
-        return AppImages.month3;
-      case 4:
-        return AppImages.month4;
-      case 5:
-        return AppImages.month5;
-      case 6:
-        return AppImages.month6;
-      case 7:
-        return AppImages.month7;
-      case 8:
-        return AppImages.month8;
-      case 9:
-        return AppImages.month9;
-      case 10:
-        return AppImages.month10;
-      case 11:
-        return AppImages.month11;
-      case 12:
-        return AppImages.month12;
-      default:
-        return AppImages.month1;
+      case 1: return AppImages.month1;
+      case 2: return AppImages.month2;
+      case 3: return AppImages.month3;
+      case 4: return AppImages.month4;
+      case 5: return AppImages.month5;
+      case 6: return AppImages.month6;
+      case 7: return AppImages.month7;
+      case 8: return AppImages.month8;
+      case 9: return AppImages.month9;
+      case 10: return AppImages.month10;
+      case 11: return AppImages.month11;
+      case 12: return AppImages.month12;
+      default: return AppImages.month1;
     }
   }
 
@@ -244,8 +205,7 @@ class _FeedScreenState extends State<FeedScreen> {
     final List<DateTime> dates = [];
 
     DateTime currentDate = today;
-    while (currentDate.isAfter(startDate) ||
-        currentDate.isAtSameMomentAs(startDate)) {
+    while (currentDate.isAfter(startDate) || currentDate.isAtSameMomentAs(startDate)) {
       dates.add(currentDate);
       currentDate = currentDate.subtract(Duration(days: 1));
     }
@@ -254,9 +214,7 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   /// 선택된 날짜에 맞는 기록들을 필터링하는 함수
-  List<Map<String, dynamic>> _filterRecordsBySelectedDate(
-    List<Map<String, dynamic>> records,
-  ) {
+  List<Map<String, dynamic>> _filterRecordsBySelectedDate(List<Map<String, dynamic>> records) {
     final List<DateTime> allDates = _generateAllDates();
     if (selectedDateIndex >= allDates.length) return [];
 
@@ -291,9 +249,7 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   /// 선택된 필터(홈팀)에 맞는 기록들을 필터링하는 함수
-  List<Map<String, dynamic>> _filterRecordsByTeam(
-    List<Map<String, dynamic>> records,
-  ) {
+  List<Map<String, dynamic>> _filterRecordsByTeam(List<Map<String, dynamic>> records) {
     if (selectedFilterIndex == 0) return records; // 'ALL' 선택시 전체 반환
 
     final String selectedTeam = _filters[selectedFilterIndex];
@@ -306,18 +262,12 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   /// 날짜와 홈팀 필터를 모두 적용하는 함수
-  List<Map<String, dynamic>> _applyAllFilters(
-    List<Map<String, dynamic>> records,
-  ) {
+  List<Map<String, dynamic>> _applyAllFilters(List<Map<String, dynamic>> records) {
     // 1. 먼저 날짜 필터링
-    List<Map<String, dynamic>> dateFiltered = _filterRecordsBySelectedDate(
-      records,
-    );
+    List<Map<String, dynamic>> dateFiltered = _filterRecordsBySelectedDate(records);
 
     // 2. 그 다음 홈팀 필터링
-    List<Map<String, dynamic>> teamFiltered = _filterRecordsByTeam(
-      dateFiltered,
-    );
+    List<Map<String, dynamic>> teamFiltered = _filterRecordsByTeam(dateFiltered);
 
     return teamFiltered;
   }
@@ -348,21 +298,17 @@ class _FeedScreenState extends State<FeedScreen> {
             // 요일
             FixedText(
               dayOfWeek,
-              style: AppFonts.pretendard
-                  .c1_r(context)
-                  .copyWith(
-                    color: isSelected ? Colors.white : AppColors.gray400,
-                  ),
+              style: AppFonts.pretendard.c1_r(context).copyWith(
+                color: isSelected ? Colors.white : AppColors.gray400,
+              ),
             ),
             SizedBox(height: 6.h),
             // 날짜
             FixedText(
               '${date.day}',
-              style: AppFonts.pretendard
-                  .b3_b(context)
-                  .copyWith(
-                    color: isSelected ? Colors.white : AppColors.gray400,
-                  ),
+              style: AppFonts.pretendard.b3_b(context).copyWith(
+                color: isSelected ? Colors.white : AppColors.gray400,
+              ),
             ),
           ],
         ),
@@ -390,14 +336,9 @@ class _FeedScreenState extends State<FeedScreen> {
         child: Center(
           child: FixedText(
             filterText,
-            style:
-                isSelected
-                    ? AppFonts.pretendard
-                        .c1_b(context)
-                        .copyWith(color: AppColors.gray20)
-                    : AppFonts.pretendard
-                        .c1_sb(context)
-                        .copyWith(color: AppColors.gray300),
+            style: isSelected
+                ? AppFonts.pretendard.c1_b(context).copyWith(color: AppColors.gray20)
+                : AppFonts.pretendard.c1_sb(context).copyWith(color: AppColors.gray300),
           ),
         ),
       ),
@@ -424,13 +365,10 @@ class _FeedScreenState extends State<FeedScreen> {
           );
         } catch (e) {
           print('❌ Base64 디코딩 실패: $e');
-          print(
-            '📊 mediaData 내용: ${mediaData.substring(0, mediaData.length > 100 ? 100 : mediaData.length)}...',
-          );
+          print('📊 mediaData 내용: ${mediaData.substring(0, mediaData.length > 100 ? 100 : mediaData.length)}...');
 
           // Base64 디코딩이 실패하면 URL로 시도
-          if (mediaData.startsWith('http://') ||
-              mediaData.startsWith('https://')) {
+          if (mediaData.startsWith('http://') || mediaData.startsWith('https://')) {
             return Image.network(
               mediaData,
               width: width,
@@ -470,9 +408,7 @@ class _FeedScreenState extends State<FeedScreen> {
           SizedBox(height: 8.h),
           FixedText(
             '이미지 로드 실패',
-            style: AppFonts.pretendard
-                .c2_m(context)
-                .copyWith(color: AppColors.gray400),
+            style: AppFonts.pretendard.c2_m(context).copyWith(color: AppColors.gray400),
           ),
         ],
       ),
@@ -511,32 +447,21 @@ class _FeedScreenState extends State<FeedScreen> {
                           children: [
                             FixedText(
                               '전체',
-                              style: AppFonts.pretendard
-                                  .h5_b(context)
-                                  .copyWith(color: Colors.black),
+                              style: AppFonts.pretendard.h5_b(context).copyWith(color: Colors.black),
                             ),
                             SizedBox(width: 16.w),
                             FixedText(
                               '팔로잉',
-                              style: AppFonts.pretendard
-                                  .h5_b(context)
-                                  .copyWith(color: AppColors.gray300),
+                              style: AppFonts.pretendard.h5_b(context).copyWith(color: AppColors.gray300),
                             ),
                           ],
                         ),
-                        /*SvgPicture.asset(
-                        AppImages.search,
-                        width: 24.w,
-                        height: 24.w,
-                      ),*/
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
                               PageRouteBuilder(
-                                pageBuilder:
-                                    (context, animation1, animation2) =>
-                                        const SearchScreen(),
+                                pageBuilder: (context, animation1, animation2) => const SearchScreen(),
                                 transitionDuration: Duration.zero,
                                 reverseTransitionDuration: Duration.zero,
                               ),
@@ -601,15 +526,11 @@ class _FeedScreenState extends State<FeedScreen> {
                               child: ListView.builder(
                                 controller: _scrollController,
                                 scrollDirection: Axis.horizontal,
-                                reverse: true,
-                                // 오늘부터 시작하여 과거로 스크롤
+                                reverse: true, // 오늘부터 시작하여 과거로 스크롤
                                 padding: EdgeInsets.zero,
                                 itemCount: allDates.length,
                                 itemBuilder: (context, index) {
-                                  return _buildDateWidget(
-                                    allDates[index],
-                                    index,
-                                  );
+                                  return _buildDateWidget(allDates[index], index);
                                 },
                               ),
                             ),
@@ -622,11 +543,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     SizedBox(height: 12.h),
 
                     // 회색 구분선 (360*1 크기, gray50 색상)
-                    Container(
-                      width: 360.w,
-                      height: 1.h,
-                      color: AppColors.gray50,
-                    ),
+                    Container(width: 360.w, height: 1.h, color: AppColors.gray50),
 
                     // 12px 간격
                     SizedBox(height: 12.h),
@@ -657,12 +574,9 @@ class _FeedScreenState extends State<FeedScreen> {
                       child: FutureBuilder<List<Map<String, dynamic>>>(
                         future: RecordApi.getMyRecordsList(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
                             return Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.pri400,
-                              ),
+                              child: CircularProgressIndicator(color: AppColors.pri400),
                             );
                           }
 
@@ -670,15 +584,12 @@ class _FeedScreenState extends State<FeedScreen> {
                             return Center(
                               child: FixedText(
                                 '기록을 불러오는데 실패했습니다',
-                                style: AppFonts.pretendard
-                                    .h5_sb(context)
-                                    .copyWith(color: AppColors.gray300),
+                                style: AppFonts.pretendard.h5_sb(context).copyWith(color: AppColors.gray300),
                               ),
                             );
                           }
 
-                          final List<Map<String, dynamic>> records =
-                              snapshot.data ?? [];
+                          final List<Map<String, dynamic>> records = snapshot.data ?? [];
                           // 최신 기록이 위로 오도록 정렬 (createdAt 기준 내림차순)
                           records.sort((a, b) {
                             try {
@@ -694,16 +605,13 @@ class _FeedScreenState extends State<FeedScreen> {
                             }
                           });
 
-                          final List<Map<String, dynamic>> filteredRecords =
-                              _applyAllFilters(records);
+                          final List<Map<String, dynamic>> filteredRecords = _applyAllFilters(records);
 
                           if (filteredRecords.isEmpty) {
                             return Center(
                               child: FixedText(
                                 '직관 기록이 없어요',
-                                style: AppFonts.pretendard
-                                    .h5_sb(context)
-                                    .copyWith(color: AppColors.gray300),
+                                style: AppFonts.pretendard.h5_sb(context).copyWith(color: AppColors.gray300),
                               ),
                             );
                           }
@@ -717,11 +625,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                 return Column(
                                   children: [
                                     SizedBox(height: 25.h),
-                                    Container(
-                                      width: 320.w,
-                                      height: 1.h,
-                                      color: AppColors.gray50,
-                                    ),
+                                    Container(width: 320.w, height: 1.h, color: AppColors.gray50),
                                     SizedBox(height: 20.h),
                                   ],
                                 );
@@ -732,22 +636,17 @@ class _FeedScreenState extends State<FeedScreen> {
                               final record = filteredRecords[recordIndex];
                               final String nickname = record['nickname'] ?? '';
                               final String favTeam = record['favTeam'] ?? '';
-                              final String profileImageUrl =
-                                  record['profileImageUrl'] ?? '';
-                              final String createdAt =
-                                  record['createdAt'] ?? '';
-                              final String longContent =
-                                  record['longContent'] ?? '';
+                              final String profileImageUrl = record['profileImageUrl'] ?? '';
+                              final String createdAt = record['createdAt'] ?? '';
+                              final String longContent = record['longContent'] ?? '';
                               final String gameDate = record['gameDate'] ?? '';
                               final String stadium = record['stadium'] ?? '';
                               final String homeTeam = record['homeTeam'] ?? '';
                               final String awayTeam = record['awayTeam'] ?? '';
                               final int homeScore = record['homeScore'] ?? 0;
                               final int awayScore = record['awayScore'] ?? 0;
-                              final int emotionCode =
-                                  record['emotionCode'] ?? 1;
-                              final String emotionLabel =
-                                  record['emotionLabel'] ?? '';
+                              final int emotionCode = record['emotionCode'] ?? 1;
+                              final String emotionLabel = record['emotionLabel'] ?? '';
 
                               return Container(
                                 margin: EdgeInsets.symmetric(horizontal: 20.w),
@@ -755,13 +654,11 @@ class _FeedScreenState extends State<FeedScreen> {
                                 child: Padding(
                                   padding: EdgeInsets.symmetric(vertical: 16.h),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       // 사용자 정보 헤더 (1~4번)
                                       Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           // 1. 프로필 이미지 (36*36, 원형)
                                           Container(
@@ -769,30 +666,23 @@ class _FeedScreenState extends State<FeedScreen> {
                                             height: 36.h,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color:
-                                                  profileImageUrl.isNotEmpty
-                                                      ? null
-                                                      : AppColors.gray50,
-                                              image:
-                                                  profileImageUrl.isNotEmpty
-                                                      ? DecorationImage(
-                                                        image: NetworkImage(
-                                                          profileImageUrl,
-                                                        ),
-                                                        fit: BoxFit.cover,
-                                                      )
-                                                      : null,
+                                              color: profileImageUrl.isNotEmpty ? null : AppColors.gray50,
+                                              image: profileImageUrl.isNotEmpty
+                                                  ? DecorationImage(
+                                                image: NetworkImage(profileImageUrl),
+                                                fit: BoxFit.cover,
+                                              )
+                                                  : null,
                                             ),
-                                            child:
-                                                profileImageUrl.isEmpty
-                                                    ? ClipOval(
-                                                      child: SvgPicture.asset(
-                                                        AppImages.profile,
-                                                        width: 36.w,
-                                                        height: 36.h,
-                                                      ),
-                                                    )
-                                                    : null,
+                                            child: profileImageUrl.isEmpty
+                                                ? ClipOval(
+                                              child: SvgPicture.asset(
+                                                AppImages.profile,
+                                                width: 36.w,
+                                                height: 36.h,
+                                              ),
+                                            )
+                                                : null,
                                           ),
 
                                           SizedBox(width: 8.w),
@@ -800,8 +690,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                           // 텍스트 영역을 Expanded로 감싸기
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 // 2, 3, 4번을 한 줄에 배치
                                                 Row(
@@ -809,13 +698,9 @@ class _FeedScreenState extends State<FeedScreen> {
                                                     // 2. 닉네임 (b3_b 폰트, gray950 색상)
                                                     FixedText(
                                                       nickname,
-                                                      style: AppFonts.pretendard
-                                                          .b3_b(context)
-                                                          .copyWith(
-                                                            color:
-                                                                AppColors
-                                                                    .gray950,
-                                                          ),
+                                                      style: AppFonts.pretendard.b3_b(context).copyWith(
+                                                        color: AppColors.gray950,
+                                                      ),
                                                     ),
 
                                                     SizedBox(width: 8.w),
@@ -823,13 +708,9 @@ class _FeedScreenState extends State<FeedScreen> {
                                                     // 3. 팬 정보 (c1_r 폰트, gray400 색상)
                                                     FixedText(
                                                       '$favTeam 팬',
-                                                      style: AppFonts.pretendard
-                                                          .c1_r(context)
-                                                          .copyWith(
-                                                            color:
-                                                                AppColors
-                                                                    .gray400,
-                                                          ),
+                                                      style: AppFonts.pretendard.c1_r(context).copyWith(
+                                                        color: AppColors.gray400,
+                                                      ),
                                                     ),
 
                                                     Spacer(),
@@ -837,13 +718,9 @@ class _FeedScreenState extends State<FeedScreen> {
                                                     // 4. 경과 시간 (c2_m 폰트, gray400 색상)
                                                     FixedText(
                                                       _getTimeAgo(createdAt),
-                                                      style: AppFonts.suite
-                                                          .c2_m(context)
-                                                          .copyWith(
-                                                            color:
-                                                                AppColors
-                                                                    .gray400,
-                                                          ),
+                                                      style: AppFonts.suite.c2_m(context).copyWith(
+                                                        color: AppColors.gray400,
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
@@ -853,14 +730,10 @@ class _FeedScreenState extends State<FeedScreen> {
                                                 // 5. 긴 내용
                                                 FixedText(
                                                   longContent,
-                                                  style: AppFonts.pretendard
-                                                      .b3_sb_long(context)
-                                                      .copyWith(
-                                                        color:
-                                                            AppColors.gray400,
-                                                      ),
-                                                  maxLines:
-                                                      null, // 여러 줄 허용 (다음줄로 넘어가는 형태)
+                                                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(
+                                                    color: AppColors.gray400,
+                                                  ),
+                                                  maxLines: null, // 여러 줄 허용 (다음줄로 넘어가는 형태)
                                                 ),
 
                                                 SizedBox(height: 10.h),
@@ -871,14 +744,8 @@ class _FeedScreenState extends State<FeedScreen> {
                                                   height: 88.h,
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12.r,
-                                                        ),
-                                                    border: Border.all(
-                                                      color: AppColors.gray30,
-                                                      width: 1,
-                                                    ),
+                                                    borderRadius: BorderRadius.circular(12.r),
+                                                    border: Border.all(color: AppColors.gray30, width: 1),
                                                   ),
                                                   padding: EdgeInsets.only(
                                                     top: 16.h,
@@ -891,26 +758,17 @@ class _FeedScreenState extends State<FeedScreen> {
                                                       // 왼쪽: 경기 정보
                                                       Expanded(
                                                         child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
                                                           children: [
                                                             // 경기 날짜 및 구장
                                                             FixedText(
                                                               '${_formatGameDate(gameDate)}, ${stadium}에서',
-                                                              style: AppFonts
-                                                                  .suite
-                                                                  .c2_m(context)
-                                                                  .copyWith(
-                                                                    color:
-                                                                        AppColors
-                                                                            .gray400,
-                                                                  ),
+                                                              style: AppFonts.suite.c2_m(context).copyWith(
+                                                                color: AppColors.gray400,
+                                                              ),
                                                             ),
 
-                                                            SizedBox(
-                                                              height: 10.h,
-                                                            ),
+                                                            SizedBox(height: 10.h),
 
                                                             // 점수 및 팀 로고
                                                             Row(
@@ -919,116 +777,66 @@ class _FeedScreenState extends State<FeedScreen> {
                                                                 Container(
                                                                   width: 31.w,
                                                                   child: Image.asset(
-                                                                    _getTeamLogo(
-                                                                      homeTeam,
-                                                                    ),
+                                                                    _getTeamLogo(homeTeam),
                                                                     width: 30.w,
-                                                                    fit:
-                                                                        BoxFit
-                                                                            .contain,
-                                                                    errorBuilder: (
-                                                                      context,
-                                                                      error,
-                                                                      stackTrace,
-                                                                    ) {
+                                                                    fit: BoxFit.contain,
+                                                                    errorBuilder: (context, error, stackTrace) {
                                                                       return Container(
-                                                                        width:
-                                                                            30.w,
-                                                                        height:
-                                                                            30.w,
+                                                                        width: 30.w,
+                                                                        height: 30.w,
                                                                         decoration: BoxDecoration(
-                                                                          color:
-                                                                              AppColors.gray200,
-                                                                          shape:
-                                                                              BoxShape.circle,
+                                                                          color: AppColors.gray200,
+                                                                          shape: BoxShape.circle,
                                                                         ),
                                                                       );
                                                                     },
                                                                   ),
                                                                 ),
 
-                                                                SizedBox(
-                                                                  width: 17.w,
-                                                                ),
+                                                                SizedBox(width: 17.w),
 
                                                                 // 점수
                                                                 FixedText(
                                                                   '$homeScore',
-                                                                  style: AppFonts
-                                                                      .pretendard
-                                                                      .h3_sb(
-                                                                        context,
-                                                                      )
-                                                                      .copyWith(
-                                                                        color:
-                                                                            AppColors.gray500,
-                                                                      ),
+                                                                  style: AppFonts.pretendard.h3_sb(context).copyWith(
+                                                                    color: AppColors.gray500,
+                                                                  ),
                                                                 ),
 
-                                                                SizedBox(
-                                                                  width: 12.w,
-                                                                ),
+                                                                SizedBox(width: 12.w),
 
                                                                 FixedText(
                                                                   ':',
-                                                                  style: AppFonts
-                                                                      .pretendard
-                                                                      .h3_sb(
-                                                                        context,
-                                                                      )
-                                                                      .copyWith(
-                                                                        color:
-                                                                            AppColors.gray500,
-                                                                      ),
+                                                                  style: AppFonts.pretendard.h3_sb(context).copyWith(
+                                                                    color: AppColors.gray500,
+                                                                  ),
                                                                 ),
 
-                                                                SizedBox(
-                                                                  width: 12.w,
-                                                                ),
+                                                                SizedBox(width: 12.w),
 
                                                                 FixedText(
                                                                   '$awayScore',
-                                                                  style: AppFonts
-                                                                      .pretendard
-                                                                      .h3_sb(
-                                                                        context,
-                                                                      )
-                                                                      .copyWith(
-                                                                        color:
-                                                                            AppColors.gray500,
-                                                                      ),
+                                                                  style: AppFonts.pretendard.h3_sb(context).copyWith(
+                                                                    color: AppColors.gray500,
+                                                                  ),
                                                                 ),
 
-                                                                SizedBox(
-                                                                  width: 17.w,
-                                                                ),
+                                                                SizedBox(width: 17.w),
 
                                                                 // 원정팀 로고
                                                                 Container(
                                                                   width: 30.w,
                                                                   child: Image.asset(
-                                                                    _getTeamLogo(
-                                                                      awayTeam,
-                                                                    ),
+                                                                    _getTeamLogo(awayTeam),
                                                                     width: 30.w,
-                                                                    fit:
-                                                                        BoxFit
-                                                                            .contain,
-                                                                    errorBuilder: (
-                                                                      context,
-                                                                      error,
-                                                                      stackTrace,
-                                                                    ) {
+                                                                    fit: BoxFit.contain,
+                                                                    errorBuilder: (context, error, stackTrace) {
                                                                       return Container(
-                                                                        width:
-                                                                            30.w,
-                                                                        height:
-                                                                            30.w,
+                                                                        width: 30.w,
+                                                                        height: 30.w,
                                                                         decoration: BoxDecoration(
-                                                                          color:
-                                                                              AppColors.gray200,
-                                                                          shape:
-                                                                              BoxShape.circle,
+                                                                          color: AppColors.gray200,
+                                                                          shape: BoxShape.circle,
                                                                         ),
                                                                       );
                                                                     },
@@ -1042,49 +850,31 @@ class _FeedScreenState extends State<FeedScreen> {
 
                                                       // 오른쪽: 감정 표현
                                                       Column(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .start,
+                                                        mainAxisAlignment: MainAxisAlignment.start,
                                                         children: [
                                                           // 감정 이모지 (위로 올리기)
                                                           Transform.translate(
-                                                            offset: Offset(
-                                                              0,
-                                                              -7.h,
-                                                            ),
+                                                            offset: Offset(0, -7.h),
                                                             child: Container(
                                                               width: 54.w,
                                                               height: 54.h,
                                                               child: SvgPicture.asset(
-                                                                _getEmotionImage(
-                                                                  emotionCode,
-                                                                ),
+                                                                _getEmotionImage(emotionCode),
                                                                 width: 54.w,
                                                                 height: 54.h,
-                                                                fit:
-                                                                    BoxFit
-                                                                        .contain,
+                                                                fit: BoxFit.contain,
                                                               ),
                                                             ),
                                                           ),
 
                                                           // 감정 라벨 (위로 더 올리기)
                                                           Transform.translate(
-                                                            offset: Offset(
-                                                              0,
-                                                              -8.h,
-                                                            ),
-                                                            // 8px 위로 이동
+                                                            offset: Offset(0, -8.h), // 8px 위로 이동
                                                             child: FixedText(
                                                               emotionLabel,
-                                                              style: AppFonts
-                                                                  .suite
-                                                                  .c2_m(context)
-                                                                  .copyWith(
-                                                                    color:
-                                                                        AppColors
-                                                                            .gray200,
-                                                                  ),
+                                                              style: AppFonts.suite.c2_m(context).copyWith(
+                                                                color: AppColors.gray200,
+                                                              ),
                                                             ),
                                                           ),
                                                         ],
@@ -1096,64 +886,28 @@ class _FeedScreenState extends State<FeedScreen> {
                                                 SizedBox(height: 12.h),
 
                                                 // 미디어 이미지들 (가로 스크롤) - 수정된 부분
-                                                if ((record['mediaUrls']
-                                                            as List<dynamic>?)
-                                                        ?.isNotEmpty ??
-                                                    false) ...[
+                                                if ((record['mediaUrls'] as List<dynamic>?)?.isNotEmpty ?? false) ...[
                                                   Container(
                                                     height: 188.h,
                                                     child: ListView.builder(
-                                                      scrollDirection:
-                                                          Axis.horizontal,
-                                                      itemCount:
-                                                          (record['mediaUrls']
-                                                                  as List<
-                                                                    dynamic
-                                                                  >)
-                                                              .length,
-                                                      itemBuilder: (
-                                                        context,
-                                                        mediaIndex,
-                                                      ) {
-                                                        final mediaData =
-                                                            (record['mediaUrls']
-                                                                as List<
-                                                                  dynamic
-                                                                >)[mediaIndex];
+                                                      scrollDirection: Axis.horizontal,
+                                                      itemCount: (record['mediaUrls'] as List<dynamic>).length,
+                                                      itemBuilder: (context, mediaIndex) {
+                                                        final mediaData = (record['mediaUrls'] as List<dynamic>)[mediaIndex];
 
                                                         return Container(
                                                           width: 210.w,
                                                           height: 188.h,
                                                           margin: EdgeInsets.only(
-                                                            right:
-                                                                mediaIndex ==
-                                                                        (record['mediaUrls']
-                                                                                    as List<dynamic>)
-                                                                                .length -
-                                                                            1
-                                                                    ? 0
-                                                                    : 12.w,
+                                                            right: mediaIndex == (record['mediaUrls'] as List<dynamic>).length - 1 ? 0 : 12.w,
                                                           ),
                                                           decoration: BoxDecoration(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12.r,
-                                                                ),
-                                                            color:
-                                                                AppColors
-                                                                    .gray100,
+                                                            borderRadius: BorderRadius.circular(12.r),
+                                                            color: AppColors.gray100,
                                                           ),
                                                           child: ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12.r,
-                                                                ),
-                                                            child:
-                                                                _buildMediaImage(
-                                                                  mediaData,
-                                                                  210.w,
-                                                                  188.h,
-                                                                ),
+                                                            borderRadius: BorderRadius.circular(12.r),
+                                                            child: _buildMediaImage(mediaData, 210.w, 188.h),
                                                           ),
                                                         );
                                                       },

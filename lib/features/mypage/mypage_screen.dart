@@ -79,27 +79,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 
   /// 내 기록 불러오기
-  /*Future<void> _loadMyRecords() async {
-    try {
-      final records = await RecordApi.getMyRecords();
-      setState(() {
-        feedList = records;
-        isLoadingRecords = false;
-      });
-    } catch (e) {
-      print('❌ 기록 불러오기 실패: $e');
-      setState(() {
-        isLoadingRecords = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('기록을 불러오는데 실패했습니다.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }*/
-
   Future<void> _loadMyRecords() async {
     try {
       // 모든 엔드포인트 테스트
@@ -141,20 +120,15 @@ class _MyPageScreenState extends State<MyPageScreen> {
     final double baseScreenHeight = 800;
     final double baseScreenWeight = 360;
     final double navBarHeight = screenH * 86 / baseScreenHeight;
-    final double navBarTopInWhite =
-        screenH - navBarHeight - MediaQuery.of(context).padding.bottom;
+    final double navBarTopInWhite = screenH - navBarHeight - MediaQuery.of(context).padding.bottom;
 
     // 탭 활성화 선 위치 계산
     double tabIndicatorX(int tabIndex) {
       switch (tabIndex) {
-        case 0:
-          return wp(43.5);
-        case 1:
-          return wp(154.5);
-        case 2:
-          return wp(265.5);
-        default:
-          return 0;
+        case 0: return wp(43.5);
+        case 1: return wp(154.5);
+        case 2: return wp(265.5);
+        default: return 0;
       }
     }
 
@@ -185,20 +159,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         Align(
                           alignment: Alignment.topRight,
                           child: Padding(
-                            padding: EdgeInsets.only(
-                              top: hp(10),
-                              right: wp(20),
-                            ),
+                            padding: EdgeInsets.only(top: hp(10), right: wp(20)),
                             child: GestureDetector(
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   PageRouteBuilder(
-                                    pageBuilder:
-                                        (context, animation1, animation2) =>
-                                            const SettingsScreen(),
+                                    pageBuilder: (context, animation1, animation2) => const SettingsScreen(),
                                     transitionDuration: Duration.zero,
-                                    // 전환 애니메이션 제거
                                     reverseTransitionDuration: Duration.zero,
                                   ),
                                 );
@@ -218,27 +186,25 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             onTap: () => print("프로필 이미지 선택"),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(14),
-                              child:
-                                  profileImageUrl != null
-                                      ? Image.network(
-                                        profileImageUrl!,
-                                        width: wp(100),
-                                        height: wp(100),
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (_, __, ___) => SvgPicture.asset(
-                                              AppImages.profile,
-                                              width: wp(100),
-                                              height: wp(100),
-                                              fit: BoxFit.cover,
-                                            ),
-                                      )
-                                      : SvgPicture.asset(
-                                        AppImages.profile,
-                                        width: wp(100),
-                                        height: wp(100),
-                                        fit: BoxFit.cover,
-                                      ),
+                              child: profileImageUrl != null
+                                  ? Image.network(
+                                profileImageUrl!,
+                                width: wp(100),
+                                height: wp(100),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => SvgPicture.asset(
+                                  AppImages.profile,
+                                  width: wp(100),
+                                  height: wp(100),
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                                  : SvgPicture.asset(
+                                AppImages.profile,
+                                width: wp(100),
+                                height: wp(100),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
@@ -247,21 +213,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         isLoading
                             ? CircularProgressIndicator()
                             : FixedText(
-                              nickname,
-                              style: AppFonts.pretendard
-                                  .b1_b(context)
-                                  .copyWith(color: AppColors.black),
-                            ),
+                          nickname,
+                          style: AppFonts.pretendard.b1_b(context).copyWith(color: AppColors.black),
+                        ),
                         // 구단명
                         SizedBox(height: hp(224 - 196 - 16)),
                         isLoading
                             ? Container()
                             : FixedText(
-                              "$favTeam 팬",
-                              style: AppFonts.suite
-                                  .c1_b(context)
-                                  .copyWith(color: AppColors.gray300),
-                            ),
+                          "$favTeam 팬",
+                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray300),
+                        ),
                         // 게시글/팔로잉/팔로워
                         SizedBox(height: hp(256 - 224 - 16)),
                         Row(
@@ -270,17 +232,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             // 게시글
                             Column(
                               children: [
-                                FixedText(
-                                  postCount.toString(),
-                                  style: AppFonts.pretendard.b2_b(context),
-                                ),
+                                FixedText(postCount.toString(), style: AppFonts.pretendard.b2_b(context)),
                                 SizedBox(height: hp(4)),
-                                FixedText(
-                                  "게시글",
-                                  style: AppFonts.pretendard
-                                      .b3_m(context)
-                                      .copyWith(color: AppColors.gray400),
-                                ),
+                                FixedText("게시글", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
                               ],
                             ),
                             SizedBox(width: wp(44.5)),
@@ -290,9 +244,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                 Navigator.push(
                                   context,
                                   PageRouteBuilder(
-                                    pageBuilder:
-                                        (context, animation1, animation2) =>
-                                            const FollowingScreen(),
+                                    pageBuilder: (context, animation1, animation2) => const FollowingScreen(),
                                     transitionDuration: Duration.zero,
                                     reverseTransitionDuration: Duration.zero,
                                   ),
@@ -300,17 +252,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               },
                               child: Column(
                                 children: [
-                                  FixedText(
-                                    followingCount.toString(),
-                                    style: AppFonts.pretendard.b2_b(context),
-                                  ),
+                                  FixedText(followingCount.toString(), style: AppFonts.pretendard.b2_b(context)),
                                   SizedBox(height: hp(4)),
-                                  FixedText(
-                                    "팔로잉",
-                                    style: AppFonts.pretendard
-                                        .b3_m(context)
-                                        .copyWith(color: AppColors.gray400),
-                                  ),
+                                  FixedText("팔로잉", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
                                 ],
                               ),
                             ),
@@ -321,9 +265,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                 Navigator.push(
                                   context,
                                   PageRouteBuilder(
-                                    pageBuilder:
-                                        (context, animation1, animation2) =>
-                                            const FollowerScreen(),
+                                    pageBuilder: (context, animation1, animation2) => const FollowerScreen(),
                                     transitionDuration: Duration.zero,
                                     reverseTransitionDuration: Duration.zero,
                                   ),
@@ -338,12 +280,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                     style: AppFonts.pretendard.b2_b(context),
                                   ),
                                   SizedBox(height: hp(4)),
-                                  FixedText(
-                                    "팔로워",
-                                    style: AppFonts.pretendard
-                                        .b3_m(context)
-                                        .copyWith(color: AppColors.gray400),
-                                  ),
+                                  FixedText("팔로워", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
                                 ],
                               ),
                             ),
@@ -360,25 +297,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               onPressed: () {},
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.gray600,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  SvgPicture.asset(
-                                    AppImages.Share,
-                                    width: wp(16),
-                                    height: wp(16),
-                                  ),
+                                  SvgPicture.asset(AppImages.Share, width: wp(16), height: wp(16)),
                                   SizedBox(width: wp(11)),
-                                  FixedText(
-                                    "프로필 공유하기",
-                                    style: AppFonts.pretendard
-                                        .b3_sb(context)
-                                        .copyWith(color: AppColors.white),
-                                  ),
+                                  FixedText("프로필 공유하기", style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.white)),
                                 ],
                               ),
                             ),
@@ -391,16 +317,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: List.generate(3, (index) {
-                              final images = [
-                                AppImages.calendar,
-                                AppImages.list,
-                                AppImages.gallery,
-                              ];
+                              final images = [AppImages.calendar, AppImages.list, AppImages.gallery];
                               return GestureDetector(
-                                onTap:
-                                    () => setState(
-                                      () => selectedTabIndex = index,
-                                    ),
+                                onTap: () => setState(() => selectedTabIndex = index),
                                 child: Container(
                                   width: wp(51),
                                   height: hp(36),
@@ -410,10 +329,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                     images[index],
                                     width: wp(24),
                                     height: wp(24),
-                                    color:
-                                        selectedTabIndex == index
-                                            ? AppColors.gray600
-                                            : AppColors.trans200,
+                                    color: selectedTabIndex == index ? AppColors.gray600 : AppColors.trans200,
                                   ),
                                 ),
                               );
@@ -431,107 +347,11 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               // 경기 구단 드롭박스
-                              Container(
-                                width: wp(83),
-                                height: hp(28),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Color(0xFFCFD3DE),
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(14.r),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: wp(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      FixedText(
-                                        "경기 구단",
-                                        style: AppFonts.pretendard
-                                            .c1_m(context)
-                                            .copyWith(color: Color(0xFF96A0B1)),
-                                      ),
-                                      SvgPicture.asset(
-                                        AppImages.dropdownBlack,
-                                        width: wp(16),
-                                        height: wp(16),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                              _buildDropdownBox(wp(83), "경기 구단", wp, hp),
                               SizedBox(width: wp(6)),
-                              Container(
-                                width: wp(61),
-                                height: hp(28),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Color(0xFFCFD3DE),
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(14.r),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: wp(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      FixedText(
-                                        "구장",
-                                        style: AppFonts.pretendard
-                                            .c1_m(context)
-                                            .copyWith(color: Color(0xFF96A0B1)),
-                                      ),
-                                      SvgPicture.asset(
-                                        AppImages.dropdownBlack,
-                                        width: wp(16),
-                                        height: wp(16),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                              _buildDropdownBox(wp(61), "구장", wp, hp),
                               SizedBox(width: wp(6)),
-                              Container(
-                                width: wp(83),
-                                height: hp(28),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Color(0xFFCFD3DE),
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(14.r),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: wp(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      FixedText(
-                                        "승패 여부",
-                                        style: AppFonts.pretendard
-                                            .c1_m(context)
-                                            .copyWith(color: Color(0xFF96A0B1)),
-                                      ),
-                                      SvgPicture.asset(
-                                        AppImages.dropdownBlack,
-                                        width: wp(16),
-                                        height: wp(16),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                              _buildDropdownBox(wp(83), "승패 여부", wp, hp),
                             ],
                           ),
                         ),
@@ -560,9 +380,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             padding: EdgeInsets.all(wp(50)),
                             child: Text(
                               '작성한 기록이 없습니다.',
-                              style: AppFonts.pretendard
-                                  .b3_m(context)
-                                  .copyWith(color: AppColors.gray400),
+                              style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
                             ),
                           )
                         else
@@ -572,78 +390,47 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               shrinkWrap: true,
                               physics: NeverScrollableScrollPhysics(),
                               itemCount: feedList.length,
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    crossAxisSpacing: wp(5),
-                                    mainAxisSpacing: wp(5),
-                                    childAspectRatio: 0.7,
-                                  ),
-
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: wp(5),
+                                mainAxisSpacing: wp(5),
+                                childAspectRatio: 0.7,
+                              ),
                               itemBuilder: (context, index) {
                                 final record = feedList[index];
                                 return GestureDetector(
-                                  onTap: () {
-                                    print('기록 상세보기: ${record['recordId']}');
-                                  },
+                                  onTap: () => print('기록 상세보기: ${record['recordId']}'),
                                   child: Container(
                                     width: wp(112),
                                     height: wp(152),
                                     child: Stack(
                                       children: [
                                         // base64 이미지 표시
-                                        record['mediaUrls'] != null &&
-                                                record['mediaUrls'].isNotEmpty
+                                        record['mediaUrls'] != null && record['mediaUrls'].isNotEmpty
                                             ? Image.memory(
-                                              base64Decode(
-                                                record['mediaUrls'][0],
-                                              ),
-                                              fit: BoxFit.cover,
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                              errorBuilder:
-                                                  (_, __, ___) =>
-                                                      _buildPlaceholder(record),
-                                            )
+                                          base64Decode(record['mediaUrls'][0]),
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          errorBuilder: (_, __, ___) => _buildPlaceholder(record),
+                                        )
                                             : _buildPlaceholder(record),
-
-                                        /*? Image.network(
-                                    record['mediaUrls'][0], // 첫 번째 이미지 사용
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => _buildPlaceholder(record),
-                                  )
-                                      : _buildPlaceholder(record),*/
-                                        /*? Image.network(
-                                    record['mediaUrls'][0], // 첫 번째 이미지 사용
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => _buildPlaceholder(record),
-                                  )
-                                      : _buildPlaceholder(record),*/
-
                                         // 날짜 오버레이
                                         Positioned(
                                           top: 8,
                                           left: 10,
                                           child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
+                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: Colors.black.withOpacity(
-                                                0.5,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
+                                              color: Colors.black.withOpacity(0.5),
+                                              borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: Text(
                                               record['gameDate'] ?? '',
-                                              style: AppFonts.pretendard
-                                                  .c3_sb(context)
-                                                  .copyWith(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
+                                              style: AppFonts.pretendard.c3_sb(context).copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -668,6 +455,30 @@ class _MyPageScreenState extends State<MyPageScreen> {
     );
   }
 
+  Widget _buildDropdownBox(double width, String text, Function wp, Function hp) {
+    return Container(
+      width: width,
+      height: hp(28),
+      decoration: BoxDecoration(
+        border: Border.all(color: Color(0xFFCFD3DE), width: 1),
+        borderRadius: BorderRadius.circular(14.r),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: wp(8)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            FixedText(
+              text,
+              style: AppFonts.pretendard.c1_m(context).copyWith(color: Color(0xFF96A0B1)),
+            ),
+            SvgPicture.asset(AppImages.dropdownBlack, width: wp(16), height: wp(16)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPlaceholder(Map<String, dynamic> record) {
     final screenW = MediaQuery.of(context).size.width;
     final screenH = MediaQuery.of(context).size.height;
@@ -688,11 +499,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
               style: AppFonts.pretendard.c2_b(context),
               textAlign: TextAlign.center,
             ),
-            /*Text(
-              '${record['homeTeam']} vs ${record['awayTeam']}',
-              style: AppFonts.c2_b(context),
-              textAlign: TextAlign.center,
-            ),*/
           ],
         ),
       ),

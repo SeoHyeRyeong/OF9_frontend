@@ -376,50 +376,35 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
 
                             // 직관 한 마디
                             _buildSection(
-                              builder: () =>
-                                  OneWordSectionContent(
-                                    scrollController: _scrollController,
-                                  ),
+                              builder: () => OneWordSectionContent(scrollController: _scrollController,),
                               cardWidth: 320.13,
                               cardHeight: 150,
                             ),
 
                             // 야구 일기
                             _buildSection(
-                              builder: () =>
-                                  DiaryNoteSectionContent(
-                                    scrollController: _scrollController,
-                                  ),
+                              builder: () => DiaryNoteSectionContent(scrollController: _scrollController,),
                               cardWidth: 320.13,
                               // cardHeight 제거 - 다중행일 때 자동 높이 조절
                             ),
 
                             // 베스트 플레이어
                             _buildSection(
-                              builder: () =>
-                                  BestPlayerSectionContent(
-                                    scrollController: _scrollController,
-                                  ),
+                              builder: () => BestPlayerSectionContent(scrollController: _scrollController,),
                               cardWidth: 320.13,
                               cardHeight: 134,
                             ),
 
                             // 함께 직관한 친구
                             _buildSection(
-                              builder: () =>
-                                  CheerFriendSectionContent(
-                                    scrollController: _scrollController,
-                                  ),
+                              builder: () => CheerFriendSectionContent(scrollController: _scrollController,),
                               cardWidth: 320.13,
                               cardHeight: 134,
                             ),
 
                             // 먹거리 태그
                             _buildSection(
-                              builder: () =>
-                                  FoodTagSectionContent(
-                                    scrollController: _scrollController,
-                                  ),
+                              builder: () => FoodTagSectionContent(scrollController: _scrollController,),
                               cardWidth: 320.13,
                               cardHeight: 128,
                             ),

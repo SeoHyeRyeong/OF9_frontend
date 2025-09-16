@@ -398,39 +398,19 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                             children: [
                               // 상단 코너들
                               Row(
-                                mainAxisAlignment: MainAxisAlignment
-                                    .spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  SvgPicture.asset(
-                                    AppImages.icCornerTopLeft,
-                                    width: scaleWidth(24),
-                                    height: scaleHeight(24),
-                                  ),
-                                  SvgPicture.asset(
-                                    AppImages.icCornerTopRight,
-                                    width: scaleWidth(24),
-                                    height: scaleHeight(24),
-                                  ),
+                                  SvgPicture.asset(AppImages.icCornerTopLeft, width: scaleWidth(24), height: scaleHeight(24)),
+                                  SvgPicture.asset(AppImages.icCornerTopRight, width: scaleWidth(24), height: scaleHeight(24)),
                                 ],
                               ),
-
                               const Expanded(child: SizedBox()),
-
                               // 하단 코너들
                               Row(
-                                mainAxisAlignment: MainAxisAlignment
-                                    .spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  SvgPicture.asset(
-                                    AppImages.icCornerBottomLeft,
-                                    width: scaleWidth(24),
-                                    height: scaleHeight(24),
-                                  ),
-                                  SvgPicture.asset(
-                                    AppImages.icCornerBottomRight,
-                                    width: scaleWidth(24),
-                                    height: scaleHeight(24),
-                                  ),
+                                  SvgPicture.asset(AppImages.icCornerBottomLeft, width: scaleWidth(24), height: scaleHeight(24)),
+                                  SvgPicture.asset(AppImages.icCornerBottomRight, width: scaleWidth(24), height: scaleHeight(24)),
                                 ],
                               ),
                             ],
@@ -461,23 +441,15 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                                   // 메인 타이틀
                                   FixedText(
                                     '티켓을 스캔해 주세요',
-                                    style: AppFonts.pretendard.h4_b(context)
-                                        .copyWith(
-                                      color: Colors.black,
-                                    ),
+                                    style: AppFonts.pretendard.h4_b(context).copyWith(color: Colors.black),
                                   ),
-
                                   const Spacer(flex: 25),
 
                                   // 서브타이틀
                                   FixedText(
                                     '팀명, 일시가 잘 보이게 정관 티켓을 찍어주세요',
-                                    style: AppFonts.pretendard.b3_r(context)
-                                        .copyWith(
-                                      color: AppColors.gray300,
-                                    ),
+                                    style: AppFonts.pretendard.b3_r(context).copyWith(color: AppColors.gray300),
                                   ),
-
                                   const Spacer(flex: 40),
 
                                   // 버튼 영역
@@ -498,19 +470,14 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                                             ),
                                           ),
                                         ),
-
                                         // 카메라 촬영 버튼
                                         GestureDetector(
-                                          onTap: _isLoading
-                                              ? null
-                                              : _onCameraButtonPressed,
+                                          onTap: _isLoading ? null : _onCameraButtonPressed,
                                           child: Container(
                                             width: scaleHeight(80),
                                             height: scaleHeight(80),
                                             decoration: BoxDecoration(
-                                              color: _isLoading
-                                                  ? AppColors.gray300
-                                                  : AppColors.gray700,
+                                              color: _isLoading ? AppColors.gray300 : AppColors.gray700,
                                               shape: BoxShape.circle,
                                             ),
                                             child: Center(
@@ -532,13 +499,11 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                                             ),
                                           ),
                                         ),
-
                                         // 오른쪽 여백
                                         const Expanded(child: SizedBox()),
                                       ],
                                     ),
                                   ),
-
                                   const Spacer(flex: 35),
                                 ],
                               );

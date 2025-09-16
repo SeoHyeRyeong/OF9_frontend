@@ -119,7 +119,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 뒤로가기 영역 + 타이틀 - 360*60 크기
+                  // 뒤로가기 영역 + 타이틀
                   Container(
                     width: scaleWidth(360),
                     height: scaleHeight(60),
@@ -152,13 +152,11 @@ class _FollowingScreenState extends State<FollowingScreen> {
                             child: Center(
                               child: FixedText(
                                 "팔로잉",
-                                style: AppFonts.suite.b2_b(context).copyWith(
-                                  color: AppColors.gray950,
-                                ),
+                                style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray950),
                               ),
                             ),
                           ),
-                          SizedBox(width: scaleHeight(24)), // 균형을 위한 오른쪽 여백
+                          SizedBox(width: scaleHeight(24)),
                         ],
                       ),
                     ),
@@ -168,9 +166,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                   Expanded(
                     child: isLoading
                         ? Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.pri900,
-                      ),
+                      child: CircularProgressIndicator(color: AppColors.pri900),
                     )
                         : followings.isEmpty
                         ? _buildEmptyState()
@@ -191,9 +187,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
     return Center(
       child: FixedText(
         "아직 팔로잉하는 사람이 없어요",
-        style: AppFonts.suite.h3_b(context).copyWith(
-          color: AppColors.gray300,
-        ),
+        style: AppFonts.suite.h3_b(context).copyWith(color: AppColors.gray300),
       ),
     );
   }
@@ -209,7 +203,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
     );
   }
 
-  // 팔로잉 아이템 위젯 - 360*74 크기 영역
+  // 팔로잉 아이템 위젯
   Widget _buildFollowingItem(Map<String, dynamic> following, int index) {
     return Container(
       width: scaleWidth(360),
@@ -218,7 +212,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         padding: EdgeInsets.symmetric(horizontal: scaleWidth(19)),
         child: Row(
           children: [
-            // 프로필 이미지 - 54*54 크기
+            // 프로필 이미지
             ClipRRect(
               borderRadius: BorderRadius.circular(scaleHeight(27)), // 54/2 = 27
               child: following['profileImageUrl'] != null
@@ -242,38 +236,32 @@ class _FollowingScreenState extends State<FollowingScreen> {
               ),
             ),
 
-            SizedBox(width: scaleWidth(18)), // 프로필에서 18px 떨어진 곳
+            SizedBox(width: scaleWidth(18)),
 
             // 닉네임과 최애구단 컬럼
             Expanded(
               child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(20)), // 영역 상단에서 20px 아래
+                padding: EdgeInsets.only(top: scaleHeight(20)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 닉네임
                     FixedText(
                       following['nickname'] ?? '알 수 없음',
-                      style: AppFonts.pretendard.b2_b(context).copyWith(
-                        color: AppColors.gray800,
-                      ),
+                      style: AppFonts.pretendard.b2_b(context).copyWith(color: AppColors.gray800),
                     ),
-
-                    SizedBox(height: scaleHeight(8)), // 닉네임 8px 아래
-
+                    SizedBox(height: scaleHeight(8)),
                     // 최애구단
                     FixedText(
                       "${following['favTeam'] ?? '응원팀 없음'} 팬",
-                      style: AppFonts.suite.c2_m(context).copyWith(
-                        color: AppColors.gray300,
-                      ),
+                      style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray300),
                     ),
                   ],
                 ),
               ),
             ),
 
-            // 팔로잉/팔로우 버튼 - 79*36px, radius 8px (본인이 아닐 때만 표시)
+            // 팔로잉/팔로우 버튼
             following['isMe'] == true
                 ? SizedBox(width: scaleWidth(79)) // 본인일 때는 빈 공간
                 : Container(
@@ -283,11 +271,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
                 onPressed: () => _handleUnfollow(index),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: following['isFollowing']
-                      ? AppColors.gray50  // 팔로잉 상태일 때 (기본값)
+                      ? AppColors.gray50 // 팔로잉 상태일 때 (기본값)
                       : AppColors.gray600, // 언팔로우된 상태일 때
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(scaleHeight(8)),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(scaleHeight(8))),
                   elevation: 0,
                   padding: EdgeInsets.zero,
                 ),
@@ -296,8 +282,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
                     following['isFollowing'] ? '팔로잉' : '팔로우',
                     style: AppFonts.suite.c1_b(context).copyWith(
                       color: following['isFollowing']
-                          ? AppColors.gray600  // 팔로잉 상태일 때 gray600
-                          : AppColors.gray20,  // 언팔로우된 상태일 때 gray20
+                          ? AppColors.gray600 // 팔로잉 상태일 때 gray600
+                          : AppColors.gray20, // 언팔로우된 상태일 때 gray20
                     ),
                   ),
                 ),

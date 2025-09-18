@@ -8,6 +8,7 @@ import 'package:frontend/features/feed/feed_screen.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:frontend/utils/size_utils.dart';
+import 'package:frontend/features/notification/notification_screen.dart';
 
 // 사용법
 // import 'package:frontend/components/custom_bottom_navbar.dart';
@@ -47,6 +48,9 @@ class CustomBottomNavBar extends StatelessWidget {
         break;
 
     //알림 3은 아직 미구현
+      case 3:
+        target = const NotificationScreen();
+        break;
 
       case 4:
         target = const MyPageScreen();

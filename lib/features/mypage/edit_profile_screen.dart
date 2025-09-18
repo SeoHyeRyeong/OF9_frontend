@@ -209,13 +209,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       print('프로필 수정 성공');
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('프로필이 성공적으로 수정되었습니다.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(

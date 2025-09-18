@@ -85,7 +85,7 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.only(left: scaleWidth(35)),
+                padding: EdgeInsets.only(left: scaleWidth(320) * 0.109), // 35/320
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -95,17 +95,18 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
                       style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray800),
                     ),
 
-                    SizedBox(width: scaleWidth(40)),
+                    SizedBox(width: scaleWidth(320) * 0.138),
 
-                    // 팀 이미지
+                    // 팀 정보
                     if (widget.selectedTeam != null) ...[
+                      // 팀 이미지
                       Image.asset(
                         _teamImages[widget.selectedTeam!]!,
                         width: scaleWidth(38),
                         height: scaleHeight(38),
                       ),
 
-                      SizedBox(width: scaleWidth(9)),
+                      SizedBox(width: scaleWidth(320) * 0.036),
 
                       // 팀 이름
                       FixedText(

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/fixed_text.dart';
+import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/api/user_api.dart';
 import 'package:frontend/api/record_api.dart';
@@ -23,8 +23,6 @@ class MyPageScreen extends StatefulWidget {
 
 class _MyPageScreenState extends State<MyPageScreen> {
   int selectedTabIndex = 2; // 0: 캘린더, 1: 리스트, 2: 모아보기
-  final double baseW = 360;
-  final double baseH = 800;
 
   // 사용자 정보 상태
   String nickname = "로딩중...";
@@ -110,28 +108,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenW = MediaQuery.of(context).size.width;
-    final screenH = MediaQuery.of(context).size.height;
-
-    double wp(double px) => screenW * (px / baseW);
-    double hp(double px) => screenH * (px / baseH);
-
-    // 하단 내비게이션 바 위치 및 높이 설정
-    final double baseScreenHeight = 800;
-    final double baseScreenWeight = 360;
-    final double navBarHeight = screenH * 86 / baseScreenHeight;
-    final double navBarTopInWhite = screenH - navBarHeight - MediaQuery.of(context).padding.bottom;
-
-    // 탭 활성화 선 위치 계산
-    double tabIndicatorX(int tabIndex) {
-      switch (tabIndex) {
-        case 0: return wp(43.5);
-        case 1: return wp(154.5);
-        case 2: return wp(265.5);
-        default: return 0;
-      }
-    }
-
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {
@@ -159,7 +135,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         Align(
                           alignment: Alignment.topRight,
                           child: Padding(
-                            padding: EdgeInsets.only(top: hp(10), right: wp(20)),
+                            padding: EdgeInsets.only(
+                                top: scaleHeight(10),
+                                right: scaleWidth(20)
+                            ),
                             child: GestureDetector(
                               onTap: () {
                                 Navigator.push(
@@ -173,43 +152,43 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               },
                               child: SvgPicture.asset(
                                 AppImages.Setting,
-                                width: wp(24),
-                                height: wp(24),
+                                width: scaleWidth(24),
+                                height: scaleHeight(24),
                               ),
                             ),
                           ),
                         ),
                         // 프로필 이미지
-                        SizedBox(height: hp(82 - 54 - 24)),
+                        SizedBox(height: scaleHeight(8)),
                         Center(
                           child: GestureDetector(
                             onTap: () => print("프로필 이미지 선택"),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(scaleHeight(14)),
                               child: profileImageUrl != null
                                   ? Image.network(
                                 profileImageUrl!,
-                                width: wp(100),
-                                height: wp(100),
+                                width: scaleWidth(100),
+                                height: scaleHeight(100),
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => SvgPicture.asset(
                                   AppImages.profile,
-                                  width: wp(100),
-                                  height: wp(100),
+                                  width: scaleWidth(100),
+                                  height: scaleHeight(100),
                                   fit: BoxFit.cover,
                                 ),
                               )
                                   : SvgPicture.asset(
                                 AppImages.profile,
-                                width: wp(100),
-                                height: wp(100),
+                                width: scaleWidth(100),
+                                height: scaleHeight(100),
                                 fit: BoxFit.cover,
                               ),
                             ),
                           ),
                         ),
                         // 닉네임
-                        SizedBox(height: hp(196 - 82 - 100)),
+                        SizedBox(height: scaleHeight(14)),
                         isLoading
                             ? CircularProgressIndicator()
                             : FixedText(
@@ -217,7 +196,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           style: AppFonts.pretendard.b1_b(context).copyWith(color: AppColors.black),
                         ),
                         // 구단명
-                        SizedBox(height: hp(224 - 196 - 16)),
+                        SizedBox(height: scaleHeight(12)),
                         isLoading
                             ? Container()
                             : FixedText(
@@ -225,7 +204,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray300),
                         ),
                         // 게시글/팔로잉/팔로워
-                        SizedBox(height: hp(256 - 224 - 16)),
+                        SizedBox(height: scaleHeight(16)),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -233,11 +212,11 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             Column(
                               children: [
                                 FixedText(postCount.toString(), style: AppFonts.pretendard.b2_b(context)),
-                                SizedBox(height: hp(4)),
+                                SizedBox(height: scaleHeight(4)),
                                 FixedText("게시글", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
                               ],
                             ),
-                            SizedBox(width: wp(44.5)),
+                            SizedBox(width: scaleWidth(44.5)),
                             // 팔로잉
                             GestureDetector(
                               onTap: () {
@@ -253,12 +232,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               child: Column(
                                 children: [
                                   FixedText(followingCount.toString(), style: AppFonts.pretendard.b2_b(context)),
-                                  SizedBox(height: hp(4)),
+                                  SizedBox(height: scaleHeight(4)),
                                   FixedText("팔로잉", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
                                 ],
                               ),
                             ),
-                            SizedBox(width: wp(44.5)),
+                            SizedBox(width: scaleWidth(44.5)),
                             // 팔로워
                             GestureDetector(
                               onTap: () {
@@ -279,7 +258,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                         : followerCount.toString(),
                                     style: AppFonts.pretendard.b2_b(context),
                                   ),
-                                  SizedBox(height: hp(4)),
+                                  SizedBox(height: scaleHeight(4)),
                                   FixedText("팔로워", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
                                 ],
                               ),
@@ -287,33 +266,42 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           ],
                         ),
                         // 버튼
-                        SizedBox(height: hp(316 - 256 - 36)),
+                        SizedBox(height: scaleHeight(24)),
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: wp(20)),
+                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                           child: SizedBox(
-                            width: wp(320),
-                            height: hp(52),
+                            width: scaleWidth(320),
+                            height: scaleHeight(52),
                             child: ElevatedButton(
                               onPressed: () {},
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.gray600,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(scaleHeight(8))
+                                ),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  SvgPicture.asset(AppImages.Share, width: wp(16), height: wp(16)),
-                                  SizedBox(width: wp(11)),
-                                  FixedText("프로필 공유하기", style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.white)),
+                                  SvgPicture.asset(
+                                      AppImages.Share,
+                                      width: scaleWidth(16),
+                                      height: scaleHeight(16)
+                                  ),
+                                  SizedBox(width: scaleWidth(11)),
+                                  FixedText(
+                                      "프로필 공유하기",
+                                      style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.white)
+                                  ),
                                 ],
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(height: hp(24)),
+                        SizedBox(height: scaleHeight(24)),
                         // 탭 선택
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: wp(43.5)),
+                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(43.5)),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: List.generate(3, (index) {
@@ -321,14 +309,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               return GestureDetector(
                                 onTap: () => setState(() => selectedTabIndex = index),
                                 child: Container(
-                                  width: wp(51),
-                                  height: hp(36),
+                                  width: scaleWidth(51),
+                                  height: scaleHeight(36),
                                   alignment: Alignment.center,
                                   color: Colors.transparent,
                                   child: SvgPicture.asset(
                                     images[index],
-                                    width: wp(24),
-                                    height: wp(24),
+                                    width: scaleWidth(24),
+                                    height: scaleHeight(24),
                                     color: selectedTabIndex == index ? AppColors.gray600 : AppColors.trans200,
                                   ),
                                 ),
@@ -337,32 +325,32 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           ),
                         ),
                         // 가로 구분선
-                        SizedBox(height: hp(430 - 394 - 36)),
+                        SizedBox(height: scaleHeight(0)),
                         Divider(color: AppColors.gray100, thickness: 1),
                         // 드롭박스
-                        SizedBox(height: hp(16)),
+                        SizedBox(height: scaleHeight(16)),
                         Padding(
-                          padding: EdgeInsets.only(left: wp(20)),
+                          padding: EdgeInsets.only(left: scaleWidth(20)),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               // 경기 구단 드롭박스
-                              _buildDropdownBox(wp(83), "경기 구단", wp, hp),
-                              SizedBox(width: wp(6)),
-                              _buildDropdownBox(wp(61), "구장", wp, hp),
-                              SizedBox(width: wp(6)),
-                              _buildDropdownBox(wp(83), "승패 여부", wp, hp),
+                              _buildDropdownBox(scaleWidth(83), "경기 구단"),
+                              SizedBox(width: scaleWidth(6)),
+                              _buildDropdownBox(scaleWidth(61), "구장"),
+                              SizedBox(width: scaleWidth(6)),
+                              _buildDropdownBox(scaleWidth(83), "승패 여부"),
                             ],
                           ),
                         ),
-                        SizedBox(height: hp(16)),
+                        SizedBox(height: scaleHeight(16)),
                       ],
                     ),
                   ),
                 ),
                 // 스크롤 가능한 본문 (상단 고정 영역 제외)
                 Positioned(
-                  top: hp(430 + 28 + 16),
+                  top: scaleHeight(474),
                   left: 0,
                   right: 0,
                   bottom: 0,
@@ -372,12 +360,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         // 피드 그리드 (모아보기 탭 기준)
                         if (isLoadingRecords)
                           Padding(
-                            padding: EdgeInsets.all(wp(50)),
+                            padding: EdgeInsets.all(scaleWidth(50)),
                             child: CircularProgressIndicator(),
                           )
                         else if (feedList.isEmpty)
                           Padding(
-                            padding: EdgeInsets.all(wp(50)),
+                            padding: EdgeInsets.all(scaleWidth(50)),
                             child: Text(
                               '작성한 기록이 없습니다.',
                               style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
@@ -385,15 +373,15 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           )
                         else
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: wp(5)),
+                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(5)),
                             child: GridView.builder(
                               shrinkWrap: true,
                               physics: NeverScrollableScrollPhysics(),
                               itemCount: feedList.length,
                               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,
-                                crossAxisSpacing: wp(5),
-                                mainAxisSpacing: wp(5),
+                                crossAxisSpacing: scaleWidth(5),
+                                mainAxisSpacing: scaleHeight(5),
                                 childAspectRatio: 0.7,
                               ),
                               itemBuilder: (context, index) {
@@ -401,8 +389,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                 return GestureDetector(
                                   onTap: () => print('기록 상세보기: ${record['recordId']}'),
                                   child: Container(
-                                    width: wp(112),
-                                    height: wp(152),
+                                    width: scaleWidth(112),
+                                    height: scaleHeight(152),
                                     child: Stack(
                                       children: [
                                         // base64 이미지 표시
@@ -423,7 +411,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                             padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
                                               color: Colors.black.withOpacity(0.5),
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius: BorderRadius.circular(scaleHeight(6)),
                                             ),
                                             child: Text(
                                               record['gameDate'] ?? '',
@@ -441,7 +429,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               },
                             ),
                           ),
-                        SizedBox(height: hp(100)), // 하단 내비게이션 바 공간 확보
+                        SizedBox(height: scaleHeight(100)), // 하단 내비게이션 바 공간 확보
                       ],
                     ),
                   ),
@@ -455,16 +443,16 @@ class _MyPageScreenState extends State<MyPageScreen> {
     );
   }
 
-  Widget _buildDropdownBox(double width, String text, Function wp, Function hp) {
+  Widget _buildDropdownBox(double width, String text) {
     return Container(
       width: width,
-      height: hp(28),
+      height: scaleHeight(28),
       decoration: BoxDecoration(
         border: Border.all(color: Color(0xFFCFD3DE), width: 1),
-        borderRadius: BorderRadius.circular(14.r),
+        borderRadius: BorderRadius.circular(scaleHeight(14)),
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: wp(8)),
+        padding: EdgeInsets.symmetric(horizontal: scaleWidth(8)),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -472,7 +460,11 @@ class _MyPageScreenState extends State<MyPageScreen> {
               text,
               style: AppFonts.pretendard.c1_m(context).copyWith(color: Color(0xFF96A0B1)),
             ),
-            SvgPicture.asset(AppImages.dropdownBlack, width: wp(16), height: wp(16)),
+            SvgPicture.asset(
+                AppImages.dropdownBlack,
+                width: scaleWidth(16),
+                height: scaleHeight(16)
+            ),
           ],
         ),
       ),
@@ -480,20 +472,13 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 
   Widget _buildPlaceholder(Map<String, dynamic> record) {
-    final screenW = MediaQuery.of(context).size.width;
-    final screenH = MediaQuery.of(context).size.height;
-    final double baseW = 360;
-    final double baseH = 800;
-    double wp(double px) => screenW * (px / baseW);
-    double hp(double px) => screenH * (px / baseH);
-
     return Container(
       color: AppColors.gray50,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(height: hp(4)),
+            SizedBox(height: scaleHeight(4)),
             Text(
               record['gameDate'] ?? '',
               style: AppFonts.pretendard.c2_b(context),

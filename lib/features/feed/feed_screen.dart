@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:frontend/features/feed/search_screen.dart';
+import 'package:frontend/api/user_api.dart';
 
 class FeedScreen extends StatefulWidget {
   final bool showCompletionPopup;
@@ -29,15 +30,21 @@ class _FeedScreenState extends State<FeedScreen> {
   ScrollController _scrollController = ScrollController();
   DateTime _visibleMonth = DateTime.now(); // 현재 보이는 월
 
-  // 필터 목록
-  final List<String> _filters = [
-    'ALL',
-    'KIA 타이거즈',
+  // 동적 필터 목록 (사용자 최애구단에 따라 변경됨)
+  List<String> _filters = ['ALL']; // 초기값은 ALL만
+
+  // 사용자 정보
+  String userFavTeam = '';
+  bool isLoadingUserInfo = true;
+
+  // 모든 구단 목록
+  final List<String> _allTeams = [
     '두산 베어스',
     '롯데 자이언츠',
     '삼성 라이온즈',
     '키움 히어로즈',
     '한화 이글스',
+    'KIA 타이거즈',
     'KT WIZ',
     'LG 트윈스',
     'NC 다이노스',
@@ -54,7 +61,9 @@ class _FeedScreenState extends State<FeedScreen> {
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
     );
 
-    // 화면 로드 후 팝업 표시
+    // 사용자 정보를 먼저 로드하고 필터 구성
+    _loadUserInfoAndSetupFilters();
+
     if (widget.showCompletionPopup) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showCompletionDialog();
@@ -68,6 +77,46 @@ class _FeedScreenState extends State<FeedScreen> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 사용자 정보를 불러오고 필터를 설정하는 함수
+  Future<void> _loadUserInfoAndSetupFilters() async {
+    try {
+      final response = await UserApi.getMyProfile();
+      final userInfo = response['data'];
+
+      setState(() {
+        userFavTeam = userInfo['favTeam'] ?? '';
+        isLoadingUserInfo = false;
+        _setupFilters();
+      });
+    } catch (e) {
+      print('❌ 사용자 정보 불러오기 실패: $e');
+      setState(() {
+        isLoadingUserInfo = false;
+        // 에러 시에도 기본 필터는 구성
+        _filters = ['ALL'] + _allTeams;
+      });
+    }
+  }
+
+  /// 최애구단을 고려해서 필터 목록을 구성하는 함수
+  void _setupFilters() {
+    List<String> newFilters = ['ALL'];
+
+    // 최애구단을 두 번째로 추가
+    newFilters.add(userFavTeam);
+
+    // 나머지 구단들을 순서대로 추가 (최애구단 제외)
+    for (String team in _allTeams) {
+      if (team != userFavTeam) {
+        newFilters.add(team);
+      }
+    }
+
+    setState(() {
+      _filters = newFilters;
+    });
   }
 
   /// 완료 팝업을 띄우는 함수
@@ -116,6 +165,33 @@ class _FeedScreenState extends State<FeedScreen> {
       final DateTime now = DateTime.now();
       final Duration difference = now.difference(recordTime);
 
+      // 1년 이상인 경우
+      final int yearDiff = now.year - recordTime.year;
+      if (yearDiff >= 1) {
+        // 해당 월/일이 이미 지났는지 확인
+        final bool hasDatePassed = now.month > recordTime.month ||
+            (now.month == recordTime.month && now.day >= recordTime.day);
+
+        final int actualYearDiff = hasDatePassed ? yearDiff : yearDiff - 1;
+
+        if (actualYearDiff >= 1) {
+          return '${actualYearDiff}년 전';
+        }
+      }
+
+      // 1개월 이상인 경우 (월 단위 계산)
+      int monthDiff = (now.year - recordTime.year) * 12 + (now.month - recordTime.month);
+
+      // 일자까지 고려해서 정확한 월 차이 계산
+      if (now.day < recordTime.day) {
+        monthDiff -= 1;
+      }
+
+      if (monthDiff >= 1) {
+        return '${monthDiff}개월 전';
+      }
+
+      // 1개월 미만인 경우 기존 로직 사용
       if (difference.inDays >= 1) {
         return '${difference.inDays}일 전';
       } else if (difference.inHours >= 1) {
@@ -631,7 +707,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                 );
                               }
 
-                              // 기록 아이템
+// 기록 아이템
                               final recordIndex = index ~/ 2;
                               final record = filteredRecords[recordIndex];
                               final String nickname = record['nickname'] ?? '';
@@ -647,6 +723,9 @@ class _FeedScreenState extends State<FeedScreen> {
                               final int awayScore = record['awayScore'] ?? 0;
                               final int emotionCode = record['emotionCode'] ?? 1;
                               final String emotionLabel = record['emotionLabel'] ?? '';
+
+// longContent가 비어있는지 확인
+                              final bool hasLongContent = longContent.trim().isNotEmpty;
 
                               return Container(
                                 margin: EdgeInsets.symmetric(horizontal: 20.w),
@@ -725,18 +804,19 @@ class _FeedScreenState extends State<FeedScreen> {
                                                   ],
                                                 ),
 
-                                                SizedBox(height: 8.h),
-
-                                                // 5. 긴 내용
-                                                FixedText(
-                                                  longContent,
-                                                  style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                                                    color: AppColors.gray400,
+                                                // 5. 긴 내용 - 조건부 렌더링
+                                                if (hasLongContent) ...[
+                                                  SizedBox(height: 8.h),
+                                                  FixedText(
+                                                    longContent,
+                                                    style: AppFonts.pretendard.b3_sb_long(context).copyWith(
+                                                      color: AppColors.gray400,
+                                                    ),
+                                                    maxLines: null, // 여러 줄 허용 (다음줄로 넘어가는 형태)
                                                   ),
-                                                  maxLines: null, // 여러 줄 허용 (다음줄로 넘어가는 형태)
-                                                ),
+                                                ],
 
-                                                SizedBox(height: 10.h),
+                                                SizedBox(height: hasLongContent ? 10.h : 15.h), // 내용 유무에 따라 여백 조정
 
                                                 // 경기 정보 카드
                                                 Container(

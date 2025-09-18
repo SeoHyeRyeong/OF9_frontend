@@ -447,7 +447,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
                                   // 서브타이틀
                                   FixedText(
-                                    '팀명, 일시가 잘 보이게 정관 티켓을 찍어주세요',
+                                    '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
                                     style: AppFonts.pretendard.b3_r(context).copyWith(color: AppColors.gray300),
                                   ),
                                   const Spacer(flex: 40),

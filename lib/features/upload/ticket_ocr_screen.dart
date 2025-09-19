@@ -8,7 +8,6 @@ import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/upload/ticket_info_screen.dart';
 import 'package:camera/camera.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:frontend/components/custom_popup_dialog.dart';
@@ -38,6 +37,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     with WidgetsBindingObserver {
   bool _isCameraInitialized = false;
   bool _isLoading = false;
+  bool _isDialogShowing = false; // 다이얼로그 중복 방지용
 
   final Map<String, String> teamToCorpMap = {
     'KIA 타이거즈': 'KIA',
@@ -110,10 +110,14 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
   @override
   void initState() {
     super.initState();
+    print('TicketOcrScreen initState started');
     WidgetsBinding.instance.addObserver(this);
+    print('Observer added');
     if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+      print('Attempting camera initialization');
       _initializeCameraIfNeeded();
     }
+    print('TicketOcrScreen initState completed');
   }
 
   @override
@@ -124,42 +128,50 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
   }
 
   Future<void> _checkPermissionOnly() async {
-    final status = await Permission.camera.status;
-
-    if (status.isGranted) {
-      if (!_isCameraInitialized) {
-        _initializeCameraIfNeeded();
-      }
+    // 앱이 다시 활성화될 때 카메라 재초기화 시도
+    // 단, 다이얼로그가 표시 중이 아닐 때만
+    if (!_isCameraInitialized && !_isDialogShowing) {
+      _initializeCameraIfNeeded();
     }
   }
 
   Future<void> _initializeCameraIfNeeded() async {
-    final hasPermission = await _requestCameraPermission();
-    if (!hasPermission) return;
-
-    _cameras = await availableCameras();
-    final backCamera = _cameras.firstWhere(
-          (c) => c.lensDirection == CameraLensDirection.back,
-      orElse: () => _cameras.first,
-    );
-    _cameraController = CameraController(
-      backCamera,
-      ResolutionPreset.high,
-      enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.jpeg,
-    );
+    if (_isCameraInitialized) return;
 
     try {
+      print('Attempting direct camera initialization...');
+
+      // permission_handler를 사용하지 않고 직접 카메라 초기화
+      _cameras = await availableCameras();
+      if (_cameras.isEmpty) {
+        throw Exception('사용 가능한 카메라가 없습니다');
+      }
+
+      print('Found ${_cameras.length} cameras');
+
+      final backCamera = _cameras.firstWhere(
+            (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => _cameras.first,
+      );
+
+      _cameraController = CameraController(
+        backCamera,
+        ResolutionPreset.high,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
+
       await _cameraController.initialize();
+      print('Camera initialized successfully');
+
       if (mounted) {
         setState(() => _isCameraInitialized = true);
       }
     } catch (e) {
       print('카메라 초기화 실패: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('카메라 초기화 실패: $e')),
-        );
+      if (mounted && !_isDialogShowing) {
+        // 다이얼로그가 이미 표시 중이 아닐 때만 표시
+        _showCustomPermissionDialog();
       }
     }
   }
@@ -174,53 +186,59 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
   }
 
   Future<void> _onGalleryButtonPressed() async {
-    final picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-    );
-    if (pickedFile == null) return;
+    try {
+      print('Attempting gallery access...');
 
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) =>
-            TicketInfoScreen(
-              imagePath: pickedFile.path,
-            ),
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-      ),
-    );
-  }
+      final picker = ImagePicker();
+      final XFile? pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+      );
 
-  Future<bool> _requestCameraPermission() async {
-    final result = await Permission.camera.request();
+      if (pickedFile == null) {
+        print('No image selected from gallery');
+        return;
+      }
 
-    if (result.isGranted) return true;
+      print('Gallery image selected: ${pickedFile.path}');
 
-    // 시스템 팝업이 사라질 시간 확보 (겹침 방지)
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    final status = await Permission.camera.status;
-
-    if (status.isPermanentlyDenied) {
-      _showCustomPermissionDialog(); // '허용 안함' 눌렀을 때만 커스텀 다이얼로그 표시
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) =>
+              TicketInfoScreen(
+                imagePath: pickedFile.path,
+              ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    } catch (e) {
+      print('Gallery access failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('갤러리 접근 실패: $e')),
+        );
+      }
     }
-
-    return false; // denied 또는 restricted일 경우 false 리턴 (다음 시도 가능)
   }
 
   void _showCustomPermissionDialog() {
+    if (_isDialogShowing) return; // 이미 다이얼로그가 표시 중이면 무시
+
+    _isDialogShowing = true; // 다이얼로그 표시 상태로 설정
+
     showDialog(
       context: context,
+      barrierDismissible: false, // 다이얼로그 외부 터치로 닫기 방지
       builder: (context) =>
           CustomPopupDialog(
             imageAsset: AppImages.icAlert,
             title: '현재 카메라 사용에 대한\n접근 권한이 없어요',
-            subtitle: '설정의 (Lookit) 탭에서 접근 활성화가 필요해요',
+            subtitle: '설정에서 카메라 권한을 허용해주세요',
             firstButtonText: '직접 입력',
             firstButtonAction: () {
+              _isDialogShowing = false; // 다이얼로그 닫힘 상태로 설정
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
@@ -232,10 +250,10 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                 ),
               );
             },
-            secondButtonText: '설정으로 이동',
-            secondButtonAction: () async {
+            secondButtonText: '확인',
+            secondButtonAction: () {
+              _isDialogShowing = false; // 다이얼로그 닫힘 상태로 설정
               Navigator.pop(context);
-              await openAppSettings();
             },
           ),
     );
@@ -276,33 +294,46 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
   Future<ExtractedTicketInfo> extractTicketInfoFromImage(
       String imagePath) async {
-    final inputImage = InputImage.fromFilePath(imagePath);
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
-    final recognizedText = await textRecognizer.processImage(inputImage);
-    final cleanedText = recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ')
-        .trim();
+    try {
+      if (imagePath.isEmpty) {
+        throw Exception('이미지 경로가 비어있습니다');
+      }
 
-    final awayTeam = extractAwayTeam(
-      cleanedText,
-      teamToCorpMap,
-      teamKeywordsList,
-    );
-    final date = extractDate(cleanedText);
-    final time = extractTime(cleanedText);
+      final inputImage = InputImage.fromFilePath(imagePath);
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
+      final recognizedText = await textRecognizer.processImage(inputImage);
 
-    return ExtractedTicketInfo(awayTeam: awayTeam, date: date, time: time);
+      if (recognizedText.text.isEmpty) {
+        print('No text recognized from image');
+        return ExtractedTicketInfo();
+      }
+
+      final cleanedText = recognizedText.text.replaceAll(RegExp(r'\\s+'), ' ')
+          .trim();
+
+      final awayTeam = extractAwayTeam(
+        cleanedText,
+        teamToCorpMap,
+        teamKeywordsList,
+      );
+      final date = extractDate(cleanedText);
+      final time = extractTime(cleanedText);
+
+      return ExtractedTicketInfo(awayTeam: awayTeam, date: date, time: time);
+    } catch (e) {
+      print('Text recognition error: $e');
+      return ExtractedTicketInfo();
+    }
   }
 
   Future<void> _onCameraButtonPressed() async {
-    final status = await Permission.camera.status;
-
-    if (!status.isGranted) {
-      final granted = await _requestCameraPermission();
-      if (!granted) return;
+    // permission_handler 체크 제거하고 바로 카메라 사용 시도
+    if (!_isCameraInitialized) {
+      await _initializeCameraIfNeeded();
+      if (!_isCameraInitialized) {
+        return; // 초기화 실패 시 다이얼로그가 이미 표시됨
+      }
     }
-
-    // 카메라 초기화 및 촬영 실행
-    if (!_isCameraInitialized) return;
 
     setState(() => _isLoading = true);
 
@@ -333,10 +364,10 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('촬영 오류: $e')),
-        );
+      print('촬영 오류: $e');
+      if (mounted && !_isDialogShowing) {
+        // 다이얼로그가 이미 표시 중이 아닐 때만 표시
+        _showCustomPermissionDialog();
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

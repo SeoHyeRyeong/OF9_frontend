@@ -158,16 +158,23 @@ class _FeedScreenState extends State<FeedScreen> {
   /// createdAt 시간을 기준으로 경과 시간을 계산하는 함수
   String _getTimeAgo(String createdAt) {
     try {
-      // "2025-05-26 17:42:26" 형태의 문자열을 DateTime으로 변환
-      final DateTime recordTimeUTC = DateTime.parse(
-        createdAt.replaceAll(' ', 'T') + 'Z',
-      );
+      // 먼저 로컬 시간으로 파싱 시도
+      DateTime recordTime;
+      try {
+        // "2025-05-26 17:42:26" 형태를 "2025-05-26T17:42:26"로 변환 후 로컬 시간으로 파싱
+        recordTime = DateTime.parse(createdAt.replaceAll(' ', 'T'));
+      } catch (e) {
+        // 로컬 파싱이 실패하면 UTC로 파싱 후 로컬 변환
+        recordTime = DateTime.parse(createdAt.replaceAll(' ', 'T') + 'Z').toLocal();
+      }
 
-      // UTC 시간을 한국 로컬 시간으로 변환
-      final DateTime recordTime = recordTimeUTC.toLocal();
+      final DateTime now = DateTime.now();
+      final Duration difference = now.difference(recordTime);
 
-      final DateTime now = DateTime.now(); // 현재 한국 로컬 시간
-      final Duration difference = now.difference(recordTime); // 동일한 시간대(KST)로 차이 계산
+      // 음수가 나오면 "방금 전"으로 처리 (미래 시간인 경우)
+      if (difference.inSeconds < 0) {
+        return '방금 전';
+      }
 
       // 1년 이상인 경우
       final int yearDiff = now.year - recordTime.year;
@@ -195,7 +202,7 @@ class _FeedScreenState extends State<FeedScreen> {
         return '${monthDiff}개월 전';
       }
 
-      // 1개월 미만인 경우 기존 로직 사용
+      // 1개월 미만인 경우
       if (difference.inDays >= 1) {
         return '${difference.inDays}일 전';
       } else if (difference.inHours >= 1) {
@@ -203,9 +210,10 @@ class _FeedScreenState extends State<FeedScreen> {
       } else if (difference.inMinutes >= 1) {
         return '${difference.inMinutes}분 전';
       } else {
-        return '${difference.inSeconds}초 전';
+        return '방금 전'; // 0초나 음수인 경우도 "방금 전"으로 처리
       }
     } catch (e) {
+      print('❌ 시간 파싱 실패: $e, createdAt: $createdAt');
       return '알 수 없음';
     }
   }
@@ -711,7 +719,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                 );
                               }
 
-// 기록 아이템
+                              // 기록 아이템
                               final recordIndex = index ~/ 2;
                               final record = filteredRecords[recordIndex];
                               final String nickname = record['nickname'] ?? '';
@@ -728,7 +736,7 @@ class _FeedScreenState extends State<FeedScreen> {
                               final int emotionCode = record['emotionCode'] ?? 1;
                               final String emotionLabel = record['emotionLabel'] ?? '';
 
-// longContent가 비어있는지 확인
+                              // longContent가 비어있는지 확인
                               final bool hasLongContent = longContent.trim().isNotEmpty;
 
                               return Container(
@@ -997,7 +1005,110 @@ class _FeedScreenState extends State<FeedScreen> {
                                                       },
                                                     ),
                                                   ),
+                                                  SizedBox(height: 8.h),
                                                 ],
+
+                                                // 반응 버튼들 (경기 정보 카드 또는 미디어 이미지 8px 아래)
+                                                Padding(
+                                                  padding: EdgeInsets.zero, // 이미 Expanded 내부이므로 추가 패딩 불필요
+                                                  child: Row(
+                                                    children: [
+                                                      // 2-1. 응원해요 버튼
+                                                      Container(
+                                                        height: 24.h,
+                                                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                                                        decoration: BoxDecoration(
+                                                          borderRadius: BorderRadius.circular(40.r),
+                                                          border: Border.all(color: AppColors.gray50, width: 1),
+                                                        ),
+                                                        child: Row(
+                                                          mainAxisSize: MainAxisSize.min,
+                                                          mainAxisAlignment: MainAxisAlignment.center,
+                                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                                          children: [
+                                                            SvgPicture.asset(
+                                                              AppImages.good,
+                                                              width: 14.w,
+                                                              height: 14.h,
+                                                              fit: BoxFit.contain,
+                                                            ),
+                                                            SizedBox(width: 4.w),
+                                                            FixedText(
+                                                              '응원해요',
+                                                              style: AppFonts.pretendard.c2_m(context).copyWith(
+                                                                color: AppColors.gray300,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+
+                                                      SizedBox(width: 8.w),
+
+                                                      // 2-2. 힘내요 버튼
+                                                      Container(
+                                                        height: 24.h,
+                                                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                                                        decoration: BoxDecoration(
+                                                          borderRadius: BorderRadius.circular(40.r),
+                                                          border: Border.all(color: AppColors.gray50, width: 1),
+                                                        ),
+                                                        child: Row(
+                                                          mainAxisSize: MainAxisSize.min,
+                                                          mainAxisAlignment: MainAxisAlignment.center,
+                                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                                          children: [
+                                                            SvgPicture.asset(
+                                                              AppImages.smile,
+                                                              width: 14.w,
+                                                              height: 14.h,
+                                                              fit: BoxFit.contain,
+                                                            ),
+                                                            SizedBox(width: 4.w),
+                                                            FixedText(
+                                                              '힘내요',
+                                                              style: AppFonts.pretendard.c2_m(context).copyWith(
+                                                                color: AppColors.gray300,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+
+                                                      SizedBox(width: 8.w),
+
+                                                      // 2-3. 축하해요 버튼
+                                                      Container(
+                                                        height: 24.h,
+                                                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                                                        decoration: BoxDecoration(
+                                                          borderRadius: BorderRadius.circular(40.r),
+                                                          border: Border.all(color: AppColors.gray50, width: 1),
+                                                        ),
+                                                        child: Row(
+                                                          mainAxisSize: MainAxisSize.min,
+                                                          mainAxisAlignment: MainAxisAlignment.center,
+                                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                                          children: [
+                                                            SvgPicture.asset(
+                                                              AppImages.congratulate,
+                                                              width: 14.w,
+                                                              height: 14.h,
+                                                              fit: BoxFit.contain,
+                                                            ),
+                                                            SizedBox(width: 4.w),
+                                                            FixedText(
+                                                              '축하해요',
+                                                              style: AppFonts.pretendard.c2_m(context).copyWith(
+                                                                color: AppColors.gray300,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),

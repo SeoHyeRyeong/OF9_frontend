@@ -107,6 +107,9 @@ class AppImages {
   static const x = 'assets/imgs/ic_feed/ic_x.svg';
   static const update = 'assets/imgs/ic_feed/ic_update.svg';
   static const location = 'assets/imgs/ic_feed/location_on.svg';
+  static const good = 'assets/imgs/ic_feed/good.svg';
+  static const congratulate = 'assets/imgs/ic_feed/congratulate.svg';
+  static const smile = 'assets/imgs/ic_feed/smile.svg';
 
   //마이페이지
   static const btn_camera = 'assets/imgs/btn_camera_24.svg';

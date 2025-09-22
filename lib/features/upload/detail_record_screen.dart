@@ -7,7 +7,6 @@ import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/fixed_text.dart';
-import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/feed/feed_screen.dart';
 import 'dart:ui' as ui;
 import 'package:provider/provider.dart';
@@ -128,15 +127,15 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     if (selectedImages.isEmpty) {
       return Column(
         children: [
-          SizedBox(height: scaleHeight(24)),
+          SizedBox(height: scaleHeight(23)),
           GestureDetector(
             onTap: _pickImages,
             child: Container(
-              width: scaleWidth(320.13),
-              height: scaleHeight(202),
+              width: scaleWidth(320),
+              height: scaleHeight(210),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(scaleWidth(18)),
+                borderRadius: BorderRadius.circular(scaleWidth(20)),
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0x08000000),
@@ -146,29 +145,42 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                   ),
                 ],
               ),
+              padding: EdgeInsets.only(
+                top: scaleHeight(30),
+                bottom: scaleHeight(23),
+              ),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Image.asset(
-                    AppImages.gallery_detail,
-                    width: scaleWidth(44),
-                    height: scaleHeight(37),
+                  Column(
+                    children: [
+                      // 갤러리 아이콘 (상단 패딩 바로 밑)
+                      Image.asset(
+                        AppImages.gallery_detail,
+                        width: scaleWidth(44),
+                        height: scaleHeight(37),
+                      ),
+                      SizedBox(height: scaleHeight(15)),
+                      // 첫 번째 텍스트
+                      FixedText(
+                        '사진과 영상을 추가해 주세요',
+                        style: AppFonts.suite.b2_b(context).copyWith(
+                          color: AppColors.gray800,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: scaleHeight(8)),
+                      // 두 번째 텍스트
+                      FixedText(
+                        '첫 번째 사진이 대표 사진으로 지정됩니다',
+                        style: AppFonts.suite.c1_m(context).copyWith(
+                          color: AppColors.gray500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  SizedBox(height: scaleHeight(10)),
-                  FixedText(
-                    '사진과 영상을 추가해 주세요',
-                    style: AppFonts.pretendard.b2_b(context).copyWith(
-                        color: AppColors.gray800),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: scaleHeight(8)),
-                  FixedText(
-                    '첫 번째 사진이 대표 사진으로 지정됩니다!',
-                    style: AppFonts.pretendard.c1_r(context).copyWith(
-                        color: AppColors.gray500),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: scaleHeight(24)),
+                  // + 버튼 (하단 패딩 바로 위)
                   SvgPicture.asset(
                     AppImages.plus,
                     width: scaleWidth(42),
@@ -178,7 +190,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
               ),
             ),
           ),
-          SizedBox(height: scaleHeight(24)),
+          SizedBox(height: scaleHeight(23)), // 섹션 하단 여백
         ],
       );
     }
@@ -188,7 +200,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
       children: [
         SizedBox(height: scaleHeight(24)),
         Container(
-          width: scaleWidth(320.13),
+          width: scaleWidth(320),
           height: scaleHeight(152),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -385,36 +397,36 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                             // 직관 한 마디
                             _buildSection(
                               builder: () => OneWordSectionContent(scrollController: _scrollController,),
-                              cardWidth: 320.13,
-                              cardHeight: 150,
+                              cardWidth: 320,
+                              cardHeight: 180,
                             ),
 
                             // 야구 일기
                             _buildSection(
                               builder: () => DiaryNoteSectionContent(scrollController: _scrollController,),
-                              cardWidth: 320.13,
+                              cardWidth: 320,
                               // cardHeight 제거 - 다중행일 때 자동 높이 조절
                             ),
 
                             // 베스트 플레이어
                             _buildSection(
                               builder: () => BestPlayerSectionContent(scrollController: _scrollController,),
-                              cardWidth: 320.13,
-                              cardHeight: 134,
+                              cardWidth: 320,
+                              cardHeight: 170,
                             ),
 
                             // 함께 직관한 친구
                             _buildSection(
                               builder: () => CheerFriendSectionContent(scrollController: _scrollController,),
-                              cardWidth: 320.13,
-                              cardHeight: 134,
+                              cardWidth: 320,
+                              cardHeight: 170,
                             ),
 
                             // 먹거리 태그
                             _buildSection(
                               builder: () => FoodTagSectionContent(scrollController: _scrollController,),
-                              cardWidth: 320.13,
-                              cardHeight: 128,
+                              cardWidth: 320,
+                              cardHeight: 150,
                             ),
 
                             // 하단 여백
@@ -543,9 +555,9 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
   // 섹션 위젯
   Widget _buildSection({
     required Widget Function() builder,
-    double cardWidth = 320.13,
+    double cardWidth = 320,
     double? cardHeight,
-    double paddingHorz = 18.75,
+    double paddingHorz = 19.5,
   }) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: scaleWidth(paddingHorz)),
@@ -556,7 +568,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
             height: cardHeight != null ? scaleHeight(cardHeight) : null,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(scaleWidth(12)),
+              borderRadius: BorderRadius.circular(scaleWidth(20)),
               boxShadow: [
                 const BoxShadow(
                   color: Color(0x08000000),
@@ -568,9 +580,9 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
             ),
             child: Padding(
               padding: EdgeInsets.only(
-                top: scaleHeight(18),
+                top: scaleHeight(22),
                 right: scaleWidth(16),
-                bottom: scaleHeight(16),
+                bottom: scaleHeight(22),
                 left: scaleWidth(16),
               ),
               child: builder(),
@@ -582,7 +594,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     );
   }
 
-  // 완료 버튼 위젯 (업로드 진행률 포함)
+  // 완료 버튼 위젯
   Widget _buildCompleteButtonArea() {
     return Container(
       color: Colors.white,
@@ -593,31 +605,9 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
       ),
       child: Column(
         children: [
-          // 업로드 진행률 표시
-          if (_isUploading) ...[
-            Container(
-              padding: EdgeInsets.symmetric(vertical: scaleHeight(8)),
-              child: Column(
-                children: [
-                  LinearProgressIndicator(
-                    backgroundColor: AppColors.gray100,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.pri400),
-                  ),
-                  SizedBox(height: scaleHeight(8)),
-                  FixedText(
-                    _uploadStatus,
-                    style: AppFonts.pretendard.c1_m(context).copyWith(
-                      color: AppColors.gray500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: scaleHeight(16)),
-          ],
           // 완료 버튼
           ElevatedButton(
-            onPressed: _isUploading ? null : () async {
+            onPressed: () async {
               try {
                 final recordState = Provider.of<RecordState>(context, listen: false);
 
@@ -628,10 +618,12 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                   return;
                 }
 
-                setState(() {
-                  _isUploading = true;
-                  _uploadStatus = '이미지를 업로드하고 있습니다...';
-                });
+                // 버튼 일시적으로 비활성화
+                final button = context.findRenderObject() as RenderBox?;
+                if (button != null) {
+                  // 중복 클릭 방지를 위해 잠시 비활성화
+                  await Future.delayed(Duration(milliseconds: 100));
+                }
 
                 // 이미지 업로드는 RecordApi.createCompleteRecord 내부에서 처리됨
                 final result = await RecordApi.createCompleteRecord(
@@ -651,11 +643,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                 print('✅ 기록 저장 성공: $result');
                 recordState.reset();
 
-                setState(() {
-                  _isUploading = false;
-                  _uploadStatus = '';
-                });
-
                 Navigator.pushReplacement(
                   context,
                   PageRouteBuilder(
@@ -666,10 +653,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                 );
               } catch (e) {
                 print('❌ 기록 저장 실패: $e');
-                setState(() {
-                  _isUploading = false;
-                  _uploadStatus = '';
-                });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('기록 저장에 실패했습니다: ${e.toString()}'),
@@ -679,35 +662,16 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: _isUploading ? AppColors.gray300 : AppColors.gray700,
+              backgroundColor: AppColors.gray700,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(scaleWidth(8)),
+                borderRadius: BorderRadius.circular(scaleWidth(16)),
               ),
               elevation: 0,
               padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
               minimumSize: Size(scaleWidth(320), scaleHeight(54)),
             ),
-            child: _isUploading
-                ? Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: scaleWidth(20),
-                  height: scaleHeight(20),
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-                SizedBox(width: scaleWidth(12)),
-                FixedText(
-                  '업로드 중...',
-                  style: AppFonts.suite.b2_b(context).copyWith(color: Colors.white),
-                ),
-              ],
-            )
-                : FixedText(
+            child: FixedText(
               '작성 완료',
               style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
             ),
@@ -733,9 +697,9 @@ Widget _buildSectionHeader(BuildContext context, String iconPath, String title, 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FixedText(title, style: AppFonts.pretendard.b2_b(context).copyWith(color: AppColors.gray800)),
+            FixedText(title, style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray800)),
             SizedBox(height: scaleHeight(8)),
-            FixedText(description, style: AppFonts.pretendard.c1_r(context).copyWith(color: AppColors.gray500)),
+            FixedText(description, style: AppFonts.suite.b3_m(context).copyWith(color: AppColors.gray500)),
           ],
         ),
       ),
@@ -760,13 +724,13 @@ Widget _buildInputWithCounter({
     children: [
       Container(
         width: scaleWidth(288),
-        height: isMultiLine ? null : scaleHeight(40),
-        constraints: isMultiLine ? BoxConstraints(minHeight: scaleHeight(40)) : null,
+        height: isMultiLine ? null : scaleHeight(54),
+        constraints: isMultiLine ? BoxConstraints(minHeight: scaleHeight(54)) : null,
         alignment: isMultiLine ? Alignment.topLeft : Alignment.center,
         decoration: BoxDecoration(
           color: AppColors.gray30,
-          borderRadius: BorderRadius.circular(scaleWidth(6)),
-          border: isActive ? Border.all(color: AppColors.pri100, width: 1.0) : null,
+          borderRadius: BorderRadius.circular(scaleWidth(12)),
+          border: isActive ? Border.all(color: AppColors.gray200, width: 1.0) : null,
         ),
         child: TextField(
           controller: controller,
@@ -781,17 +745,17 @@ Widget _buildInputWithCounter({
                 ? EdgeInsets.all(scaleWidth(16))
                 : EdgeInsets.only(left: scaleWidth(16)),
             hintText: hintText,
-            hintStyle: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.gray200, height: 1.0),
+            hintStyle: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray200, height: 1.0),
             border: InputBorder.none,
           ),
           textAlignVertical: isMultiLine ? TextAlignVertical.top : TextAlignVertical.center,
-          style: AppFonts.pretendard.c1_m(context).copyWith(
-            color: isActive ? AppColors.gray950 : AppColors.gray200,
-            height: 1.0,
+          style: AppFonts.pretendard.b3_m(context).copyWith(
+            color: isActive ? Colors.black : AppColors.gray200,
+            height: 1.5,
           ),
         ),
       ),
-      SizedBox(height: scaleHeight(4)),
+      SizedBox(height: scaleHeight(6)),
       Container(
         width: scaleWidth(288),
         child: Row(
@@ -821,12 +785,11 @@ Widget _buildSimpleInput({
 }) {
   return Container(
     width: scaleWidth(288),
-    height: scaleHeight(40),
+    height: scaleHeight(54),
     alignment: Alignment.center,
     decoration: BoxDecoration(
       color: AppColors.gray30,
-      borderRadius: BorderRadius.circular(scaleWidth(6)),
-      border: isActive ? Border.all(color: AppColors.pri100, width: 1.0) : null,
+      borderRadius: BorderRadius.circular(scaleWidth(12)),
     ),
     child: TextField(
       controller: controller,
@@ -836,12 +799,12 @@ Widget _buildSimpleInput({
         isCollapsed: true,
         contentPadding: EdgeInsets.only(left: scaleWidth(16)),
         hintText: hintText,
-        hintStyle: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.gray200, height: 1.0),
+        hintStyle: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray200, height: 1.0),
         border: InputBorder.none,
       ),
       textAlignVertical: TextAlignVertical.center,
-      style: AppFonts.pretendard.c1_m(context).copyWith(
-        color: isActive ? AppColors.gray950 : AppColors.gray200,
+      style: AppFonts.pretendard.b3_m(context).copyWith(
+        color: isActive ? Colors.black : AppColors.gray200,
         height: 1.0,
       ),
     ),
@@ -860,9 +823,9 @@ Widget _buildFoodTagSection({
         context,
         AppImages.food,
         '먹거리 태그',
-        '오늘의 먹거리 태그를 선택해 주세요!',
+        '오늘의 먹거리 태그를 선택해 주세요',
       ),
-      SizedBox(height: scaleHeight(16)),
+      SizedBox(height: scaleHeight(20)),
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -954,9 +917,9 @@ class _OneWordSectionContentState extends State<OneWordSectionContent> {
           context,
           AppImages.oneword,
           '직관 한 마디',
-          '이번 경기의 한 줄 평을 남겨주세요!',
+          '이번 경기의 한 줄 평을 남겨주세요',
         ),
-        SizedBox(height: scaleHeight(12)),
+        SizedBox(height: scaleHeight(18)),
         _buildInputWithCounter(
           context: context,
           controller: _controller,
@@ -985,7 +948,7 @@ class _DiaryNoteSectionContentState extends State<DiaryNoteSectionContent> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   int _currentLength = 0;
-  final int _maxLength = 500;
+  final int _maxLength = 1000;
   bool _isFocused = false;
   bool _isMultiLine = false;
 
@@ -1024,7 +987,7 @@ class _DiaryNoteSectionContentState extends State<DiaryNoteSectionContent> {
       textDirection: ui.TextDirection.ltr,
       maxLines: 1,
     );
-    textPainter.layout(maxWidth: scaleWidth(288) - scaleWidth(32));
+    textPainter.layout(maxWidth: scaleWidth(230));
     return textPainter.didExceedMaxLines;
   }
 
@@ -1056,9 +1019,9 @@ class _DiaryNoteSectionContentState extends State<DiaryNoteSectionContent> {
           context,
           AppImages.diary,
           '야구 일기',
-          '오늘의 야구 일기를 적어주세요!',
+          '오늘의 야구 일기를 적어주세요',
         ),
-        SizedBox(height: scaleHeight(12)),
+        SizedBox(height: scaleHeight(18)),
         _buildInputWithCounter(
           context: context,
           controller: _controller,
@@ -1139,9 +1102,9 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> {
           context,
           AppImages.bestplayer,
           '베스트 플레이어',
-          '오늘의 베스트 플레이어를 뽑아주세요!',
+          '오늘의 베스트 플레이어를 뽑아주세요',
         ),
-        SizedBox(height: scaleHeight(12)),
+        SizedBox(height: scaleHeight(18)),
         _buildSimpleInput(
           context: context,
           controller: _controller,
@@ -1221,16 +1184,16 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> {
           context,
           AppImages.cheer,
           '함께 직관한 친구',
-          '오늘의 경기를 함께 직관한 친구를 적어주세요!',
+          '경기를 함께 직관한 친구를 적어주세요',
         ),
-        SizedBox(height: scaleHeight(12)),
+        SizedBox(height: scaleHeight(18)),
         _buildSimpleInput(
           context: context,
           controller: _controller,
           focusNode: _focusNode,
           isActive: _controller.text.isNotEmpty,
           onTap: _scrollToTextField,
-          hintText: '팔로우 한 친구만 검색 가능해요!',
+          hintText: '팔로우 한 친구만 검색 가능해요',
         ),
       ],
     );

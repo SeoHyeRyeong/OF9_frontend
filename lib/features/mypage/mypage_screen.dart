@@ -215,293 +215,270 @@ class _MyPageScreenState extends State<MyPageScreen> {
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: _refreshData,
-            child: Stack(
-              children: [
-                // 상단 고정 영역 (프로필~드롭박스)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        // 우측상단 톱니바퀴
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                                top: scaleHeight(10),
-                                right: scaleWidth(20)
+            child: SingleChildScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  // 우측상단 톱니바퀴
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                          top: scaleHeight(10),
+                          right: scaleWidth(20)
+                      ),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
                             ),
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const SettingsScreen(),
-                                  ),
-                                );
-                              },
-                              child: SvgPicture.asset(
-                                AppImages.Setting,
-                                width: scaleWidth(24),
-                                height: scaleHeight(24),
-                              ),
-                            ),
-                          ),
+                          );
+                        },
+                        child: SvgPicture.asset(
+                          AppImages.Setting,
+                          width: scaleWidth(24),
+                          height: scaleHeight(24),
                         ),
-                        // 프로필 이미지
-                        SizedBox(height: scaleHeight(8)),
-                        Center(
-                          child: GestureDetector(
-                            onTap: () => print("프로필 이미지 선택"),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(scaleHeight(14)),
-                              child: profileImageUrl != null
-                                  ? Image.network(
-                                profileImageUrl!,
-                                width: scaleWidth(100),
-                                height: scaleHeight(100),
-                                fit: BoxFit.cover,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    width: scaleWidth(100),
-                                    height: scaleHeight(100),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.gray100,
-                                      borderRadius: BorderRadius.circular(scaleHeight(14)),
-                                    ),
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: AppColors.pri400,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (_, __, ___) => SvgPicture.asset(
-                                  AppImages.profile,
-                                  width: scaleWidth(100),
-                                  height: scaleHeight(100),
-                                  fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  // 프로필 이미지
+                  SizedBox(height: scaleHeight(8)),
+                  Center(
+                    child: GestureDetector(
+                      onTap: () => print("프로필 이미지 선택"),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(scaleHeight(14)),
+                        child: profileImageUrl != null
+                            ? Image.network(
+                          profileImageUrl!,
+                          width: scaleWidth(100),
+                          height: scaleHeight(100),
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: scaleWidth(100),
+                              height: scaleHeight(100),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray100,
+                                borderRadius: BorderRadius.circular(scaleHeight(14)),
+                              ),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.pri400,
                                 ),
-                              )
-                                  : SvgPicture.asset(
-                                AppImages.profile,
-                                width: scaleWidth(100),
-                                height: scaleHeight(100),
-                                fit: BoxFit.cover,
                               ),
+                            );
+                          },
+                          errorBuilder: (_, __, ___) => SvgPicture.asset(
+                            AppImages.profile,
+                            width: scaleWidth(100),
+                            height: scaleHeight(100),
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                            : SvgPicture.asset(
+                          AppImages.profile,
+                          width: scaleWidth(100),
+                          height: scaleHeight(100),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // 닉네임
+                  SizedBox(height: scaleHeight(14)),
+                  isLoading
+                      ? CircularProgressIndicator()
+                      : FixedText(
+                    nickname,
+                    style: AppFonts.pretendard.b1_b(context).copyWith(color: AppColors.black),
+                  ),
+                  // 구단명
+                  SizedBox(height: scaleHeight(12)),
+                  isLoading
+                      ? Container()
+                      : FixedText(
+                    "$favTeam 팬",
+                    style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray300),
+                  ),
+                  // 게시글/팔로잉/팔로워
+                  SizedBox(height: scaleHeight(16)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // 게시글
+                      Column(
+                        children: [
+                          FixedText(postCount.toString(), style: AppFonts.pretendard.b2_b(context)),
+                          SizedBox(height: scaleHeight(4)),
+                          FixedText("게시글", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
+                        ],
+                      ),
+                      SizedBox(width: scaleWidth(44.5)),
+                      // 팔로잉
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FollowingScreen(),
                             ),
+                          );
+                        },
+                        child: Column(
+                          children: [
+                            FixedText(followingCount.toString(), style: AppFonts.pretendard.b2_b(context)),
+                            SizedBox(height: scaleHeight(4)),
+                            FixedText("팔로잉", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: scaleWidth(44.5)),
+                      // 팔로워
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FollowerScreen(),
+                            ),
+                          );
+                        },
+                        child: Column(
+                          children: [
+                            FixedText(
+                              followerCount >= 1000
+                                  ? "${(followerCount / 1000).toStringAsFixed(1)}K"
+                                  : followerCount.toString(),
+                              style: AppFonts.pretendard.b2_b(context),
+                            ),
+                            SizedBox(height: scaleHeight(4)),
+                            FixedText("팔로워", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  // 버튼
+                  SizedBox(height: scaleHeight(24)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                    child: SizedBox(
+                      width: scaleWidth(320),
+                      height: scaleHeight(52),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.gray600,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(scaleHeight(8))
                           ),
                         ),
-                        // 닉네임
-                        SizedBox(height: scaleHeight(14)),
-                        isLoading
-                            ? CircularProgressIndicator()
-                            : FixedText(
-                          nickname,
-                          style: AppFonts.pretendard.b1_b(context).copyWith(color: AppColors.black),
-                        ),
-                        // 구단명
-                        SizedBox(height: scaleHeight(12)),
-                        isLoading
-                            ? Container()
-                            : FixedText(
-                          "$favTeam 팬",
-                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray300),
-                        ),
-                        // 게시글/팔로잉/팔로워
-                        SizedBox(height: scaleHeight(16)),
-                        Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // 게시글
-                            Column(
-                              children: [
-                                FixedText(postCount.toString(), style: AppFonts.pretendard.b2_b(context)),
-                                SizedBox(height: scaleHeight(4)),
-                                FixedText("게시글", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
-                              ],
+                            SvgPicture.asset(
+                                AppImages.Share,
+                                width: scaleWidth(16),
+                                height: scaleHeight(16)
                             ),
-                            SizedBox(width: scaleWidth(44.5)),
-                            // 팔로잉
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const FollowingScreen(),
-                                  ),
-                                );
-                              },
-                              child: Column(
-                                children: [
-                                  FixedText(followingCount.toString(), style: AppFonts.pretendard.b2_b(context)),
-                                  SizedBox(height: scaleHeight(4)),
-                                  FixedText("팔로잉", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: scaleWidth(44.5)),
-                            // 팔로워
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const FollowerScreen(),
-                                  ),
-                                );
-                              },
-                              child: Column(
-                                children: [
-                                  FixedText(
-                                    followerCount >= 1000
-                                        ? "${(followerCount / 1000).toStringAsFixed(1)}K"
-                                        : followerCount.toString(),
-                                    style: AppFonts.pretendard.b2_b(context),
-                                  ),
-                                  SizedBox(height: scaleHeight(4)),
-                                  FixedText("팔로워", style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400)),
-                                ],
-                              ),
+                            SizedBox(width: scaleWidth(11)),
+                            FixedText(
+                                "프로필 공유하기",
+                                style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.white)
                             ),
                           ],
                         ),
-                        // 버튼
-                        SizedBox(height: scaleHeight(24)),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                          child: SizedBox(
-                            width: scaleWidth(320),
-                            height: scaleHeight(52),
-                            child: ElevatedButton(
-                              onPressed: () {},
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.gray600,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(scaleHeight(8))
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SvgPicture.asset(
-                                      AppImages.Share,
-                                      width: scaleWidth(16),
-                                      height: scaleHeight(16)
-                                  ),
-                                  SizedBox(width: scaleWidth(11)),
-                                  FixedText(
-                                      "프로필 공유하기",
-                                      style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.white)
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: scaleHeight(24)),
-                        // 탭 선택
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(43.5)),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: List.generate(3, (index) {
-                              final images = [AppImages.calendar, AppImages.list, AppImages.gallery];
-                              return GestureDetector(
-                                onTap: () => setState(() => selectedTabIndex = index),
-                                child: Container(
-                                  width: scaleWidth(51),
-                                  height: scaleHeight(36),
-                                  alignment: Alignment.center,
-                                  color: Colors.transparent,
-                                  child: SvgPicture.asset(
-                                    images[index],
-                                    width: scaleWidth(24),
-                                    height: scaleHeight(24),
-                                    color: selectedTabIndex == index ? AppColors.gray600 : AppColors.trans200,
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-                        // 가로 구분선
-                        SizedBox(height: scaleHeight(0)),
-                        Divider(color: AppColors.gray100, thickness: 1),
-                        // 드롭박스
-                        SizedBox(height: scaleHeight(16)),
-                        Padding(
-                          padding: EdgeInsets.only(left: scaleWidth(20)),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              // 경기 구단 드롭박스
-                              _buildDropdownBox(scaleWidth(83), "경기 구단"),
-                              SizedBox(width: scaleWidth(6)),
-                              _buildDropdownBox(scaleWidth(61), "구장"),
-                              SizedBox(width: scaleWidth(6)),
-                              _buildDropdownBox(scaleWidth(83), "승패 여부"),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: scaleHeight(16)),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-                // 스크롤 가능한 본문 (상단 고정 영역 제외)
-                Positioned(
-                  top: scaleHeight(474),
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: SingleChildScrollView(
-                    child: Column(
+                  SizedBox(height: scaleHeight(24)),
+                  // 탭 선택
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(43.5)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(3, (index) {
+                        final images = [AppImages.calendar, AppImages.list, AppImages.gallery];
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedTabIndex = index),
+                          child: Container(
+                            width: scaleWidth(51),
+                            height: scaleHeight(36),
+                            alignment: Alignment.center,
+                            color: Colors.transparent,
+                            child: SvgPicture.asset(
+                              images[index],
+                              width: scaleWidth(24),
+                              height: scaleHeight(24),
+                              color: selectedTabIndex == index ? AppColors.gray600 : AppColors.trans200,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                  // 가로 구분선
+                  SizedBox(height: scaleHeight(0)),
+                  Divider(color: AppColors.gray100, thickness: 1),
+                  // 드롭박스
+                  SizedBox(height: scaleHeight(16)),
+                  Padding(
+                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        // 피드 그리드 (모아보기 탭 기준)
-                        if (isLoadingRecords)
-                          Padding(
-                            padding: EdgeInsets.all(scaleWidth(50)),
-                            child: CircularProgressIndicator(),
-                          )
-                        else if (feedList.isEmpty)
-                          Padding(
-                            padding: EdgeInsets.all(scaleWidth(50)),
-                            child: Text(
-                              '작성한 기록이 없습니다.',
-                              style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
-                            ),
-                          )
-                        else
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(5)),
-                            child: GridView.builder(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: feedList.length,
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: scaleWidth(5),
-                                mainAxisSpacing: scaleHeight(5),
-                                childAspectRatio: 0.7,
-                              ),
-                              itemBuilder: (context, index) {
-                                final record = feedList[index];
-                                return _buildGridItem(record, index);
-                              },
-                            ),
-                          ),
-                        SizedBox(height: scaleHeight(100)), // 하단 내비게이션 바 공간 확보
+                        // 경기 구단 드롭박스
+                        _buildDropdownBox(scaleWidth(83), "경기 구단"),
+                        SizedBox(width: scaleWidth(6)),
+                        _buildDropdownBox(scaleWidth(61), "구장"),
+                        SizedBox(width: scaleWidth(6)),
+                        _buildDropdownBox(scaleWidth(83), "승패 여부"),
                       ],
                     ),
                   ),
-                ),
-              ],
+                  SizedBox(height: scaleHeight(16)),
+                  // 피드 그리드 (모아보기 탭 기준)
+                  if (isLoadingRecords)
+                    Padding(
+                      padding: EdgeInsets.all(scaleWidth(50)),
+                      child: CircularProgressIndicator(),
+                    )
+                  else if (feedList.isEmpty)
+                    Padding(
+                      padding: EdgeInsets.all(scaleWidth(50)),
+                      child: Text(
+                        '작성한 기록이 없습니다.',
+                        style: AppFonts.pretendard.b3_m(context).copyWith(color: AppColors.gray400),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(5)),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: feedList.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: scaleWidth(5),
+                          mainAxisSpacing: scaleHeight(5),
+                          childAspectRatio: 0.7,
+                        ),
+                        itemBuilder: (context, index) {
+                          final record = feedList[index];
+                          return _buildGridItem(record, index);
+                        },
+                      ),
+                    ),
+                  SizedBox(height: scaleHeight(100)), // 하단 내비게이션 바 공간 확보
+                ],
+              ),
             ),
           ),
         ),

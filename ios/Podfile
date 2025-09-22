@@ -27,17 +27,38 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_ios_podfile_setup
 
+# iOS 버전 변수 추가
+$iOSVersion = '15.5'
+
 target 'Runner' do
   use_frameworks!
+  use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  
+  # 한국어 텍스트 인식을 위한 ML Kit 모듈 추가
+  pod 'GoogleMLKit/TextRecognitionKorean', '~> 7.0.0'
+  
   target 'RunnerTests' do
     inherit! :search_paths
   end
 end
 
 post_install do |installer|
+  # armv7 아키텍처 제외 및 iOS 버전 설정 추가
+  installer.pods_project.build_configurations.each do |config|
+    config.build_settings["EXCLUDED_ARCHS[sdk=*]"] = "armv7"
+    config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
+  end
+  
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    
+    # 각 타겟의 iOS 버전 설정
+    target.build_configurations.each do |config|
+      if Gem::Version.new($iOSVersion) > Gem::Version.new(config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'])
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
+      end
+    end
   end
 end

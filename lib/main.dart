@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:frontend/features/onboarding_login/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +59,11 @@ class MyApp extends StatelessWidget {
         title: 'Flutter Kakao Login',
         theme: ThemeData(
           primarySwatch: Colors.blue,
+          textTheme: GoogleFonts.notoSansKrTextTheme(
+            Theme.of(context).textTheme,
+          ).apply(
+            fontFamilyFallback: ['NotoSansKR', 'AppleSDGothicNeo', 'MalgunGothic'],
+          ),
         ),
         debugShowCheckedModeBanner: false,
         builder: (context, child) {

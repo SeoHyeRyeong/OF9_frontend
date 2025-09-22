@@ -178,6 +178,14 @@ class _SuiteFonts {
     letterSpacing: -0.36,
   );
 
+  TextStyle c1_m_narrow(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(12),
+    height: 1.45,
+    letterSpacing: -0.36,
+  );
+
   TextStyle c2_b(BuildContext context) => TextStyle(
     fontFamily: _fontFamily,
     fontWeight: FontWeight.w700,
@@ -426,6 +434,14 @@ class _PretendardFonts {
     fontWeight: FontWeight.w600,
     fontSize: scaleFont(12),
     height: 1.0,
+    letterSpacing: -0.36,
+  );
+
+  TextStyle c1_m_narrow(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(12),
+    height: 1.45,
     letterSpacing: -0.36,
   );
 

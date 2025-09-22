@@ -159,11 +159,15 @@ class _FeedScreenState extends State<FeedScreen> {
   String _getTimeAgo(String createdAt) {
     try {
       // "2025-05-26 17:42:26" 형태의 문자열을 DateTime으로 변환
-      final DateTime recordTime = DateTime.parse(
-        createdAt.replaceAll(' ', 'T'),
+      final DateTime recordTimeUTC = DateTime.parse(
+        createdAt.replaceAll(' ', 'T') + 'Z',
       );
-      final DateTime now = DateTime.now();
-      final Duration difference = now.difference(recordTime);
+
+      // UTC 시간을 한국 로컬 시간으로 변환
+      final DateTime recordTime = recordTimeUTC.toLocal();
+
+      final DateTime now = DateTime.now(); // 현재 한국 로컬 시간
+      final Duration difference = now.difference(recordTime); // 동일한 시간대(KST)로 차이 계산
 
       // 1년 이상인 경우
       final int yearDiff = now.year - recordTime.year;

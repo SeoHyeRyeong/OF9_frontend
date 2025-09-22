@@ -41,6 +41,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
   final int maxImages = 20;
   final ScrollController _scrollController = ScrollController();
 
+  // 업로드 상태 관리
+  bool _isUploading = false;
+  String _uploadStatus = '';
+
   /// 날짜 포맷팅 함수 (2025 - 04 - 15 (수) 14시 00분 → 2025.04.15(수))
   String? formatDisplayDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return null;
@@ -62,7 +66,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     }
   }
 
-  /// 갤러리 이미지 선택, 삭제 관련 함수
   /// 갤러리에서 이미지 선택
   Future<void> _pickImages() async {
     if (selectedImages.length >= maxImages) {
@@ -121,7 +124,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
   }
 
   /// 갤러리 위젯 빌드
-  /// 사진과 영상을 추가해 주세요 기능 구현 + 뷰 디자인
   Widget _buildGallerySection() {
     if (selectedImages.isEmpty) {
       return Column(
@@ -181,7 +183,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
       );
     }
 
-    // 이미지가 선택된 상태
+    // 이미지가 선택된 상태 - 로컬 파일로 표시 (업로드 전)
     return Column(
       children: [
         SizedBox(height: scaleHeight(24)),
@@ -204,7 +206,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                     margin: EdgeInsets.only(right: scaleWidth(10)),
                     child: Stack(
                       children: [
-                        // 이미지
+                        // 로컬 파일 이미지 표시
                         Container(
                           width: scaleWidth(112),
                           height: scaleHeight(152),
@@ -219,14 +221,20 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                               fit: BoxFit.cover,
                               width: double.infinity,
                               height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[300],
+                                  child: Icon(Icons.error, color: Colors.red),
+                                );
+                              },
                             ),
                           ),
                         ),
                         // 대표 배지 (첫 번째 이미지)
                         if (index == 0)
                           Container(
-                            width: scaleWidth(112), // Stack과 같은 크기
-                            height: scaleHeight(152), // Stack과 같은 크기
+                            width: scaleWidth(112),
+                            height: scaleHeight(152),
                             alignment: Alignment.topLeft,
                             padding: EdgeInsets.only(
                               top: scaleHeight(8),
@@ -260,8 +268,8 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                           ),
                         // 삭제 버튼 (오른쪽 상단)
                         Container(
-                          width: scaleWidth(112), // Stack과 같은 크기
-                          height: scaleHeight(152), // Stack과 같은 크기
+                          width: scaleWidth(112),
+                          height: scaleHeight(152),
                           alignment: Alignment.topRight,
                           padding: EdgeInsets.only(
                             top: scaleHeight(8),
@@ -428,7 +436,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     );
   }
 
-
   // 뒤로가기 위젯
   Widget _buildBackButtonArea() {
     return Container(
@@ -533,7 +540,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     );
   }
 
-  // 직관 한 마디, 야구 일기, 베스트플레이어, 함께 직관한 친구, 먹거리 태그 위젯
+  // 섹션 위젯
   Widget _buildSection({
     required Widget Function() builder,
     double cardWidth = 320.13,
@@ -575,7 +582,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     );
   }
 
-  // 완료 버튼 위젯
+  // 완료 버튼 위젯 (업로드 진행률 포함)
   Widget _buildCompleteButtonArea() {
     return Container(
       color: Colors.white,
@@ -584,66 +591,128 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
         horizontal: scaleWidth(20),
         vertical: scaleHeight(24),
       ),
-      child: ElevatedButton(
-        onPressed: () async {
-          try {
-            final recordState = Provider.of<RecordState>(context, listen: false);
-
-            if (!recordState.isBasicInfoComplete) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('기본 정보가 누락되었습니다.')),
-              );
-              return;
-            }
-
-            final result = await RecordApi.createCompleteRecord(
-              userId: recordState.userId!,
-              gameId: recordState.gameId!,
-              seatInfo: recordState.seatInfo!,
-              emotionCode: recordState.emotionCode!,
-              stadium: recordState.stadium!,
-              comment: recordState.comment,
-              longContent: recordState.longContent,
-              bestPlayer: recordState.bestPlayer,
-              companionIds: recordState.companions, // companions -> companionIds로 변경
-              foodTags: recordState.foodTags,
-              imagePaths: recordState.imagePaths,
-            );
-
-            print('✅ 기록 저장 성공: $result');
-            recordState.reset();
-            Navigator.pushReplacement(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation1, animation2) => const FeedScreen(showCompletionPopup: true),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
+      child: Column(
+        children: [
+          // 업로드 진행률 표시
+          if (_isUploading) ...[
+            Container(
+              padding: EdgeInsets.symmetric(vertical: scaleHeight(8)),
+              child: Column(
+                children: [
+                  LinearProgressIndicator(
+                    backgroundColor: AppColors.gray100,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.pri400),
+                  ),
+                  SizedBox(height: scaleHeight(8)),
+                  FixedText(
+                    _uploadStatus,
+                    style: AppFonts.pretendard.c1_m(context).copyWith(
+                      color: AppColors.gray500,
+                    ),
+                  ),
+                ],
               ),
-            );
-          } catch (e) {
-            print('❌ 기록 저장 실패: $e');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('기록 저장에 실패했습니다: ${e.toString()}'),
-                backgroundColor: Colors.red,
+            ),
+            SizedBox(height: scaleHeight(16)),
+          ],
+          // 완료 버튼
+          ElevatedButton(
+            onPressed: _isUploading ? null : () async {
+              try {
+                final recordState = Provider.of<RecordState>(context, listen: false);
+
+                if (!recordState.isBasicInfoComplete) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('기본 정보가 누락되었습니다.')),
+                  );
+                  return;
+                }
+
+                setState(() {
+                  _isUploading = true;
+                  _uploadStatus = '이미지를 업로드하고 있습니다...';
+                });
+
+                // 이미지 업로드는 RecordApi.createCompleteRecord 내부에서 처리됨
+                final result = await RecordApi.createCompleteRecord(
+                  userId: recordState.userId!,
+                  gameId: recordState.gameId!,
+                  seatInfo: recordState.seatInfo!,
+                  emotionCode: recordState.emotionCode!,
+                  stadium: recordState.stadium!,
+                  comment: recordState.comment,
+                  longContent: recordState.longContent,
+                  bestPlayer: recordState.bestPlayer,
+                  companionIds: recordState.companions,
+                  foodTags: recordState.foodTags,
+                  imagePaths: selectedImages, // 로컬 이미지 경로 전달
+                );
+
+                print('✅ 기록 저장 성공: $result');
+                recordState.reset();
+
+                setState(() {
+                  _isUploading = false;
+                  _uploadStatus = '';
+                });
+
+                Navigator.pushReplacement(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation1, animation2) => const FeedScreen(showCompletionPopup: true),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              } catch (e) {
+                print('❌ 기록 저장 실패: $e');
+                setState(() {
+                  _isUploading = false;
+                  _uploadStatus = '';
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('기록 저장에 실패했습니다: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _isUploading ? AppColors.gray300 : AppColors.gray700,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(scaleWidth(8)),
               ),
-            );
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.gray700,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(scaleWidth(8)),
+              elevation: 0,
+              padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
+              minimumSize: Size(scaleWidth(320), scaleHeight(54)),
+            ),
+            child: _isUploading
+                ? Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: scaleWidth(20),
+                  height: scaleHeight(20),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: scaleWidth(12)),
+                FixedText(
+                  '업로드 중...',
+                  style: AppFonts.suite.b2_b(context).copyWith(color: Colors.white),
+                ),
+              ],
+            )
+                : FixedText(
+              '작성 완료',
+              style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
+            ),
           ),
-          elevation: 0,
-          padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
-          minimumSize: Size(scaleWidth(320), scaleHeight(54)),
-        ),
-        child: FixedText(
-          '작성 완료',
-          style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
-        ),
+        ],
       ),
     );
   }

@@ -3,9 +3,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
-import 'dart:convert';
-import 'dart:typed_data';
-
 
 class RecordApi {
   static final _kakaoAuth = KakaoAuthService();
@@ -92,11 +89,122 @@ class RecordApi {
   }
 
   //=====================================================================================
+  // S3 업로드 관련
+  //=====================================================================================
+
+  /// Pre-signed URL 요청
+  static Future<Map<String, String>> getPresignedUrl({
+    required String domain, // "profiles" 또는 "records"
+    required String fileName,
+  }) async {
+    final requestBody = {
+      'domain': domain,
+      'fileName': fileName,
+    };
+
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/uploads/presigned-url'),
+      method: 'POST',
+      body: jsonEncode(requestBody),
+    );
+
+    print('📤 Pre-signed URL 요청: $domain/$fileName');
+    print('📥 Pre-signed URL 응답: ${res.statusCode} - ${res.body}');
+
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      final responseData = jsonDecode(utf8.decode(res.bodyBytes));
+      final data = responseData['data'];
+      return {
+        'presignedUrl': data['presignedUrl'],
+        'finalUrl': data['finalUrl'],
+      };
+    } else {
+      throw Exception('Pre-signed URL 요청 실패: ${res.statusCode}');
+    }
+  }
+
+  /// S3에 파일 직접 업로드
+  static Future<void> uploadFileToS3({
+    required String presignedUrl,
+    required File file,
+  }) async {
+    try {
+      final bytes = await file.readAsBytes();
+      final fileName = file.path.split('/').last;
+
+      // 파일 확장자로 Content-Type 결정
+      String contentType = 'application/octet-stream';
+      if (fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) {
+        contentType = 'image/jpeg';
+      } else if (fileName.toLowerCase().endsWith('.png')) {
+        contentType = 'image/png';
+      } else if (fileName.toLowerCase().endsWith('.mp4')) {
+        contentType = 'video/mp4';
+      }
+
+      final response = await http.put(
+        Uri.parse(presignedUrl),
+        headers: {
+          'Content-Type': contentType,
+          'Content-Length': bytes.length.toString(),
+        },
+        body: bytes,
+      );
+
+      print('📤 S3 업로드: ${file.path}');
+      print('📥 S3 업로드 응답: ${response.statusCode}');
+
+      if (response.statusCode != 200) {
+        throw Exception('S3 업로드 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ S3 업로드 에러: $e');
+      rethrow;
+    }
+  }
+
+  /// 여러 이미지를 S3에 업로드하고 finalUrl 리스트 반환
+  static Future<List<String>> uploadMultipleImages({
+    required List<String> imagePaths,
+    required String domain, // "records" 또는 "profiles"
+  }) async {
+    List<String> finalUrls = [];
+
+    try {
+      // 1단계: 모든 파일에 대한 Pre-signed URL 요청 (병렬 처리)
+      List<Future<Map<String, String>>> urlRequests = [];
+      for (String imagePath in imagePaths) {
+        final fileName = imagePath.split('/').last;
+        urlRequests.add(getPresignedUrl(domain: domain, fileName: fileName));
+      }
+
+      final urlResults = await Future.wait(urlRequests);
+
+      // 2단계: 모든 파일을 S3에 업로드 (병렬 처리)
+      List<Future<void>> uploadTasks = [];
+      for (int i = 0; i < imagePaths.length; i++) {
+        final file = File(imagePaths[i]);
+        final presignedUrl = urlResults[i]['presignedUrl']!;
+        uploadTasks.add(uploadFileToS3(presignedUrl: presignedUrl, file: file));
+        finalUrls.add(urlResults[i]['finalUrl']!);
+      }
+
+      await Future.wait(uploadTasks);
+
+      print('✅ 모든 이미지 업로드 완료: ${finalUrls.length}개');
+      return finalUrls;
+
+    } catch (e) {
+      print('❌ 다중 이미지 업로드 실패: $e');
+      rethrow;
+    }
+  }
+
+  //=====================================================================================
   // 직관 기록
   //=====================================================================================
 
-  /// 직관 기록 등록
-  /// 모든 기록을 한 번에 업로드 (JSON + Base64 방식)
+  /// 직관 기록 등록 (S3 URL 방식)
   static Future<Map<String, dynamic>> createCompleteRecord({
     required int userId,
     required String gameId,
@@ -110,22 +218,13 @@ class RecordApi {
     List<String>? foodTags,
     List<String>? imagePaths,
   }) async {
-    // 이미지를 Base64로 인코딩
-    List<String> base64Images = [];
+    // 이미지가 있다면 S3에 업로드하고 URL 받기
+    List<String> mediaUrls = [];
     if (imagePaths != null && imagePaths.isNotEmpty) {
-      for (String imagePath in imagePaths) {
-        final file = File(imagePath);
-        if (await file.exists()) {
-          try {
-            final bytes = await file.readAsBytes();
-            final base64String = base64Encode(bytes);
-            base64Images.add(base64String);
-            print('📤 이미지 Base64 인코딩 완료: ${imagePath}');
-          } catch (e) {
-            print('❌이미지 인코딩 실패: $imagePath, 에러: $e');
-          }
-        }
-      }
+      mediaUrls = await uploadMultipleImages(
+        imagePaths: imagePaths,
+        domain: 'records',
+      );
     }
 
     final requestBody = {
@@ -139,11 +238,11 @@ class RecordApi {
       if (bestPlayer != null && bestPlayer.isNotEmpty) 'bestPlayer': bestPlayer,
       if (companionIds != null && companionIds.isNotEmpty) 'companions': companionIds,
       if (foodTags != null && foodTags.isNotEmpty) 'foodTags': foodTags,
-      if (base64Images.isNotEmpty) 'mediaUrls': base64Images,
+      if (mediaUrls.isNotEmpty) 'mediaUrls': mediaUrls,
     };
 
-    print('📤 기록 업로드 요청 본문: ${jsonEncode(requestBody).length} bytes');
-    print('📤 Base64 이미지 개수: ${base64Images.length}');
+    print('📤 기록 업로드 요청 본문: ${jsonEncode(requestBody)}');
+    print('📤 미디어 URL 개수: ${mediaUrls.length}');
 
     final res = await _makeRequestWithRetry(
       uri: Uri.parse('$baseUrl/records'),
@@ -187,7 +286,7 @@ class RecordApi {
     }
   }
 
-  /// 직관 기록 수정 (디테일한 정보 추가)
+  /// 직관 기록 수정
   static Future<Map<String, dynamic>> updateRecord({
     required String recordId,
     String? comment,
@@ -197,22 +296,13 @@ class RecordApi {
     List<String>? foodTags,
     List<String>? imagePaths,
   }) async {
-    // 이미지를 Base64로 인코딩
-    List<String> base64Images = [];
+    // 이미지가 있다면 S3에 업로드하고 URL 받기
+    List<String> mediaUrls = [];
     if (imagePaths != null && imagePaths.isNotEmpty) {
-      for (String imagePath in imagePaths) {
-        final file = File(imagePath);
-        if (await file.exists()) {
-          try {
-            final bytes = await file.readAsBytes();
-            final base64String = base64Encode(bytes);
-            base64Images.add(base64String);
-            print('📤 이미지 Base64 인코딩 완료: ${imagePath}');
-          } catch (e) {
-            print('❌ 이미지 인코딩 실패: $imagePath, 에러: $e');
-          }
-        }
-      }
+      mediaUrls = await uploadMultipleImages(
+        imagePaths: imagePaths,
+        domain: 'records',
+      );
     }
 
     final requestBody = {
@@ -221,7 +311,7 @@ class RecordApi {
       if (bestPlayer != null) 'bestPlayer': bestPlayer,
       if (companionIds != null) 'companions': companionIds,
       if (foodTags != null) 'foodTags': foodTags,
-      if (base64Images.isNotEmpty) 'mediaUrls': base64Images,
+      if (mediaUrls.isNotEmpty) 'mediaUrls': mediaUrls,
     };
 
     print('📤 기록 수정 요청 본문: ${jsonEncode(requestBody)}');
@@ -237,7 +327,7 @@ class RecordApi {
 
     if (res.statusCode == 200) {
       final responseData = jsonDecode(utf8.decode(res.bodyBytes));
-      return responseData['data']; // ApiResponse의 data 필드 반환
+      return responseData['data'];
     } else {
       throw Exception('기록 수정 실패: ${res.statusCode}');
     }
@@ -255,7 +345,7 @@ class RecordApi {
 
     if (res.statusCode == 200) {
       final responseData = jsonDecode(utf8.decode(res.bodyBytes));
-      return responseData['data']; // ApiResponse의 data 필드 반환
+      return responseData['data'];
     } else {
       throw Exception('기록 상세 조회 실패: ${res.statusCode}');
     }
@@ -274,7 +364,6 @@ class RecordApi {
       throw Exception('기록 삭제 실패: ${res.statusCode}');
     }
   }
-
 
   //=====================================================================================
   // 마이페이지
@@ -335,8 +424,6 @@ class RecordApi {
     }
   }
 
-
-  /// 기존 getRecordById 메서드는 getRecordDetail로 통일했으므로 제거하거나 별칭으로 유지
   @Deprecated('Use getRecordDetail instead')
   static Future<Map<String, dynamic>> getRecordById(String recordId) async {
     return getRecordDetail(recordId);

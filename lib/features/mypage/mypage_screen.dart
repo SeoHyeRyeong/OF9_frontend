@@ -9,7 +9,6 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/api/user_api.dart';
 import 'package:frontend/api/record_api.dart';
-import 'dart:convert';
 import 'package:frontend/features/mypage/settings_screen.dart';
 import 'package:frontend/features/mypage/follower_screen.dart';
 import 'package:frontend/features/mypage/following_screen.dart';
@@ -67,12 +66,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
         favTeam = "정보 불러오기 실패";
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('사용자 정보를 불러오는데 실패했습니다.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('사용자 정보를 불러오는데 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -104,6 +105,100 @@ class _MyPageScreenState extends State<MyPageScreen> {
       isLoadingRecords = true;
     });
     await Future.wait([_loadUserInfo(), _loadMyRecords()]);
+  }
+
+  /// 그리드 아이템 빌드 (S3 URL 방식)
+  Widget _buildGridItem(Map<String, dynamic> record, int index) {
+    return GestureDetector(
+      onTap: () => print('기록 상세보기: ${record['recordId']}'),
+      child: Container(
+        width: scaleWidth(112),
+        height: scaleHeight(152),
+        child: Stack(
+          children: [
+            // S3 URL로 이미지 표시
+            record['mediaUrls'] != null && record['mediaUrls'].isNotEmpty
+                ? ClipRRect(
+              borderRadius: BorderRadius.circular(scaleWidth(8)),
+              child: Image.network(
+                record['mediaUrls'][0], // 첫 번째 이미지 URL
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.gray50,
+                      borderRadius: BorderRadius.circular(scaleWidth(8)),
+                    ),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                            : null,
+                        strokeWidth: 2,
+                        color: AppColors.pri400,
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (_, __, ___) => _buildPlaceholder(record),
+              ),
+            )
+                : _buildPlaceholder(record),
+            // 날짜 오버레이
+            Positioned(
+              top: 8,
+              left: 10,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(scaleHeight(6)),
+                ),
+                child: Text(
+                  record['gameDate'] ?? '',
+                  style: AppFonts.pretendard.c3_sb(context).copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder(Map<String, dynamic> record) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(scaleWidth(8)),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image,
+              size: scaleWidth(32),
+              color: AppColors.gray300,
+            ),
+            SizedBox(height: scaleHeight(8)),
+            Text(
+              record['gameDate'] ?? '',
+              style: AppFonts.pretendard.c2_b(context).copyWith(
+                color: AppColors.gray400,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -143,10 +238,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation1, animation2) => const SettingsScreen(),
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SettingsScreen(),
                                   ),
                                 );
                               },
@@ -171,6 +264,23 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                 width: scaleWidth(100),
                                 height: scaleHeight(100),
                                 fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    width: scaleWidth(100),
+                                    height: scaleHeight(100),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.gray100,
+                                      borderRadius: BorderRadius.circular(scaleHeight(14)),
+                                    ),
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.pri400,
+                                      ),
+                                    ),
+                                  );
+                                },
                                 errorBuilder: (_, __, ___) => SvgPicture.asset(
                                   AppImages.profile,
                                   width: scaleWidth(100),
@@ -222,10 +332,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation1, animation2) => const FollowingScreen(),
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
+                                  MaterialPageRoute(
+                                    builder: (context) => const FollowingScreen(),
                                   ),
                                 );
                               },
@@ -243,10 +351,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation1, animation2) => const FollowerScreen(),
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
+                                  MaterialPageRoute(
+                                    builder: (context) => const FollowerScreen(),
                                   ),
                                 );
                               },
@@ -386,46 +492,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               ),
                               itemBuilder: (context, index) {
                                 final record = feedList[index];
-                                return GestureDetector(
-                                  onTap: () => print('기록 상세보기: ${record['recordId']}'),
-                                  child: Container(
-                                    width: scaleWidth(112),
-                                    height: scaleHeight(152),
-                                    child: Stack(
-                                      children: [
-                                        // base64 이미지 표시
-                                        record['mediaUrls'] != null && record['mediaUrls'].isNotEmpty
-                                            ? Image.memory(
-                                          base64Decode(record['mediaUrls'][0]),
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          errorBuilder: (_, __, ___) => _buildPlaceholder(record),
-                                        )
-                                            : _buildPlaceholder(record),
-                                        // 날짜 오버레이
-                                        Positioned(
-                                          top: 8,
-                                          left: 10,
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.black.withOpacity(0.5),
-                                              borderRadius: BorderRadius.circular(scaleHeight(6)),
-                                            ),
-                                            child: Text(
-                                              record['gameDate'] ?? '',
-                                              style: AppFonts.pretendard.c3_sb(context).copyWith(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
+                                return _buildGridItem(record, index);
                               },
                             ),
                           ),
@@ -464,25 +531,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
                 AppImages.dropdownBlack,
                 width: scaleWidth(16),
                 height: scaleHeight(16)
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder(Map<String, dynamic> record) {
-    return Container(
-      color: AppColors.gray50,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(height: scaleHeight(4)),
-            Text(
-              record['gameDate'] ?? '',
-              style: AppFonts.pretendard.c2_b(context),
-              textAlign: TextAlign.center,
             ),
           ],
         ),

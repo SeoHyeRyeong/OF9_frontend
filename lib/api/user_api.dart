@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http_parser/http_parser.dart';
 
 class UserApi {
   static final _kakaoAuth = KakaoAuthService();
@@ -107,36 +109,38 @@ class UserApi {
     }
   }
 
-  /// 2. 내 정보 수정
+  /// 2. 내 정보 수정 (JSON 방식 - S3 URL 직접 전송)
   static Future<Map<String, dynamic>> updateMyProfile({
     required String nickname,
-    String? profileImageUrl,
     String? favTeam,
+    String? profileImageUrl, // S3 URL을 직접 받음
     bool? isPrivate,
   }) async {
-    final body = jsonEncode({
+    final requestBody = {
       'nickname': nickname,
-      if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
       if (favTeam != null) 'favTeam': favTeam,
+      if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
       if (isPrivate != null) 'isPrivate': isPrivate,
-    });
+    };
+
+    print('📝 프로필 수정 요청: ${jsonEncode(requestBody)}');
 
     final res = await _makeRequestWithRetry(
       uri: Uri.parse('$baseUrl/users/me'),
       method: 'PATCH',
-      body: body,
+      body: jsonEncode(requestBody),
     );
 
     print('📝 프로필 수정 응답 코드: ${res.statusCode}');
     print('📝 프로필 수정 응답 본문: ${res.body}');
 
     if (res.statusCode == 200) {
-      final decoded = jsonDecode(utf8.decode(res.bodyBytes));
-      return decoded;
+      return jsonDecode(utf8.decode(res.bodyBytes));
     } else {
       throw Exception('프로필 수정 실패: ${res.statusCode}');
     }
   }
+
 
   /// 3. 닉네임 중복 확인
   static Future<Map<String, dynamic>> checkNickname(String nickname) async {

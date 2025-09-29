@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:frontend/theme/app_imgs.dart';
@@ -7,8 +8,10 @@ import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/api/user_api.dart';
+import 'package:frontend/api/record_api.dart'; // S3 업로드용 추가
 import 'package:frontend/features/mypage/settings_screen.dart';
 import 'package:frontend/features/upload/show_team_picker.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -24,9 +27,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? profileImageUrl;
   bool isLoading = true;
 
+  // 이미지 변경 관련 상태
+  final ImagePicker _picker = ImagePicker();
+  XFile? _newProfileImageFile;
+  bool _isProfileImageDeleted = false;
+
   // 원본 정보 저장 (변경 감지용)
   String originalNickname = "";
   String originalFavTeam = "";
+  String? originalProfileImageUrl;
 
   // 닉네임 입력 관련
   final TextEditingController _nicknameController = TextEditingController();
@@ -72,19 +81,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _currentLength = _nicknameController.text.length;
     });
 
-    // 디바운스 타이머 취소 후 새로 설정
     _debounceTimer?.cancel();
-
     final currentNickname = _nicknameController.text.trim();
-
-    // 원래 닉네임과 같거나 비어있으면 중복 확인 안함
     if (currentNickname.isEmpty || currentNickname == originalNickname.trim()) {
       setState(() {
         _isNicknameAvailable = true;
       });
     } else {
-      // 중복 확인
-      _debounceTimer = Timer(Duration(milliseconds: 300), () {
+      _debounceTimer = Timer(const Duration(milliseconds: 300), () {
         _checkNicknameAvailability();
       });
     }
@@ -94,18 +98,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() {});
   }
 
-  ///닉네임이 비어있는지 확인
   bool _isNicknameEmpty() {
     return _nicknameController.text.trim().isEmpty;
   }
 
-  ///닉네임에 오류가 있는지 확인 (로딩 중이면 에러 아님)
   bool _hasNicknameError() {
-    if (isLoading) return false; // 로딩 중에는 에러 표시 안함
+    if (isLoading) return false;
     return _isNicknameEmpty() || !_isNicknameAvailable;
   }
 
-  ///닉네임 중복 확인
   Future<void> _checkNicknameAvailability() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty || nickname == originalNickname.trim()) {
@@ -114,17 +115,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
       return;
     }
-
     try {
-      print('🔍 닉네임 중복 확인: $nickname');
       final response = await UserApi.checkNickname(nickname);
-      print('📥 중복 확인 응답: $response');
-
       setState(() {
         _isNicknameAvailable = response['data']['available'] ?? false;
       });
-
-      print('✅ 닉네임 사용 가능: $_isNicknameAvailable');
     } catch (e) {
       print('❌ 닉네임 중복 확인 실패: $e');
       setState(() {
@@ -133,18 +128,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  ///완료 버튼 활성화 조건 확인
   bool _canComplete() {
     return !_isNicknameEmpty() && _isNicknameAvailable && _hasChanges();
   }
 
-  ///정보가 변경되었는지 확인
   bool _hasChanges() {
-    return _nicknameController.text != originalNickname ||
-        favTeam != originalFavTeam;
+    return _nicknameController.text.trim() != originalNickname.trim() ||
+        favTeam != originalFavTeam ||
+        _newProfileImageFile != null ||
+        _isProfileImageDeleted;
   }
 
-  ///사용자 정보 불러오기
   Future<void> _loadUserInfo() async {
     try {
       final response = await UserApi.getMyProfile();
@@ -153,15 +147,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         nickname = userInfo['nickname'] ?? '알 수 없음';
         favTeam = userInfo['favTeam'] ?? '정보 불러오기 실패';
         profileImageUrl = userInfo['profileImageUrl'];
-
-        // 원본 정보 저장
         originalNickname = nickname;
         originalFavTeam = favTeam;
-
-        // 닉네임 컨트롤러에 현재 닉네임 설정
+        originalProfileImageUrl = profileImageUrl;
         _nicknameController.text = nickname;
         _currentLength = nickname.length;
-
         isLoading = false;
       });
     } catch (e) {
@@ -176,7 +166,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  ///최애구단 선택
   Future<void> _selectFavTeam() async {
     final selectedTeam = await showTeamPicker(
       context: context,
@@ -189,44 +178,179 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         favTeam = selectedTeam;
       });
-      print('선택된 팀: $selectedTeam');
     }
   }
 
-  ///완료 버튼 클릭 시 실행될 함수
-  Future<void> _onCompletePressed() async {
-    if (!_canComplete()) {
-      return;
+  void _showImageSourceActionSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+                horizontal: scaleWidth(8), vertical: scaleHeight(8)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(scaleHeight(16)),
+                  ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        title: Center(
+                            child: Text('앨범에서 사진 선택',
+                                style: AppFonts.suite
+                                    .b2_m(context)
+                                    .copyWith(color: AppColors.gray950))),
+                        onTap: _pickImageFromGallery,
+                      ),
+                      const Divider(color: AppColors.gray50, height: 1, thickness: 1),
+                      ListTile(
+                        title: Center(
+                            child: Text('현재 사진 삭제',
+                                style: AppFonts.suite
+                                    .b2_m(context)
+                                    .copyWith(color: AppColors.error))),
+                        onTap: _deleteProfileImage,
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: scaleHeight(8)),
+                SizedBox(
+                  width: double.infinity,
+                  height: scaleHeight(54),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(scaleHeight(16))),
+                    ),
+                    child: Text('취소',
+                        style: AppFonts.suite
+                            .b2_b(context)
+                            .copyWith(color: AppColors.gray500)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    Navigator.pop(context);
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,        // 크기 제한으로 압축 대신 사용
+        maxHeight: 1024,
+        imageQuality: 85,      // 품질 제한으로 압축 대신 사용
+      );
+
+      if (pickedFile != null) {
+        // 파일 크기 로그
+        final fileSize = await File(pickedFile.path).length();
+        print('📷 선택된 이미지 크기: ${(fileSize / 1024).toStringAsFixed(2)} KB');
+
+        setState(() {
+          _newProfileImageFile = pickedFile;
+          _isProfileImageDeleted = false;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('갤러리에 접근 권한이 필요합니다.')));
     }
+  }
+
+  void _deleteProfileImage() {
+    Navigator.pop(context);
+    setState(() {
+      _newProfileImageFile = null;
+      profileImageUrl = null;
+      _isProfileImageDeleted = true;
+    });
+  }
+
+  // S3 업로드 함수 추가
+  Future<String?> _uploadProfileImageToS3(XFile imageFile) async {
+    try {
+      print('📤 프로필 이미지 S3 업로드 시작');
+
+      // 1. Pre-signed URL 요청
+      final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final urlData = await RecordApi.getPresignedUrl(
+        domain: 'profiles',
+        fileName: fileName,
+      );
+
+      // 2. S3에 파일 업로드
+      await RecordApi.uploadFileToS3(
+        presignedUrl: urlData['presignedUrl']!,
+        file: File(imageFile.path),
+      );
+
+      final finalUrl = urlData['finalUrl']!;
+      print('✅ 프로필 이미지 업로드 성공: $finalUrl');
+      return finalUrl;
+
+    } catch (e) {
+      print('❌ 프로필 이미지 S3 업로드 실패: $e');
+      return null;
+    }
+  }
+
+  Future<void> _onCompletePressed() async {
+    if (!_canComplete()) return;
+    setState(() => isLoading = true);
 
     try {
-      // 프로필 정보 업데이트 API 호출 (이미지 제외)
+      String? updatedImageUrl;
+
+      if (_newProfileImageFile != null) {
+        // S3 업로드 사용
+        updatedImageUrl = await _uploadProfileImageToS3(_newProfileImageFile!);
+        if (updatedImageUrl == null) throw Exception('이미지 업로드 실패');
+      } else if (_isProfileImageDeleted) {
+        updatedImageUrl = null; // null로 변경 (빈 문자열 대신)
+      }
+
       await UserApi.updateMyProfile(
-        nickname: _nicknameController.text,
-        profileImageUrl: null,
+        nickname: _nicknameController.text.trim(),
         favTeam: favTeam == "정보 불러오기 실패" ? null : favTeam,
+        profileImageUrl: (_newProfileImageFile != null || _isProfileImageDeleted)
+            ? updatedImageUrl
+            : originalProfileImageUrl,
       );
 
-      print('프로필 수정 성공');
-
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder:
-              (context, animation1, animation2) => const SettingsScreen(),
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-        ),
-      );
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const SettingsScreen(),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      }
     } catch (e) {
-      print('프로필 수정 실패: $e');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('프로필 수정에 실패했습니다. 다시 시도해주세요.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('프로필 수정에 실패했습니다.'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -277,7 +401,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   context,
                                   PageRouteBuilder(
                                     pageBuilder:
-                                        (context, animation1, animation2) => const SettingsScreen(),
+                                        (context, animation1, animation2) =>
+                                    const SettingsScreen(),
                                     transitionDuration: Duration.zero,
                                     reverseTransitionDuration: Duration.zero,
                                   ),
@@ -299,7 +424,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               child: Center(
                                 child: FixedText(
                                   "내 정보 수정",
-                                  style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray950),
+                                  style: AppFonts.suite
+                                      .b2_b(context)
+                                      .copyWith(color: AppColors.gray950),
                                 ),
                               ),
                             ),
@@ -312,33 +439,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   SizedBox(height: scaleHeight(22)),
 
-                  // 프로필 이미지 영역 (수정 불가능한 표시용)
+                  // 프로필 이미지 영역
                   Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(scaleHeight(29.6)),
-                      child:
-                          profileImageUrl != null
-                              ? Image.network(
-                                profileImageUrl!,
-                                width: scaleWidth(100),
-                                height: scaleHeight(100),
-                                fit: BoxFit.cover,
-                                errorBuilder:
-                                    (_, __, ___) => SvgPicture.asset(
-                                      AppImages.profile,
-                                      width: scaleWidth(100),
-                                      height: scaleHeight(100),
-                                      fit: BoxFit.cover,
-                                    ),
-                              )
-                              : SvgPicture.asset(
-                                AppImages.profile,
-                                width: scaleWidth(100),
-                                height: scaleHeight(100),
-                                fit: BoxFit.cover,
-                              ),
+                    child: GestureDetector(
+                      onTap: _showImageSourceActionSheet,
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(scaleHeight(29.59)),
+                            child: SizedBox(
+                              width: scaleWidth(100),
+                              height: scaleHeight(100),
+                              child: _buildProfileImage(),
+                            ),
+                          ),
+                          // 카메라 아이콘 오버레이 (우측 하단)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: SvgPicture.asset(
+                              'assets/imgs/btn_camera_24.svg', // AppImages.btn_camera로 변경해도 됩니다
+                              width: scaleWidth(24),
+                              height: scaleHeight(24),
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+
 
                   SizedBox(height: scaleHeight(40)),
 
@@ -349,12 +479,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       children: [
                         FixedText(
                           "닉네임",
-                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray600),
+                          style: AppFonts.suite
+                              .b3_sb(context)
+                              .copyWith(color: AppColors.gray600),
                         ),
                         SizedBox(width: scaleWidth(2)),
                         FixedText(
                           "*",
-                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
+                          style: AppFonts.suite
+                              .c1_b(context)
+                              .copyWith(color: AppColors.pri200),
                         ),
                       ],
                     ),
@@ -371,26 +505,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           width: scaleWidth(320),
                           height: scaleHeight(54),
                           decoration: BoxDecoration(
-                            color: AppColors.gray30,
+                            color: AppColors.gray30, // 원본 색상으로 복원
                             borderRadius: BorderRadius.circular(scaleWidth(8)),
-                            border:
-                                _hasNicknameError()
-                                    ? Border.all(
-                                      color: AppColors.error, width: 1,
-                                    )
-                                    : null,
+                            border: _hasNicknameError()
+                                ? Border.all(
+                              color: AppColors.error,
+                              width: 1,
+                            )
+                                : null,
                           ),
                           child: TextField(
                             controller: _nicknameController,
                             focusNode: _nicknameFocusNode,
                             maxLength: _maxLength,
-                            buildCounter:
-                                (
-                                  context, {
+                            buildCounter: (
+                                context, {
                                   required currentLength,
                                   required isFocused,
                                   maxLength,
-                                }) => null,
+                                }) =>
+                            null,
                             decoration: InputDecoration(
                               isCollapsed: true,
                               contentPadding: EdgeInsets.only(
@@ -401,35 +535,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               border: InputBorder.none,
                             ),
                             textAlignVertical: TextAlignVertical.center,
-                            style: AppFonts.pretendard.b3_r_long(context).copyWith(color: AppColors.black),
+                            style: AppFonts.pretendard
+                                .b3_r_long(context)
+                                .copyWith(color: AppColors.black),
                           ),
                         ),
-
                         SizedBox(height: scaleHeight(8)),
-
-                        // 에러 메시지와 글자수 카운터 같은 줄
-                        Container(
+                        SizedBox(
                           width: scaleWidth(320),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              // 에러 메시지 (좌측)
                               _hasNicknameError()
                                   ? FixedText(
-                                    _isNicknameEmpty() ? '닉네임을 작성해 주세요.' : '이미 등록된 닉네임이에요.',
-                                    style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.error),
-                                  )
-                                  : SizedBox.shrink(),
-                              // 글자수 카운터 (우측)
+                                _isNicknameEmpty()
+                                    ? '닉네임을 작성해 주세요.'
+                                    : '이미 등록된 닉네임이에요.',
+                                style: AppFonts.pretendard
+                                    .c1_m(context)
+                                    .copyWith(color: AppColors.error),
+                              )
+                                  : const SizedBox.shrink(),
+                              // 원본 UI 구조와 스타일로 복원
                               _hasNicknameError()
                                   ? FixedText(
-                                    '$_currentLength / $_maxLength',
-                                    style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.error),
-                                  )
+                                '$_currentLength / $_maxLength',
+                                style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.error),
+                              )
                                   : FixedText(
-                                    '$_currentLength / $_maxLength',
-                                    style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri900),
-                                  ),
+                                '$_currentLength / $_maxLength',
+                                style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri900),
+                              ),
                             ],
                           ),
                         ),
@@ -446,12 +582,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       children: [
                         FixedText(
                           "최애 구단",
-                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray600),
+                          style: AppFonts.suite
+                              .b3_sb(context)
+                              .copyWith(color: AppColors.gray600),
                         ),
                         SizedBox(width: scaleWidth(2)),
                         FixedText(
                           "*",
-                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
+                          style: AppFonts.suite
+                              .c1_b(context)
+                              .copyWith(color: AppColors.pri200),
                         ),
                       ],
                     ),
@@ -478,11 +618,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             children: [
                               Expanded(
                                 child: FixedText(
-                                  favTeam == "정보 불러오기 실패" ? "최애 구단을 선택해주세요" : favTeam,
-                                  style: AppFonts.pretendard.b3_r_long(context).copyWith(
-                                        color:
-                                            favTeam == "정보 불러오기 실패" ? AppColors.gray400 : AppColors.black,
-                                      ),
+                                  favTeam == "정보 불러오기 실패"
+                                      ? "최애 구단을 선택해주세요"
+                                      : favTeam,
+                                  style: AppFonts.pretendard
+                                      .b3_r_long(context)
+                                      .copyWith(
+                                    color: favTeam == "정보 불러오기 실패"
+                                        ? AppColors.gray400
+                                        : AppColors.black,
+                                  ),
                                 ),
                               ),
                               Transform.rotate(
@@ -501,8 +646,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
 
-                  // Spacer로 공간 확보
-                  Spacer(),
+                  const Spacer(),
 
                   // 완료 버튼
                   Padding(
@@ -513,8 +657,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: ElevatedButton(
                         onPressed: canComplete ? _onCompletePressed : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              canComplete ? AppColors.gray700 : AppColors.gray200,
+                          backgroundColor: canComplete
+                              ? AppColors.gray700
+                              : AppColors.gray200,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               scaleHeight(16),
@@ -527,7 +672,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         child: FixedText(
                           '완료',
-                          style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
+                          style: AppFonts.suite
+                              .b2_b(context)
+                              .copyWith(color: AppColors.gray20),
                         ),
                       ),
                     ),
@@ -540,6 +687,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileImage() {
+    if (_newProfileImageFile != null) {
+      return Image.file(File(_newProfileImageFile!.path), fit: BoxFit.cover);
+    }
+    if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
+      return Image.network(profileImageUrl!,
+          fit: BoxFit.cover, errorBuilder: (_, __, ___) => _defaultProfileImage());
+    }
+    return _defaultProfileImage();
+  }
+
+  Widget _defaultProfileImage() {
+    return SvgPicture.asset(
+      AppImages.profile,
+      fit: BoxFit.cover,
     );
   }
 }

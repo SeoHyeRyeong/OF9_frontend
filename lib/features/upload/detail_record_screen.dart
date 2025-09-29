@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
 import 'package:frontend/api/record_api.dart';
 import 'package:frontend/utils/size_utils.dart';
+import 'package:frontend/theme/app_imgs.dart';
 
 class DetailRecordScreen extends StatefulWidget {
   final String? imagePath;
@@ -398,7 +399,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                             _buildSection(
                               builder: () => OneWordSectionContent(scrollController: _scrollController,),
                               cardWidth: 320,
-                              cardHeight: 180,
+                              cardHeight: 181,
                             ),
 
                             // 야구 일기

@@ -71,7 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await UserApi.updateMyProfile(
         nickname: nickname,
         favTeam: favTeam.replaceAll(' 팬', ''),
-        profileImageUrl: profileImageUrl,
+        profileImageUrl: profileImageUrl, // 추가: 기존 프로필 이미지 URL 유지
         isPrivate: !isPublic, // isPublic의 반대값을 isPrivate로 전송
       );
 
@@ -88,6 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     }
   }
+
 
   /// 로그아웃 처리
   Future<void> _handleLogout() async {

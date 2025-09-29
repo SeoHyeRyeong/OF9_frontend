@@ -8,7 +8,7 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 final _secureStorage = FlutterSecureStorage();
 
 class KakaoAuthService {
-  ///저장된 토큰 존재 여부만 확인 (만료 여부는 신경 안씀)
+  /// 저장된 토큰 존재 여부만 확인 (만료 여부는 신경 안씀)
   Future<bool> hasStoredTokens() async {
     try {
       final accessToken = await _secureStorage.read(key: 'access_token');
@@ -187,9 +187,11 @@ class KakaoAuthService {
     try {
       final response = await http.post(
         url,
+        // ⚠️ 수정: 토큰 갱신 시 만료된 AccessToken을 헤더에 보내지 않도록 Authorization 헤더를 제거했습니다.
+        // 백엔드에서 Refresh Token은 보통 Body를 통해 처리됩니다.
         headers: {
-          'Authorization': 'Bearer $currentAccessToken',
           'Content-Type': 'application/json',
+          // 'Authorization': 'Bearer $currentAccessToken', // 만료된 AT는 제거
         },
         body: payload,
       ).timeout(const Duration(seconds: 8));
@@ -238,7 +240,7 @@ class KakaoAuthService {
     return null;
   }
 
-  /// 6)인증이 필요한 API호출 (자동 토큰 갱신 포함) = 자동 재시도 기능
+  /// 6) 인증이 필요한 API 호출 (자동 토큰 갱신 포함) = 자동 재시도 기능
   Future<http.Response?> authenticatedRequest({
     required String endpoint,
     required String method,
@@ -255,7 +257,10 @@ class KakaoAuthService {
     }
 
     final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
-    final url = Uri.parse('$backendUrl$endpoint');
+    // ⚠️ 수정: backendUrl이 슬래시(/)로 끝나는 경우를 대비하여 중복 슬래시를 방지합니다.
+    final cleanBackendUrl = backendUrl.endsWith('/') ? backendUrl.substring(0, backendUrl.length - 1) : backendUrl;
+    final url = Uri.parse('$cleanBackendUrl$endpoint');
+    print('✅ 최종 URL: $url'); // URL 확인 로그 추가
 
     String? accessToken = await getAccessToken();
     if (accessToken == null) {
@@ -316,6 +321,12 @@ class KakaoAuthService {
         }
       }
 
+      // ⚠️ 400 에러는 재시도 없이 반환하여 상위 로직에서 처리하도록 합니다.
+      if (response.statusCode == 400) {
+        print('❌ 400 Bad Request 발생 - 서버가 요청을 이해하지 못함');
+      }
+
+
       return response;
     } catch (e) {
       print('🔥 API 요청 오류: $e');
@@ -355,6 +366,7 @@ class KakaoAuthService {
     try {
       print('🔄 기존 사용자 로그인 시작');
 
+      // 'KIA 타이거즈'는 임시 값일 가능성이 있으므로, 실제 사용자 팀 정보를 사용해야 합니다.
       final ourTokens = await sendKakaoTokenToBackend(kakaoAccessToken, 'KIA 타이거즈');
 
       if (ourTokens != null) {
@@ -391,6 +403,40 @@ class KakaoAuthService {
     }
   }
 
+  /// 7) 로그아웃: 서버 로그아웃 시도 후 로컬 토큰 무조건 삭제
+  Future<bool> performLogout() async {
+    print('🚪 performLogout 시작 (로컬/서버 처리)');
+
+    // 1. 서버 로그아웃 요청 (로그에서 POST /users/me/logout 경로 확인됨)
+    try {
+      final response = await authenticatedRequest(
+        endpoint: '/users/me/logout',
+        method: 'POST',
+      );
+
+      // 서버 로그아웃 응답이 실패(400)하더라도 로컬 클리어는 계속 진행합니다.
+      if (response != null) {
+        print('✅ 서버 로그아웃 응답: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ 서버 로그아웃 요청 중 오류 발생: $e');
+    }
+
+    // 2. 로컬 토큰 무조건 삭제 (가장 중요한 부분)
+    await clearTokens();
+
+    // 3. 카카오 세션도 해제
+    try {
+      await UserApi.instance.logout();
+      print('✅ 카카오 세션 로그아웃 성공');
+    } catch (e) {
+      print('❌ 카카오 세션 로그아웃 실패: $e');
+    }
+
+    // 로컬 토큰을 지웠으므로 클라이언트 관점에서는 로그아웃 성공으로 간주
+    return true;
+  }
+
   /// 카카오 연결 해제 (탈퇴)
   Future<bool> unlinkKakaoAccount() async {
     try {
@@ -403,5 +449,4 @@ class KakaoAuthService {
       return false;
     }
   }
-
 }

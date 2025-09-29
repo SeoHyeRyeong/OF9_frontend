@@ -48,6 +48,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   Future<void> _loadUserInfo() async {
     try {
       final response = await UserApi.getMyProfile();
+      if (!mounted) return;
       final userInfo = response['data'];
       setState(() {
         nickname = userInfo['nickname'] ?? '알 수 없음';
@@ -60,6 +61,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       print('❌ 사용자 정보 불러오기 실패: $e');
       setState(() {
         nickname = "정보 불러오기 실패";
@@ -86,11 +88,13 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
       // 기존 피드 조회
       final records = await RecordApi.getMyRecordsFeed();
+      if (!mounted) return;
       setState(() {
         feedList = records;
         isLoadingRecords = false;
       });
     } catch (e) {
+      if (!mounted) return;
       print('❌ 기록 불러오기 실패: $e');
       setState(() {
         isLoadingRecords = false;

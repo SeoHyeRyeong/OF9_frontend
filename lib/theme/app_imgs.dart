@@ -11,9 +11,9 @@ class AppImages {
   static const logo_large = 'assets/imgs/logo_large.svg';
 
   // 온보딩 그래픽
-  static const loginOnboarding1 = 'assets/imgs/onboarding_1.png';
-  static const loginOnboarding2 = 'assets/imgs/onboarding_2.png';
-  static const loginOnboarding3 = 'assets/imgs/onboarding_3.png';
+  static const loginOnboarding1 = 'assets/imgs/graphic_onboarding_1.png';
+  static const loginOnboarding2 = 'assets/imgs/graphic_onboarding_2.png';
+  static const loginOnboarding3 = 'assets/imgs/graphic_onboarding_3.png';
 
   // 카카오
   static const kakaobrown = 'assets/imgs/ic_kakao_kakaobrown_28.svg';

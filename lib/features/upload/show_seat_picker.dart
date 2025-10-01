@@ -1037,7 +1037,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
             hintText: '번호',
             hintStyle: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray300),
           ),
-          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray950),
+          style: AppFonts.pretendard.b3_sb_long(context).copyWith(color: AppColors.gray900),
           onChanged: (value) => setState(() {}),
         ),
       ),

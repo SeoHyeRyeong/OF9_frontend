@@ -31,12 +31,12 @@ class _LoginScreenState extends State<LoginScreen> {
     {
       'image': AppImages.loginOnboarding2,
       'title': '기록으로 쌓이는 팬 히스토리',
-      'subtitle': '직관 횟수, 감정 분포 등 통계를 확인하고\n특별한 팬 뱃지를 모아보세요'
+      'subtitle': '직관 횟수, 감정 분포 등 통계로 확인하고\n특별한 팬 뱃지를 모아 보세요'
     },
     {
       'image': AppImages.loginOnboarding3,
       'title': '친구와 직관 기록 공유',
-      'subtitle': '그 순간의 감정! 경기를 함께 본\n친구와 직관 경험을 나눠 보세요'
+      'subtitle': '설레는 직관, 그 순간의 감정을\n친구와 함께 나눠 보세요'
     },
   ];
 
@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: scaleHeight(10),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _currentIndex == index ? AppColors.gray600: AppColors.gray100,
+                color: _currentIndex == index ? AppColors.pri600: AppColors.pri100,
               ),
             ),
             if (index != onboardingData.length - 1)
@@ -126,134 +126,112 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final screenHeight = constraints.maxHeight;
-          final statusBarHeight = MediaQuery.of(context).padding.top;
-
-          return Column(
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+          child: Column(
             children: [
-              // 이미지 영역 - 전체 높이의 56.25% (450/800)
-              SizedBox(
-                height: screenHeight * 0.5625,
-                child: Stack(
-                  children: [
-                    PageView.builder(
-                      controller: _pageController,
-                      itemCount: onboardingData.length,
-                      onPageChanged: (index) => setState(() => _currentIndex = index),
-                      itemBuilder: (context, index) {
-                        final data = onboardingData[index];
-                        return Image.asset(
-                          data['image']!,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        );
-                      },
-                    ),
+              SizedBox(height: scaleHeight(25)),
 
-                    // 로고
-                    Container(
-                      margin: EdgeInsets.only(
-                        top: statusBarHeight + (screenHeight * 0.055),
-                        left: scaleWidth(20),
+              // 1. 이미지 영역
+              SizedBox(
+                width: scaleWidth(320),
+                height: scaleHeight(364),
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: onboardingData.length,
+                  onPageChanged: (index) => setState(() => _currentIndex = index),
+                  itemBuilder: (context, index) {
+                    final data = onboardingData[index];
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(scaleHeight(8)),
+                      child: Image.asset(
+                        data['image']!,
+                        width: scaleWidth(320),
+                        height: scaleHeight(364),
+                        fit: BoxFit.cover,
                       ),
-                      child: SvgPicture.asset(
-                        AppImages.logo_small,
-                        width: scaleWidth(82),
-                        height: scaleHeight(16),
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
 
-              // 콘텐츠 영역 - 나머지 43.75%
-              Expanded(
-                child: SafeArea(
-                  top: false,
-                  child: LayoutBuilder(
-                    builder: (context, contentConstraints) {
-                      final contentHeight = contentConstraints.maxHeight;
+              SizedBox(height: scaleHeight(25)),
 
-                      return Column(
-                        children: [
-                          const Spacer(flex: 22),
+              // 2. 페이지 인디케이터
+              _buildPageIndicator(),
+              SizedBox(height: scaleHeight(28)),
 
-                          _buildPageIndicator(),
+              // 3. Title
+              FixedText(
+                onboardingData[_currentIndex]['title']!,
+                style: AppFonts.suite.title_md_700(context).copyWith(
+                  color: AppColors.gray800,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: scaleHeight(16)),
 
-                          const Spacer(flex: 33),
+              // 4. Subtitle
+              FixedText(
+                onboardingData[_currentIndex]['subtitle']!,
+                style: AppFonts.suite.body_md_500(context).copyWith(
+                  color: AppColors.gray500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: scaleHeight(28)),
 
-                          // 타이틀
-                          FixedText(
-                            onboardingData[_currentIndex]['title']!,
-                            style: AppFonts.suite.h3_b(context).copyWith(
-                                color: AppColors.gray800),
-                            textAlign: TextAlign.center,
-                          ),
-
-                          const Spacer(flex: 20),
-
-                          // 서브타이틀
-                          FixedText(
-                            onboardingData[_currentIndex]['subtitle']!,
-                            style: AppFonts.suite.b2_m_long(context).copyWith(
-                                color: AppColors.gray300),
-                            textAlign: TextAlign.center,
-                          ),
-
-                          const Spacer(flex: 45),
-
-                          // 버튼
-                          Center(
-                            child: SizedBox(
-                              width: scaleWidth(320),
-                              height: scaleHeight(54),
-                              child: ElevatedButton(
-                                onPressed: isLoading ? null : _handleKakaoLogin,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.kakao01,
-                                  foregroundColor: Colors.black,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: isLoading
-                                    ? CircularProgressIndicator(color: AppColors.kakao02)
-                                    : Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SvgPicture.asset(
-                                      AppImages.kakaobrown,
-                                      width: scaleHeight(28),
-                                      height: scaleHeight(28),
-                                      color: AppColors.kakao02,
-                                    ),
-                                    SizedBox(width: scaleWidth(4)),
-                                    FixedText(
-                                      '카카오로 로그인',
-                                      style: AppFonts.suite.b2_b(context).copyWith(
-                                        color: AppColors.kakao02,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const Spacer(flex: 33),
-                        ],
-                      );
-                    },
+              // 5. 카카오 로그인 버튼
+              SizedBox(
+                width: scaleWidth(320),
+                height: scaleHeight(60),
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _handleKakaoLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.kakao01,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(scaleHeight(16)),
+                    ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: isLoading
+                      ? CircularProgressIndicator(color: AppColors.kakao02)
+                      : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        AppImages.kakaobrown,
+                        width: scaleHeight(28),
+                        height: scaleHeight(28),
+                        color: AppColors.kakao02,
+                      ),
+                      SizedBox(width: scaleWidth(8)),
+                      FixedText(
+                        '카카오로 로그인',
+                        style: AppFonts.suite.head_sm_700(context).copyWith(
+                          color: AppColors.kakao02,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
+              SizedBox(height: scaleHeight(16)),
+
+              // 6. 로그인 문제 텍스트
+              FixedText(
+                '로그인에 문제가 있나요?',
+                style: AppFonts.suite.body_sm_500(context).copyWith(
+                  color: AppColors.gray300,
+                ),
+              ),
+              Spacer(),
             ],
-          );
-        },
+          ),
+        ),
       ),
     );
   }

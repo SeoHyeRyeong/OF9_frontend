@@ -399,7 +399,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                             _buildSection(
                               builder: () => OneWordSectionContent(scrollController: _scrollController,),
                               cardWidth: 320,
-                              cardHeight: 181,
+                              cardHeight: 180,
                             ),
 
                             // 야구 일기
@@ -581,9 +581,9 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
             ),
             child: Padding(
               padding: EdgeInsets.only(
-                top: scaleHeight(22),
+                top: scaleHeight(18),
                 right: scaleWidth(16),
-                bottom: scaleHeight(22),
+                bottom: scaleHeight(18),
                 left: scaleWidth(16),
               ),
               child: builder(),

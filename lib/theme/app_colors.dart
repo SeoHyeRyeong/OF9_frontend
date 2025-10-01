@@ -7,9 +7,8 @@ class AppColors {
   static const Color white = Color(0xFFFFFFFF);
 
   // 🔷 GrayScale
-  static const Color gray950 = Color(0xFF0E1117);
   static const Color gray900 = Color(0xFF141B23);
-  static const Color gray800 = Color(0xFF1E2228);
+  static const Color gray800 = Color(0xFF282C32);
   static const Color gray700 = Color(0xFF38414C);
   static const Color gray600 = Color(0xFF4A5260);
   static const Color gray500 = Color(0xFF5F6775);
@@ -17,9 +16,9 @@ class AppColors {
   static const Color gray300 = Color(0xFF909CA8);
   static const Color gray200 = Color(0xFFB7C1C9);
   static const Color gray100 = Color(0xFFD9E0E7);
-  static const Color gray50  = Color(0xFFE9F1F6);
+  static const Color gray50  = Color(0xFFEFF4FA);
   static const Color gray30  = Color(0xFFF4F8FB);
-  static const Color gray20  = Color(0xFFF6FAFD);
+  static const Color gray20  = Color(0xFFFFFFFF);
 
   // 🔳 Transparency (gray with opacity)
   static const Color trans900 = Color(0xE60E1117); // 90%
@@ -34,16 +33,15 @@ class AppColors {
   static const Color trans50  = Color(0x0D0E1117); // 5%
 
   // 🔵 Primary
-  static const Color pri900 = Color(0xFF142539);
-  static const Color pri800 = Color(0xFF1F2B3A);
-  static const Color pri700 = Color(0xFF263545);
-  static const Color pri600 = Color(0xFF32455B);
-  static const Color pri500 = Color(0xFF36526F);
-  static const Color pri400 = Color(0xFF3A5F83);
-  static const Color pri300 = Color(0xFF3C648B);
-  static const Color pri200 = Color(0xFF507B9F);
-  static const Color pri100 = Color(0xFF7290AE);
-  static const Color pri50  = Color(0xFF97B5D3);
+  static const Color pri900 = Color(0xFF2A3E52);
+  static const Color pri800 = Color(0xFF354E66);
+  static const Color pri700 = Color(0xFF4F7599);
+  static const Color pri600 = Color(0xFF6A9CCC);
+  static const Color pri500 = Color(0xFF84C3FF);
+  static const Color pri400 = Color(0xFF9DCFFF);
+  static const Color pri300 = Color(0xFFB5DBFF);
+  static const Color pri200 = Color(0xFFCEE7FF);
+  static const Color pri100 = Color(0xFFE6F3FF);
 
   // 🟢 Secondary
   static const Color sec900 = Color(0xFF316A60);
@@ -63,4 +61,8 @@ class AppColors {
   //카카오 색상
   static const Color kakao01 = Color(0xFFFDE500);
   static const Color kakao02 = Color(0xFF3C1E1E);
+
+  //다음에 삭제해야 할 컬러 (수정된 디자인 시스템에는 없음)
+  static const Color gray950= Color(0xFF0E1117);
+  static const Color pri50= Color(0xFF97B5D3);
 }

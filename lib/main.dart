@@ -16,14 +16,16 @@ Future<void> main() async {
   KakaoSdk.init(nativeAppKey: dotenv.env['NATIVE_APP_KEY']);
 
   await SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.manual,
-    overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    SystemUiMode.edgeToEdge,
   );
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
       statusBarBrightness: Brightness.light,
+      // 내비게이션 바를 투명하게
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
   await SystemChrome.setPreferredOrientations([

@@ -458,7 +458,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             bottom: 0,
                             right: 0,
                             child: SvgPicture.asset(
-                              'assets/imgs/btn_camera_24.svg', // AppImages.btn_camera로 변경해도 됩니다
+                              AppImages.btn_camera,
                               width: scaleWidth(24),
                               height: scaleHeight(24),
                               fit: BoxFit.contain,

@@ -225,6 +225,111 @@ class _SuiteFonts {
     height: 1.0,
     letterSpacing: -0.3,
   );
+
+  // ========== 변경된 디자인 시스템 ==========
+  TextStyle title_lg_700(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: scaleFont(26),
+    height: 38 / 26,
+    letterSpacing: -0.52,
+  );
+
+  TextStyle title_md_700(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(24),
+    height: 36 / 24,
+    letterSpacing: -0.48,
+  );
+
+  TextStyle title_sm_700(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(22),
+    height: 36 / 22,
+    letterSpacing: -0.44,
+  );
+
+  TextStyle head_md_700(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(20),
+    height: 30 / 20,
+    letterSpacing: -0.40,
+  );
+
+  TextStyle head_sm_700(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(18),
+    height: 28 / 18,
+    letterSpacing: -0.36,
+  );
+
+  TextStyle body_md_500(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(16),
+    height: 24 / 16,
+    letterSpacing: -0.32,
+  );
+
+  TextStyle body_md_400(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(16),
+    height: 24 / 16,
+    letterSpacing: -0.32,
+  );
+
+  TextStyle body_sm_500(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(14),
+    height: 20 / 14,
+    letterSpacing: -0.28,
+  );
+
+  TextStyle body_re_400(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(14),
+    height: 20 / 14,
+    letterSpacing: -0.28,
+  );
+
+  TextStyle caption_md_500(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(12),
+    height: 18 / 12,
+    letterSpacing: -0.24,
+  );
+
+  TextStyle caption_re_400(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(12),
+    height: 18 / 12,
+    letterSpacing: -0.24,
+  );
+
+  TextStyle caption_md_500_sm(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(10),
+    height: 18 / 10,
+    letterSpacing: -0.24,
+  );
+
+  TextStyle caption_md_400(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(10),
+    height: 18 / 10,
+    letterSpacing: -0.24,
+  );
 }
 
 /// =======================================================
@@ -452,4 +557,95 @@ class _PretendardFonts {
     height: 1.0,
     letterSpacing: -0.3,
   );
+
+
+// ========== 변경된 디자인 시스템 ==========
+  TextStyle title_lg_600(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(26),
+    height: 38 / 26,
+    letterSpacing: -0.52,
+  );
+
+  TextStyle title_md_600(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(24),
+    height: 36 / 24,
+    letterSpacing: -0.48,
+  );
+
+  TextStyle title_sm_600(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(22),
+    height: 36 / 22,
+    letterSpacing: -0.44,
+  );
+
+  TextStyle head_md_600(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(20),
+    height: 30 / 20,
+    letterSpacing: -0.40,
+  );
+
+  TextStyle head_sm_600(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: scaleFont(18),
+    height: 28 / 18,
+    letterSpacing: -0.36,
+  );
+
+  TextStyle body_md_500(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(16),
+    height: 24 / 16,
+    letterSpacing: -0.32,
+  );
+
+  TextStyle body_md_400(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(16),
+    height: 24 / 16,
+    letterSpacing: -0.32,
+  );
+
+  TextStyle body_sm_500(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(14),
+    height: 20 / 14,
+    letterSpacing: -0.28,
+  );
+
+  TextStyle body_sm_400(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(14),
+    height: 20 / 14,
+    letterSpacing: -0.28,
+  );
+
+  TextStyle caption_md_500(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(12),
+    height: 18 / 12,
+    letterSpacing: -0.24,
+  );
+
+  TextStyle caption_md_400(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(12),
+    height: 18 / 12,
+    letterSpacing: -0.24,
+  );
+
 }

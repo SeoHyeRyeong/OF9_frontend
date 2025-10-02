@@ -199,6 +199,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// (추가) 재사용 가능한 메뉴 버튼 위젯
+  Widget _buildMenuButton(String title, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        color: Colors.transparent, // 터치 영역을 확실하게 하기 위해 추가
+        width: scaleWidth(320),
+        height: scaleHeight(48), // 높이를 48 또는 54로 통일
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: EdgeInsets.only(left: scaleWidth(16)),
+            child: FixedText(
+              title,
+              style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 커스텀 토글 스위치 위젯
   Widget _buildCustomToggle(bool isOn, VoidCallback onToggle) {
     return GestureDetector(
@@ -411,6 +433,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           SizedBox(height: scaleHeight(16)),
 
                           // 테마 변경 메뉴
+                          // 🎨 GestureDetector가 Container 전체를 감싸도록 수정
                           GestureDetector(
                             onTap: () {
                               print('테마 변경 버튼 클릭');
@@ -495,26 +518,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                   ),
                                 ),
-                                // 차단된 계정
-                                GestureDetector(
-                                  onTap: () {
-                                    print('차단된 계정 버튼 클릭');
-                                  },
-                                  child: Container(
-                                    width: scaleWidth(320),
-                                    height: scaleHeight(48),
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Padding(
-                                        padding: EdgeInsets.only(left: scaleWidth(16)),
-                                        child: FixedText(
-                                          "차단된 계정",
-                                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                // 🎨 '차단된 계정' 메뉴에 재사용 함수 적용
+                                _buildMenuButton("차단된 계정", () {
+                                  print('차단된 계정 버튼 클릭');
+                                }),
                               ],
                             ),
                           ),
@@ -527,109 +534,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     // 기타 설정 메뉴들
                     Container(
                       width: scaleWidth(320),
-                      height: scaleHeight(270),
+                      // 🎨 높이 수정 (54 * 5 = 270)
                       decoration: BoxDecoration(
                         color: AppColors.gray30,
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      // 🎨 Column으로 감싸서 각 메뉴 버튼을 재사용 함수로 생성
                       child: Column(
                         children: [
-                          // 버전 정보
-                          GestureDetector(
-                            onTap: () {
-                              print('버전 정보 버튼 클릭');
-                            },
-                            child: Container(
-                              width: scaleWidth(320),
-                              height: scaleHeight(54),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: EdgeInsets.only(left: scaleWidth(16)),
-                                  child: FixedText(
-                                    "버전 정보",
-                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // 이용 약관
-                          GestureDetector(
-                            onTap: () {
-                              _launchUrl('https://www.notion.so/24bf22b2f4cd8027bf3ada45e3970e9e?source=copy_link');
-                            },
-                            child: Container(
-                              width: scaleWidth(320),
-                              height: scaleHeight(54),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: EdgeInsets.only(left: scaleWidth(16)),
-                                  child: FixedText(
-                                    "이용 약관",
-                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // 개인정보 처리방침
-                          GestureDetector(
-                            onTap: () {
-                              _launchUrl('https://www.notion.so/24bf22b2f4cd80f0a0efeab79c6861ae?source=copy_link');
-                            },
-                            child: Container(
-                              width: scaleWidth(320),
-                              height: scaleHeight(54),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: EdgeInsets.only(left: scaleWidth(16)),
-                                  child: FixedText(
-                                    "개인정보 처리방침",
-                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // 로그아웃
-                          GestureDetector(
-                            onTap: _handleLogout,
-                            child: Container(
-                              width: scaleWidth(320),
-                              height: scaleHeight(54),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: EdgeInsets.only(left: scaleWidth(16)),
-                                  child: FixedText(
-                                    "로그아웃",
-                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // 회원 탈퇴
-                          GestureDetector(
-                            onTap: _handleAccountDeletion,
-                            child: Container(
-                              width: scaleWidth(320),
-                              height: scaleHeight(54),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: EdgeInsets.only(left: scaleWidth(16)),
-                                  child: FixedText(
-                                    "회원 탈퇴",
-                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                          _buildMenuButton("버전 정보", () {
+                            print('버전 정보 버튼 클릭');
+                          }),
+                          _buildMenuButton("이용 약관", () {
+                            _launchUrl('https://www.notion.so/24bf22b2f4cd8027bf3ada45e3970e9e?source=copy_link');
+                          }),
+                          _buildMenuButton("개인정보 처리방침", () {
+                            _launchUrl('https://www.notion.so/24bf22b2f4cd80f0a0efeab79c6861ae?source=copy_link');
+                          }),
+                          _buildMenuButton("로그아웃", _handleLogout),
+                          _buildMenuButton("회원 탈퇴", _handleAccountDeletion),
                         ],
                       ),
                     ),

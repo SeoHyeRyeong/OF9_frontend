@@ -18,22 +18,25 @@ Future<void> main() async {
   await SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.edgeToEdge,
   );
+
+  // 중복 제거된 SystemUiOverlayStyle 설정
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.dark, // 한 번만 지정
       statusBarBrightness: Brightness.light,
-      // 내비게이션 바를 투명하게
       systemNavigationBarColor: Colors.transparent,
       systemNavigationBarIconBrightness: Brightness.dark,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarContrastEnforced: false,
     ),
   );
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // 백엔드 토큰 기반 로그인 상태 확인
   final kakaoAuthService = KakaoAuthService();
   final isLoggedIn = await kakaoAuthService.hasStoredTokens();
 

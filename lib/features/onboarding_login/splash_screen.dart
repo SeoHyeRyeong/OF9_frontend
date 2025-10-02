@@ -26,10 +26,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Lottie 애니메이션 컨트롤러
     _lottieController = AnimationController(vsync: this);
-
-    // 페이드 인 애니메이션 컨트롤러
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -47,20 +44,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startSplashSequence() async {
-    // 페이드 인 시작
     _fadeController.forward();
 
-    // 최소 3초 대기 (또는 앱 초기화 완료까지)
     await Future.wait([
       Future.delayed(const Duration(seconds: 3)),
       _performAppInitialization(),
     ]);
 
     if (mounted) {
-      // 페이드 아웃
       await _fadeController.reverse();
 
-      // 다음 화면으로 이동 (로그인 분기 처리)
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
@@ -74,9 +67,7 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  // 앱 초기화 작업 수행
   Future<void> _performAppInitialization() async {
-    // ex. API 설정, 캐시 로드, 권한 확인 등
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
@@ -89,12 +80,15 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // 중복 제거된 SystemUiOverlayStyle 설정
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.dark, // 한 번만 지정
         systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.dark,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemNavigationBarContrastEnforced: false,
       ),
     );
 
@@ -102,107 +96,119 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: Colors.white,
       extendBody: true,
       extendBodyBehindAppBar: true,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final screenHeight = constraints.maxHeight;
-          final screenWidth = constraints.maxWidth;
+      resizeToAvoidBottomInset: false,
+      body: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        removeBottom: true,
+        removeLeft: true,
+        removeRight: true,
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenHeight = MediaQuery.of(context).size.height;
+              final screenWidth = MediaQuery.of(context).size.width;
 
-          return Stack(
-            children: [
-              // 배경 레이어
-              Column(
+              return Stack(
                 children: [
-                  // 상단 그라데이션 영역
+                  // 배경 레이어
                   Container(
-                    height: screenHeight * 0.7,
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0xFF78BDEC), // #78BDEC
-                          Color(0xFFFFFFFF), // #FFFFFF
-                        ],
+                    width: screenWidth,
+                    height: screenHeight,
+                    child: Column(
+                      children: [
+                        Container(
+                          height: screenHeight * 0.7,
+                          width: double.infinity,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Color(0xFF78BDEC),
+                                Color(0xFFFFFFFF),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Lottie 애니메이션
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(height: screenHeight * 0.29),
+                        Center(
+                          child: Lottie.asset(
+                            'assets/animations/splash.json',
+                            controller: _lottieController,
+                            width: scaleWidth(225),
+                            height: scaleHeight(136),
+                            fit: BoxFit.contain,
+                            repeat: true,
+                            onLoaded: (composition) {
+                              _lottieController
+                                ..duration = composition.duration
+                                ..repeat();
+                            },
+                          ),
+                        ),
+                        const Spacer(),
+                      ],
+                    ),
+                  ),
+
+                  // dodada 이미지
+                  Positioned(
+                    bottom: scaleHeight(242 + 1),
+                    left: 0,
+                    right: 0,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Center(
+                        child: SvgPicture.asset(
+                          AppImages.dodada,
+                          width: scaleWidth(84),
+                          height: scaleHeight(22),
+                        ),
                       ),
                     ),
                   ),
-                  // 나머지 하단 흰색 영역
-                  Expanded(
-                    child: Container(
-                      color: Colors.white,
+
+                  // splash 이미지
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SizedBox(
+                        height: scaleHeight(242),
+                        width: screenWidth,
+                        child: SvgPicture.asset(
+                          AppImages.splash,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
+                      ),
                     ),
                   ),
                 ],
-              ),
-
-              // Lottie 애니메이션 오버레이
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(height: screenHeight * 0.29),
-
-                    // Lottie 애니메이션
-                    Center(
-                      child: Lottie.asset(
-                        'assets/animations/splash.json',
-                        controller: _lottieController,
-                        width: scaleWidth(225),
-                        height: scaleHeight(136),
-                        fit: BoxFit.contain,
-                        repeat: true, //반복 재생
-                        onLoaded: (composition) {
-                          // Lottie 파일 로드 완료 후 애니메이션 시작
-                          _lottieController
-                            ..duration = composition.duration //반복 재생 시간 적용
-                            ..repeat(); //반복 시작
-                        },
-                      ),
-                    ),
-
-                    const Spacer(),
-                  ],
-                ),
-              ),
-
-              // dodada 이미지 (splash 이미지 바로 위에)
-              Positioned(
-                bottom: MediaQuery.of(context).padding.bottom + scaleHeight(242 + 1),
-                left: 0,
-                right: 0,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Center(
-                    child: SvgPicture.asset(
-                      AppImages.dodada,
-                      width: scaleWidth(84),
-                      height: scaleHeight(22),
-                    ),
-                  ),
-                ),
-              ),
-
-              // splash 이미지 (네비게이션 바 바로 위에 고정)
-              Positioned(
-                bottom: MediaQuery.of(context).padding.bottom,
-                left: 0,
-                right: 0,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SizedBox(
-                    height: scaleHeight(242),
-                    child: SvgPicture.asset(
-                      AppImages.splash,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
     );
   }

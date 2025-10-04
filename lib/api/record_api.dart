@@ -123,7 +123,7 @@ class RecordApi {
     }
   }
 
-  /// S3에 파일 직접 업로드
+  /// S3에 파일 직접 업로드 (x-amz-acl: public-read 헤더 추가)
   static Future<void> uploadFileToS3({
     required String presignedUrl,
     required File file,
@@ -147,6 +147,7 @@ class RecordApi {
         headers: {
           'Content-Type': contentType,
           'Content-Length': bytes.length.toString(),
+          'x-amz-acl': 'public-read',
         },
         body: bytes,
       );

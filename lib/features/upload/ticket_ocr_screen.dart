@@ -375,6 +375,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
@@ -384,168 +385,172 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.gray400,
+        backgroundColor: Colors.white,
         body: LayoutBuilder(
           builder: (context, constraints) {
             final screenHeight = constraints.maxHeight;
 
-            return Stack(
-              children: [
-                // 카메라 배경 - 하단 흰색 영역까지 확장
-                if (_isCameraInitialized &&
-                    _cameraController.value.isInitialized &&
-                    _cameraController.value.previewSize != null)
-                  Container(
-                    height: (screenHeight * 0.696) + scaleHeight(20),
-                    width: double.infinity,
-                    child: ClipRect(
-                      child: OverflowBox(
-                        alignment: Alignment.center,
-                        child: FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(
-                            width: _cameraController.value.previewSize!.height,
-                            height: _cameraController.value.previewSize!.width,
-                            child: CameraPreview(_cameraController),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Column 기반 UI 레이아웃
-                Column(
-                  children: [
-                    // 카메라 영역 - 스캔 가이드
+            return Container(
+              color: AppColors.gray400,
+              child: Stack(
+                children: [
+                  // 카메라 배경 - 하단 흰색 영역까지 확장
+                  if (_isCameraInitialized &&
+                      _cameraController.value.isInitialized &&
+                      _cameraController.value.previewSize != null)
                     Container(
-                      height: screenHeight * 0.696,
-                      child: SafeArea(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: scaleWidth(20),
-                            vertical: scaleHeight(15),
-                          ),
-                          child: Column(
-                            children: [
-                              // 상단 코너들
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  SvgPicture.asset(AppImages.icCornerTopLeft, width: scaleWidth(24), height: scaleHeight(24)),
-                                  SvgPicture.asset(AppImages.icCornerTopRight, width: scaleWidth(24), height: scaleHeight(24)),
-                                ],
-                              ),
-                              const Expanded(child: SizedBox()),
-                              // 하단 코너들
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  SvgPicture.asset(AppImages.icCornerBottomLeft, width: scaleWidth(24), height: scaleHeight(24)),
-                                  SvgPicture.asset(AppImages.icCornerBottomRight, width: scaleWidth(24), height: scaleHeight(24)),
-                                ],
-                              ),
-                            ],
+                      height: (screenHeight * 0.696) + scaleHeight(20),
+                      width: double.infinity,
+                      child: ClipRect(
+                        child: OverflowBox(
+                          alignment: Alignment.center,
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: _cameraController.value.previewSize!.height,
+                              height: _cameraController.value.previewSize!.width,
+                              child: CameraPreview(_cameraController),
+                            ),
                           ),
                         ),
                       ),
                     ),
 
-                    // 하단 컨트롤 영역
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
-                          ),
-                        ),
+                  // Column 기반 UI 레이아웃
+                  Column(
+                    children: [
+                      // 카메라 영역 - 스캔 가이드
+                      Container(
+                        height: screenHeight * 0.696,
                         child: SafeArea(
-                          top: false,
-                          child: LayoutBuilder(
-                            builder: (context, contentConstraints) {
-                              return Column(
-                                children: [
-                                  const Spacer(flex: 50),
-
-                                  // 메인 타이틀
-                                  FixedText(
-                                    '티켓을 스캔해 주세요',
-                                    style: AppFonts.pretendard.h4_b(context).copyWith(color: Colors.black),
-                                  ),
-                                  const Spacer(flex: 25),
-
-                                  // 서브타이틀
-                                  FixedText(
-                                    '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
-                                    style: AppFonts.pretendard.b3_r(context).copyWith(color: AppColors.gray300),
-                                  ),
-                                  const Spacer(flex: 40),
-
-                                  // 버튼 영역
-                                  SizedBox(
-                                    height: scaleHeight(80),
-                                    child: Row(
-                                      children: [
-                                        // 갤러리 버튼
-                                        Expanded(
-                                          child: Center(
-                                            child: GestureDetector(
-                                              onTap: _onGalleryButtonPressed,
-                                              child: SvgPicture.asset(
-                                                AppImages.solar_gallery,
-                                                width: scaleWidth(36),
-                                                height: scaleWidth(36),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        // 카메라 촬영 버튼
-                                        GestureDetector(
-                                          onTap: _isLoading ? null : _onCameraButtonPressed,
-                                          child: Container(
-                                            width: scaleHeight(80),
-                                            height: scaleHeight(80),
-                                            decoration: BoxDecoration(
-                                              color: _isLoading ? AppColors.gray300 : AppColors.gray700,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Center(
-                                              child: _isLoading
-                                                  ? SizedBox(
-                                                width: scaleWidth(24),
-                                                height: scaleWidth(24),
-                                                child: const CircularProgressIndicator(
-                                                  color: Colors.white,
-                                                  strokeWidth: 2,
-                                                ),
-                                              )
-                                                  : SvgPicture.asset(
-                                                AppImages.camera,
-                                                width: scaleHeight(48),
-                                                height: scaleHeight(48),
-                                                color: AppColors.gray20,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        // 오른쪽 여백
-                                        const Expanded(child: SizedBox()),
-                                      ],
-                                    ),
-                                  ),
-                                  const Spacer(flex: 35),
-                                ],
-                              );
-                            },
+                          bottom: false, // SafeArea가 하단 컨트롤 영역과 겹치지 않도록 bottom은 제외
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: scaleWidth(20),
+                              vertical: scaleHeight(15),
+                            ),
+                            child: Column(
+                              children: [
+                                // 상단 코너들
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    SvgPicture.asset(AppImages.icCornerTopLeft, width: scaleWidth(24), height: scaleHeight(24)),
+                                    SvgPicture.asset(AppImages.icCornerTopRight, width: scaleWidth(24), height: scaleHeight(24)),
+                                  ],
+                                ),
+                                const Expanded(child: SizedBox()),
+                                // 하단 코너들
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    SvgPicture.asset(AppImages.icCornerBottomLeft, width: scaleWidth(24), height: scaleHeight(24)),
+                                    SvgPicture.asset(AppImages.icCornerBottomRight, width: scaleWidth(24), height: scaleHeight(24)),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+
+                      // 하단 컨트롤 영역
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              topRight: Radius.circular(20),
+                            ),
+                          ),
+                          child: SafeArea(
+                            top: false,
+                            child: LayoutBuilder(
+                              builder: (context, contentConstraints) {
+                                return Column(
+                                  children: [
+                                    const Spacer(flex: 50),
+
+                                    // 메인 타이틀
+                                    FixedText(
+                                      '티켓을 스캔해 주세요',
+                                      style: AppFonts.pretendard.h4_b(context).copyWith(color: Colors.black),
+                                    ),
+                                    const Spacer(flex: 25),
+
+                                    // 서브타이틀
+                                    FixedText(
+                                      '팀명, 일시가 잘 보이게 직관 티켓을 찍어주세요',
+                                      style: AppFonts.pretendard.b3_r(context).copyWith(color: AppColors.gray300),
+                                    ),
+                                    const Spacer(flex: 40),
+
+                                    // 버튼 영역
+                                    SizedBox(
+                                      height: scaleHeight(80),
+                                      child: Row(
+                                        children: [
+                                          // 갤러리 버튼
+                                          Expanded(
+                                            child: Center(
+                                              child: GestureDetector(
+                                                onTap: _onGalleryButtonPressed,
+                                                child: SvgPicture.asset(
+                                                  AppImages.solar_gallery,
+                                                  width: scaleWidth(36),
+                                                  height: scaleWidth(36),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          // 카메라 촬영 버튼
+                                          GestureDetector(
+                                            onTap: _isLoading ? null : _onCameraButtonPressed,
+                                            child: Container(
+                                              width: scaleHeight(80),
+                                              height: scaleHeight(80),
+                                              decoration: BoxDecoration(
+                                                color: _isLoading ? AppColors.gray300 : AppColors.gray700,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Center(
+                                                child: _isLoading
+                                                    ? SizedBox(
+                                                  width: scaleWidth(24),
+                                                  height: scaleWidth(24),
+                                                  child: const CircularProgressIndicator(
+                                                    color: Colors.white,
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                                    : SvgPicture.asset(
+                                                  AppImages.camera,
+                                                  width: scaleHeight(48),
+                                                  height: scaleHeight(48),
+                                                  color: AppColors.gray20,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          // 오른쪽 여백
+                                          const Expanded(child: SizedBox()),
+                                        ],
+                                      ),
+                                    ),
+                                    const Spacer(flex: 35),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             );
           },
         ),

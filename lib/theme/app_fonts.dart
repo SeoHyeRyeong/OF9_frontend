@@ -315,7 +315,7 @@ class _SuiteFonts {
     letterSpacing: -0.24,
   );
 
-  TextStyle caption_md_500_sm(BuildContext context) => TextStyle(
+  TextStyle caption_re_500(BuildContext context) => TextStyle(
     fontFamily: _fontFamily,
     fontWeight: FontWeight.w500,
     fontSize: scaleFont(10),

@@ -360,7 +360,8 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
         extractedStadium = game.stadium;
 
         // 구장 매핑
-        final mappedStadiumForSeat = mapStadiumName(game.stadium) ?? game.stadium;
+        final mappedStadiumForSeat = mapStadiumName(game.stadium) ??
+            game.stadium;
 
         // 새로운 매핑 기반 좌석 파싱 사용
         final parsedSeat = parseSeatStringWithMapping(
@@ -438,531 +439,512 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
               return Column(
                 children: [
                   // 뒤로가기 영역
-                  SizedBox(
-                    height: screenHeight * 0.075,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                      child: Row(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(
-                                top: screenHeight * 0.0225),
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation1,
-                                        animation2) => const TicketOcrScreen(),
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
-                                  ),
-                                );
-                              },
-                              child: SvgPicture.asset(
-                                AppImages.backBlack,
-                                width: scaleHeight(24),
-                                height: scaleHeight(24),
-                                fit: BoxFit.contain,
-                              ),
-                            ),
+                  Container(
+                    width: double.infinity,
+                    height: scaleHeight(60),
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation1,
+                                animation2) => const TicketOcrScreen(),
+                            transitionDuration: Duration.zero,
+                            reverseTransitionDuration: Duration.zero,
                           ),
-                        ],
+                        );
+                      },
+                      child: SvgPicture.asset(
+                        AppImages.backBlack,
+                        width: scaleWidth(24),
+                        height: scaleHeight(24),
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
 
                   // 콘텐츠 영역
                   Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, contentConstraints) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Spacer(flex: 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: scaleHeight(18)),
 
-                            // 제목
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: scaleWidth(20)),
-                              child: FixedText(
-                                '티켓 정보 확인',
-                                style: AppFonts.pretendard.h1_b(context)
-                                    .copyWith(color: Colors.black),
-                              ),
-                            ),
+                        // 제목
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: scaleWidth(20)),
+                          child: FixedText(
+                            '티켓 정보 확인',
+                            style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray900),
+                          ),
+                        ),
 
-                            const Spacer(flex: 18),
+                        SizedBox(height: scaleHeight(4)),
 
-                            // 서브타이틀
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: scaleWidth(20)),
-                              child: FixedText(
-                                '스캔한 정보와 다른 부분이 있다면 수정해 주세요.',
-                                style: AppFonts.pretendard.b2_m(context)
-                                    .copyWith(color: AppColors.gray300),
-                              ),
-                            ),
+                        // 서브타이틀
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: scaleWidth(20)),
+                          child: FixedText(
+                            '스캔한 정보와 다른 부분이 있다면 수정해 주세요',
+                            style: AppFonts.suite.body_md_400(context).copyWith(color: AppColors.gray500),
+                          ),
+                        ),
 
-                            const Spacer(flex: 16),
+                        SizedBox(height: scaleHeight(24)),
 
-                            // 메인 영역
-                            Expanded(
-                              flex: 520,
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: scaleWidth(20)),
-                                child: Column(
+                        // 메인 영역
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 이미지 미리보기 + 홈/원정 구단
+                                Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Spacer(flex: 20),
-
-                                    // 이미지 + 홈/원정 구단 영역
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment
-                                          .start,
-                                      children: [
-                                        // 이미지 미리보기
-                                        GestureDetector(
-                                          onTap: _pickImage,
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                                8),
-                                            child: Container(
-                                              width: scaleWidth(107),
-                                              height: scaleHeight(156),
-                                              color: Colors.grey[200],
-                                              child: _selectedImage != null
-                                                  ? Image.file(
-                                                File(_selectedImage!.path),
-                                                fit: BoxFit.cover,
-                                              )
-                                                  : widget.imagePath.isNotEmpty
-                                                  ? Image.file(
-                                                File(widget.imagePath),
-                                                fit: BoxFit.cover,
-                                              )
-                                                  : const Center(
-                                                child: FixedText('이미지 없음'),
-                                              ),
-                                            ),
+                                    // 이미지 미리보기
+                                    GestureDetector(
+                                      onTap: _pickImage,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Container(
+                                          width: scaleWidth(107),
+                                          height: scaleHeight(156),
+                                          color: Colors.grey[200],
+                                          child: _selectedImage != null
+                                              ? Image.file(
+                                            File(_selectedImage!.path),
+                                            fit: BoxFit.cover,
+                                          )
+                                              : widget.imagePath.isNotEmpty
+                                              ? Image.file(
+                                            File(widget.imagePath),
+                                            fit: BoxFit.cover,
+                                          )
+                                              : const Center(
+                                            child: FixedText('이미지 없음'),
                                           ),
                                         ),
+                                      ),
+                                    ),
 
-                                        SizedBox(width: scaleWidth(24)),
+                                    SizedBox(width: scaleWidth(24)),
 
-                                        // 홈/원정 구단 영역
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                    // 홈/원정 구단 영역
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          // 홈 구단
+                                          Row(
                                             children: [
-                                              // 홈 구단
-                                              Row(
-                                                children: [
-                                                  SizedBox(
-                                                      height: scaleHeight(1)),
-                                                  FixedText('홈 구단',
-                                                      style: AppFonts.suite.c1_b(context).copyWith(
-                                                          color: AppColors.gray400)),
-                                                  SizedBox(
-                                                      width: scaleWidth(2)),
-                                                  FixedText('*',
-                                                      style: AppFonts.suite.c1_b(context).copyWith(
-                                                          color: AppColors.pri200)),
-                                                ],
-                                              ),
-                                              SizedBox(height: scaleHeight(8)),
-                                              GestureDetector(
-                                                onTap: () async {
-                                                  final team = await showTeamPicker(
-                                                    context: context,
-                                                    title: '홈 구단',
-                                                    teams: teamListWithImages,
-                                                    initial: selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? ''),
-                                                  );
-                                                  if (team != null)
-                                                    setState(() => selectedHome = team);
-                                                },
-                                                child: Container(
-                                                  width: double.infinity,
-                                                  height: scaleHeight(48),
-                                                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-                                                  alignment: Alignment.centerLeft,
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.gray50,
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Row(
-                                                    children: [
-                                                      Expanded(
-                                                        child: FixedText(
-                                                          (selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '')) ?? '구단을 선택해 주세요',
-                                                          style: AppFonts.pretendard.b3_sb_long(context)
-                                                              .copyWith(color: ((selectedHome ?? extractedHomeTeam) == null
-                                                              || (selectedHome ?? extractedHomeTeam)!.isEmpty) ? AppColors.gray300 : Colors.black,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: scaleWidth(14)),
-                                                      SvgPicture.asset(
-                                                        AppImages.dropdown,
-                                                        width: scaleWidth(20),
-                                                        height: scaleHeight(20),
-                                                        fit: BoxFit.contain,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-
-                                              SizedBox(height: scaleHeight(20)),
-
-                                              // 원정 구단
-                                              Row(
-                                                children: [
-                                                  FixedText('원정 구단',
-                                                      style: AppFonts.suite.c1_b(context).copyWith(
-                                                          color: AppColors.gray400)),
-                                                  SizedBox(width: scaleWidth(2)),
-                                                  FixedText('*',
-                                                      style: AppFonts.suite.c1_b(context)
-                                                          .copyWith(color: AppColors.pri200)),
-                                                ],
-                                              ),
-                                              SizedBox(height: scaleHeight(8)),
-                                              GestureDetector(
-                                                onTap: () async {
-                                                  final team = await showTeamPicker(
-                                                    context: context,
-                                                    title: '원정 구단',
-                                                    teams: teamListWithImages,
-                                                    initial: selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? ''),
-                                                  );
-                                                  if (team != null)
-                                                    setState(() => selectedAway = team);
-                                                },
-                                                child: Container(
-                                                  width: double.infinity,
-                                                  height: scaleHeight(48),
-                                                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-                                                  alignment: Alignment.centerLeft,
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.gray50,
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Row(
-                                                    children: [
-                                                      Expanded(
-                                                        child: FixedText(
-                                                          (selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '')) ??
-                                                              '구단을 선택해 주세요',
-                                                          style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                                                            color: ((selectedAway ?? extractedAwayTeam) == null ||
-                                                                (selectedAway ?? extractedAwayTeam)!.isEmpty)
-                                                                ? AppColors.gray300 : Colors.black,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: scaleWidth(14)),
-                                                      SvgPicture.asset(
-                                                        AppImages.dropdown,
-                                                        width: scaleWidth(20),
-                                                        height: scaleHeight(20),
-                                                        fit: BoxFit.contain,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
+                                              SizedBox(height: scaleHeight(1)),
+                                              FixedText('홈 구단', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                              SizedBox(width: scaleWidth(2)),
+                                              FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
                                             ],
                                           ),
-                                        ),
-                                      ],
-                                    ),
+                                          SizedBox(height: scaleHeight(4)),
+                                          GestureDetector(
+                                            onTap: () async {
+                                              final team = await showTeamPicker(
+                                                context: context,
+                                                title: '홈 구단',
+                                                teams: teamListWithImages,
 
-                                    const Spacer(flex: 38), // 이미지-일시 간격
-
-                                    // 일시
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            FixedText('일시',
-                                                style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray400)),
-                                            SizedBox(width: scaleWidth(2)),
-                                            FixedText('*',
-                                                style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200)),
-                                          ],
-                                        ),
-                                        SizedBox(height: scaleHeight(8)),
-                                        GestureDetector(
-                                          onTap: () async {
-                                            final home = selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '');
-                                            final away = selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '');
-
-                                            if (home == null || home.isEmpty || away == null || away.isEmpty) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: FixedText('홈 구단과 원정 구단을 먼저 선택해 주세요.')),
+                                                initial: selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? ''),
                                               );
-                                              return;
-                                            }
-
-                                            final dt = await showDateTimePicker(
-                                              context: context,
-                                              ocrDateText: extractedDate,
-                                              homeTeam: home,
-                                              opponentTeam: away,
-                                            );
-                                            if (dt != null)
-                                              setState(() => selectedDateTime = dt);
-                                          },
-                                          child: Container(
-                                            width: double.infinity,
-                                            height: scaleHeight(52),
-                                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-                                            alignment: Alignment.centerLeft,
-                                            decoration: BoxDecoration(
-                                              color: AppColors.gray50,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: FixedText(
-                                                    selectedDateTime ?? formatKoreanDateTime(extractedDate, extractedTime) ?? '경기 날짜를 선택해 주세요',
-                                                    style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                                                      color: (selectedDateTime == null && extractedDate == null &&
-                                                          extractedTime == null)
-                                                          ? AppColors.gray300 : Colors.black,
+                                              if (team != null)
+                                                setState(() => selectedHome = team);
+                                            },
+                                            child: Container(
+                                              width: double.infinity,
+                                              height: scaleHeight(48),
+                                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
+                                              alignment: Alignment.centerLeft,
+                                              decoration: BoxDecoration(
+                                                color: AppColors.gray50,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: FixedText(
+                                                      (selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '')) ?? '구단을 선택해 주세요',
+                                                      style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                                                        color: ((selectedHome ?? extractedHomeTeam) == null
+                                                            || (selectedHome ?? extractedHomeTeam)!.isEmpty)
+                                                            ? AppColors.gray300 : AppColors.gray900,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                SizedBox(width: scaleWidth(14)),
-                                                SvgPicture.asset(
-                                                  AppImages.dropdown_calendar,
-                                                  width: scaleWidth(20),
-                                                  height: scaleHeight(20),
-                                                  fit: BoxFit.contain,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    const Spacer(flex: 28), // 일시-구장 간격
-
-                                    // 구장
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            FixedText('구장',
-                                                style: AppFonts.suite.c1_b(context).copyWith(
-                                                    color: AppColors.gray400)),
-                                            SizedBox(width: scaleWidth(2)),
-                                            FixedText('*',
-                                                style: AppFonts.suite.c1_b(context).copyWith(
-                                                    color: AppColors.pri200)),
-                                          ],
-                                        ),
-                                        SizedBox(height: scaleHeight(8)),
-                                        GestureDetector(
-                                          onTap: () async {
-                                            final previousStadium = selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium;
-
-                                            final stadium = await showStadiumPicker(
-                                              context: context,
-                                              title: '구장',
-                                              stadiums: stadiumListWithImages,
-                                              initial: previousStadium,
-                                            );
-
-                                            if (stadium != null) {
-                                              setState(() {selectedStadium = stadium;
-
-                                                // 구장이 변경되었다면 모든 좌석 정보 리셋 (OCR 포함)
-                                                if (stadium != previousStadium) {
-                                                  selectedSeat = null;
-                                                  extractedSeat =
-                                                  null; // OCR로 인식된 좌석도 리셋
-                                                }
-                                              });
-                                            }
-                                          },
-                                          child: Container(
-                                            width: double.infinity,
-                                            height: scaleHeight(52),
-                                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-                                            alignment: Alignment.centerLeft,
-                                            decoration: BoxDecoration(
-                                              color: AppColors.gray50,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: FixedText(
-                                                    selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium ?? '구장 정보를 작성해 주세요',
-                                                    style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                                                      color: (selectedStadium ?? mapStadiumName(extractedStadium) ??
-                                                          extractedStadium) == null ? AppColors.gray300 : Colors.black,
-                                                    ),
+                                                  SizedBox(width: scaleWidth(14)),
+                                                  SvgPicture.asset(
+                                                    AppImages.dropdown,
+                                                    width: scaleWidth(20),
+                                                    height: scaleHeight(20),
+                                                    fit: BoxFit.contain,
                                                   ),
-                                                ),
-                                                SizedBox(width: scaleWidth(14)),
-                                                SvgPicture.asset(
-                                                  AppImages.dropdown,
-                                                  width: scaleWidth(20),
-                                                  height: scaleHeight(20),
-                                                  fit: BoxFit.contain,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(height: scaleHeight(8)),
-                                        FixedText(
-                                          '*홈 구장과 실제 경기 구장이 다를 경우 직접 작성해 주세요',
-                                          style: AppFonts.suite.c2_sb(context).copyWith(
-                                              color: AppColors.gray300),
-                                        ),
-                                      ],
-                                    ),
-
-                                    const Spacer(flex: 37), // 구장-좌석 간격
-
-                                    // 좌석 선택 부분
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            FixedText('좌석',
-                                                style: AppFonts.suite.c1_b(context).copyWith(
-                                                    color: AppColors.gray400)),
-                                            SizedBox(width: scaleWidth(2)),
-                                            FixedText('*',
-                                                style: AppFonts.suite.c1_b(context).copyWith(
-                                                    color: AppColors.pri200)),
-                                          ],
-                                        ),
-                                        SizedBox(height: scaleHeight(8)),
-                                        GestureDetector(
-                                          onTap: () async {
-                                            FocusScope.of(context).unfocus();
-                                            final currentStadium = selectedStadium ??
-                                                mapStadiumName(extractedStadium) ?? extractedStadium;
-
-                                            final seat = await showSeatInputDialog(
-                                              context,
-                                              initial: selectedSeat ?? extractedSeat,
-                                              stadium: currentStadium,
-                                              previousStadium: currentStadium, // 현재 구장을 이전 구장으로 전달 (바텀시트에서는 구장 변경 감지 불필요)
-                                            );
-                                            if (seat != null)
-                                              setState(() => selectedSeat = seat);
-                                          },
-                                          child: Container(
-                                            width: double.infinity,
-                                            height: scaleHeight(52),
-                                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-                                            alignment: Alignment.centerLeft,
-                                            decoration: BoxDecoration(
-                                              color: AppColors.gray50,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: FixedText(
-                                              selectedSeat ?? extractedSeat ??
-                                                  '좌석 정보를 작성해 주세요',
-                                              style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                                                color: ((selectedSeat ?? extractedSeat) == null ||
-                                                    (selectedSeat ?? extractedSeat)!.isEmpty) ? AppColors.gray300 : Colors.black,
+                                                ],
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        SizedBox(height: scaleHeight(8)),
-                                        FixedText(
-                                          '*상세 좌석 정보는 나에게만 보여요',
-                                          style: AppFonts.suite.c2_sb(context).copyWith(
-                                              color: AppColors.gray300),
-                                        ),
-                                      ],
-                                    ),
 
-                                    const Spacer(flex: 25), // 하단 여백
+                                          SizedBox(height: scaleHeight(15)),
+
+                                          // 원정 구단
+                                          Row(
+                                            children: [
+                                              FixedText('원정 구단', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                              SizedBox(width: scaleWidth(2)),
+                                              FixedText('*',
+                                                  style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
+                                            ],
+                                          ),
+                                          SizedBox(height: scaleHeight(4)),
+                                          GestureDetector(
+                                            onTap: () async {
+                                              final team = await showTeamPicker(
+                                                context: context,
+                                                title: '원정 구단',
+                                                teams: teamListWithImages,
+                                                initial: selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? ''),
+                                              );
+                                              if (team != null)
+                                                setState(() => selectedAway = team);
+                                            },
+                                            child: Container(
+                                              width: double.infinity,
+                                              height: scaleHeight(48),
+                                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
+                                              alignment: Alignment.centerLeft,
+                                              decoration: BoxDecoration(
+                                                color: AppColors.gray50,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: FixedText(
+                                                      (selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '')) ??
+                                                          '구단을 선택해 주세요',
+                                                      style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                                                        color: ((selectedAway ?? extractedAwayTeam) == null ||
+                                                            (selectedAway ?? extractedAwayTeam)!.isEmpty)
+                                                            ? AppColors.gray300
+                                                            : AppColors.gray900,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: scaleWidth(14)),
+                                                  SvgPicture.asset(
+                                                    AppImages.dropdown,
+                                                    width: scaleWidth(20),
+                                                    height: scaleHeight(20),
+                                                    fit: BoxFit.contain,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ),
-                              ),
-                            ),
 
-                            const Spacer(flex: 24),
+                                SizedBox(height: scaleHeight(14)), // 이미지-일시 간격
 
-                            // 완료 버튼
-                            Center(
-                              child: SizedBox(
-                                width: scaleWidth(320),
-                                height: scaleHeight(54),
-                                child: ElevatedButton(
-                                  onPressed: isComplete
-                                      ? () {
-                                    final String finalStadium = selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium ?? '';
-                                    final String finalSeat = selectedSeat ?? extractedSeat ?? '';
-                                    final String finalGameId = matchedGames.isNotEmpty ? matchedGames.first.gameId : '';
-                                    final int userId = 1;
-
-                                    final String finalHomeTeam = selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '') ?? '';
-                                    final String finalAwayTeam = selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '') ?? '';
-                                    final String finalGameDate = selectedDateTime ?? formatKoreanDateTime(extractedDate, extractedTime) ?? '';
-
-                                    Navigator.push(
-                                      context,
-                                      PageRouteBuilder(
-                                        pageBuilder: (context, animation1,
-                                            animation2) =>
-                                            EmotionSelectScreen(
-                                              userId: userId,
-                                              gameId: finalGameId,
-                                              seatInfo: finalSeat,
-                                              stadium: finalStadium,
-                                              imagePath: widget.imagePath,
-                                              homeTeam: finalHomeTeam,
-                                              awayTeam: finalAwayTeam,
-                                              gameDate: finalGameDate,
-                                            ),
-                                        transitionDuration: Duration.zero,
-                                        reverseTransitionDuration: Duration
-                                            .zero,
-                                      ),
-                                    );
-                                  }
-                                      : null,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: isComplete ? AppColors.gray700 : AppColors.gray200,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                // 일시
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        FixedText('일시', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                        SizedBox(width: scaleWidth(2)),
+                                        FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
+                                      ],
                                     ),
-                                    elevation: 0,
-                                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
-                                  ),
-                                  child: FixedText(
-                                    '완료',
-                                    style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
-                                  ),
+                                    SizedBox(height: scaleHeight(4)),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final home = selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '');
+                                        final away = selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '');
+
+                                        if (home == null || home.isEmpty ||
+                                            away == null || away.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: FixedText(
+                                                '홈 구단과 원정 구단을 먼저 선택해 주세요.')),
+                                          );
+                                          return;
+                                        }
+
+                                        final dt = await showDateTimePicker(
+                                          context: context,
+                                          ocrDateText: extractedDate,
+                                          homeTeam: home,
+                                          opponentTeam: away,
+                                        );
+                                        if (dt != null)
+                                          setState(() => selectedDateTime = dt);
+                                      },
+                                      child: Container(
+                                        width: double.infinity,
+                                        height: scaleHeight(52),
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: scaleWidth(16)),
+                                        alignment: Alignment.centerLeft,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.gray50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: FixedText(
+                                                selectedDateTime ?? formatKoreanDateTime(extractedDate, extractedTime) ??
+                                                    '경기 날짜를 선택해 주세요',
+                                                style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                                                  color: (selectedDateTime == null &&
+                                                      extractedDate == null && extractedTime == null)
+                                                      ? AppColors.gray300
+                                                      : AppColors.gray900,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: scaleWidth(14)),
+                                            SvgPicture.asset(
+                                              AppImages.dropdown_calendar,
+                                              width: scaleWidth(20),
+                                              height: scaleHeight(20),
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
+
+                                SizedBox(height: scaleHeight(14)), // 일시-구장 간격
+
+                                // 구장
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        FixedText('구장', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                        SizedBox(width: scaleWidth(2)),
+                                        FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
+                                      ],
+                                    ),
+                                    SizedBox(height: scaleHeight(4)),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final previousStadium = selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium;
+
+                                        final stadium = await showStadiumPicker(
+                                          context: context,
+                                          title: '구장',
+                                          stadiums: stadiumListWithImages,
+                                          initial: previousStadium,
+                                        );
+
+                                        if (stadium != null) {
+                                          setState(() {
+                                            selectedStadium = stadium;
+
+                                            // 구장이 변경되었다면 모든 좌석 정보 리셋 (OCR 포함)
+                                            if (stadium != previousStadium) {
+                                              selectedSeat = null;
+                                              extractedSeat =
+                                              null; // OCR로 인식된 좌석도 리셋
+                                            }
+                                          });
+                                        }
+                                      },
+                                      child: Container(
+                                        width: double.infinity,
+                                        height: scaleHeight(52),
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: scaleWidth(16)),
+                                        alignment: Alignment.centerLeft,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.gray50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: FixedText(
+                                                selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium ??
+                                                    '구장 정보를 작성해 주세요',
+                                                style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                                                  color: (selectedStadium ??
+                                                      mapStadiumName(extractedStadium) ?? extractedStadium) == null
+                                                      ? AppColors.gray300
+                                                      : AppColors.gray900,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: scaleWidth(14)),
+                                            SvgPicture.asset(
+                                              AppImages.dropdown,
+                                              width: scaleWidth(20),
+                                              height: scaleHeight(20),
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: scaleHeight(4)),
+                                    FixedText(
+                                      '*홈 구장과 실제 경기 구장이 다를 경우 직접 작성해 주세요',
+                                      style: AppFonts.suite.caption_re_500(context).copyWith(color: AppColors.gray300),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(height: scaleHeight(14)), // 구장-좌석 간격
+
+                                // 좌석 선택 부분
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        FixedText('좌석', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                        SizedBox(width: scaleWidth(2)),
+                                        FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
+                                      ],
+                                    ),
+                                    SizedBox(height: scaleHeight(4)),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        FocusScope.of(context).unfocus();
+                                        final currentStadium = selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium;
+
+                                        final seat = await showSeatInputDialog(
+                                          context,
+                                          initial: selectedSeat ?? extractedSeat,
+                                          stadium: currentStadium,
+                                          previousStadium: currentStadium, // 현재 구장을 이전 구장으로 전달 (바텀시트에서는 구장 변경 감지 불필요)
+                                        );
+                                        if (seat != null)
+                                          setState(() => selectedSeat = seat);
+                                      },
+                                      child: Container(
+                                        width: double.infinity,
+                                        height: scaleHeight(52),
+                                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
+                                        alignment: Alignment.centerLeft,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.gray50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: FixedText(
+                                          selectedSeat ?? extractedSeat ??
+                                              '좌석 정보를 작성해 주세요',
+                                          style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                                            color: ((selectedSeat ?? extractedSeat) == null ||
+                                                (selectedSeat ?? extractedSeat)!.isEmpty) ? AppColors.gray300 : AppColors.gray900,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: scaleHeight(4)),
+                                    FixedText(
+                                      '*상세 좌석 정보는 나에게만 보여요',
+                                      style: AppFonts.suite.caption_re_500(context).copyWith(color: AppColors.gray300),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // 완료 버튼 영역
+                        Container(
+                          width: scaleWidth(360),
+                          height: scaleHeight(88),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: AppColors.gray20,
+                                width: 1,
                               ),
                             ),
+                          ),
+                          padding: EdgeInsets.only(
+                            top: scaleHeight(24),
+                            right: scaleWidth(20),
+                            bottom: scaleHeight(10),
+                            left: scaleWidth(20),
+                          ),
+                          child: ElevatedButton(
+                            onPressed: isComplete
+                                ? () {
+                              final String finalStadium = selectedStadium ?? mapStadiumName(extractedStadium) ?? extractedStadium ?? '';
+                              final String finalSeat = selectedSeat ?? extractedSeat ?? '';
+                              final String finalGameId = matchedGames.isNotEmpty ? matchedGames.first.gameId : '';
+                              final int userId = 1;
 
-                            const Spacer(flex: 33),
-                          ],
-                        );
-                      },
+                              final String finalHomeTeam = selectedHome ?? mapCorpToFullName(extractedHomeTeam ?? '') ?? '';
+                              final String finalAwayTeam = selectedAway ?? mapCorpToFullName(extractedAwayTeam ?? '') ?? '';
+                              final String finalGameDate = selectedDateTime ?? formatKoreanDateTime(extractedDate, extractedTime) ?? '';
+
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation1,
+                                      animation2) =>
+                                      EmotionSelectScreen(
+                                        userId: userId,
+                                        gameId: finalGameId,
+                                        seatInfo: finalSeat,
+                                        stadium: finalStadium,
+                                        imagePath: widget.imagePath,
+                                        homeTeam: finalHomeTeam,
+                                        awayTeam: finalAwayTeam,
+                                        gameDate: finalGameDate,
+                                      ),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isComplete
+                                  ? AppColors.gray700
+                                  : AppColors.gray200,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    scaleHeight(16)),
+                              ),
+                              elevation: 0,
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: Center(
+                              child: FixedText(
+                                '완료',
+                                style: AppFonts.suite.head_sm_700(context)
+                                    .copyWith(color: AppColors.gray20),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

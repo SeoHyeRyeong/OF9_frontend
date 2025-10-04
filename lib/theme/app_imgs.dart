@@ -6,14 +6,11 @@ class AppImages {
   static const splash = 'assets/imgs/ic_onboarding/img_splash.svg';
   static const dodada = 'assets/imgs/ic_onboarding/text_dodada.svg';
 
-  // lookit 로고
-  static const logo_small = 'assets/imgs/logo_small.svg';
-  static const logo_large = 'assets/imgs/logo_large.svg';
-
   // 온보딩 그래픽
   static const loginOnboarding1 = 'assets/imgs/graphic_onboarding_1.png';
   static const loginOnboarding2 = 'assets/imgs/graphic_onboarding_2.png';
   static const loginOnboarding3 = 'assets/imgs/graphic_onboarding_3.png';
+  static const check = 'assets/imgs/ic_check.svg';
 
   // 카카오
   static const kakaobrown = 'assets/imgs/ic_kakao_kakaobrown_28.svg';

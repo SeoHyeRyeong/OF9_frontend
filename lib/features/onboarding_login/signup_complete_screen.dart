@@ -72,7 +72,7 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
               style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray300),
             ),
 
-            SizedBox(height: scaleHeight(26)),
+            SizedBox(height: scaleHeight(28)),
 
             // 티켓 이미지와 팀 정보
             Container(
@@ -106,7 +106,7 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
                         height: scaleHeight(38),
                       ),
 
-                      SizedBox(width: scaleWidth(320) * 0.036),
+                      SizedBox(width: scaleWidth(320) * 0.035),
 
                       // 팀 이름
                       FixedText(
@@ -122,39 +122,50 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
             Spacer(),
 
             // 완료 버튼
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-              child: SizedBox(
-                width: scaleWidth(320),
-                height: scaleHeight(54),
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation1, animation2) => const FeedScreen(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gray700,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(scaleHeight(16)),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
-                    elevation: 0,
+            Container(
+              width: scaleWidth(360),
+              height: scaleHeight(88),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: AppColors.gray20,
+                    width: 1,
                   ),
+                ),
+              ),
+              padding: EdgeInsets.only(
+                top: scaleHeight(24),
+                right: scaleWidth(20),
+                bottom: scaleHeight(10),
+                left: scaleWidth(20),
+              ),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation1, animation2) => const FeedScreen(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gray700,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(scaleHeight(16)),
+                  ),
+                  elevation: 0,
+                  padding: EdgeInsets.zero,
+                ),
+                child: Center(
                   child: FixedText(
                     '완료',
-                    style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
+                    style: AppFonts.suite.body_md_500(context).copyWith(color: AppColors.gray20),
                   ),
                 ),
               ),
             ),
-
-            SizedBox(height: scaleHeight(30)),
           ],
         ),
       ),

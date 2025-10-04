@@ -10,7 +10,7 @@ import 'package:frontend/features/onboarding_login/signup_complete_screen.dart';
 import 'package:frontend/utils/fixed_text.dart';
 
 class FavoriteTeamScreen extends StatefulWidget {
-  final String? kakaoAccessToken; // 추가
+  final String? kakaoAccessToken;
 
   const FavoriteTeamScreen({Key? key, this.kakaoAccessToken}) : super(key: key);
 
@@ -38,7 +38,6 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
 
   Future<void> _handleComplete() async {
     if (widget.kakaoAccessToken != null && _selectedTeam != null) {
-      // 신규 회원가입: sendTokenToBackend 사용
       final tokens = await kakaoAuthService.sendKakaoTokenToBackend(
           widget.kakaoAccessToken!,
           _selectedTeam!
@@ -69,206 +68,220 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final screenHeight = constraints.maxHeight;
-
-            return Column(
-              children: [
-                // 뒤로가기 영역 - 전체 높이의 7.5% (60/800)
-                SizedBox(
-                  height: screenHeight * 0.075,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(top: screenHeight * 0.0225), // 18/800
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.pushReplacement(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation1, animation2) => const LoginScreen(),
-                                  transitionDuration: Duration.zero,
-                                  reverseTransitionDuration: Duration.zero,
-                                ),
-                              );
-                            },
-                            child: SvgPicture.asset(
-                              AppImages.backBlack,
-                              width: scaleHeight(24),
-                              height: scaleHeight(24),
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+    // 💡 1. PopScope: 시스템 뒤로 가기 동작을 정의합니다.
+    return PopScope(
+      canPop: false, // 시스템 pop 동작을 막습니다.
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          // canPop이 false이므로, pop 시도 시 이 코드가 실행됩니다.
+          // LoginScreen으로 돌아가도록 설정 (pushReplacement)
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1, animation2) => const LoginScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // 1. 뒤로가기 영역 - 60px 높이
+              Container(
+                width: double.infinity,
+                height: scaleHeight(60),
+                alignment: Alignment.centerLeft,
+                padding: EdgeInsets.only(left: scaleWidth(20)),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation1, animation2) => const LoginScreen(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                  },
+                  child: SvgPicture.asset(
+                    AppImages.backBlack,
+                    width: scaleWidth(24),
+                    height: scaleHeight(24),
+                    fit: BoxFit.contain,
                   ),
                 ),
+              ),
 
-                // 콘텐츠 영역 - 나머지 92.5%
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, contentConstraints) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Spacer(flex: 33),
+              SizedBox(height: scaleHeight(16)),
 
-                          // 제목
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                            child: FixedText(
-                              '최애 구단 선택',
-                              style: AppFonts.suite.h1_b(context).copyWith(color: Colors.black),
-                            ),
+              // 2. 제목 영역
+              Padding(
+                padding: EdgeInsets.only(left: scaleWidth(20)),
+                child: Container(
+                  width: double.infinity,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FixedText(
+                        '최애 구단 선택',
+                        style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray800),
+                      ),
+                      SizedBox(height: scaleHeight(4)),
+                      FixedText(
+                        '나중에 마이페이지에서 변경 가능해요',
+                        style: AppFonts.suite.body_md_400(context).copyWith(color: AppColors.gray300),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(height: scaleHeight(8)),
+
+              // 3. 그리드 영역
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                  child: GridView.builder(
+                    padding: EdgeInsets.only(
+                      top: scaleHeight(20),
+                      bottom: scaleHeight(5),
+                    ),
+                    itemCount: _teams.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: scaleWidth(8),
+                      mainAxisSpacing: scaleHeight(8),
+                      childAspectRatio: 1.2,
+                    ),
+                    itemBuilder: (context, index) {
+                      final team = _teams[index];
+                      final isSelected = _selectedTeam == team['name'];
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            if (_selectedTeam == team['name']) {
+                              _selectedTeam = null;
+                            } else {
+                              _selectedTeam = team['name'];
+                            }
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.gray50,
+                            border: isSelected
+                                ? Border.all(color: AppColors.gray700, width: scaleWidth(3))
+                                : Border.all(color: AppColors.gray50, width: scaleWidth(1)),
+                            borderRadius: BorderRadius.circular(scaleHeight(20)),
                           ),
-
-                          const Spacer(flex: 18),
-
-                          // 서브타이틀
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                            child: FixedText(
-                              '나중에 마이페이지에서 변경 가능해요',
-                              style: AppFonts.suite.b2_m(context).copyWith(color: AppColors.gray300),
-                            ),
-                          ),
-
-                          const Spacer(flex: 16),
-
-                          // 그리드 영역
-                          Expanded(
-                            flex: 520,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                              child: GridView.builder(
-                                padding: EdgeInsets.only(
-                                  top: screenHeight * 0.02,
-                                  bottom: screenHeight * 0.02,
+                          child: Stack(
+                            children: [
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      team['image']!,
+                                      width: scaleHeight(60),
+                                      height: scaleHeight(60),
+                                    ),
+                                    SizedBox(height: scaleHeight(8)),
+                                    FixedText(
+                                      team['name']!,
+                                      style: AppFonts.suite.body_md_500(context).copyWith(
+                                          color: AppColors.gray900),
+                                    ),
+                                  ],
                                 ),
-                                itemCount: _teams.length,
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: scaleWidth(8),
-                                  mainAxisSpacing: screenHeight * 0.01,
-                                  childAspectRatio: 1.2,
-                                ),
-                                itemBuilder: (context, index) {
-                                  final team = _teams[index];
-                                  final isSelected = _selectedTeam == team['name'];
-
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        if (_selectedTeam == team['name']) {
-                                          _selectedTeam = null;
-                                        } else {
-                                          _selectedTeam = team['name'];
-                                        }
-                                      });
-                                    },
+                              ),
+                              if (isSelected)
+                                Align(
+                                  alignment: Alignment.topLeft,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      top: scaleHeight(14),
+                                      left: scaleHeight(14),
+                                    ),
                                     child: Container(
+                                      width: scaleWidth(24),
+                                      height: scaleWidth(24),
                                       decoration: BoxDecoration(
-                                        color: AppColors.gray50,
-                                        border: isSelected
-                                            ? Border.all(color: AppColors.pri300, width: scaleWidth(3))
-                                            : Border.all(color: AppColors.gray50, width: scaleWidth(1)),
-                                        borderRadius: BorderRadius.circular(scaleHeight(20)),
+                                        color: AppColors.gray700,
+                                        shape: BoxShape.circle,
                                       ),
-                                      child: Stack(
-                                        children: [
-                                          Center(
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Image.asset(
-                                                  team['image']!,
-                                                  width: scaleHeight(60),
-                                                  height: scaleHeight(60),
-                                                ),
-                                                SizedBox(height: scaleHeight(8)),
-                                                FixedText(
-                                                  team['name']!,
-                                                  style: AppFonts.suite.b2_b(context).copyWith(
-                                                      color: AppColors.gray900),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          if (isSelected)
-                                            Align(
-                                              alignment: Alignment.topLeft,
-                                              child: Padding(
-                                                padding: EdgeInsets.only(
-                                                  top: scaleHeight(15),
-                                                  left: scaleHeight(15),
-                                                ),
-                                                child: Icon(
-                                                  Icons.check_circle,
-                                                  color: AppColors.pri300,
-                                                  size: scaleWidth(24),
-                                                ),
-                                              ),
-                                            ),
-                                          if (!isSelected && _selectedTeam != null)
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                color: AppColors.gray50.withOpacity(0.5),
-                                                borderRadius: BorderRadius.circular(scaleHeight(12)),
-                                              ),
-                                            ),
-                                        ],
+                                      child: Center(
+                                        child: SvgPicture.asset(
+                                          AppImages.check,
+                                          width: scaleWidth(13),
+                                          height: scaleHeight(11),
+                                          fit: BoxFit.contain,
+                                        ),
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-
-                          const Spacer(flex: 24),
-
-                          // 확인 버튼
-                          Center(
-                            child: SizedBox(
-                              width: scaleWidth(320),
-                              height: scaleHeight(54),
-                              child: ElevatedButton(
-                                onPressed: _selectedTeam != null ? _handleComplete : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _selectedTeam != null
-                                      ? AppColors.gray700
-                                      : AppColors.gray200,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(scaleHeight(16)),
                                   ),
-                                  elevation: 0,
-                                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
                                 ),
-                                child: FixedText(
-                                  '확인',
-                                  style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
+                              if (!isSelected && _selectedTeam != null)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.gray50.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(scaleHeight(12)),
+                                  ),
                                 ),
-                              ),
-                            ),
+                            ],
                           ),
-
-                          const Spacer(flex: 33),
-                        ],
+                        ),
                       );
                     },
                   ),
                 ),
-              ],
-            );
-          },
+              ),
+
+              // 4. 확인 버튼 영역
+              Container(
+                width: scaleWidth(360),
+                height: scaleHeight(88),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.gray20,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                padding: EdgeInsets.only(
+                  top: scaleHeight(24),
+                  right: scaleWidth(20),
+                  bottom: scaleHeight(10),
+                  left: scaleWidth(20),
+                ),
+                child: ElevatedButton(
+                  onPressed: _selectedTeam != null ? _handleComplete : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedTeam != null
+                        ? AppColors.gray700
+                        : AppColors.gray200,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(scaleHeight(16)),
+                    ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Center(
+                    child: FixedText(
+                      '확인',
+                      style: AppFonts.suite.body_md_500(context).copyWith(color: AppColors.gray20),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

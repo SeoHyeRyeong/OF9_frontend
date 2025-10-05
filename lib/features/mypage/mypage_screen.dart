@@ -12,6 +12,8 @@ import 'package:frontend/api/record_api.dart';
 import 'package:frontend/features/mypage/settings_screen.dart';
 import 'package:frontend/features/mypage/follower_screen.dart';
 import 'package:frontend/features/mypage/following_screen.dart';
+import 'dart:convert'; // 추가
+import 'dart:typed_data'; // 추가
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({Key? key}) : super(key: key);
@@ -111,7 +113,88 @@ class _MyPageScreenState extends State<MyPageScreen> {
     await Future.wait([_loadUserInfo(), _loadMyRecords()]);
   }
 
-  /// 그리드 아이템 빌드 (S3 URL 방식)
+  /// 미디어 이미지 빌드 (Base64 및 URL 지원)
+  Widget _buildMediaImage(dynamic mediaData, double width, double height) {
+    try {
+      if (mediaData is String) {
+        // URL 먼저 확인 (Base64보다 우선)
+        if (mediaData.startsWith('http://') || mediaData.startsWith('https://')) {
+          return Image.network(
+            mediaData,
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                width: width,
+                height: height,
+                decoration: BoxDecoration(
+                  color: AppColors.gray50,
+                  borderRadius: BorderRadius.circular(scaleWidth(8)),
+                ),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        : null,
+                    strokeWidth: 2,
+                    color: AppColors.pri400,
+                  ),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              print('❌ Image.network 에러: $error');
+              return _buildImageErrorWidget(width, height);
+            },
+          );
+        }
+        // Base64 처리 (URL이 아닌 경우만)
+        try {
+          final Uint8List imageBytes = base64Decode(mediaData);
+          return Image.memory(
+            imageBytes,
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+          );
+        } catch (e) {
+          print('❌ Base64 디코딩 실패: $e');
+          return _buildImageErrorWidget(width, height);
+        }
+      }
+      return _buildImageErrorWidget(width, height);
+    } catch (e) {
+      print('❌ 이미지 처리 실패: $e');
+      return _buildImageErrorWidget(width, height);
+    }
+  }
+
+  /// 이미지 에러 위젯
+  Widget _buildImageErrorWidget(double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(scaleWidth(8)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.image, size: scaleWidth(32), color: AppColors.gray300),
+          SizedBox(height: scaleHeight(8)),
+          Text(
+            '이미지 로드 실패',
+            style: AppFonts.pretendard.c2_b(context).copyWith(color: AppColors.gray400),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 그리드 아이템 빌드 (수정된 버전)
   Widget _buildGridItem(Map<String, dynamic> record, int index) {
     return GestureDetector(
       onTap: () => print('기록 상세보기: ${record['recordId']}'),
@@ -120,34 +203,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
         height: scaleHeight(152),
         child: Stack(
           children: [
-            // S3 URL로 이미지 표시
+            // 미디어 이미지 표시 (Base64 및 URL 지원)
             record['mediaUrls'] != null && record['mediaUrls'].isNotEmpty
                 ? ClipRRect(
               borderRadius: BorderRadius.circular(scaleWidth(8)),
-              child: Image.network(
-                record['mediaUrls'][0], // 첫 번째 이미지 URL
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.gray50,
-                      borderRadius: BorderRadius.circular(scaleWidth(8)),
-                    ),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                            : null,
-                        strokeWidth: 2,
-                        color: AppColors.pri400,
-                      ),
-                    ),
-                  );
-                },
-                errorBuilder: (_, __, ___) => _buildPlaceholder(record),
+              child: _buildMediaImage(
+                  record['mediaUrls'][0],
+                  double.infinity,
+                  double.infinity
               ),
             )
                 : _buildPlaceholder(record),

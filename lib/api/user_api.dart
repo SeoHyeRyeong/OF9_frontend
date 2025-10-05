@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
@@ -89,6 +90,85 @@ class UserApi {
   }
 
   //=====================================================================================
+  // S3 업로드 관련 (프로필 이미지용)
+  //=====================================================================================
+
+  /// Pre-signed URL 요청 (프로필 이미지용)
+  static Future<Map<String, String>> getPresignedUrl({
+    required String domain, // "profiles"
+    required String fileName,
+  }) async {
+    final requestBody = {
+      'domain': domain,
+      'fileName': fileName,
+    };
+
+    final headers = await _authHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/uploads/presigned-url'),
+      headers: headers,
+      body: jsonEncode(requestBody),
+    );
+
+    print('📤 Pre-signed URL 요청: $domain/$fileName');
+    print('📥 Pre-signed URL 응답: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final responseData = jsonDecode(utf8.decode(response.bodyBytes));
+      final data = responseData['data'];
+      return {
+        'presignedUrl': data['presignedUrl'],
+        'finalUrl': data['finalUrl'],
+      };
+    } else {
+      throw Exception('Pre-signed URL 요청 실패: ${response.statusCode}');
+    }
+  }
+
+  /// S3에 프로필 이미지 업로드 (x-amz-acl: public-read 헤더 추가)
+  static Future<String?> uploadProfileImageToS3(XFile imageFile) async {
+    try {
+      print('📤 프로필 이미지 S3 업로드 시작');
+
+      // 1. Pre-signed URL 요청
+      final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final urlData = await getPresignedUrl(
+        domain: 'profiles',
+        fileName: fileName,
+      );
+
+      // 2. S3에 파일 업로드
+      final file = File(imageFile.path);
+      final bytes = await file.readAsBytes();
+
+      final response = await http.put(
+        Uri.parse(urlData['presignedUrl']!),
+        headers: {
+          'Content-Type': 'image/jpeg',
+          'Content-Length': bytes.length.toString(),
+          'x-amz-acl': 'public-read',
+        },
+        body: bytes,
+      );
+
+      print('📤 S3 업로드: ${imageFile.path}');
+      print('📥 S3 업로드 응답: ${response.statusCode}');
+
+      if (response.statusCode != 200) {
+        throw Exception('S3 업로드 실패: ${response.statusCode}');
+      }
+
+      final finalUrl = urlData['finalUrl']!;
+      print('✅ 프로필 이미지 업로드 성공: $finalUrl');
+      return finalUrl;
+
+    } catch (e) {
+      print('❌ 프로필 이미지 S3 업로드 실패: $e');
+      return null;
+    }
+  }
+
+  //=====================================================================================
   // 마이페이지
   //=====================================================================================
   /// 1. 내 정보 조회
@@ -140,7 +220,6 @@ class UserApi {
       throw Exception('프로필 수정 실패: ${res.statusCode}');
     }
   }
-
 
   /// 3. 닉네임 중복 확인
   static Future<Map<String, dynamic>> checkNickname(String nickname) async {

@@ -10,8 +10,6 @@ import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/components/custom_popup_dialog.dart';
 import 'package:frontend/api/record_api.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:frontend/features/feed/search_screen.dart';
 import 'package:frontend/api/user_api.dart';
 
@@ -438,38 +436,38 @@ class _FeedScreenState extends State<FeedScreen> {
     try {
       // mediaData가 String인지 확인
       if (mediaData is String) {
-        // base64 데이터로 처리 (마이페이지와 동일한 방식)
-        try {
-          final Uint8List imageBytes = base64Decode(mediaData);
-          return Image.memory(
-            imageBytes,
+        // URL인지 확인하고 직접 로드
+        if (mediaData.startsWith('http://') || mediaData.startsWith('https://')) {
+          return Image.network(
+            mediaData,
             width: width,
             height: height,
             fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                width: width,
+                height: height,
+                color: AppColors.gray100,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        : null,
+                    color: AppColors.pri400,
+                  ),
+                ),
+              );
+            },
             errorBuilder: (context, error, stackTrace) {
-              print('❌ Image.memory 에러: $error');
+              print('❌ Image.network 에러: $error');
               return _buildImageErrorWidget(width, height);
             },
           );
-        } catch (e) {
-          print('❌ Base64 디코딩 실패: $e');
-          print('📊 mediaData 내용: ${mediaData.substring(0, mediaData.length > 100 ? 100 : mediaData.length)}...');
-
-          // Base64 디코딩이 실패하면 URL로 시도
-          if (mediaData.startsWith('http://') || mediaData.startsWith('https://')) {
-            return Image.network(
-              mediaData,
-              width: width,
-              height: height,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                print('❌ Image.network 에러: $error');
-                return _buildImageErrorWidget(width, height);
-              },
-            );
-          }
-          return _buildImageErrorWidget(width, height);
         }
+        // URL이 아닌 경우 에러 처리
+        print('❌ 지원하지 않는 이미지 형식: $mediaData');
+        return _buildImageErrorWidget(width, height);
       }
       // mediaData가 다른 형태인 경우
       else {

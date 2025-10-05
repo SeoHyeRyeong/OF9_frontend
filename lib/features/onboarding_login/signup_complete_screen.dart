@@ -36,32 +36,34 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(height: scaleHeight(76)),
 
             // Welcome 이미지
-            Image.asset(
-              AppImages.welcome,
-              width: scaleWidth(296),
-              height: scaleHeight(262),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: scaleWidth(32)),
+              child: AspectRatio(
+                aspectRatio: 296 / 262,
+                child: Image.asset(
+                  AppImages.welcome,
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
 
             SizedBox(height: scaleHeight(40)),
 
             // 메인 타이틀
-            Column(
-              children: [
-                FixedText(
-                  '두다다에 오신 것을',
-                  style: AppFonts.suite.h1_b(context).copyWith(color: Colors.black),
-                ),
-                SizedBox(height: scaleHeight(12)),
-                FixedText(
-                  '환영합니다!',
-                  style: AppFonts.suite.h1_b(context).copyWith(color: Colors.black),
-                ),
-              ],
+            FixedText(
+              '두다다에 오신 것을',
+              style: AppFonts.suite.h1_b(context).copyWith(color: Colors.black),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: scaleHeight(12)),
+            FixedText(
+              '환영합니다!',
+              style: AppFonts.suite.h1_b(context).copyWith(color: Colors.black),
+              textAlign: TextAlign.center,
             ),
 
             SizedBox(height: scaleHeight(20)),
@@ -70,51 +72,53 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
             FixedText(
               '지금부터 나만의 직관 이야기를 기록해 보세요!',
               style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray300),
+              textAlign: TextAlign.center,
             ),
 
             SizedBox(height: scaleHeight(28)),
 
-            // 티켓 이미지와 팀 정보
-            Container(
-              width: scaleWidth(320),
-              height: scaleHeight(76),
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(AppImages.img_ticket),
-                  fit: BoxFit.contain,
-                ),
-              ),
-              child: Padding(
-                padding: EdgeInsets.only(left: scaleWidth(320) * 0.109), // 35/320
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // "최애 구단" 텍스트
-                    FixedText(
-                      '최애 구단',
-                      style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray800),
+            // 티켓 이미지
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+              child: AspectRatio(
+                aspectRatio: 320 / 76,
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(AppImages.img_ticket),
+                      fit: BoxFit.contain,
                     ),
-
-                    SizedBox(width: scaleWidth(320) * 0.138),
-
-                    // 팀 정보
-                    if (widget.selectedTeam != null) ...[
-                      // 팀 이미지
-                      Image.asset(
-                        _teamImages[widget.selectedTeam!]!,
-                        width: scaleWidth(38),
-                        height: scaleHeight(38),
-                      ),
-
-                      SizedBox(width: scaleWidth(320) * 0.035),
-
-                      // 팀 이름
-                      FixedText(
-                        widget.selectedTeam!,
-                        style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray800),
-                      ),
-                    ],
-                  ],
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final containerWidth = constraints.maxWidth;
+                      return Padding(
+                        padding: EdgeInsets.only(left: containerWidth * 0.109),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            FixedText(
+                              '최애 구단',
+                              style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray800),
+                            ),
+                            SizedBox(width: containerWidth * 0.138),
+                            if (widget.selectedTeam != null) ...[
+                              Image.asset(
+                                _teamImages[widget.selectedTeam!]!,
+                                width: scaleWidth(38),
+                                height: scaleHeight(38),
+                              ),
+                              SizedBox(width: containerWidth * 0.035),
+                              FixedText(
+                                widget.selectedTeam!,
+                                style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray800),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -123,7 +127,7 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
 
             // 완료 버튼
             Container(
-              width: scaleWidth(360),
+              width: double.infinity,
               height: scaleHeight(88),
               decoration: BoxDecoration(
                 border: Border(

@@ -13,9 +13,6 @@ Future<String?> showTeamPicker({
   required List<Map<String, String>> teams,
   String? initial,
 }) {
-  final screenHeight = MediaQuery.of(context).size.height;
-  final sheetHeight = screenHeight * 0.7;
-
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
@@ -25,197 +22,180 @@ Future<String?> showTeamPicker({
       return StatefulBuilder(
         builder: (ctx, setState) {
           return Container(
-            height: sheetHeight,
+            height: scaleHeight(537),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(scaleHeight(20)),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(scaleHeight(20)),
               ),
             ),
             child: SafeArea(
               top: false,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final sheetHeight = constraints.maxHeight;
+              child: Column(
+                children: [
+                  // 헤더 영역
+                  Container(
+                    height: scaleHeight(60),
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                    child: Stack(
+                      children: [
+                        // 뒤로가기 버튼
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: SvgPicture.asset(
+                              AppImages.backBlack,
+                              width: scaleWidth(24),
+                              height: scaleHeight(24),
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                        // 타이틀
+                        Center(
+                          child: FixedText(
+                            title,
+                            style: AppFonts.suite.head_sm_700(context).copyWith(
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                  return Column(
-                    children: [
-                      // 헤더 영역
-                      SizedBox(
-                        height: scaleHeight(60),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                          child: Row(
+                  // 팀 리스트 영역
+                  Expanded(
+                    child: ListView.separated(
+                      padding: EdgeInsets.only(
+                        top: scaleHeight(12),
+                        right: scaleWidth(20),
+                        bottom: scaleHeight(12),
+                        left: scaleWidth(20),
+                      ),
+                      itemCount: teams.length,
+                      separatorBuilder: (_, __) => SizedBox(height: scaleHeight(8)),
+                      itemBuilder: (context, idx) {
+                        final team = teams[idx]['name']!;
+                        final image = teams[idx]['image']!;
+                        final isSel = team == selected;
+
+                        return GestureDetector(
+                          onTap: () => setState(() {
+                            selected = selected == team ? null : team;
+                          }),
+                          child: Stack(
                             children: [
-                              // 뒤로가기 버튼
-                              GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: SvgPicture.asset(
-                                  AppImages.backBlack,
-                                  width: scaleWidth(24),
-                                  height: scaleHeight(24),
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-
-                              Expanded(
-                                child: Center(
-                                  child: FixedText(
-                                    title,
-                                    style: AppFonts.pretendard.b2_b(context).copyWith(color: Colors.black),
+                              // 카드
+                              Container(
+                                width: double.infinity,
+                                height: scaleHeight(64),
+                                decoration: BoxDecoration(
+                                  color: AppColors.gray50,
+                                  borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                  border: Border.all(
+                                    color: isSel ? AppColors.pri700 : Colors.transparent,
+                                    width: 2,
                                   ),
                                 ),
+                                padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      image,
+                                      width: scaleHeight(35),
+                                      height: scaleHeight(35),
+                                      fit: BoxFit.contain,
+                                    ),
+                                    SizedBox(width: scaleWidth(11.5)),
+                                    Expanded(
+                                      child: FixedText(
+                                        team,
+                                        style: AppFonts.suite.b3_sb(context).copyWith(
+                                          color: AppColors.gray900,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isSel)
+                                      Container(
+                                        width: scaleWidth(24),
+                                        height: scaleWidth(24),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.pri700,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: SvgPicture.asset(
+                                            AppImages.check,
+                                            width: scaleWidth(13),
+                                            height: scaleHeight(11),
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
-
-                              SizedBox(width: scaleWidth(24)),
+                              // 흐림 처리
+                              if (selected != null && team != selected)
+                                Container(
+                                  width: double.infinity,
+                                  height: scaleHeight(64),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.gray50.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                                  ),
+                                ),
                             ],
                           ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // 완료 버튼 영역
+                  Container(
+                    width: double.infinity,
+                    height: scaleHeight(88),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: AppColors.gray20,
+                          width: 1,
                         ),
                       ),
-
-                      // 콘텐츠 영역
-                      Expanded(
-                        child: SafeArea(
-                          top: false,
-                          child: LayoutBuilder(
-                            builder: (context, contentConstraints) {
-                              return Column(
-                                children: [
-                                  // 리스트 영역
-                                  Expanded(
-                                    flex: 470,
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                                      child: ListView.separated(
-                                        padding: EdgeInsets.only(top: scaleHeight(5)),
-                                        itemCount: teams.length,
-                                        separatorBuilder: (_, __) => SizedBox(height: scaleHeight(8)),
-                                        itemBuilder: (context, idx) {
-                                          final team = teams[idx]['name']!;
-                                          final image = teams[idx]['image']!;
-                                          final isSel = team == selected;
-
-                                          return GestureDetector(
-                                            onTap: () => setState(() {
-                                              selected = selected == team ? null : team;
-                                            }),
-                                            child: Align(
-                                              alignment: Alignment.center,
-                                              child: Stack(
-                                                children: [
-                                                  // 카드
-                                                  Container(
-                                                    width: scaleWidth(320),
-                                                    height: scaleHeight(64),
-                                                    decoration: BoxDecoration(
-                                                      color: AppColors.gray50,
-                                                      borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                                      border: Border.all(
-                                                        color: isSel ? AppColors.pri300 : Colors.transparent,
-                                                        width: 2,
-                                                      ),
-                                                    ),
-                                                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-                                                    child: Row(
-                                                      crossAxisAlignment: CrossAxisAlignment.center, // 세로 중앙 정렬
-                                                      children: [
-                                                        Image.asset(
-                                                          image,
-                                                          width: scaleHeight(35),
-                                                          height: scaleHeight(35),
-                                                          fit: BoxFit.contain,
-                                                        ),
-                                                        SizedBox(width: scaleWidth(8)),
-                                                        Expanded(
-                                                          child: FixedText(
-                                                            team,
-                                                            style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
-                                                          ),
-                                                        ),
-
-                                                        // 체크 아이콘 - 자동 세로 중앙 정렬
-                                                        if (isSel)
-                                                          Icon(
-                                                            Icons.check_circle,
-                                                            color: AppColors.pri300,
-                                                            size: scaleWidth(24),
-                                                          ),
-                                                      ],
-                                                    ),
-                                                  ),
-
-                                                  // 흐림 처리
-                                                  if (selected != null && team != selected)
-                                                    Container(
-                                                      width: scaleWidth(320),
-                                                      height: scaleHeight(64),
-                                                      decoration: BoxDecoration(
-                                                        color: AppColors.gray50.withOpacity(0.5),
-                                                        borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-
-                                  // 완료 버튼
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      border: Border(
-                                        top: BorderSide(
-                                          color: AppColors.gray20,
-                                          width: 1,
-                                        ),
-                                      ),
-                                    ),
-                                    padding: EdgeInsets.fromLTRB(
-                                      scaleWidth(20),
-                                      scaleHeight(24),
-                                      scaleWidth(20),
-                                      scaleHeight(10),
-                                    ),
-                                    child: Center(
-                                      child: SizedBox(
-                                        width: scaleWidth(320),
-                                        height: scaleHeight(54),
-                                        child: ElevatedButton(
-                                          onPressed: () => Navigator.pop(context, selected),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: selected != null
-                                                ? AppColors.gray700
-                                                : AppColors.gray200,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(scaleHeight(16)),
-                                            ),
-                                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
-                                            elevation: 0,
-                                          ),
-                                          child: FixedText(
-                                            '완료',
-                                            style: AppFonts.suite.b2_b(context).copyWith(
-                                              color: AppColors.gray20,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                  const Spacer(flex: 26),
-                                ],
-                              );
-                            },
+                    ),
+                    padding: EdgeInsets.only(
+                      top: scaleHeight(24),
+                      right: scaleWidth(20),
+                      bottom: scaleHeight(10),
+                      left: scaleWidth(20),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: selected != null ? () => Navigator.pop(context, selected) : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: selected != null
+                            ? AppColors.gray700
+                            : AppColors.gray200,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(scaleHeight(16)),
+                        ),
+                        elevation: 0,
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: Center(
+                        child: FixedText(
+                          '완료',
+                          style: AppFonts.suite.head_sm_700(context).copyWith(
+                            color: AppColors.gray20,
                           ),
                         ),
                       ),
-                    ],
-                  );
-                },
+                    ),
+                  ),
+                ],
               ),
             ),
           );

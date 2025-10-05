@@ -244,7 +244,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
 
               // 4. 확인 버튼 영역
               Container(
-                width: scaleWidth(360),
+                width: double.infinity,
                 height: scaleHeight(88),
                 decoration: BoxDecoration(
                   border: Border(

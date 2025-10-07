@@ -185,36 +185,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      barrierColor: AppColors.trans300,
       builder: (BuildContext context) {
         return SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: scaleWidth(8), vertical: scaleHeight(8)),
+            padding: EdgeInsets.only(
+              left: scaleWidth(20),
+              right: scaleWidth(20),
+              top: scaleHeight(8),
+              bottom: scaleHeight(10),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(scaleHeight(16)),
+                    borderRadius: BorderRadius.circular(scaleHeight(12)),
                   ),
                   child: Column(
                     children: [
                       ListTile(
                         title: Center(
-                            child: Text('앨범에서 사진 선택',
-                                style: AppFonts.suite
-                                    .b2_m(context)
-                                    .copyWith(color: AppColors.gray950))),
+                            child: FixedText('앨범에서 사진 선택',
+                                style: AppFonts.suite.b2_m(context).copyWith(color: AppColors.gray950))),
                         onTap: _pickImageFromGallery,
                       ),
-                      const Divider(color: AppColors.gray50, height: 1, thickness: 1),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                        child: const Divider(color: AppColors.trans100, height: 1, thickness: 1),
+                      ),
                       ListTile(
                         title: Center(
-                            child: Text('현재 사진 삭제',
-                                style: AppFonts.suite
-                                    .b2_m(context)
-                                    .copyWith(color: AppColors.error))),
+                            child: FixedText('현재 사진 삭제',
+                                style: AppFonts.suite.b2_m(context).copyWith(color: AppColors.error))),
                         onTap: _deleteProfileImage,
                       ),
                     ],
@@ -227,15 +231,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
+                      backgroundColor: AppColors.gray20,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(scaleHeight(16))),
                     ),
-                    child: Text('취소',
-                        style: AppFonts.suite
-                            .b2_b(context)
-                            .copyWith(color: AppColors.gray500)),
+                    child: FixedText('취소',
+                        style: AppFonts.suite.b2_m(context).copyWith(color: AppColors.gray300)),
                   ),
                 ),
               ],
@@ -385,29 +387,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 뒤로가기 영역 + 타이틀
-                  SizedBox(
-                    height: screenHeight * 0.075,
+                  Container(
+                    width: double.infinity,
+                    height: scaleHeight(60),
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                       child: Row(
                         children: [
-                          Padding(
-                            padding: EdgeInsets.only(
-                              top: screenHeight * 0.0225,
-                            ),
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder:
-                                        (context, animation1, animation2) =>
-                                    const SettingsScreen(),
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
-                                  ),
-                                );
-                              },
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder:
+                                      (context, animation1, animation2) =>
+                                  const SettingsScreen(),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
+                            child: Container(
+                              alignment: Alignment.center,
                               child: SvgPicture.asset(
                                 AppImages.backBlack,
                                 width: scaleHeight(24),
@@ -417,17 +418,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                           ),
                           Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.only(
-                                top: screenHeight * 0.0225,
-                              ),
-                              child: Center(
-                                child: FixedText(
-                                  "내 정보 수정",
-                                  style: AppFonts.suite
-                                      .b2_b(context)
-                                      .copyWith(color: AppColors.gray950),
-                                ),
+                            child: Center(
+                              child: FixedText(
+                                "내 정보 수정",
+                                style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray950),
                               ),
                             ),
                           ),
@@ -474,21 +468,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   // 닉네임 라벨
                   Padding(
-                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                     child: Row(
                       children: [
                         FixedText(
                           "닉네임",
-                          style: AppFonts.suite
-                              .b3_sb(context)
-                              .copyWith(color: AppColors.gray600),
+                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray600),
                         ),
                         SizedBox(width: scaleWidth(2)),
                         FixedText(
                           "*",
-                          style: AppFonts.suite
-                              .c1_b(context)
-                              .copyWith(color: AppColors.pri200),
+                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
                         ),
                       ],
                     ),
@@ -497,15 +487,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   // 닉네임 입력 필드
                   Padding(
-                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: scaleWidth(320),
+                          width: double.infinity,
                           height: scaleHeight(54),
                           decoration: BoxDecoration(
-                            color: AppColors.gray30, // 원본 색상으로 복원
+                            color: AppColors.gray30,
                             borderRadius: BorderRadius.circular(scaleWidth(8)),
                             border: _hasNicknameError()
                                 ? Border.all(
@@ -535,14 +525,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               border: InputBorder.none,
                             ),
                             textAlignVertical: TextAlignVertical.center,
-                            style: AppFonts.pretendard
-                                .b3_r_long(context)
-                                .copyWith(color: AppColors.black),
+                            style: AppFonts.pretendard.b3_r_long(context).copyWith(color: AppColors.black),
                           ),
                         ),
                         SizedBox(height: scaleHeight(8)),
                         SizedBox(
-                          width: scaleWidth(320),
+                          width: double.infinity,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -551,12 +539,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 _isNicknameEmpty()
                                     ? '닉네임을 작성해 주세요.'
                                     : '이미 등록된 닉네임이에요.',
-                                style: AppFonts.pretendard
-                                    .c1_m(context)
-                                    .copyWith(color: AppColors.error),
+                                style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.error),
                               )
                                   : const SizedBox.shrink(),
-                              // 원본 UI 구조와 스타일로 복원
                               _hasNicknameError()
                                   ? FixedText(
                                 '$_currentLength / $_maxLength',
@@ -577,21 +562,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   // 최애 구단 라벨
                   Padding(
-                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                     child: Row(
                       children: [
                         FixedText(
                           "최애 구단",
-                          style: AppFonts.suite
-                              .b3_sb(context)
-                              .copyWith(color: AppColors.gray600),
+                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray600),
                         ),
                         SizedBox(width: scaleWidth(2)),
                         FixedText(
                           "*",
-                          style: AppFonts.suite
-                              .c1_b(context)
-                              .copyWith(color: AppColors.pri200),
+                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
                         ),
                       ],
                     ),
@@ -600,20 +581,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   // 최애구단 선택 필드
                   Padding(
-                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                     child: GestureDetector(
                       onTap: _selectFavTeam,
                       child: Container(
-                        width: scaleWidth(320),
+                        width: double.infinity,
                         height: scaleHeight(54),
                         decoration: BoxDecoration(
                           color: AppColors.gray30,
                           borderRadius: BorderRadius.circular(scaleWidth(8)),
                         ),
                         child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: scaleWidth(16),
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(16),),
                           child: Row(
                             children: [
                               Expanded(
@@ -621,9 +600,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   favTeam == "정보 불러오기 실패"
                                       ? "최애 구단을 선택해주세요"
                                       : favTeam,
-                                  style: AppFonts.pretendard
-                                      .b3_r_long(context)
-                                      .copyWith(
+                                  style: AppFonts.pretendard.b3_r_long(context).copyWith(
                                     color: favTeam == "정보 불러오기 실패"
                                         ? AppColors.gray400
                                         : AppColors.black,
@@ -649,38 +626,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const Spacer(),
 
                   // 완료 버튼
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                    child: SizedBox(
-                      width: scaleWidth(320),
-                      height: scaleHeight(54),
-                      child: ElevatedButton(
-                        onPressed: canComplete ? _onCompletePressed : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: canComplete
-                              ? AppColors.gray700
-                              : AppColors.gray200,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              scaleHeight(16),
-                            ),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: scaleWidth(18),
-                          ),
-                          elevation: 0,
+                  Container(
+                    width: double.infinity,
+                    height: scaleHeight(88),
+                    decoration: BoxDecoration(
+                      border: Border(top: BorderSide(color: AppColors.gray20, width: 1)),
+                    ),
+                    padding: EdgeInsets.only(
+                      top: scaleHeight(24),
+                      right: scaleWidth(20),
+                      bottom: scaleHeight(10),
+                      left: scaleWidth(20),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: canComplete ? _onCompletePressed : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: canComplete
+                            ? AppColors.gray700
+                            : AppColors.gray200,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(scaleHeight(16)),
                         ),
+                        elevation: 0,
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: Center(
                         child: FixedText(
                           '완료',
                           style: AppFonts.suite
-                              .b2_b(context)
+                              .body_md_500(context)
                               .copyWith(color: AppColors.gray20),
                         ),
                       ),
                     ),
                   ),
-
-                  SizedBox(height: scaleHeight(30)),
                 ],
               );
             },

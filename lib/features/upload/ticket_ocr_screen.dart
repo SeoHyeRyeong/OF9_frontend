@@ -14,6 +14,8 @@ import 'package:frontend/components/custom_popup_dialog.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:frontend/utils/ticket_info_extractor.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
+import 'package:provider/provider.dart';
+import 'package:frontend/features/upload/providers/record_state.dart';
 
 class ExtractedTicketInfo {
   final String? awayTeam;
@@ -202,13 +204,14 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       print('Gallery image selected: ${pickedFile.path}');
 
       if (!mounted) return;
+
+      final recordState = Provider.of<RecordState>(context, listen: false);
+      recordState.reset();
+
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) =>
-              TicketInfoScreen(
-                imagePath: pickedFile.path,
-              ),
+          pageBuilder: (_, __, ___) => TicketInfoScreen(imagePath: pickedFile.path),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
         ),
@@ -343,6 +346,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
       final extracted = await extractTicketInfoFromImage(file.path);
 
+      final recordState = Provider.of<RecordState>(context, listen: false);
+      recordState.reset();
+
       if (extracted.awayTeam?.isEmpty != false ||
           extracted.date?.isEmpty != false ||
           extracted.time?.isEmpty != false) {
@@ -351,13 +357,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         Navigator.push(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation1, animation2) =>
-                TicketInfoScreen(
-                  imagePath: file.path,
-                  preExtractedAwayTeam: extracted.awayTeam,
-                  preExtractedDate: extracted.date,
-                  preExtractedTime: extracted.time,
-                ),
+            pageBuilder: (context, animation1, animation2) => TicketInfoScreen(
+              imagePath: file.path,
+            ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),

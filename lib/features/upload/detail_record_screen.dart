@@ -13,23 +13,10 @@ import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
 import 'package:frontend/api/record_api.dart';
 import 'package:frontend/utils/size_utils.dart';
-import 'package:frontend/theme/app_imgs.dart';
+import 'package:frontend/api/user_api.dart';
 
 class DetailRecordScreen extends StatefulWidget {
-  final String? imagePath;
-  final String? gameDate;
-  final String? homeTeam;
-  final String? awayTeam;
-  final String? stadium;
-
-  const DetailRecordScreen({
-    Key? key,
-    this.imagePath,
-    this.gameDate,
-    this.homeTeam,
-    this.awayTeam,
-    this.stadium,
-  }) : super(key: key);
+  const DetailRecordScreen({Key? key}) : super(key: key);
 
   @override
   State<DetailRecordScreen> createState() => _DetailRecordScreenState();
@@ -41,18 +28,26 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
   final int maxImages = 20;
   final ScrollController _scrollController = ScrollController();
 
-  // 업로드 상태 관리
-  bool _isUploading = false;
-  String _uploadStatus = '';
+  @override
+  void initState() {
+    super.initState();
+
+    // Provider에서 이전에 선택한 이미지 복원
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final recordState = Provider.of<RecordState>(context, listen: false);
+      if (recordState.detailImages.isNotEmpty) {
+        setState(() {
+          selectedImages = List.from(recordState.detailImages);
+        });
+      }
+    });
+  }
 
   /// 날짜 포맷팅 함수 (2025 - 04 - 15 (수) 14시 00분 → 2025.04.15(수))
   String? formatDisplayDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return null;
     try {
-      // "2025 - 04 - 15 (수) 14시 00분" 같은 형태에서 날짜 부분만 추출
-      final dateMatch = RegExp(
-          r'(\d{4})\s*-\s*(\d{2})\s*-\s*(\d{2})\s*\(([^)]+)\)').firstMatch(
-          dateStr);
+      final dateMatch = RegExp(r'(\d{4})\s*-\s*(\d{2})\s*-\s*(\d{2})\s*\(([^)]+)\)').firstMatch(dateStr);
       if (dateMatch != null) {
         final year = dateMatch.group(1);
         final month = dateMatch.group(2);
@@ -66,7 +61,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     }
   }
 
-  /// 갤러리에서 이미지 선택
   Future<void> _pickImages() async {
     if (selectedImages.length >= maxImages) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -76,32 +70,25 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     }
 
     try {
-      // 남은 선택 가능한 개수 계산
       final remainingCount = maxImages - selectedImages.length;
       final List<XFile> pickedFiles = await _picker.pickMultiImage();
 
       if (pickedFiles.isNotEmpty) {
-        // 선택한 파일이 제한을 초과하는 경우 처리
         final filesToAdd = pickedFiles.take(remainingCount).toList();
 
         if (pickedFiles.length > remainingCount) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${remainingCount}개만 추가되었습니다. (최대 ${maxImages}개)'),
-            ),
+            SnackBar(content: Text('${remainingCount}개만 추가되었습니다. (최대 ${maxImages}개)')),
           );
         }
 
-        // 이미지 경로 추가
         for (final file in filesToAdd) {
           selectedImages.add(file.path);
         }
         print('✔️추가 후 서버로 전송할 이미지 경로: $selectedImages');
         setState(() {});
 
-        // Provider에 이미지 경로 저장
-        Provider.of<RecordState>(context, listen: false)
-            .updateImagePaths(selectedImages);
+        Provider.of<RecordState>(context, listen: false).updateDetailImages(selectedImages);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,20 +97,14 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     }
   }
 
-  /// 이미지 삭제
   void _removeImage(int index) {
     setState(() {
       selectedImages.removeAt(index);
     });
-
     print('🗑️삭제 후 서버로 전송할 이미지 경로: $selectedImages');
-
-    // Provider에 업데이트된 이미지 경로 저장
-    Provider.of<RecordState>(context, listen: false)
-        .updateImagePaths(selectedImages);
+    Provider.of<RecordState>(context, listen: false).updateDetailImages(selectedImages);
   }
 
-  /// 갤러리 위젯 빌드
   Widget _buildGallerySection() {
     if (selectedImages.isEmpty) {
       return Column(
@@ -155,48 +136,29 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                 children: [
                   Column(
                     children: [
-                      // 갤러리 아이콘 (상단 패딩 바로 밑)
-                      Image.asset(
-                        AppImages.gallery_detail,
-                        width: scaleWidth(44),
-                        height: scaleHeight(37),
-                      ),
+                      Image.asset(AppImages.gallery_detail, width: scaleWidth(44), height: scaleHeight(37)),
                       SizedBox(height: scaleHeight(15)),
-                      // 첫 번째 텍스트
-                      FixedText(
-                        '사진과 영상을 추가해 주세요',
-                        style: AppFonts.suite.b2_b(context).copyWith(
-                          color: AppColors.gray800,
-                        ),
+                      FixedText('사진과 영상을 추가해 주세요',
+                        style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray800),
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: scaleHeight(8)),
-                      // 두 번째 텍스트
-                      FixedText(
-                        '첫 번째 사진이 대표 사진으로 지정됩니다',
-                        style: AppFonts.suite.c1_m(context).copyWith(
-                          color: AppColors.gray500,
-                        ),
+                      FixedText('첫 번째 사진이 대표 사진으로 지정됩니다',
+                        style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray500),
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
-                  // + 버튼 (하단 패딩 바로 위)
-                  SvgPicture.asset(
-                    AppImages.plus,
-                    width: scaleWidth(42),
-                    height: scaleHeight(42),
-                  ),
+                  SvgPicture.asset(AppImages.plus, width: scaleWidth(42), height: scaleHeight(42)),
                 ],
               ),
             ),
           ),
-          SizedBox(height: scaleHeight(23)), // 섹션 하단 여백
+          SizedBox(height: scaleHeight(23)),
         ],
       );
     }
 
-    // 이미지가 선택된 상태 - 로컬 파일로 표시 (업로드 전)
     return Column(
       children: [
         SizedBox(height: scaleHeight(24)),
@@ -207,11 +169,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                // 선택된 이미지들 (가로 스크롤)
-                ...selectedImages
-                    .asMap()
-                    .entries
-                    .map((entry) {
+                ...selectedImages.asMap().entries.map((entry) {
                   final index = entry.key;
                   final imagePath = entry.value;
 
@@ -219,7 +177,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                     margin: EdgeInsets.only(right: scaleWidth(10)),
                     child: Stack(
                       children: [
-                        // 로컬 파일 이미지 표시
                         Container(
                           width: scaleWidth(112),
                           height: scaleHeight(152),
@@ -243,16 +200,12 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                             ),
                           ),
                         ),
-                        // 대표 배지 (첫 번째 이미지)
                         if (index == 0)
                           Container(
                             width: scaleWidth(112),
                             height: scaleHeight(152),
                             alignment: Alignment.topLeft,
-                            padding: EdgeInsets.only(
-                              top: scaleHeight(8),
-                              left: scaleWidth(7),
-                            ),
+                            padding: EdgeInsets.only(top: scaleHeight(8), left: scaleWidth(7)),
                             child: Container(
                               width: scaleWidth(40),
                               height: scaleHeight(16),
@@ -265,43 +218,25 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  SvgPicture.asset(
-                                    AppImages.maincheck,
-                                    width: scaleWidth(10),
-                                    height: scaleHeight(10),
-                                  ),
+                                  SvgPicture.asset(AppImages.maincheck, width: scaleWidth(10), height: scaleHeight(10)),
                                   SizedBox(width: scaleWidth(2)),
-                                  FixedText(
-                                    '대표',
-                                    style: AppFonts.pretendard.c2_sb(context).copyWith(color: AppColors.gray20),
-                                  ),
+                                  FixedText('대표', style: AppFonts.pretendard.c2_sb(context).copyWith(color: AppColors.gray20)),
                                 ],
                               ),
                             ),
                           ),
-                        // 삭제 버튼 (오른쪽 상단)
                         Container(
                           width: scaleWidth(112),
                           height: scaleHeight(152),
                           alignment: Alignment.topRight,
-                          padding: EdgeInsets.only(
-                            top: scaleHeight(8),
-                            right: scaleWidth(7),
-                          ),
+                          padding: EdgeInsets.only(top: scaleHeight(8), right: scaleWidth(7)),
                           child: GestureDetector(
                             onTap: () => _removeImage(index),
                             child: Container(
                               width: scaleWidth(16),
                               height: scaleHeight(16),
-                              decoration: BoxDecoration(
-                                color: AppColors.gray400,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: scaleWidth(12),
-                              ),
+                              decoration: BoxDecoration(color: AppColors.gray400, shape: BoxShape.circle),
+                              child: Icon(Icons.close, color: Colors.white, size: scaleWidth(12)),
                             ),
                           ),
                         ),
@@ -309,7 +244,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                     ),
                   );
                 }).toList(),
-                // 추가 버튼 (20개 미만일 때만 표시)
                 if (selectedImages.length < maxImages) ...[
                   SizedBox(width: scaleWidth(20)),
                   GestureDetector(
@@ -317,15 +251,8 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                     child: Container(
                       width: scaleWidth(42),
                       height: scaleHeight(42),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        shape: BoxShape.circle,
-                      ),
-                      child: SvgPicture.asset(
-                        AppImages.plus,
-                        width: scaleWidth(24),
-                        height: scaleHeight(24),
-                      ),
+                      decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle),
+                      child: SvgPicture.asset(AppImages.plus, width: scaleWidth(24), height: scaleHeight(24)),
                     ),
                   ),
                 ],
@@ -340,25 +267,17 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final recordState = Provider.of<RecordState>(context);
+
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {
         if (!didPop) {
-          final recordState = Provider.of<RecordState>(context, listen: false);
-
+          recordState.updateDetailImages(selectedImages);
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (_, __, ___) => EmotionSelectScreen(
-                userId: recordState.userId ?? 0,
-                gameId: recordState.gameId ?? '',
-                seatInfo: recordState.seatInfo ?? '',
-                stadium: recordState.stadium ?? '',
-                imagePath: widget.imagePath,
-                homeTeam: widget.homeTeam,
-                awayTeam: widget.awayTeam,
-                gameDate: widget.gameDate,
-              ),
+              pageBuilder: (_, __, ___) => EmotionSelectScreen(),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
@@ -371,66 +290,44 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              // 1. 뒤로가기 영역
               _buildBackButtonArea(),
-
-              // 2. 메인 콘텐츠 영역 (스크롤)
               Expanded(
                 child: SingleChildScrollView(
                   controller: _scrollController,
                   child: Column(
                     children: [
-                      // 티켓 사진 카드 상단 여백
                       SizedBox(height: scaleHeight(2)),
-
-                      // 티켓 사진 카드
                       _buildTicketCard(),
-
-                      // 회색 배경 영역
                       Container(
                         width: double.infinity,
                         color: AppColors.gray20,
                         child: Column(
                           children: [
-                            // 사진과 영상을 추가해 주세요
                             _buildGallerySection(),
-
-                            // 직관 한 마디
                             _buildSection(
-                              builder: () => OneWordSectionContent(scrollController: _scrollController,),
+                              builder: () => OneWordSectionContent(scrollController: _scrollController),
                               cardWidth: 320,
                               cardHeight: 180,
                             ),
-
-                            // 야구 일기
                             _buildSection(
-                              builder: () => DiaryNoteSectionContent(scrollController: _scrollController,),
+                              builder: () => DiaryNoteSectionContent(scrollController: _scrollController),
                               cardWidth: 320,
-                              // cardHeight 제거 - 다중행일 때 자동 높이 조절
                             ),
-
-                            // 베스트 플레이어
                             _buildSection(
-                              builder: () => BestPlayerSectionContent(scrollController: _scrollController,),
+                              builder: () => BestPlayerSectionContent(scrollController: _scrollController),
                               cardWidth: 320,
                               cardHeight: 170,
                             ),
-
-                            // 함께 직관한 친구
                             _buildSection(
-                              builder: () => CheerFriendSectionContent(scrollController: _scrollController,),
+                              builder: () => CheerFriendSectionContent(scrollController: _scrollController),
                               cardWidth: 320,
                               cardHeight: 170,
                             ),
-
-                            // 먹거리 태그
                             _buildSection(
-                              builder: () => FoodTagSectionContent(scrollController: _scrollController,),
+                              builder: () => FoodTagSectionContent(scrollController: _scrollController),
                               cardWidth: 320,
                               cardHeight: 150,
                             ),
-
-                            // 하단 여백
                             SizedBox(height: scaleHeight(5)),
                           ],
                         ),
@@ -439,8 +336,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                   ),
                 ),
               ),
-
-              // 3. 완료 버튼 영역
               _buildCompleteButtonArea(),
             ],
           ),
@@ -449,7 +344,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     );
   }
 
-  // 뒤로가기 위젯
   Widget _buildBackButtonArea() {
     return Container(
       height: scaleHeight(60),
@@ -458,90 +352,68 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
       child: GestureDetector(
         onTap: () {
           final recordState = Provider.of<RecordState>(context, listen: false);
+          recordState.updateDetailImages(selectedImages);
 
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (_, __, ___) => EmotionSelectScreen(
-                userId: recordState.userId ?? 0,
-                gameId: recordState.gameId ?? '',
-                seatInfo: recordState.seatInfo ?? '',
-                stadium: recordState.stadium ?? '',
-              ),
+              pageBuilder: (_, __, ___) => EmotionSelectScreen(),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
           );
         },
-        child: SvgPicture.asset(
-          AppImages.backBlack,
-          width: scaleWidth(24),
-          height: scaleWidth(24),
-        ),
+        child: SvgPicture.asset(AppImages.backBlack, width: scaleWidth(24), height: scaleWidth(24)),
       ),
     );
   }
 
-  // 티켓 사진 카드 위젯
   Widget _buildTicketCard() {
+    final recordState = Provider.of<RecordState>(context);
+
     return Container(
       child: Padding(
-        padding: EdgeInsets.only(
-          top: scaleHeight(2),
-          left: scaleWidth(15),
-          bottom: scaleHeight(12),
-        ),
+        padding: EdgeInsets.only(top: scaleHeight(2), left: scaleWidth(15), bottom: scaleHeight(12)),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 티켓 이미지
             Container(
               width: scaleWidth(60.17),
               height: scaleHeight(88),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(scaleWidth(8)),
                 color: Colors.grey[200],
-                image: widget.imagePath != null
+                image: recordState.ticketImagePath != null
                     ? DecorationImage(
-                  image: FileImage(File(widget.imagePath!)),
+                  image: FileImage(File(recordState.ticketImagePath!)),
                   fit: BoxFit.cover,
                 )
                     : null,
               ),
-              child: widget.imagePath == null
-                  ? Center(
-                child: FixedText('이미지X'),
-              )
+              child: recordState.ticketImagePath == null
+                  ? Center(child: FixedText('이미지X'))
                   : null,
             ),
             SizedBox(width: scaleWidth(15)),
-            // 티켓 정보
             Expanded(
               child: Padding(
                 padding: EdgeInsets.only(top: scaleHeight(10)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 일시
                     FixedText(
-                      formatDisplayDate(widget.gameDate) ?? widget.gameDate ??
-                          '',
-                      style: AppFonts.suite.c1_b(context).copyWith(
-                          color: AppColors.gray800),
+                      formatDisplayDate(recordState.finalDateTime) ?? recordState.finalDateTime ?? '',
+                      style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray800),
                     ),
                     SizedBox(height: scaleHeight(12)),
-                    // 홈팀 VS 원정팀
                     FixedText(
-                      '${widget.homeTeam ?? ''}  VS  ${widget.awayTeam ?? ''}',
-                      style: AppFonts.pretendard.b2_b(context).copyWith(
-                          color: AppColors.gray800),
+                      '${recordState.finalHome ?? ''}  VS  ${recordState.finalAway ?? ''}',
+                      style: AppFonts.pretendard.b2_b(context).copyWith(color: AppColors.gray800),
                     ),
                     SizedBox(height: scaleHeight(16)),
-                    // 구장
                     FixedText(
-                      widget.stadium ?? '',
-                      style: AppFonts.suite.c1_b(context).copyWith(
-                          color: AppColors.gray600),
+                      recordState.finalStadium ?? '',
+                      style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.gray600),
                     ),
                   ],
                 ),
@@ -553,7 +425,6 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     );
   }
 
-  // 섹션 위젯
   Widget _buildSection({
     required Widget Function() builder,
     double cardWidth = 320,
@@ -571,12 +442,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(scaleWidth(20)),
               boxShadow: [
-                const BoxShadow(
-                  color: Color(0x08000000),
-                  offset: Offset(0, 0),
-                  blurRadius: 5,
-                  spreadRadius: 0,
-                ),
+                const BoxShadow(color: Color(0x08000000), offset: Offset(0, 0), blurRadius: 5, spreadRadius: 0),
               ],
             ),
             child: Padding(
@@ -595,50 +461,59 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
     );
   }
 
-  // 완료 버튼 위젯
   Widget _buildCompleteButtonArea() {
     return Container(
       color: Colors.white,
       width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: scaleWidth(20),
-        vertical: scaleHeight(24),
-      ),
+      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20), vertical: scaleHeight(24)),
       child: Column(
         children: [
-          // 완료 버튼
           ElevatedButton(
             onPressed: () async {
               try {
                 final recordState = Provider.of<RecordState>(context, listen: false);
 
-                if (!recordState.isBasicInfoComplete) {
+                // userId 가져오기
+                final userInfo = await UserApi.getMyProfile();
+                final userId = userInfo['data']['userId'] as int;
+
+                // gameId 확인
+                final gameId = recordState.gameId;
+                if (gameId == null || gameId.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('기본 정보가 누락되었습니다.')),
+                    SnackBar(content: Text('경기 정보가 없습니다.')),
                   );
                   return;
                 }
 
-                // 버튼 일시적으로 비활성화
-                final button = context.findRenderObject() as RenderBox?;
-                if (button != null) {
-                  // 중복 클릭 방지를 위해 잠시 비활성화
-                  await Future.delayed(Duration(milliseconds: 100));
-                }
+                print('=== 서버로 전송할 데이터 ===');
+                print('userId: $userId');
+                print('gameId: $gameId');
+                print('seatInfo: ${recordState.finalSeat}');
+                print('emotionCode: ${recordState.emotionCode}');
+                print('stadium: ${recordState.finalStadium}');
+                print('comment: ${recordState.comment}');
+                print('longContent: ${recordState.longContent}');
+                print('bestPlayer: ${recordState.bestPlayer}');
+                print('companionIds: ${recordState.companions}');
+                print('foodTags: ${recordState.foodTags}');
+                print('imagePaths: $selectedImages');
+                print('========================');
 
-                // 이미지 업로드는 RecordApi.createCompleteRecord 내부에서 처리됨
+                await Future.delayed(Duration(milliseconds: 100));
+
                 final result = await RecordApi.createCompleteRecord(
-                  userId: recordState.userId!,
+                  userId: userId,
                   gameId: recordState.gameId!,
-                  seatInfo: recordState.seatInfo!,
+                  seatInfo: recordState.finalSeat ?? ''!,
                   emotionCode: recordState.emotionCode!,
-                  stadium: recordState.stadium!,
+                  stadium: recordState.finalStadium ?? '',
                   comment: recordState.comment,
                   longContent: recordState.longContent,
                   bestPlayer: recordState.bestPlayer,
                   companionIds: recordState.companions,
                   foodTags: recordState.foodTags,
-                  imagePaths: selectedImages, // 로컬 이미지 경로 전달
+                  imagePaths: selectedImages,
                 );
 
                 print('✅ 기록 저장 성공: $result');
@@ -665,17 +540,12 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.gray700,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(scaleWidth(16)),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(scaleWidth(16))),
               elevation: 0,
               padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
               minimumSize: Size(scaleWidth(320), scaleHeight(54)),
             ),
-            child: FixedText(
-              '작성 완료',
-              style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
-            ),
+            child: FixedText('작성 완료', style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20)),
           ),
         ],
       ),

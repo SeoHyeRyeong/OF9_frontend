@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 
 /// 플랫폼별 기준 사이즈
-double get _baseWidth => Platform.isIOS ? 393 : 360;
-double get _baseHeight => Platform.isIOS ? 852 : 800;
+double get _baseWidth => Platform.isIOS ? 375 : 360;
+double get _baseHeight => Platform.isIOS ? 812 : 800;
 
 /// 화면 높이에 따라 자동으로 크기를 조정하는 함수
 double scaleHeight(double baseHeight) {

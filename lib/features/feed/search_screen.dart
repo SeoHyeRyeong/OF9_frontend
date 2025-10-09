@@ -79,59 +79,60 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                   SizedBox(width: scaleWidth(8)),
-                  GestureDetector(
-                    onTap: () {
-                      _focusNode.requestFocus();
-                    },
-                    child: Container(
-                      width: scaleWidth(288),
-                      height: scaleHeight(48),
-                      decoration: BoxDecoration(
-                        color: AppColors.gray30,
-                        borderRadius: BorderRadius.circular(scaleHeight(12)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              margin: EdgeInsets.only(left: scaleWidth(20)),
-                              child: TextField(
-                                controller: _searchController,
-                                focusNode: _focusNode,
-                                autofocus: false,
-                                style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.gray700),
-                                decoration: InputDecoration(
-                                  hintText: '글, 제목, 내용, 해시태그, 유저',
-                                  hintStyle: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.gray300),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                onSubmitted: _performSearch,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            margin: EdgeInsets.only(right: scaleWidth(8)),
-                            width: scaleWidth(36),
-                            height: scaleHeight(36),
-                            decoration: BoxDecoration(
-                              color: _getButtonColor(),
-                              borderRadius: BorderRadius.circular(scaleHeight(12)),
-                            ),
-                            child: GestureDetector(
-                              onTap: _handleSearchButtonTap,
-                              child: Center(
-                                child: SvgPicture.asset(
-                                  _getButtonIcon(),
-                                  width: scaleHeight(24),
-                                  height: scaleHeight(24),
-                                  color: AppColors.gray30,
-                                  fit: BoxFit.contain,
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        _focusNode.requestFocus();
+                      },
+                      child: Container(
+                        height: scaleHeight(48),
+                        decoration: BoxDecoration(
+                          color: AppColors.gray30,
+                          borderRadius: BorderRadius.circular(scaleHeight(12)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                margin: EdgeInsets.only(left: scaleWidth(20)),
+                                child: TextField(
+                                  controller: _searchController,
+                                  focusNode: _focusNode,
+                                  autofocus: false,
+                                  style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.gray700),
+                                  decoration: InputDecoration(
+                                    hintText: '글, 제목, 내용, 해시태그, 유저',
+                                    hintStyle: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.gray300),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  onSubmitted: _performSearch,
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                            Container(
+                              margin: EdgeInsets.only(right: scaleWidth(8)),
+                              width: scaleWidth(36),
+                              height: scaleHeight(36),
+                              decoration: BoxDecoration(
+                                color: _getButtonColor(),
+                                borderRadius: BorderRadius.circular(scaleHeight(12)),
+                              ),
+                              child: GestureDetector(
+                                onTap: _handleSearchButtonTap,
+                                child: Center(
+                                  child: SvgPicture.asset(
+                                    _getButtonIcon(),
+                                    width: scaleHeight(24),
+                                    height: scaleHeight(24),
+                                    color: AppColors.gray30,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -265,6 +266,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
+/// 탭 설정
 class SearchResultsWidget extends StatefulWidget {
   final SearchResult? searchResult;
   final int selectedTabIndex;
@@ -511,6 +513,7 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
   }
 }
 
+/// 추천 검색어, 최근 검색어 영역
 class InitialSearchWidget extends StatelessWidget {
   final List<String> popularSearches;
   final List<String> recentSearches;
@@ -589,7 +592,7 @@ class InitialSearchWidget extends StatelessWidget {
           Expanded(
             child: Container(
               margin: EdgeInsets.only(top: scaleHeight(20)),
-              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+              padding: EdgeInsets.only(left: scaleWidth(20)),
               child: SingleChildScrollView(
                 child: Column(
                   children: recentSearches
@@ -667,9 +670,9 @@ class RecentSearchItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: scaleWidth(320),
       height: scaleHeight(28),
       margin: EdgeInsets.only(bottom: scaleHeight(20)),
+      padding: EdgeInsets.only(right: scaleWidth(20)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -706,6 +709,7 @@ class RecentSearchItemWidget extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(width: scaleWidth(12)),
           GestureDetector(
             onTap: onDelete,
             child: Container(
@@ -727,6 +731,7 @@ class RecentSearchItemWidget extends StatelessWidget {
   }
 }
 
+/// 게시글 검색 결과
 class RecordsListWidget extends StatelessWidget {
   final List<Record> records;
 
@@ -921,7 +926,6 @@ class RecordCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: scaleWidth(320),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(scaleHeight(16)),
@@ -930,7 +934,6 @@ class RecordCardWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: scaleWidth(320),
             height: scaleHeight(60),
             decoration: BoxDecoration(
               color: AppColors.gray700,
@@ -1297,6 +1300,7 @@ class RecordCardWidget extends StatelessWidget {
   }
 }
 
+/// 사용자 검색 결과
 class UsersListWidget extends StatelessWidget {
   final List<UserSearchResult> users;
 
@@ -1431,7 +1435,6 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: scaleWidth(320),
       height: scaleHeight(80),
       decoration: BoxDecoration(
         color: Colors.white,

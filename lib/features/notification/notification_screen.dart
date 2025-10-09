@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/api/notification_api.dart';
+import 'package:frontend/api/user_api.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
@@ -15,100 +16,117 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  int selectedTabIndex = 0;
-  final List<String> tabTexts = ["ALL", "친구의 직관 기록", "받은 공감", "소식"];
-  final List<String> categories = ["ALL", "FRIEND_RECORD", "REACTION", "NEWS"];
+  int _selectedTabIndex = 0;
+  final List<String> _tabTexts = ["ALL", "친구의 직관 기록", "받은 공감", "소식"];
+  final List<String> _categories = ["ALL", "FRIEND_RECORD", "REACTION", "NEWS"];
 
-  List<Map<String, dynamic>> notifications = [];
-  bool isLoading = false;
-  int? _processingId; // 사용자 ID 또는 알림 ID를 저장하여 중복 처리 방지
-
-  // UI의 버튼 상태를 직접 관리하는 Map (userId, buttonStatus)
-  Map<int, FollowButtonStatus> _followButtonStatusMap = {};
+  List<Map<String, dynamic>> _notifications = [];
+  bool _isLoading = true;
+  int? _processingId;
+  final Map<int, FollowButtonStatus> _followStatusMap = {};
+  List<dynamic> _pendingFollowRequests = [];
 
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    _loadData();
   }
 
   void _onTabChanged(int index) {
-    if (selectedTabIndex == index) return;
-    setState(() => selectedTabIndex = index);
-    _loadNotifications();
+    if (_selectedTabIndex == index) return;
+    setState(() {
+      _selectedTabIndex = index;
+      _notifications = [];
+    });
+    _loadData();
   }
 
-  Future<void> _loadNotifications() async {
-    if (isLoading) return;
-    setState(() => isLoading = true);
-
+  Future<void> _loadData() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
     try {
-      final category = categories[selectedTabIndex];
-      final data = await NotificationApi.getNotificationsByCategory(category);
+      final category = _categories[_selectedTabIndex];
+
+      // a'ALL' 탭일 때만 팔로우 요청 목록을 함께 가져옴
+      if (category == 'ALL') {
+        final results = await Future.wait([
+          NotificationApi.getNotificationsByCategory(category),
+          UserApi.getFollowRequests(),
+        ]);
+        _notifications = results[0] as List<Map<String, dynamic>>;
+        final followRequestsResponse = results[1] as Map<String, dynamic>;
+        _pendingFollowRequests = followRequestsResponse['data'] as List<dynamic>? ?? [];
+      } else {
+        _notifications = await NotificationApi.getNotificationsByCategory(category);
+      }
+
+      for (var n in _notifications) {
+        final userId = NotificationApi.extractUserIdFromNotification(n);
+        if (userId != null && _followStatusMap[userId] == null) {
+          final amIFollowing = n['amIFollowing'] ?? false;
+          _followStatusMap[userId] = amIFollowing ? FollowButtonStatus.following : FollowButtonStatus.canFollow;
+        }
+      }
+
       if (mounted) {
-        setState(() {
-          notifications = data;
-          // 알림 로드 후 팔로우 버튼 상태 초기화
-          _initializeFollowButtonStates(data);
-        });
+        setState(() {});
       }
     } catch (e) {
-      // 에러 처리
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
-  }
-
-  /// 알림 데이터를 기반으로 팔로우 버튼의 초기 상태를 설정
-  void _initializeFollowButtonStates(List<Map<String, dynamic>> notifications) {
-    for (var notification in notifications) {
-      if (notification['type'] == 'FOLLOW' && notification['userId'] != null) {
-        final userId = notification['userId'];
-        // API 더미 데이터에 'amIFollowing' 키가 있으므로 활용
-        // TODO: 실제 API 응답에 이와 유사한 필드가 없다면, 별도의 getFollowStatus API 호출 필요
-        final amIFollowing = notification['amIFollowing'] ?? false;
-        _followButtonStatusMap[userId] = amIFollowing ? FollowButtonStatus.following : FollowButtonStatus.canFollow;
+      debugPrint('데이터 로딩 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('데이터를 불러오는데 실패했습니다: $e')),
+        );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // --- 비즈니스 로직 핸들러 ---
 
-  Future<void> _handleAcceptFollow(int nId, int reqId, int uId) async {
-    setState(() => _processingId = nId);
+  Future<void> _handleAcceptFollow(int notificationId, int? requestId, int? userId) async {
+    if (requestId == null || userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('오류: 요청 정보가 없습니다.')));
+      return;
+    }
+    setState(() => _processingId = notificationId);
     try {
-      final result = await NotificationApi.acceptFollowRequest(reqId, uId);
+      final result = await NotificationApi.acceptFollowRequest(requestId, userId);
       if (mounted && result.success) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
-        setState(() {
-          notifications.removeWhere((n) => n['id'] == nId);
-          // 팔로우 수락 후, 상대방에 대한 내 팔로우 버튼 상태 업데이트
-          _followButtonStatusMap[uId] = result.myFollowStatus;
-        });
+        _loadData();
       }
     } catch (e) {
-      // 에러 처리
+      debugPrint('팔로우 수락 실패: $e');
     } finally {
       if (mounted) setState(() => _processingId = null);
     }
   }
 
-  Future<void> _handleRejectFollow(int nId, int reqId, int uId) async {
-    setState(() => _processingId = nId);
+  Future<void> _handleRejectFollow(int notificationId, int? requestId, int? userId) async {
+    if (requestId == null || userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('오류: 요청 정보가 없습니다.')));
+      return;
+    }
+    setState(() => _processingId = notificationId);
     try {
-      await NotificationApi.rejectFollowRequest(reqId, uId);
+      await NotificationApi.rejectFollowRequest(requestId, userId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('팔로우 요청을 거절했습니다.')));
-        setState(() => notifications.removeWhere((n) => n['id'] == nId));
+        _loadData();
       }
     } catch (e) {
-      // 에러 처리
+      debugPrint('팔로우 거절 실패: $e');
     } finally {
       if (mounted) setState(() => _processingId = null);
     }
   }
 
-  Future<void> _handleFollowAction(int userId, FollowButtonStatus currentStatus, {int? requestId}) async {
+  Future<void> _handleFollowAction(int? userId, FollowButtonStatus currentStatus, {int? requestId}) async {
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('오류: 사용자 정보가 없습니다.')));
+      return;
+    }
     setState(() => _processingId = userId);
     try {
       FollowActionResult result;
@@ -120,17 +138,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
           result = await NotificationApi.unfollowUser(userId);
           break;
         case FollowButtonStatus.requestSent:
-        // 요청 취소를 위해 requestId가 필요. API 구조상 userId만으로도 가능할 수 있음
           result = await NotificationApi.cancelFollowRequest(userId, requestId ?? 0);
           break;
       }
       if (mounted && result.success) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
-        // API 결과에 따라 버튼 상태를 정확하게 업데이트
-        setState(() => _followButtonStatusMap[userId] = result.buttonState);
+        setState(() => _followStatusMap[userId] = result.buttonState);
       }
     } catch (e) {
-      // 에러 처리
+      debugPrint('팔로우 액션 실패: $e');
     } finally {
       if (mounted) setState(() => _processingId = null);
     }
@@ -141,7 +157,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -152,16 +168,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(scaleWidth(20), scaleHeight(10), scaleWidth(20), scaleHeight(10)),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(tabTexts.length, (index) {
-                    return Padding(
-                      padding: EdgeInsets.only(right: scaleWidth(6)),
-                      child: _buildTabButton(index),
-                    );
-                  }),
+              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20), vertical: scaleHeight(10)),
+              child: SizedBox(
+                height: scaleHeight(40),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _tabTexts.length,
+                  itemBuilder: (context, index) => Padding(
+                    padding: EdgeInsets.only(right: scaleWidth(6)),
+                    child: _buildTabButton(index),
+                  ),
                 ),
               ),
             ),
@@ -169,198 +185,343 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: CustomBottomNavBar(currentIndex: 3),
-    );
-  }
-
-  Widget _buildContent() {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.pri400));
-    }
-    if (notifications.isEmpty) {
-      return Center(child: Text("받은 알림이 없어요", style: AppFonts.suite.b1_sb(context).copyWith(color: AppColors.gray400)));
-    }
-    return RefreshIndicator(
-      onRefresh: _loadNotifications,
-      color: AppColors.pri400,
-      child: ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20), vertical: scaleHeight(10)),
-        itemCount: notifications.length,
-        itemBuilder: (context, index) {
-          return _buildNotificationItem(notifications[index]);
-        },
-      ),
-    );
-  }
-
-  // --- UI 위젯 빌더 ---
-
-  Widget _buildNotificationItem(Map<String, dynamic> notification) {
-    final int nId = notification['id'];
-    final int? reqId = notification['requestId'];
-    final int? uId = notification['userId'];
-    final String actionButtonType = notification['actionButton'] ?? '';
-    final bool isProcessing = _processingId == nId || _processingId == uId;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: scaleHeight(16)),
-      padding: EdgeInsets.all(scaleWidth(16)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(scaleWidth(12)),
-        border: Border.all(color: AppColors.gray50),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _buildProfileImage(notification['type'], notification['userProfileImage']),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(notification['userNickname'] ?? '알 수 없는 사용자', style: AppFonts.suite.b3_b(context)),
-                    const SizedBox(height: 4),
-                    Text(notification['timeAgo'] ?? '', style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400)),
-                  ],
-                ),
-              ),
-              _buildTrailingWidget(notification),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(notification['content'] ?? '알림 내용이 없습니다.', style: AppFonts.suite.b3_m(context).copyWith(color: AppColors.gray700)),
-
-          if (actionButtonType == 'ACCEPT_REJECT' && reqId != null && uId != null)
-            _buildAcceptRejectButtons(nId, reqId, uId, isProcessing),
-
-          if (actionButtonType == 'FOLLOW_BUTTON' && uId != null)
-            _buildFollowButton(uId, reqId, isProcessing),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileImage(String type, String? imageUrl) {
-    bool isSystem = type == 'SYSTEM';
-    return CircleAvatar(
-      radius: scaleWidth(21),
-      backgroundColor: AppColors.gray50,
-      backgroundImage: (imageUrl != null && !isSystem) ? NetworkImage(imageUrl) : null,
-      child: isSystem
-          ? SvgPicture.asset(AppImages.dodada, width: scaleWidth(30), color: AppColors.gray300)
-          : (imageUrl == null ? Icon(Icons.person, color: AppColors.gray400, size: scaleWidth(22)) : null),
-    );
-  }
-
-  Widget _buildTrailingWidget(Map<String, dynamic> notification) {
-    if (notification['badge'] == 'NEW') {
-      return Container(
-        padding: EdgeInsets.symmetric(horizontal: scaleWidth(8), vertical: scaleHeight(4)),
-        decoration: BoxDecoration(color: AppColors.pri400, borderRadius: BorderRadius.circular(scaleWidth(8))),
-        child: Text('NEW', style: AppFonts.suite.c3_sb(context).copyWith(color: Colors.white)),
-      );
-    }
-    if (notification['type'] == 'REACTION') {
-      return Container(
-        width: scaleWidth(36),
-        height: scaleWidth(36),
-        decoration: const BoxDecoration(color: Color(0xFFFCB4BA), shape: BoxShape.circle),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildAcceptRejectButtons(int nId, int reqId, int uId, bool isProcessing) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12.0),
-      child: Row(
-        children: [
-          Expanded(child: ElevatedButton(onPressed: isProcessing ? null : () => _handleAcceptFollow(nId, reqId, uId), style: ElevatedButton.styleFrom(backgroundColor: AppColors.pri400, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(scaleWidth(8)))), child: isProcessing ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Text('수락', style: AppFonts.suite.b3_b(context).copyWith(color: Colors.white)))),
-          const SizedBox(width: 8),
-          Expanded(child: OutlinedButton(onPressed: isProcessing ? null : () => _handleRejectFollow(nId, reqId, uId), style: OutlinedButton.styleFrom(side: BorderSide(color: AppColors.gray300), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(scaleWidth(8)))), child: Text('거절', style: AppFonts.suite.b3_b(context).copyWith(color: AppColors.gray700)))),
-        ],
-      ),
-    );
-  }
-
-  /// 3가지 상태(팔로우, 팔로잉, 요청됨)를 모두 처리하는 지능형 버튼
-  Widget _buildFollowButton(int userId, int? requestId, bool isProcessing) {
-    final status = _followButtonStatusMap[userId] ?? FollowButtonStatus.canFollow;
-
-    String text;
-    Color buttonColor, textColor;
-    bool isOutlined = false;
-
-    switch (status) {
-      case FollowButtonStatus.canFollow:
-        text = '팔로우';
-        buttonColor = AppColors.gray600;
-        textColor = Colors.white;
-        break;
-      case FollowButtonStatus.following:
-        text = '팔로잉';
-        buttonColor = AppColors.gray50;
-        textColor = AppColors.gray600;
-        isOutlined = true;
-        break;
-      case FollowButtonStatus.requestSent:
-        text = '요청됨';
-        buttonColor = AppColors.gray50;
-        textColor = AppColors.gray600;
-        isOutlined = true;
-        break;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12.0),
-      child: SizedBox(
-        width: double.infinity,
-        height: scaleHeight(40),
-        child: isOutlined
-            ? OutlinedButton(
-          onPressed: isProcessing ? null : () => _handleFollowAction(userId, status, requestId: requestId),
-          style: OutlinedButton.styleFrom(
-            backgroundColor: buttonColor,
-            side: BorderSide(color: AppColors.gray100),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          child: isProcessing ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(text, style: AppFonts.suite.b3_b(context).copyWith(color: textColor)),
-        )
-            : ElevatedButton(
-          onPressed: isProcessing ? null : () => _handleFollowAction(userId, status, requestId: requestId),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: buttonColor,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            elevation: 0,
-          ),
-          child: isProcessing ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(text, style: AppFonts.suite.b3_b(context).copyWith(color: textColor)),
-        ),
-      ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
     );
   }
 
   Widget _buildTabButton(int index) {
-    final bool isSelected = selectedTabIndex == index;
+    final isSelected = _selectedTabIndex == index;
     return GestureDetector(
       onTap: () => _onTabChanged(index),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: scaleWidth(14), vertical: scaleHeight(10)),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.gray600 : AppColors.gray30,
+          color: isSelected ? AppColors.gray700 : AppColors.gray30,
           borderRadius: BorderRadius.circular(68),
         ),
         child: Center(
           child: Text(
-            tabTexts[index],
+            _tabTexts[index],
             style: isSelected
-                ? AppFonts.suite.c1_b(context).copyWith(color: Colors.white)
+                ? AppFonts.suite.c1_b(context).copyWith(color: AppColors.white)
                 : AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray500),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.pri500));
+    }
+    if (_notifications.isEmpty) {
+      return Center(
+        child: Text(
+          "받은 알림이 없어요",
+          style: AppFonts.suite.b1_sb(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      color: AppColors.pri500,
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20), vertical: scaleHeight(10)),
+        itemCount: _notifications.length,
+        itemBuilder: (context, index) {
+          return _buildNotificationItem(_notifications[index]);
+        },
+      ),
+    );
+  }
+
+  // notification_screen.dart 파일에서 이 함수를 교체해주세요.
+  Widget _buildNotificationItem(Map<String, dynamic> notification) {
+    int? userId = NotificationApi.extractUserIdFromNotification(notification);
+    int? requestId = NotificationApi.extractRequestIdFromNotification(notification);
+    final int notificationId = notification['id'] as int;
+    final bool isRead = notification['isRead'] ?? true;
+
+    if (notification['type'] == 'FOLLOW_REQUEST') {
+      try {
+        final matchingRequest = _pendingFollowRequests.firstWhere(
+              (req) => req['requesterNickname'] == notification['userNickname'],
+          orElse: () => null,
+        );
+
+        if (matchingRequest != null) {
+          userId = matchingRequest['requesterId'];
+          requestId = matchingRequest['requestId'];
+        }
+      } catch (e) {
+        debugPrint("상세 요청 목록에서 일치하는 항목 찾기 실패: $e");
+      }
+    }
+
+    final bool isProcessing = _processingId == notificationId || (_processingId == userId && userId != null);
+    final Widget? trailingWidget = _buildTrailingWidget(notification, userId, requestId, notificationId, isProcessing);
+
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: scaleHeight(16)),
+      color: isRead ? AppColors.white : AppColors.pri100.withOpacity(0.2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _buildProfileImage(notification),
+          SizedBox(width: scaleWidth(12)),
+          Expanded(
+            // ✅ 1. Column을 제거하고 _buildNotificationText가 시간까지 모두 그리도록 변경
+            child: _buildNotificationText(notification),
+          ),
+          if (trailingWidget != null) ...[
+            SizedBox(width: scaleWidth(12)),
+            trailingWidget,
+          ]
+        ],
+      ),
+    );
+  }
+
+  // notification_screen.dart 파일에서 이 함수를 아래 코드로 교체해주세요.
+
+  Widget _buildNotificationText(Map<String, dynamic> notification) {
+    final String type = notification['type'] ?? '';
+    final String content = notification['content'] ?? '알림 내용이 없습니다.';
+    final String nickname = notification['userNickname'] ?? '';
+    final String timeAgo = notification['timeAgo'] ?? '';
+    const double lineSpacing = 1.45; // 줄바꿈 시 간격
+
+    // ✅ [수정] 오른쪽에 위젯이 없는 타입 (직관 기록, 소식 등)
+    if (type == 'SYSTEM' || type == 'NEWS' || type == 'NEW_RECORD' || type == 'FRIEND_RECORD') {
+      Widget mainText;
+
+      // 시스템 알림은 닉네임 없이 content만 표시
+      if (type == 'SYSTEM' || type == 'NEWS') {
+        mainText = Text(
+          content,
+          style: AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray800, height: lineSpacing),
+        );
+      } else {
+        // 직관 기록 알림은 닉네임과 내용을 조합
+        String actionText = '님이 직관 기록을 업로드했어요.';
+        mainText = Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: nickname,
+                style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900, height: lineSpacing),
+              ),
+              TextSpan(
+                text: actionText,
+                style: AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray700, height: lineSpacing),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Column을 사용해 메인 텍스트와 시간을 분리하고 아랫줄에 배치
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          mainText,
+          SizedBox(height: scaleHeight(6)), // 요청하신 간격 6 적용
+          Text(
+            timeAgo,
+            style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400),
+          ),
+        ],
+      );
+    }
+
+    // ✅ [수정] 오른쪽에 위젯이 있는 타입 (팔로우, 공감 등)
+    // Text.rich를 사용해 텍스트와 시간을 한 줄에 표시
+    String actionText = '';
+    switch (type) {
+      case 'REACTION':
+        actionText = '님이 회원님의 기록에 공감했어요.';
+        break;
+      case 'FOLLOW':
+        actionText = '님이 회원님을 팔로우합니다.';
+        break;
+      case 'FOLLOW_REQUEST':
+        actionText = '님의 팔로우 요청';
+        break;
+      default:
+        actionText = content;
+        break;
+    }
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: nickname,
+            style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900, height: lineSpacing),
+          ),
+          TextSpan(
+            text: actionText,
+            style: AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray700, height: lineSpacing),
+          ),
+          TextSpan(
+            text: ' \u{00A0}$timeAgo', // 띄어쓰기
+            style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400, height: lineSpacing),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileImage(Map<String, dynamic> notification) {
+    final String? imageUrl = notification['userProfileImage'];
+    final bool isSystem = notification['type'] == 'SYSTEM' || notification['type'] == 'NEWS';
+
+    return Container(
+      width: scaleWidth(42),
+      height: scaleWidth(42),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(12.43),
+        image: (imageUrl != null && !isSystem)
+            ? DecorationImage(
+          image: NetworkImage(imageUrl),
+          fit: BoxFit.cover,
+        )
+            : null,
+      ),
+      child: (imageUrl == null || isSystem)
+          ? Center(
+        child: isSystem
+            ? SvgPicture.asset(AppImages.dodada, width: scaleWidth(24), color: AppColors.gray400)
+            : Icon(Icons.person, color: AppColors.gray400, size: scaleWidth(24)),
+      )
+          : null,
+    );
+  }
+
+  // ✅ [수정] 반환 타입을 Widget? (nullable)로 변경
+  Widget? _buildTrailingWidget(Map<String, dynamic> notification, int? userId, int? requestId, int notificationId, bool isProcessing) {
+    final String type = notification['type'] ?? 'NONE';
+
+    if (type == 'FOLLOW_REQUEST' && userId != null && requestId != null) {
+      return _buildAcceptRejectButtons(notificationId, requestId, userId, isProcessing);
+    }
+
+    if (type == 'FOLLOW' && userId != null) {
+      return _buildFollowButton(userId, _followStatusMap[userId] ?? FollowButtonStatus.canFollow, requestId: requestId, isProcessing: isProcessing);
+    }
+
+    if (type == 'REACTION' && notification['reactionImageUrl'] != null) {
+      return Image.network(
+        notification['reactionImageUrl'],
+        width: scaleWidth(40),
+        height: scaleWidth(40),
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: scaleWidth(40),
+          height: scaleWidth(40),
+          decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFCB4BA)),
+        ),
+      );
+    }
+
+    // 위젯이 필요 없는 타입은 null을 반환
+    return null;
+  }
+
+  Widget _buildAcceptRejectButtons(int notificationId, int requestId, int userId, bool isProcessing) {
+    return isProcessing
+        ? SizedBox(width: scaleWidth(108), child: const Center(child: CircularProgressIndicator(strokeWidth: 2)))
+        : Row(
+      children: [
+        SizedBox(
+          width: scaleWidth(50),
+          height: scaleHeight(32),
+          child: ElevatedButton(
+            onPressed: () => _handleAcceptFollow(notificationId, requestId, userId),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gray600,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding: EdgeInsets.zero,
+              elevation: 0,
+            ),
+            child: Text('수락', style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.white)),
+          ),
+        ),
+        SizedBox(width: scaleWidth(4)),
+        SizedBox(
+          width: scaleWidth(50),
+          height: scaleHeight(32),
+          child: TextButton(
+            onPressed: () => _handleRejectFollow(notificationId, requestId, userId),
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.gray50,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding: EdgeInsets.zero,
+            ),
+            child: Text('삭제', style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray600)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // notification_screen.dart 파일에서 이 함수를 아래 코드로 교체해주세요.
+
+  Widget _buildFollowButton(int userId, FollowButtonStatus status, {int? requestId, bool isProcessing = false}) {
+    String text;
+    Color buttonColor, textColor, borderColor;
+    bool isOutlined; // OutlinedButton을 쓸지 여부
+    VoidCallback? onPressed = isProcessing ? null : () => _handleFollowAction(userId, status, requestId: requestId);
+
+    switch (status) {
+      case FollowButtonStatus.canFollow:
+        text = '맞팔로우';
+        buttonColor = AppColors.gray700;
+        textColor = AppColors.white;
+        borderColor = Colors.transparent;
+        isOutlined = false; // ElevatedButton 사용
+        break;
+      case FollowButtonStatus.following:
+        text = '팔로잉';
+        buttonColor = AppColors.gray50;
+        textColor = AppColors.gray600;
+        borderColor = Colors.transparent; // 테두리 없음
+        isOutlined = false; // ✅ [수정] ElevatedButton을 사용하도록 변경
+        break;
+      case FollowButtonStatus.requestSent:
+        text = '요청됨';
+        buttonColor = AppColors.gray50;
+        textColor = AppColors.gray400;
+        borderColor = Colors.transparent; // 테두리 없음
+        isOutlined = false; // ✅ [수정] ElevatedButton을 사용하도록 변경
+        break;
+    }
+
+    final buttonStyle = isOutlined
+        ? OutlinedButton.styleFrom(
+      backgroundColor: buttonColor,
+      side: BorderSide(color: borderColor),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      padding: EdgeInsets.zero,
+    )
+        : ElevatedButton.styleFrom(
+      backgroundColor: buttonColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      padding: EdgeInsets.zero,
+      elevation: 0, // 그림자 제거
+    );
+
+    return SizedBox(
+      width: scaleWidth(88),
+      height: scaleHeight(32),
+      child: TextButton(
+        onPressed: onPressed,
+        style: buttonStyle,
+        child: isProcessing
+            ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: isOutlined ? AppColors.gray600 : textColor))
+            : Text(text, style: AppFonts.suite.c1_m(context).copyWith(color: textColor)),
       ),
     );
   }

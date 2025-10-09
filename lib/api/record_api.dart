@@ -147,7 +147,6 @@ class RecordApi {
         headers: {
           'Content-Type': contentType,
           'Content-Length': bytes.length.toString(),
-          'x-amz-acl': 'public-read',
         },
         body: bytes,
       );

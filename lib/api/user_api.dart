@@ -146,7 +146,6 @@ class UserApi {
         headers: {
           'Content-Type': 'image/jpeg',
           'Content-Length': bytes.length.toString(),
-          'x-amz-acl': 'public-read',
         },
         body: bytes,
       );

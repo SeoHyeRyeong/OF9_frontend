@@ -875,7 +875,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
 
                         // 완료 버튼 영역
                         Container(
-                          width: scaleWidth(360),
+                          width: double.infinity,
                           height: scaleHeight(88),
                           decoration: BoxDecoration(
                             border: Border(
@@ -906,8 +906,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                  pageBuilder: (context, animation1,
-                                      animation2) =>
+                                  pageBuilder: (context, animation1, animation2) =>
                                       EmotionSelectScreen(
                                         userId: userId,
                                         gameId: finalGameId,
@@ -929,8 +928,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                   ? AppColors.gray700
                                   : AppColors.gray200,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    scaleHeight(16)),
+                                borderRadius: BorderRadius.circular(scaleHeight(16)),
                               ),
                               elevation: 0,
                               padding: EdgeInsets.zero,

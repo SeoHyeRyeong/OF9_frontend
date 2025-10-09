@@ -80,10 +80,11 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // 중복 제거된 SystemUiOverlayStyle 설정
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.dark, // 한 번만 지정
         systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.dark,
         systemNavigationBarDividerColor: Colors.transparent,
@@ -102,91 +103,111 @@ class _SplashScreenState extends State<SplashScreen>
         removeBottom: true,
         removeLeft: true,
         removeRight: true,
-        child: Stack(
-          children: [
-            // 배경 그라데이션
-            Column(
-              children: [
-                Container(
-                  height: scaleHeight(560),
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFF78BDEC),
-                        Color(0xFFFFFFFF),
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenHeight = MediaQuery.of(context).size.height;
+              final screenWidth = MediaQuery.of(context).size.width;
+
+              return Stack(
+                children: [
+                  // 배경 레이어
+                  Container(
+                    width: screenWidth,
+                    height: screenHeight,
+                    child: Column(
+                      children: [
+                        Container(
+                          height: screenHeight * 0.7,
+                          width: double.infinity,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Color(0xFF78BDEC),
+                                Color(0xFFFFFFFF),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            color: Colors.white,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
-                Expanded(
-                  child: Container(
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
 
-            // Lottie 애니메이션 - 상단에서 240 위치
-            Positioned(
-              top: scaleHeight(240),
-              left: 0,
-              right: 0,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Center(
-                  child: Lottie.asset(
-                    'assets/animations/splash.json',
-                    controller: _lottieController,
-                    width: scaleWidth(225),
-                    height: scaleHeight(136),
-                    fit: BoxFit.contain,
-                    repeat: true,
-                    onLoaded: (composition) {
-                      _lottieController
-                        ..duration = composition.duration
-                        ..repeat();
-                    },
+                  // Lottie 애니메이션
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(height: screenHeight * 0.29),
+                        Center(
+                          child: Lottie.asset(
+                            'assets/animations/splash.json',
+                            controller: _lottieController,
+                            width: scaleWidth(225),
+                            height: scaleHeight(136),
+                            fit: BoxFit.contain,
+                            repeat: true,
+                            onLoaded: (composition) {
+                              _lottieController
+                                ..duration = composition.duration
+                                ..repeat();
+                            },
+                          ),
+                        ),
+                        const Spacer(),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            ),
 
-            // dodada 이미지 - splash 이미지 바로 위 (+1)
-            Positioned(
-              bottom: scaleHeight(242 + 1),
-              left: 0,
-              right: 0,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Center(
-                  child: SvgPicture.asset(
-                    AppImages.dodada,
-                    width: scaleWidth(84),
-                    height: scaleHeight(22),
+                  // dodada 이미지
+                  Positioned(
+                    bottom: scaleHeight(242 + 1),
+                    left: 0,
+                    right: 0,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Center(
+                        child: SvgPicture.asset(
+                          AppImages.dodada,
+                          width: scaleWidth(84),
+                          height: scaleHeight(22),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
 
-            // splash 이미지 - 제일 아래
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SvgPicture.asset(
-                  AppImages.splash,
-                  width: double.infinity,
-                  height: scaleHeight(242),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ],
+                  // splash 이미지
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SizedBox(
+                        height: scaleHeight(242),
+                        width: screenWidth,
+                        child: SvgPicture.asset(
+                          AppImages.splash,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

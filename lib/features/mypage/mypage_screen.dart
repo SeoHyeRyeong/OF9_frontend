@@ -12,8 +12,8 @@ import 'package:frontend/api/record_api.dart';
 import 'package:frontend/features/mypage/settings_screen.dart';
 import 'package:frontend/features/mypage/follower_screen.dart';
 import 'package:frontend/features/mypage/following_screen.dart';
-import 'dart:convert'; // 추가
-import 'dart:typed_data'; // 추가
+import 'dart:convert';
+import 'dart:typed_data';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({Key? key}) : super(key: key);
@@ -296,10 +296,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
                       ),
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.push(
+                          Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => const SettingsScreen(),
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation1, animation2) => const SettingsScreen(),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
                             ),
                           );
                         },

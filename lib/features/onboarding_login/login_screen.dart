@@ -134,9 +134,8 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: scaleHeight(25)),
 
               // 1. 이미지 영역
-              SizedBox(
-                width: scaleWidth(320),
-                height: scaleHeight(364),
+              AspectRatio(
+                aspectRatio: 320 / 364,
                 child: PageView.builder(
                   controller: _pageController,
                   itemCount: onboardingData.length,
@@ -147,8 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(scaleHeight(8)),
                       child: Image.asset(
                         data['image']!,
-                        width: scaleWidth(320),
-                        height: scaleHeight(364),
                         fit: BoxFit.cover,
                       ),
                     );
@@ -185,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // 5. 카카오 로그인 버튼
               SizedBox(
-                width: scaleWidth(320),
+                width: double.infinity,
                 height: scaleHeight(60),
                 child: ElevatedButton(
                   onPressed: isLoading ? null : _handleKakaoLogin,

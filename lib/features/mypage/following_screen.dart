@@ -158,7 +158,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                 children: [
                   // 뒤로가기 영역 + 타이틀
                   Container(
-                    width: scaleWidth(360),
+                    width: double.infinity,
                     height: scaleHeight(60),
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
@@ -243,7 +243,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
   // 팔로잉 아이템 위젯
   Widget _buildFollowingItem(Map<String, dynamic> following, int index) {
     return Container(
-      width: scaleWidth(360),
+      width: double.infinity,
       height: scaleHeight(74),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: scaleWidth(19)),

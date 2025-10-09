@@ -71,8 +71,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await UserApi.updateMyProfile(
         nickname: nickname,
         favTeam: favTeam.replaceAll(' 팬', ''),
-        profileImageUrl: profileImageUrl, // 추가: 기존 프로필 이미지 URL 유지
-        isPrivate: !isPublic, // isPublic의 반대값을 isPrivate로 전송
+        profileImageUrl: profileImageUrl,
+        isPrivate: !isPublic,
       );
 
       setState(() {
@@ -82,13 +82,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       print('✅ 계정 공개/비공개 설정 변경 성공: ${isPublic ? '공개' : '비공개'}');
     } catch (e) {
       print('❌ 계정 공개/비공개 설정 변경 실패: $e');
-      // 실패 시 원래 상태로 되돌리기
       setState(() {
         isAccountPublic = !isPublic;
       });
     }
   }
-
 
   /// 로그아웃 처리
   Future<void> _handleLogout() async {
@@ -199,14 +197,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// (추가) 재사용 가능한 메뉴 버튼 위젯
+  /// 재사용 가능한 메뉴 버튼 위젯
   Widget _buildMenuButton(String title, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        color: Colors.transparent, // 터치 영역을 확실하게 하기 위해 추가
-        width: scaleWidth(320),
-        height: scaleHeight(48), // 높이를 48 또는 54로 통일
+        color: Colors.transparent,
+        height: scaleHeight(54),
         child: Align(
           alignment: Alignment.centerLeft,
           child: Padding(
@@ -303,265 +300,265 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final screenHeight = constraints.maxHeight;
-
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // 뒤로가기 영역
-                    SizedBox(
-                      height: screenHeight * 0.075,
+          child: Stack(
+            children: [
+              // 메인 컨텐츠 (먼저 그려짐)
+              Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                        child: Row(
+                        child: Column(
                           children: [
-                            Padding(
-                              padding: EdgeInsets.only(top: screenHeight * 0.0325),
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    PageRouteBuilder(
-                                      pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
-                                      transitionDuration: Duration.zero,
-                                      reverseTransitionDuration: Duration.zero,
-                                    ),
-                                  );
-                                },
-                                child: SvgPicture.asset(
-                                  AppImages.backBlack,
-                                  width: scaleHeight(24),
-                                  height: scaleHeight(24),
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                            SizedBox(height: scaleHeight(36)),
 
-                    // 프로필 영역
-                    Transform(
-                      transform: Matrix4.translationValues(0, -scaleHeight(10), 0),
-                      child: Column(
-                        children: [
-                          // 프로필 이미지
-                          Center(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(40),
-                              child: profileImageUrl != null
-                                  ? Image.network(
-                                profileImageUrl!,
-                                width: scaleWidth(100),
-                                height: scaleHeight(100),
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => SvgPicture.asset(
+                            // 프로필 이미지
+                            Center(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(40),
+                                child: profileImageUrl != null
+                                    ? Image.network(
+                                  profileImageUrl!,
+                                  width: scaleWidth(100),
+                                  height: scaleHeight(100),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => SvgPicture.asset(
+                                    AppImages.profile,
+                                    width: scaleWidth(100),
+                                    height: scaleHeight(100),
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                                    : SvgPicture.asset(
                                   AppImages.profile,
                                   width: scaleWidth(100),
                                   height: scaleHeight(100),
                                   fit: BoxFit.cover,
                                 ),
-                              )
-                                  : SvgPicture.asset(
-                                AppImages.profile,
-                                width: scaleWidth(100),
-                                height: scaleHeight(100),
-                                fit: BoxFit.cover,
                               ),
                             ),
-                          ),
 
-                          SizedBox(height: scaleHeight(16)),
+                            SizedBox(height: scaleHeight(16)),
 
-                          // 닉네임
-                          isLoading
-                              ? CircularProgressIndicator()
-                              : FixedText(
-                            nickname,
-                            style: AppFonts.pretendard.h5_sb(context).copyWith(color: AppColors.black),
-                          ),
+                            // 닉네임
+                            isLoading
+                                ? CircularProgressIndicator()
+                                : FixedText(
+                              nickname,
+                              style: AppFonts.pretendard.h5_sb(context).copyWith(color: AppColors.black),
+                            ),
 
-                          SizedBox(height: scaleHeight(12)),
+                            SizedBox(height: scaleHeight(12)),
 
-                          // 최애구단
-                          isLoading
-                              ? Container()
-                              : FixedText(
-                            "$favTeam 팬",
-                            style: AppFonts.pretendard.b3_r(context).copyWith(color: AppColors.gray300),
-                          ),
+                            // 최애구단
+                            isLoading
+                                ? Container()
+                                : FixedText(
+                              "$favTeam 팬",
+                              style: AppFonts.pretendard.b3_r(context).copyWith(color: AppColors.gray300),
+                            ),
 
-                          SizedBox(height: scaleHeight(12)),
+                            SizedBox(height: scaleHeight(12)),
 
-                          // 내 정보 수정 버튼
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation1, animation2) => const EditProfileScreen(),
-                                  transitionDuration: Duration.zero,
-                                  reverseTransitionDuration: Duration.zero,
+                            // 내 정보 수정 버튼
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation1, animation2) => const EditProfileScreen(),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                width: scaleWidth(76),
+                                height: scaleHeight(28),
+                                decoration: BoxDecoration(
+                                  color: AppColors.gray50,
+                                  borderRadius: BorderRadius.circular(30),
                                 ),
-                              );
-                            },
-                            child: Container(
-                              width: scaleWidth(76),
-                              height: scaleHeight(28),
-                              decoration: BoxDecoration(
-                                color: AppColors.gray50,
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              padding: EdgeInsets.only(
-                                top: scaleHeight(8),
-                                right: scaleWidth(10),
-                                bottom: scaleHeight(8),
-                                left: scaleWidth(10),
-                              ),
-                              child: Center(
-                                child: FixedText(
-                                  "내 정보 수정",
-                                  style: AppFonts.pretendard.c1_sb(context).copyWith(color: AppColors.gray500),
+                                padding: EdgeInsets.only(
+                                  top: scaleHeight(8),
+                                  right: scaleWidth(10),
+                                  bottom: scaleHeight(8),
+                                  left: scaleWidth(10),
+                                ),
+                                child: Center(
+                                  child: FixedText(
+                                    "내 정보 수정",
+                                    style: AppFonts.pretendard.c1_sb(context).copyWith(color: AppColors.gray500),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
 
-                          SizedBox(height: scaleHeight(16)),
+                            SizedBox(height: scaleHeight(16)),
 
-                          // 테마 변경 메뉴
-                          // 🎨 GestureDetector가 Container 전체를 감싸도록 수정
-                          GestureDetector(
-                            onTap: () {
-                              print('테마 변경 버튼 클릭');
-                            },
-                            child: Container(
-                              width: scaleWidth(320),
-                              height: scaleHeight(48),
+                            // 테마 변경 메뉴
+                            GestureDetector(
+                              onTap: () {
+                                print('테마 변경 버튼 클릭');
+                              },
+                              child: Container(
+                                height: scaleHeight(48),
+                                decoration: BoxDecoration(
+                                  color: AppColors.gray30,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: EdgeInsets.all(scaleWidth(16)),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: FixedText(
+                                    "테마 변경",
+                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: scaleHeight(16)),
+
+                            // 푸시 알림 메뉴
+                            Container(
+                              height: scaleHeight(56),
                               decoration: BoxDecoration(
                                 color: AppColors.gray30,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: EdgeInsets.all(scaleWidth(16)),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: FixedText(
-                                  "테마 변경",
-                                  style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
+                                child: Row(
+                                  children: [
+                                    FixedText(
+                                      "푸시 알림",
+                                      style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+                                    ),
+                                    const Spacer(),
+                                    _buildCustomToggle(isPushNotificationOn, () {
+                                      setState(() {
+                                        isPushNotificationOn = !isPushNotificationOn;
+                                      });
+                                      print('푸시 알림 토글: ${isPushNotificationOn ? 'ON' : 'OFF'}');
+                                    }),
+                                  ],
                                 ),
                               ),
                             ),
-                          ),
 
-                          SizedBox(height: scaleHeight(16)),
+                            SizedBox(height: scaleHeight(16)),
 
-                          // 푸시 알림 메뉴
-                          Container(
-                            width: scaleWidth(320),
-                            height: scaleHeight(56),
-                            decoration: BoxDecoration(
-                              color: AppColors.gray30,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-                              child: Row(
+                            // 계정 공개 / 차단된 계정 메뉴
+                            Container(
+                              height: scaleHeight(104),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray30,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
                                 children: [
-                                  FixedText(
-                                    "푸시 알림",
-                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+                                  // 계정 공개
+                                  Container(
+                                    height: scaleHeight(56),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
+                                      child: Row(
+                                        children: [
+                                          FixedText(
+                                            "계정 공개",
+                                            style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+                                          ),
+                                          const Spacer(),
+                                          _buildCustomToggle(isAccountPublic, () {
+                                            _updateAccountPrivacy(!isAccountPublic);
+                                          }),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                  const Spacer(),
-                                  _buildCustomToggle(isPushNotificationOn, () {
-                                    setState(() {
-                                      isPushNotificationOn = !isPushNotificationOn;
-                                    });
-                                    print('푸시 알림 토글: ${isPushNotificationOn ? 'ON' : 'OFF'}');
-                                  }),
+                                  // 차단된 계정
+                                  GestureDetector(
+                                    onTap: () {
+                                      print('차단된 계정 버튼 클릭');
+                                    },
+                                    child: Container(
+                                      color: Colors.transparent,
+                                      height: scaleHeight(48),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Padding(
+                                          padding: EdgeInsets.only(left: scaleWidth(16)),
+                                          child: FixedText(
+                                            "차단된 계정",
+                                            style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-                          ),
 
-                          SizedBox(height: scaleHeight(16)),
+                            SizedBox(height: scaleHeight(16)),
 
-                          // 계정 공개 / 차단된 계정 메뉴
-                          Container(
-                            width: scaleWidth(320),
-                            height: scaleHeight(104),
-                            decoration: BoxDecoration(
-                              color: AppColors.gray30,
-                              borderRadius: BorderRadius.circular(12),
+                            // 기타 설정 메뉴들
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.gray30,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildMenuButton("버전 정보", () {
+                                    print('버전 정보 버튼 클릭');
+                                  }),
+                                  _buildMenuButton("이용 약관", () {
+                                    _launchUrl('https://www.notion.so/24bf22b2f4cd8027bf3ada45e3970e9e?source=copy_link');
+                                  }),
+                                  _buildMenuButton("개인정보 처리방침", () {
+                                    _launchUrl('https://www.notion.so/24bf22b2f4cd80f0a0efeab79c6861ae?source=copy_link');
+                                  }),
+                                  _buildMenuButton("로그아웃", _handleLogout),
+                                  _buildMenuButton("회원 탈퇴", _handleAccountDeletion),
+                                ],
+                              ),
                             ),
-                            child: Column(
-                              children: [
-                                // 계정 공개
-                                Container(
-                                  width: scaleWidth(320),
-                                  height: scaleHeight(56),
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-                                    child: Row(
-                                      children: [
-                                        FixedText(
-                                          "계정 공개",
-                                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
-                                        ),
-                                        const Spacer(),
-                                        _buildCustomToggle(isAccountPublic, () {
-                                          _updateAccountPrivacy(!isAccountPublic);
-                                        }),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                // 🎨 '차단된 계정' 메뉴에 재사용 함수 적용
-                                _buildMenuButton("차단된 계정", () {
-                                  print('차단된 계정 버튼 클릭');
-                                }),
-                              ],
-                            ),
-                          ),
-                        ],
+                            SizedBox(height: scaleHeight(24)),
+                          ],
+                        ),
                       ),
                     ),
+                  ),
+                ],
+              ),
 
-                    SizedBox(height: scaleHeight(16)),
-
-                    // 기타 설정 메뉴들
-                    Container(
-                      width: scaleWidth(320),
-                      // 🎨 높이 수정 (54 * 5 = 270)
-                      decoration: BoxDecoration(
-                        color: AppColors.gray30,
-                        borderRadius: BorderRadius.circular(12),
+              // 뒤로가기 버튼 (나중에 그려짐 - 최상단)
+              Positioned(
+                top: scaleHeight(18),
+                left: scaleWidth(20),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
                       ),
-                      // 🎨 Column으로 감싸서 각 메뉴 버튼을 재사용 함수로 생성
-                      child: Column(
-                        children: [
-                          _buildMenuButton("버전 정보", () {
-                            print('버전 정보 버튼 클릭');
-                          }),
-                          _buildMenuButton("이용 약관", () {
-                            _launchUrl('https://www.notion.so/24bf22b2f4cd8027bf3ada45e3970e9e?source=copy_link');
-                          }),
-                          _buildMenuButton("개인정보 처리방침", () {
-                            _launchUrl('https://www.notion.so/24bf22b2f4cd80f0a0efeab79c6861ae?source=copy_link');
-                          }),
-                          _buildMenuButton("로그아웃", _handleLogout),
-                          _buildMenuButton("회원 탈퇴", _handleAccountDeletion),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: scaleHeight(24)),
-                  ],
+                    );
+                  },
+                  child: SvgPicture.asset(
+                    AppImages.backBlack,
+                    width: scaleWidth(24),
+                    height: scaleHeight(24),
+                    fit: BoxFit.contain,
+                  ),
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ),
         bottomNavigationBar: CustomBottomNavBar(currentIndex: 4),

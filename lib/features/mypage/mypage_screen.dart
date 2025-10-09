@@ -394,8 +394,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => const FollowingScreen(),
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation1, animation2) => const FollowingScreen(),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
                             ),
                           );
                         },
@@ -413,8 +415,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => const FollowerScreen(),
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation1, animation2) => const FollowerScreen(),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
                             ),
                           );
                         },

@@ -475,7 +475,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
 
                 // userId 가져오기
                 final userInfo = await UserApi.getMyProfile();
-                final userId = userInfo['data']['userId'] as int;
+                final userId = userInfo['data']['id'] as int;
 
                 // gameId 확인
                 final gameId = recordState.gameId;

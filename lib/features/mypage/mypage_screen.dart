@@ -319,13 +319,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     child: GestureDetector(
                       onTap: () => print("프로필 이미지 선택"),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(scaleHeight(14)),
-                        child: profileImageUrl != null
+                        borderRadius: BorderRadius.circular(scaleHeight(29.59)),
+                        child: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
                             ? Image.network(
                           profileImageUrl!,
                           width: scaleWidth(100),
                           height: scaleHeight(100),
                           fit: BoxFit.cover,
+                          // 이미지 로딩 중일 때 보여줄 UI
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Container(
@@ -333,7 +334,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                               height: scaleHeight(100),
                               decoration: BoxDecoration(
                                 color: AppColors.gray100,
-                                borderRadius: BorderRadius.circular(scaleHeight(14)),
+                                borderRadius: BorderRadius.circular(scaleHeight(29.59)),
                               ),
                               child: Center(
                                 child: CircularProgressIndicator(
@@ -344,6 +345,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             );
                           },
                           errorBuilder: (_, __, ___) => SvgPicture.asset(
+                            // 이미지 로드 실패 시 기본 프로필 이미지 표시
                             AppImages.profile,
                             width: scaleWidth(100),
                             height: scaleHeight(100),
@@ -351,6 +353,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                           ),
                         )
                             : SvgPicture.asset(
+                          // 카카오 프로필 이미지 없을 때 기본 프로필로
                           AppImages.profile,
                           width: scaleWidth(100),
                           height: scaleHeight(100),

@@ -27,6 +27,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
   List<String> selectedImages = [];
   final int maxImages = 20;
   final ScrollController _scrollController = ScrollController();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -469,13 +470,21 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
       child: Column(
         children: [
           ElevatedButton(
-            onPressed: () async {
+            onPressed: _isSubmitting
+                ? null
+                : () async {
+              if (_isSubmitting) return;
+
+              setState(() {
+                _isSubmitting = true;
+              });
+
               try {
                 final recordState = Provider.of<RecordState>(context, listen: false);
 
                 // userId 가져오기
                 final userInfo = await UserApi.getMyProfile();
-                final userId = userInfo['data']['id'] as int;
+                final userId = userInfo['data']['id'];
 
                 // gameId 확인
                 final gameId = recordState.gameId;
@@ -519,33 +528,53 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> {
                 print('✅ 기록 저장 성공: $result');
                 recordState.reset();
 
-                Navigator.pushReplacement(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation1, animation2) => const FeedScreen(showCompletionPopup: true),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
-                  ),
-                );
+                if (mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation1, animation2) => const FeedScreen(showCompletionPopup: true),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                }
               } catch (e) {
                 print('❌ 기록 저장 실패: $e');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('기록 저장에 실패했습니다: ${e.toString()}'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('기록 저장에 실패했습니다: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    _isSubmitting = false;
+                  });
+                }
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.gray700,
-              foregroundColor: Colors.white,
+              backgroundColor: _isSubmitting
+                  ? AppColors.gray400
+                  : AppColors.gray700,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(scaleWidth(16))),
               elevation: 0,
               padding: EdgeInsets.symmetric(horizontal: scaleWidth(18)),
               minimumSize: Size(scaleWidth(320), scaleHeight(54)),
             ),
-            child: FixedText('작성 완료', style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20)),
+            child: _isSubmitting
+                ? SizedBox(
+              width: scaleWidth(20),
+              height: scaleWidth(20),
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+                : FixedText('작성 완료', style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20)),
           ),
         ],
       ),

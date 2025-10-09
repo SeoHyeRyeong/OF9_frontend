@@ -102,11 +102,11 @@ String _formatTimeToKorean(String time) {
 }
 
 ///날짜/시간 선택용 BottomSheet표시
-Future<String?> showDateTimePicker({
+Future<Map<String, dynamic>?> showDateTimePicker({
   required BuildContext context,
   String? ocrDateText,
-  String? homeTeam,  // fullname으로 받음
-  String? opponentTeam,  // fullname으로 받음
+  required String? homeTeam,  // fullname으로 받음
+  required String? opponentTeam,  // fullname으로 받음
 }) async {
   debugPhysicalScreen(context);
   DateTime focused = DateTime.now();
@@ -232,7 +232,7 @@ Future<String?> showDateTimePicker({
     initialSelectedDay = resolvedFocus;
   }
 
-  return await showModalBottomSheet<String>(
+  return await showModalBottomSheet<Map<String, dynamic>>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -723,7 +723,10 @@ Future<String?> showDateTimePicker({
                                 final timeKorean = '${timeParts[0]}시 ${timeParts[1]}분';
 
                                 final formattedResult = '$year - $month - $day ($weekday) $timeKorean';
-                                Navigator.pop(context, formattedResult);
+                                Navigator.pop(context, {
+                                  'dateTime': formattedResult,
+                                  'gameId': matchedGames[selectedGameIndex].gameId,
+                                });
                               }
                             },
                             style: ElevatedButton.styleFrom(

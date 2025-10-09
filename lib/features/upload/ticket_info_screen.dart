@@ -55,6 +55,8 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
   String? selectedStadium;
   String? selectedSeat;
 
+  String? selectedGameId;
+
   // 날짜(yyyy-MM-dd) → '2025 - 04 - 15 (수)' 형식
   String? formatKoreanDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return null;
@@ -594,13 +596,20 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                           return;
                                         }
 
-                                        final dt = await showDateTimePicker(
+                                        final result = await showDateTimePicker(
                                           context: context,
                                           ocrDateText: extractedDate,
                                           homeTeam: home,
                                           opponentTeam: away,
                                         );
-                                        if (dt != null) setState(() => selectedDateTime = dt);
+                                        if (result != null) {
+                                          setState(() {
+                                            selectedDateTime = result['dateTime']?.toString();
+                                            selectedGameId = result['gameId']?.toString();
+                                          });
+                                          print('📅 선택된 일시: $selectedDateTime');
+                                          print('🎮 선택된 gameId: $selectedGameId');
+                                        }
                                       },
                                       child: Container(
                                         width: double.infinity,
@@ -770,6 +779,20 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                 ? () {
                               final recordState = Provider.of<RecordState>(context, listen: false);
 
+                              final finalGameId = selectedGameId ?? (matchedGames.isNotEmpty ? matchedGames[0].gameId : null);
+
+                              print('🎮 최종 gameId 결정:');
+                              print('  - selectedGameId (바텀시트): $selectedGameId');
+                              print('  - matchedGames (OCR): ${matchedGames.isNotEmpty ? matchedGames[0].gameId : 'null'}');
+                              print('  - 최종 선택: $finalGameId');
+
+                              if (finalGameId == null || finalGameId.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('경기 정보를 찾을 수 없습니다.')),
+                                );
+                                return;
+                              }
+
                               // 티켓 정보 저장
                               recordState.setTicketInfo(
                                 ticketImagePath: widget.imagePath,
@@ -784,7 +807,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                 extractedTime: extractedTime,
                                 extractedStadium: extractedStadium,
                                 extractedSeat: extractedSeat,
-                                gameId: matchedGames.isNotEmpty ? matchedGames[0].gameId.toString() : null,
+                                gameId: finalGameId,
                               );
 
                               Navigator.push(

@@ -317,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Center(
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(40),
-                                child: profileImageUrl != null
+                                child: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
                                     ? Image.network(
                                   profileImageUrl!,
                                   width: scaleWidth(100),

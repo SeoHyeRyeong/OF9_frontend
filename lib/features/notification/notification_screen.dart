@@ -600,8 +600,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
           child: ElevatedButton(
             onPressed: () => _handleAcceptFollow(notification),
             style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.pri500,
-                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.gray600,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: EdgeInsets.zero,
                 elevation: 0
@@ -616,11 +615,11 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
           child: TextButton(
             onPressed: () => _handleRejectFollow(notification),
             style: TextButton.styleFrom(
-                backgroundColor: AppColors.pri100,
+                backgroundColor: AppColors.gray50,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: EdgeInsets.zero
             ),
-            child: Text('삭제', style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri500)),
+            child: Text('삭제', style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray600)),
           ),
         ),
       ],
@@ -633,7 +632,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
 
     switch (status) {
       case FollowButtonStatus.canFollow:
-        text = '맞팔로우'; buttonColor = AppColors.gray700; textColor = AppColors.white;
+        text = '맞팔로우'; buttonColor = AppColors.gray600; textColor = AppColors.white;
         break;
       case FollowButtonStatus.following:
         text = '팔로잉'; buttonColor = AppColors.gray50; textColor = AppColors.gray600;

@@ -23,6 +23,9 @@ class NotificationApi {
       var headers = await _authHeaders();
       var response = await request(headers);
 
+      // NOTE: kakao_auth_service.dart 에 refreshTokens 메서드가 없어서 주석 처리합니다.
+      // 실제 토큰 재발급 로직이 있다면 주석을 해제하고 사용하세요.
+      /*
       if (response.statusCode == 401 || response.statusCode == 403) {
         final refreshResult = await _kakaoAuth.refreshTokens();
         if (refreshResult != null) {
@@ -32,6 +35,7 @@ class NotificationApi {
           throw Exception('Token refresh failed');
         }
       }
+      */
       return response;
     } catch (e) {
       rethrow;
@@ -60,9 +64,6 @@ class NotificationApi {
       ]);
 
       final mainResponse = results[0] as http.Response;
-      print('🔔 알림 조회 응답: ${mainResponse.statusCode}');
-      print('🔔 알림 조회 본문: ${utf8.decode(mainResponse.bodyBytes)}');
-
       if (mainResponse.statusCode != 200) {
         throw Exception('Failed to load notifications: ${mainResponse.body}');
       }
@@ -71,11 +72,10 @@ class NotificationApi {
       List<Map<String, dynamic>> notifications = (mainData['data'] as List).cast<Map<String, dynamic>>();
       print('📊 원본 알림 개수: ${notifications.length}');
 
+      notifications.sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
+
       final followRequestsResponse = results[1] as Map<String, dynamic>;
       final followersResponse = results[2] as Map<String, dynamic>;
-
-      print('📋 팔로우 요청 응답: $followRequestsResponse');
-      print('📋 팔로워 응답: $followersResponse');
 
       final List<dynamic> pendingRequests = followRequestsResponse['data'] ?? [];
       final requestMap = { for (var req in pendingRequests) if (req['requesterNickname'] != null) req['requesterNickname']: req };
@@ -83,82 +83,74 @@ class NotificationApi {
       final List<dynamic> followers = followersResponse['data'] ?? [];
       final followerMap = { for (var follower in followers) if(follower['nickname'] != null) follower['nickname']: follower };
 
-      print('🗺️ 요청 맵: $requestMap');
-      print('🗺️ 팔로워 맵: $followerMap');
-
-      List<Map<String, dynamic>> validNotifications = [];
+      Map<String, Map<String, dynamic>> finalNotificationsMap = {};
+      const Set<String> followRelatedTypes = {'FOLLOW_REQUEST', 'FOLLOW'};
 
       for (var notification in notifications) {
         final nickname = notification['userNickname'];
-        if (nickname == null) {
-          validNotifications.add(notification);
-          print('✅ userNickname null 알림 추가: ${notification['id']}');
-          continue;
+        final type = notification['type'];
+
+        String key;
+        if (nickname != null && followRelatedTypes.contains(type)) {
+          key = '$nickname-follow_action';
+        } else {
+          key = 'unique-${notification['id']}';
         }
 
-        if (notification['type'] == 'FOLLOW_REQUEST') {
-          print('🔍 FOLLOW_REQUEST 처리: $nickname');
+        Map<String, dynamic>? processedNotification;
+
+        if (type == 'FOLLOW_REQUEST') {
           if (isMyAccountPrivate) {
-            // 비공개 계정: 실제 팔로우 요청만 "수락/삭제" 버튼으로 표시
-            print('  🔒 비공개 계정 - 실제 팔로우 요청 확인');
             final matchedRequest = requestMap[nickname];
             if (matchedRequest != null) {
+              // 아직 처리되지 않은 유효한 팔로우 요청
               notification['userId'] = matchedRequest['requesterId'];
               notification['requestId'] = matchedRequest['requestId'];
-              notification['isPrivateAccount'] = true;
-              validNotifications.add(notification);
-              print('  ✅ 실제 팔로우 요청 존재 → 수락/삭제 버튼 표시: $nickname');
+              processedNotification = notification;
             } else {
-              print('  ❌ 팔로우 요청 없음 → 알림 제외 (이미 처리됨): $nickname');
-            }
-          } else {
-            // 공개 계정: 자동 수락되었다고 가정하고 FOLLOW로 변환
-            print('  🔓 공개 계정 - 자동 수락 처리 (FOLLOW_REQUEST → FOLLOW 변환)');
-            notification['type'] = 'FOLLOW';
-
-            // 팔로워 목록에서 매칭 시도
-            final matchedFollower = followerMap[nickname];
-            if (matchedFollower != null) {
-              notification['userId'] = matchedFollower['id'];
-              notification['isPrivateAccount'] = false;
-              validNotifications.add(notification);
-              print('  ✅ 자동 수락 후 매칭 성공 → 맞팔로우 버튼 표시: $nickname');
-            } else {
-              // 팔로워 목록에 없어도 requestMap에 있다면 표시
-              final matchedRequest = requestMap[nickname];
-              if (matchedRequest != null) {
-                notification['userId'] = matchedRequest['requesterId'];
-                notification['isPrivateAccount'] = false;
-                validNotifications.add(notification);
-                print('  ✅ 요청 맵에서 매칭 → 맞팔로우 버튼 표시 (동기화 지연): $nickname');
-              } else {
-                print('  ❌ 변환 후 매칭 실패 → 알림 제외: $nickname');
+              // ✨ [핵심 수정] 요청은 더 이상 없지만, 이미 팔로워가 된 경우
+              // 이 '요청' 알림을 '최신 팔로우' 알림으로 변환하여 처리
+              final matchedFollower = followerMap[nickname];
+              if (matchedFollower != null) {
+                print('🔄 [수정됨] 처리된 팔로우 요청(ID: ${notification['id']})을 최신 팔로우 알림으로 변환합니다.');
+                notification['type'] = 'FOLLOW';
+                notification['userId'] = matchedFollower['id'];
+                processedNotification = notification;
               }
+              // 요청도 없고 팔로워도 아니면 (거절/삭제됨) -> 아무것도 안 함 (processedNotification = null)
+            }
+          } else { // 공개 계정일 때
+            notification['type'] = 'FOLLOW';
+            final matchedUser = followerMap[nickname] ?? requestMap[nickname];
+            if (matchedUser != null) {
+              notification['userId'] = matchedUser['id'] ?? matchedUser['requesterId'];
+              processedNotification = notification;
             }
           }
-        } else if (notification['type'] == 'FOLLOW') {
-          print('🔍 FOLLOW 처리: $nickname');
-          final matchedFollower = followerMap[nickname];
-          if (matchedFollower != null) {
-            notification['userId'] = matchedFollower['id'];
-            notification['isPrivateAccount'] = false;
-            validNotifications.add(notification);
-            print('  ✅ FOLLOW 매칭 성공: $nickname');
-          } else {
-            print('  ❌ FOLLOW 매칭 실패: $nickname');
+        } else if (type == 'FOLLOW') {
+          processedNotification = notification;
+          if (notification['userId'] == null) {
+            final matchedUser = followerMap[nickname] ?? requestMap[nickname];
+            if (matchedUser != null) {
+              notification['userId'] = matchedUser['id'] ?? matchedUser['requesterId'];
+            }
           }
         } else {
-          validNotifications.add(notification);
-          print('✅ 기타 알림 추가: ${notification['type']} - ${notification['id']}');
+          processedNotification = notification;
+        }
+
+        if (processedNotification != null) {
+          finalNotificationsMap[key] = processedNotification;
         }
       }
 
-      print('📊 최종 알림 개수: ${validNotifications.length}');
-      print('🎯 계정 상태별 처리 요약:');
-      print('  - 비공개 계정: FOLLOW_REQUEST → 수락/삭제 버튼 (실제 요청만)');
-      print('  - 공개 계정: FOLLOW_REQUEST → FOLLOW 변환 → 맞팔로우 버튼 (자동 수락됨)');
+      var validNotifications = finalNotificationsMap.values.toList();
 
+      validNotifications.sort((a, b) => (b['id'] as int).compareTo(a['id'] as int));
+
+      print('📊 최종 필터링된 알림 개수: ${validNotifications.length}');
       return validNotifications;
+
     } catch (e) {
       print('❌ Error in getNotificationsByCategory: $e');
       rethrow;
@@ -167,32 +159,24 @@ class NotificationApi {
 
   static Future<FollowRequestResult> acceptFollowRequest(int requestId, int userId) async {
     try {
-      print('✅ 팔로우 요청 수락 시작: requestId=$requestId, userId=$userId');
       final result = await UserApi.acceptFollowRequest(requestId);
-      print('✅ 팔로우 요청 수락 결과: $result');
-
       return FollowRequestResult(
         success: true,
         message: result['message'] ?? '팔로우 요청을 수락했습니다',
         myFollowStatus: FollowButtonStatus.canFollow,
       );
     } catch (e) {
-      print('❌ 팔로우 요청 수락 실패: $e');
       return FollowRequestResult(success: false, message: '팔로우 요청 수락 실패', myFollowStatus: FollowButtonStatus.canFollow);
     }
   }
 
   static Future<Map<String, dynamic>> rejectFollowRequest(int requestId, int userId) {
-    print('❌ 팔로우 요청 거절: requestId=$requestId, userId=$userId');
     return UserApi.rejectFollowRequest(requestId);
   }
 
   static Future<FollowActionResult> followUser(int userId) async {
     try {
-      print('👥 팔로우 시작: userId=$userId');
       final result = await UserApi.followUser(userId);
-      print('👥 팔로우 결과: $result');
-
       final data = result['data'];
       final pending = data?['pending'] ?? false;
 
@@ -202,24 +186,19 @@ class NotificationApi {
         buttonState: pending ? FollowButtonStatus.requestSent : FollowButtonStatus.following,
       );
     } catch (e) {
-      print('❌ 팔로우 실패: $e');
       rethrow;
     }
   }
 
   static Future<FollowActionResult> unfollowUser(int userId) async {
     try {
-      print('👋 언팔로우 시작: userId=$userId');
       final result = await UserApi.unfollowUser(userId);
-      print('👋 언팔로우 결과: $result');
-
       return FollowActionResult(
         success: true,
         message: result['message'] ?? '언팔로우했습니다',
         buttonState: FollowButtonStatus.canFollow,
       );
     } catch (e) {
-      print('❌ 언팔로우 실패: $e');
       rethrow;
     }
   }

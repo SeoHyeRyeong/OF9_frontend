@@ -26,8 +26,8 @@ class CustomBottomNavBar extends StatelessWidget {
   }) : super(key: key);
 
   static const _navItems = [
-    {'icon': AppImages.home, 'label': '피드'},
-    {'icon': AppImages.report, 'label': '리포트'},
+    {'icon': AppImages.home, 'label': '홈'},
+    {'icon': AppImages.report, 'label': '피드'},
     {'icon': AppImages.upload, 'label': '업로드'},
     {'icon': AppImages.bell, 'label': '알림'},
     {'icon': AppImages.person, 'label': 'MY'},
@@ -37,17 +37,16 @@ class CustomBottomNavBar extends StatelessWidget {
     Widget? target;
 
     switch (index) {
-      case 0:
+      // 0은 미구현
+
+      case 1:
         target = const FeedScreen();
         break;
-
-    //리포트 1은 아직 미구현
 
       case 2:
         target = const TicketOcrScreen();
         break;
 
-    //알림 3은 아직 미구현
       case 3:
         target = const NotificationScreen();
         break;

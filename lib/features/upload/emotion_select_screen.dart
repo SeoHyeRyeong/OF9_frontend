@@ -227,7 +227,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                   child: Center(
                     child: FixedText(
                       '다음',
-                      style: AppFonts.suite.body_md_500(context).copyWith(color: AppColors.gray20),
+                      style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray20),
                     ),
                   ),
                 ),

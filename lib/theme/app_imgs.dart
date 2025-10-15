@@ -7,13 +7,13 @@ class AppImages {
   static const dodada = 'assets/imgs/ic_onboarding/text_dodada.svg';
 
   // 온보딩 그래픽
-  static const loginOnboarding1 = 'assets/imgs/graphic_onboarding_1.png';
-  static const loginOnboarding2 = 'assets/imgs/graphic_onboarding_2.png';
-  static const loginOnboarding3 = 'assets/imgs/graphic_onboarding_3.png';
+  static const loginOnboarding1 = 'assets/imgs/ic_onboarding/graphic_onboarding_1.png';
+  static const loginOnboarding2 = 'assets/imgs/ic_onboarding/graphic_onboarding_2.png';
+  static const loginOnboarding3 = 'assets/imgs/ic_onboarding/graphic_onboarding_3.png';
   static const check = 'assets/imgs/ic_check.svg';
 
   // 카카오
-  static const kakaobrown = 'assets/imgs/ic_kakao_kakaobrown_28.svg';
+  static const kakaobrown = 'assets/imgs/ic_onboarding/ic_kakao_kakaobrown_28.svg';
   static const backBlack = 'assets/imgs/ic_back_black_24.svg';
   static const dropdownBlack = 'assets/imgs/ic_dropdown_black.svg';
 
@@ -23,16 +23,16 @@ class AppImages {
   static const ticket = 'assets/imgs/ic_ticket.png';
 
   // 야구팀 로고
-  static const bears = 'assets/imgs/img_doosan.png';
-  static const dinos = 'assets/imgs/img_nc.png';
-  static const eagles = 'assets/imgs/img_eagles.png';
-  static const giants = 'assets/imgs/img_lotte.png';
-  static const kiwoom = 'assets/imgs/img_kiwoom.png';
-  static const ktwiz = 'assets/imgs/img_kt.png';
-  static const landers = 'assets/imgs/img_ssg.png';
-  static const lions = 'assets/imgs/img_samsung.png';
-  static const tigers = 'assets/imgs/img_kia.png';
-  static const twins = 'assets/imgs/img_lg.png';
+  static const bears = 'assets/imgs/img_team/img_doosan.png';
+  static const dinos = 'assets/imgs/img_team/img_nc.png';
+  static const eagles = 'assets/imgs/img_team/img_eagles.png';
+  static const giants = 'assets/imgs/img_team/img_lotte.png';
+  static const kiwoom = 'assets/imgs/img_team/img_kiwoom.png';
+  static const ktwiz = 'assets/imgs/img_team/img_kt.png';
+  static const landers = 'assets/imgs/img_team/img_ssg.png';
+  static const lions = 'assets/imgs/img_team/img_samsung.png';
+  static const tigers = 'assets/imgs/img_team/img_kia.png';
+  static const twins = 'assets/imgs/img_team/img_lg.png';
 
   // 바텀바
   static const home = 'assets/imgs/ic_normal_home.svg';
@@ -55,6 +55,8 @@ class AppImages {
   //티켓 정보 확인
   static const dropdown = 'assets/imgs/ic_right_black_24.svg';
   static const dropdown_calendar = 'assets/imgs/calendar_today.svg';
+  static const back_black = 'assets/imgs/ic_back_black_16.svg';
+  static const right_black = 'assets/imgs/ic_right_black_16.svg';
 
   // 이모지 선택
   static const emotion_1 = 'assets/imgs/ic_emotion/emotion_1.svg';
@@ -74,9 +76,10 @@ class AppImages {
   static const diary = 'assets/imgs/ic_detail_record/ic_diary.svg';
   static const food = 'assets/imgs/ic_detail_record/ic_food.svg';
   static const gallery_detail = 'assets/imgs/ic_detail_record/ic_gallery.png';
-  static const oneword = 'assets/imgs/ic_detail_record/ic_oneword.svg';
   static const plus = 'assets/imgs/ic_detail_record/btn_plus.svg';
   static const foodplus = 'assets/imgs/ic_detail_record/btn_food_plus.svg';
+  static const textfield_delete = 'assets/imgs/ic_detail_record/ic_textfield_delete.png';
+
 
   static const calendar = 'assets/imgs/ic_normal_calendar.svg';
   static const gallery = 'assets/imgs/ic_normal_gallery.svg';

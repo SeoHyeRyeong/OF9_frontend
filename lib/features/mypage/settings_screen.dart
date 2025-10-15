@@ -46,6 +46,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final response = await UserApi.getMyProfile();
       final userInfo = response['data'];
+
+      // ✅ 디버깅: 실제 값 확인
+      print('🔍 받은 profileImageUrl: "${userInfo['profileImageUrl']}"');
+      print('🔍 타입: ${userInfo['profileImageUrl'].runtimeType}');
+
       setState(() {
         nickname = userInfo['nickname'] ?? '알 수 없음';
         favTeam = userInfo['favTeam'] ?? '응원팀 없음';

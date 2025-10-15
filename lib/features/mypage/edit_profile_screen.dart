@@ -185,7 +185,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.trans300,
+      barrierColor: AppColors.trans700,
       builder: (BuildContext context) {
         return SafeArea(
           child: Padding(

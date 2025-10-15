@@ -786,13 +786,6 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                               print('  - matchedGames (OCR): ${matchedGames.isNotEmpty ? matchedGames[0].gameId : 'null'}');
                               print('  - 최종 선택: $finalGameId');
 
-                              if (finalGameId == null || finalGameId.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('경기 정보를 찾을 수 없습니다.')),
-                                );
-                                return;
-                              }
-
                               // 티켓 정보 저장
                               recordState.setTicketInfo(
                                 ticketImagePath: widget.imagePath,

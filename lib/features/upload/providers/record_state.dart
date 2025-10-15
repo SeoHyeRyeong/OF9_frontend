@@ -20,7 +20,6 @@ class RecordState extends ChangeNotifier {
   String? _extractedSeat;
 
   // 상세 기록
-  String? _comment;
   String? _longContent;
   String? _bestPlayer;
   List<int> _companions = [];
@@ -46,7 +45,6 @@ class RecordState extends ChangeNotifier {
   String? get extractedSeat => _extractedSeat;
 
   // Getters - 상세 기록
-  String? get comment => _comment;
   String? get longContent => _longContent;
   String? get bestPlayer => _bestPlayer;
   List<int> get companions => _companions;
@@ -88,11 +86,6 @@ class RecordState extends ChangeNotifier {
   // 개별 필드 업데이트
   void updateEmotionCode(int emotionCode) {
     _emotionCode = emotionCode;
-    notifyListeners();
-  }
-
-  void updateComment(String comment) {
-    _comment = comment;
     notifyListeners();
   }
 
@@ -165,7 +158,6 @@ class RecordState extends ChangeNotifier {
     _extractedStadium = null;
     _extractedSeat = null;
 
-    _comment = null;
     _longContent = null;
     _bestPlayer = null;
     _companions = [];
@@ -188,7 +180,6 @@ class RecordState extends ChangeNotifier {
     print('selectedStadium: $_selectedStadium (extracted: $_extractedStadium)');
     print('selectedSeat: $_selectedSeat (extracted: $_extractedSeat)');
     print('[상세 기록]');
-    print('comment: $_comment');
     print('longContent: $_longContent');
     print('bestPlayer: $_bestPlayer');
     print('companions: $_companions');

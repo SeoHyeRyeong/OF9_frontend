@@ -1127,7 +1127,7 @@ class _FeedScreenState extends State<FeedScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: CustomBottomNavBar(currentIndex: 0),
+        bottomNavigationBar: CustomBottomNavBar(currentIndex: 1),
       ),
     );
   }

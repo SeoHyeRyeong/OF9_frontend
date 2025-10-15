@@ -11,9 +11,6 @@ double scaleHeight(double baseHeight) {
   double screenHeight = ScreenUtil().screenHeight;
   double ratio = screenHeight / _baseHeight;
 
-  // pro max 높이만 최대값 제한 (오버플로우 방지)
-  if (ratio > 1.08) ratio = 1.08;
-
   return baseHeight * ratio;
 }
 
@@ -31,17 +28,6 @@ double scaleFont(double baseFontSize) {
   if (ratio > 1.08) ratio = 1.08;
 
   return baseFontSize * ratio;
-}
-
-/// 달력 그리드 스케일링을 위한 함수
-double scaleCalendar(double baseSize) {
-  double screenWidth = ScreenUtil().screenWidth;
-  return screenWidth * (baseSize / _baseWidth);
-}
-
-double scaleCalendarFont(double baseFontSize) {
-  double screenWidth = ScreenUtil().screenWidth;
-  return screenWidth * (baseFontSize / _baseWidth);
 }
 
 ///======================================================

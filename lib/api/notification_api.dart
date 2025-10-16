@@ -18,26 +18,31 @@ class NotificationApi {
     return {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'};
   }
 
-  static Future<http.Response> _makeRequestWithRetry({required Future<http.Response> Function(Map<String, String> headers) request}) async {
+  /// ✨ 수정: user_api.dart를 참고하여 토큰 갱신 및 재시도 로직 활성화
+  static Future<http.Response> _makeRequestWithRetry(
+      {required Future<http.Response> Function(Map<String, String> headers) request}) async {
     try {
       var headers = await _authHeaders();
       var response = await request(headers);
 
-      // NOTE: kakao_auth_service.dart 에 refreshTokens 메서드가 없어서 주석 처리합니다.
-      // 실제 토큰 재발급 로직이 있다면 주석을 해제하고 사용하세요.
-      /*
+      // 401/403 에러 시 토큰 갱신 후 재시도
       if (response.statusCode == 401 || response.statusCode == 403) {
+        print('🔄 [NotificationApi] 토큰 만료, 갱신 시도...');
+        // user_api.dart와 마찬가지로 kakaoAuthService에 refreshTokens()가 있다고 가정합니다.
         final refreshResult = await _kakaoAuth.refreshTokens();
+
         if (refreshResult != null) {
-          headers = await _authHeaders();
-          response = await request(headers);
+          print('🎉 [NotificationApi] 토큰 갱신 성공, 재요청 시작');
+          headers = await _authHeaders(); // 새 토큰으로 헤더 갱신
+          response = await request(headers); // 원래 요청 재시도
         } else {
-          throw Exception('Token refresh failed');
+          print('❌ [NotificationApi] 토큰 갱신 실패, 재로그인 필요');
+          throw Exception('토큰 갱신에 실패했습니다. 다시 로그인해주세요.');
         }
       }
-      */
       return response;
     } catch (e) {
+      print('🔥 [NotificationApi] API 요청 오류: $e');
       rethrow;
     }
   }
@@ -53,7 +58,7 @@ class NotificationApi {
       print('👤 내 계정 정보: userId=$myUserId, isPrivate=$isMyAccountPrivate');
 
       final results = await Future.wait([
-        _makeRequestWithRetry(
+        _makeRequestWithRetry( // ✨ 수정된 함수 호출
           request: (headers) => http.get(
             Uri.parse('$baseUrl/notifications?category=$category'),
             headers: headers,
@@ -108,11 +113,10 @@ class NotificationApi {
               notification['requestId'] = matchedRequest['requestId'];
               processedNotification = notification;
             } else {
-              // ✨ [핵심 수정] 요청은 더 이상 없지만, 이미 팔로워가 된 경우
               // 이 '요청' 알림을 '최신 팔로우' 알림으로 변환하여 처리
               final matchedFollower = followerMap[nickname];
               if (matchedFollower != null) {
-                print('🔄 [수정됨] 처리된 팔로우 요청(ID: ${notification['id']})을 최신 팔로우 알림으로 변환합니다.');
+                print('🔄 처리된 팔로우 요청(ID: ${notification['id']})을 최신 팔로우 알림으로 변환합니다.');
                 notification['type'] = 'FOLLOW';
                 notification['userId'] = matchedFollower['id'];
                 processedNotification = notification;

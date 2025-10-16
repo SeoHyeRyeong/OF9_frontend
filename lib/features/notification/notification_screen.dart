@@ -15,7 +15,7 @@ class NotificationModel {
   final String timeAgo;
   final String? userNickname;
   final String? userProfileImage;
-  final String? reactionImageUrl;
+  final int? relatedRecordId;
   final bool isRead;
   final bool? isPrivateAccount;
   int? userId;
@@ -28,7 +28,7 @@ class NotificationModel {
         timeAgo = json['timeAgo'] ?? '',
         userNickname = json['userNickname'],
         userProfileImage = json['userProfileImage'],
-        reactionImageUrl = json['reactionImageUrl'],
+        relatedRecordId = json['relatedRecordId'],
         isRead = json['isRead'] ?? true,
         isPrivateAccount = json['isPrivateAccount'],
         userId = json['userId'],
@@ -44,7 +44,7 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> with WidgetsBindingObserver {
   int _selectedTabIndex = 0;
-  final List<String> _tabTexts = ["ALL", "친구의 직관 기록", "받은 공감", "소식"];
+  final List<String> _tabTexts = ["ALL", "친구의 직관 기록", "반응", "소식"];
   final List<String> _categories = ["ALL", "FRIEND_RECORD", "REACTION", "NEWS"];
 
   List<NotificationModel> _notifications = [];
@@ -254,7 +254,6 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
     }
   }
 
-  // ✨ [핵심 수정] _loadData() 대신 직접 UI 상태를 업데이트하도록 변경
   Future<void> _handleRejectFollow(NotificationModel notification) async {
     if (notification.requestId == null || notification.userId == null) return;
     setState(() => _processingId = notification.id);
@@ -263,8 +262,6 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
       await NotificationApi.rejectFollowRequest(notification.requestId!, notification.userId!);
 
       if (mounted) {
-        // API 호출 성공 시, 전체 데이터를 다시 로드하는 대신
-        // 현재 목록에서 해당 알림을 즉시 제거합니다.
         setState(() {
           _notifications.removeWhere((n) => n.id == notification.id);
         });
@@ -407,7 +404,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
           SizedBox(width: scaleWidth(12)),
           Expanded(child: _buildNotificationText(notification)),
           if (trailingWidget != null) ...[
-            SizedBox(width: scaleWidth(12)),
+            SizedBox(width: scaleWidth(20)),
             trailingWidget,
           ]
         ],
@@ -416,56 +413,43 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
   }
 
   Widget _buildNotificationText(NotificationModel notification) {
-    const double lineSpacing = 1.45;
+    final double lineSpacing = 1.45;
+
+    final nicknameStyle = AppFonts.suite.b3_sb(context).copyWith(color: AppColors.black, height: lineSpacing);
+    final actionStyle = AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray600, height: lineSpacing);
+    final timeStyle = AppFonts.suite.c1_r(context).copyWith(color: AppColors.gray300, height: lineSpacing);
+
+    final unbreakableTimeAgo = notification.timeAgo
+        .replaceAll(' ', '\u{00A0}')
+        .replaceAllMapped(
+        RegExp(r'(\d)([가-힣])'), (match) => '${match.group(1)}\u{2060}${match.group(2)}');
+
+    final actionText = _getActionText(notification);
+
     return Text.rich(
-      _buildTextSpans(notification, lineSpacing),
-      textAlign: TextAlign.left,
+      TextSpan(
+        children: [
+          if (notification.userNickname != null)
+            TextSpan(text: notification.userNickname, style: nicknameStyle),
+
+          // 공백을 포함한 본문 텍스트 Span
+          TextSpan(text: '$actionText  ', style: actionStyle),
+
+          // 시간 텍스트만 포함하는 WidgetSpan
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Text(
+              unbreakableTimeAgo,
+              style: timeStyle,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  InlineSpan _buildTextSpans(NotificationModel notification, double lineSpacing) {
-    final List<InlineSpan> children = [];
-
-    if (notification.type == 'SYSTEM' || notification.type == 'NEWS') {
-      children.add(TextSpan(
-        text: notification.content,
-        style: AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray800, height: lineSpacing),
-      ));
-    } else {
-      if (notification.userNickname != null) {
-        children.add(TextSpan(
-          text: notification.userNickname,
-          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900, height: lineSpacing),
-        ));
-      }
-      children.add(TextSpan(
-        text: _getActionText(notification),
-        style: AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray700, height: lineSpacing),
-      ));
-    }
-
-    children.add(TextSpan(
-      text: ' \u{00A0}${notification.timeAgo}',
-      style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400, height: lineSpacing),
-    ));
-
-    return TextSpan(children: children);
-  }
-
   String _getActionText(NotificationModel notification) {
-    switch (notification.type) {
-      case 'NEW_RECORD':
-      case 'FRIEND_RECORD':
-        return '님이 직관 기록을 업로드했어요.';
-      case 'REACTION':
-        return '님이 회원님의 기록에 공감했어요.';
-      case 'FOLLOW':
-        return '님이 회원님을 팔로우합니다.';
-      case 'FOLLOW_REQUEST':
-        return '님의 팔로우 요청';
-      default:
-        return notification.content;
-    }
+    return notification.content;
   }
 
   Widget _buildProfileImage(NotificationModel notification) {
@@ -482,7 +466,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
             : null,
       ),
       child: (notification.userProfileImage == null || isSystem)
-          ? Center(child: isSystem ? SvgPicture.asset(AppImages.dodada, width: scaleWidth(24), color: AppColors.gray400) : Icon(Icons.person, color: AppColors.gray400, size: scaleWidth(24)))
+          ? Center(child: isSystem ? SvgPicture.asset(AppImages.dodada, width: scaleWidth(24), color: AppColors.gray400) : SvgPicture.asset(AppImages.profile, width: scaleWidth(42), height: scaleWidth(42)))
           : null,
     );
   }
@@ -504,20 +488,6 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
         final status = _followStatusMap[notification.userNickname] ?? FollowButtonStatus.canFollow;
         return _buildFollowButton(notification, status, isProcessing);
 
-      case 'REACTION':
-        if(notification.reactionImageUrl != null) {
-          return Image.network(
-            notification.reactionImageUrl!,
-            width: scaleWidth(40),
-            height: scaleWidth(40),
-            errorBuilder: (context, error, stackTrace) => Container(
-              width: scaleWidth(40),
-              height: scaleWidth(40),
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFCB4BA)),
-            ),
-          );
-        }
-        return null;
       default:
         return null;
     }
@@ -572,7 +542,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
         text = '팔로잉'; buttonColor = AppColors.gray50; textColor = AppColors.gray600;
         break;
       case FollowButtonStatus.requestSent:
-        text = '요청됨'; buttonColor = AppColors.gray50; textColor = AppColors.gray400;
+        text = '요청됨'; buttonColor = AppColors.gray50; textColor = AppColors.gray600;
         break;
     }
 

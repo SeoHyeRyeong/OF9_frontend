@@ -116,7 +116,6 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     '히어로즈', '이글스', '트윈스', '다이노스', '랜더스', '베어스', 'Eagles', 'KIA', '두산',
     '롯데', '삼성', '키움', '한화', 'KT', 'LG', 'NC', 'SSG', 'WIZ'
   ];
-
   final List<Map<String, String>> teamListWithImages = [
     {'name': '두산 베어스', 'image': AppImages.bears},
     {'name': '롯데 자이언츠', 'image': AppImages.giants},
@@ -129,6 +128,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     {'name': 'NC 다이노스', 'image': AppImages.dinos},
     {'name': 'SSG 랜더스', 'image': AppImages.landers},
   ];
+
 
   final List<Map<String, dynamic>> stadiumListWithImages = [
     {'name': '잠실 야구장', 'images': [AppImages.bears, AppImages.twins]},

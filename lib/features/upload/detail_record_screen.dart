@@ -783,7 +783,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation1, animation2) =>
-            const FeedScreen(showCompletionPopup: true),
+            const FeedScreen(),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),

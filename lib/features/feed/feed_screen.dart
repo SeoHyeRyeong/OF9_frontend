@@ -1,1134 +1,1124 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:frontend/utils/fixed_text.dart';
-import 'package:frontend/components/custom_bottom_navbar.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:frontend/features/feed/search_screen.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
-import 'package:frontend/components/custom_popup_dialog.dart';
-import 'package:frontend/api/record_api.dart';
+import 'package:frontend/utils/size_utils.dart';
+import 'package:frontend/utils/fixed_text.dart';
+import 'package:frontend/components/custom_bottom_navbar.dart';
+import 'package:frontend/api/feed_api.dart';
 import 'package:intl/intl.dart';
-import 'package:frontend/features/feed/search_screen.dart';
-import 'package:frontend/api/user_api.dart';
+import 'dart:ui' as ui;
 
 class FeedScreen extends StatefulWidget {
-  final bool showCompletionPopup;
-
-  const FeedScreen({Key? key, this.showCompletionPopup = false}) : super(key: key);
+  const FeedScreen({super.key});
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends State<FeedScreen> {
-  int selectedDateIndex = 0; // 선택된 날짜의 인덱스 (오늘이 0)
-  int selectedFilterIndex = 0; // 선택된 필터의 인덱스 (ALL이 0)
-  ScrollController _scrollController = ScrollController();
-  DateTime _visibleMonth = DateTime.now(); // 현재 보이는 월
+class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _indicatorAnimation;
+  late PageController _pageController;
 
-  // 동적 필터 목록 (사용자 최애구단에 따라 변경됨)
-  List<String> _filters = ['ALL']; // 초기값은 ALL만
+  late ScrollController _recommendScrollController;
+  late ScrollController _followingScrollController;
 
-  // 사용자 정보
-  String userFavTeam = '';
-  bool isLoadingUserInfo = true;
+  double _currentPageValue = 0.0;
+  bool _isPageViewScrolling = false;
+  int _selectedTabIndex = 0;
 
-  // 모든 구단 목록
-  final List<String> _allTeams = [
-    '두산 베어스',
-    '롯데 자이언츠',
-    '삼성 라이온즈',
-    '키움 히어로즈',
-    '한화 이글스',
-    'KIA 타이거즈',
-    'KT WIZ',
-    'LG 트윈스',
-    'NC 다이노스',
-    'SSG 랜더스',
-  ];
+  List<Map<String, dynamic>> _recommendFeedItems = [];
+  List<Map<String, dynamic>> _followingFeedItems = [];
+  bool _isLoadingRecommend = true;
+  bool _isLoadingFollowing = true;
+
+  int _recommendCurrentPage = 0;
+  int _followingCurrentPage = 0;
+  bool _isLoadingMoreRecommend = false;
+  bool _isLoadingMoreFollowing = false;
+  bool _hasMoreRecommend = true;
+  bool _hasMoreFollowing = true;
+
+  Map<String, bool> _likedStatus = {};
+  Map<String, int> _likeCounts = {};
+
+  // 팀 이름 매핑
+  final Map<String, String> _teamFullNames = {
+    'LG': 'LG 트윈스',
+    'KT': 'KT 위즈',
+    '두산': '두산 베어스',
+    '삼성': '삼성 라이온즈',
+    'SSG': 'SSG 랜더스',
+    'NC': 'NC 다이노스',
+    '롯데': '롯데 자이언츠',
+    'KIA': 'KIA 타이거즈',
+    '한화': '한화 이글스',
+    '키움': '키움 히어로즈',
+  };
+
+  // 구장 이름 매핑
+  final Map<String, String> _stadiumFullNames = {
+    '잠실': '잠실야구장',
+    '고척': '고척스카이돔',
+    '수원': '수원KT위즈파크',
+    '대구': '대구삼성라이온즈파크',
+    '광주': '광주-기아챔피언스필드',
+    '창원': '창원NC파크',
+    '사직': '사직야구장',
+    '대전': '대전한화생명이글스파크',
+    '인천': '인천SSG랜더스필드',
+  };
 
   @override
   void initState() {
     super.initState();
-
-    // 상태바 항상 표시
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.manual,
-      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 250),
+      vsync: this,
     );
 
-    // 사용자 정보를 먼저 로드하고 필터 구성
-    _loadUserInfoAndSetupFilters();
+    _indicatorAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
 
-    if (widget.showCompletionPopup) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showCompletionDialog();
+    _pageController = PageController(initialPage: 0);
+    _currentPageValue = 0.0;
+
+    _pageController.addListener(() {
+      if (_pageController.hasClients) {
+        setState(() {
+          _currentPageValue = _pageController.page ?? 0.0;
+          _isPageViewScrolling = true;
+        });
+      }
+    });
+
+    _loadRecommendFeed();
+    _loadFollowingFeed();
+  }
+
+  //추천 피드 로드
+  Future<void> _loadRecommendFeed() async {
+    try {
+      final feeds = await FeedApi.getAllFeed(page: 0, size: 20);
+      setState(() {
+        _recommendFeedItems = feeds;
+        _isLoadingRecommend = false;
+        _recommendCurrentPage = 0;
+        _hasMoreRecommend = feeds.length >= 20;
+      });
+
+      for (var feed in feeds) {
+        if (feed['recordId'] != null) {
+          final recordId = feed['recordId'].toString();
+          _likedStatus[recordId] = feed['isLiked'] ?? false;
+          _likeCounts[recordId] = feed['likeCount'] ?? 0;
+        }
+      }
+    } catch (e) {
+      print('추천 피드 로드 실패: $e');
+      setState(() {
+        _isLoadingRecommend = false;
       });
     }
-    _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _loadMoreRecommendFeed() async {
+    if (_isLoadingMoreRecommend || !_hasMoreRecommend) return;
+
+    setState(() {
+      _isLoadingMoreRecommend = true;
+    });
+
+    try {
+      final nextPage = _recommendCurrentPage + 1;
+      final feeds = await FeedApi.getAllFeed(page: nextPage, size: 20);
+
+      setState(() {
+        if (feeds.isEmpty) {
+          _hasMoreRecommend = false;
+        } else {
+          _recommendFeedItems.addAll(feeds);
+          _recommendCurrentPage = nextPage;
+          _hasMoreRecommend = feeds.length >= 20;
+
+          for (var feed in feeds) {
+            if (feed['recordId'] != null) {
+              final recordId = feed['recordId'].toString();
+              _likedStatus[recordId] = feed['isLiked'] ?? false;
+              _likeCounts[recordId] = feed['likeCount'] ?? 0;
+            }
+          }
+        }
+        _isLoadingMoreRecommend = false;
+      });
+    } catch (e) {
+      print('추천 피드 추가 로드 실패: $e');
+      setState(() {
+        _isLoadingMoreRecommend = false;
+      });
+    }
+  }
+
+  //팔로잉 피드 로드
+  Future<void> _loadFollowingFeed() async {
+    try {
+      final feeds = await FeedApi.getFollowingFeed(page: 0, size: 20);
+      setState(() {
+        _followingFeedItems = feeds;
+        _isLoadingFollowing = false;
+        _followingCurrentPage = 0;
+        _hasMoreFollowing = feeds.length >= 20;
+      });
+
+      for (var feed in feeds) {
+        if (feed['recordId'] != null) {
+          final recordId = feed['recordId'].toString();
+          _likedStatus[recordId] = feed['isLiked'] ?? false;
+          _likeCounts[recordId] = feed['likeCount'] ?? 0;
+        }
+      }
+    } catch (e) {
+      print('팔로잉 피드 로드 실패: $e');
+      setState(() {
+        _isLoadingFollowing = false;
+      });
+    }
+  }
+
+  Future<void> _loadMoreFollowingFeed() async {
+    if (_isLoadingMoreFollowing || !_hasMoreFollowing) return;
+
+    setState(() {
+      _isLoadingMoreFollowing = true;
+    });
+
+    try {
+      final nextPage = _followingCurrentPage + 1;
+      final feeds = await FeedApi.getFollowingFeed(page: nextPage, size: 20);
+
+      setState(() {
+        if (feeds.isEmpty) {
+          _hasMoreFollowing = false;
+        } else {
+          _followingFeedItems.addAll(feeds);
+          _followingCurrentPage = nextPage;
+          _hasMoreFollowing = feeds.length >= 20;
+
+          for (var feed in feeds) {
+            if (feed['recordId'] != null) {
+              final recordId = feed['recordId'].toString();
+              _likedStatus[recordId] = feed['isLiked'] ?? false;
+              _likeCounts[recordId] = feed['likeCount'] ?? 0;
+            }
+          }
+        }
+        _isLoadingMoreFollowing = false;
+      });
+    } catch (e) {
+      print('팔로잉 피드 추가 로드 실패: $e');
+      setState(() {
+        _isLoadingMoreFollowing = false;
+      });
+    }
+  }
+
+  // 좋아요 토글 처리
+  Future<void> _toggleLike(String recordId) async {
+    try {
+      print('🔍 [시작] recordId: $recordId');
+      print('📊 [현재상태] isLiked: ${_likedStatus[recordId]}, count: ${_likeCounts[recordId]}');
+
+      final result = await FeedApi.toggleLike(recordId);
+
+      final isLiked = result['isLiked'] as bool;
+      final likeCountRaw = result['likeCount'];
+      final likeCount = likeCountRaw is int ? likeCountRaw : (likeCountRaw as num).toInt();
+
+      print('✅ [파싱완료] isLiked: $isLiked, likeCount: $likeCount');
+
+      setState(() {
+        _likedStatus[recordId] = isLiked;
+        _likeCounts[recordId] = likeCount;
+      });
+
+      print('🎯 [최종상태] isLiked: ${_likedStatus[recordId]}, count: ${_likeCounts[recordId]}');
+    } catch (e, stackTrace) {
+      print('❌ [에러] $e');
+      print('📚 [스택] $stackTrace');
+    }
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
+    _animationController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
-  /// 사용자 정보를 불러오고 필터를 설정하는 함수
-  Future<void> _loadUserInfoAndSetupFilters() async {
-    try {
-      final response = await UserApi.getMyProfile();
-      final userInfo = response['data'];
-
-      setState(() {
-        userFavTeam = userInfo['favTeam'] ?? '';
-        isLoadingUserInfo = false;
-        _setupFilters();
-      });
-    } catch (e) {
-      print('❌ 사용자 정보 불러오기 실패: $e');
-      setState(() {
-        isLoadingUserInfo = false;
-        // 에러 시에도 기본 필터는 구성
-        _filters = ['ALL'] + _allTeams;
-      });
-    }
-  }
-
-  /// 최애구단을 고려해서 필터 목록을 구성하는 함수
-  void _setupFilters() {
-    List<String> newFilters = ['ALL'];
-
-    // 최애구단을 두 번째로 추가
-    newFilters.add(userFavTeam);
-
-    // 나머지 구단들을 순서대로 추가 (최애구단 제외)
-    for (String team in _allTeams) {
-      if (team != userFavTeam) {
-        newFilters.add(team);
-      }
-    }
-
+  ///===================================================
+  /// 탭 처리
+  ///===================================================
+  void _onPageChanged(int index) {
     setState(() {
-      _filters = newFilters;
+      _isPageViewScrolling = false;
+      _selectedTabIndex = index;
     });
+
+    if (index == 1) {
+      _animationController.forward();
+    } else {
+      _animationController.reverse();
+    }
   }
 
-  /// 완료 팝업을 띄우는 함수
-  void _showCompletionDialog() {
-    final todayDate = getTodayFormattedDate();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => CustomPopupDialog(
-        imageAsset: AppImages.ticket,
-        title: '$todayDate\n직관 기록이 완료됐어요',
-        subtitle: '직관 기록은 마이 페이지에서 확인할 수 있어요',
-        firstButtonText: '확인',
-        firstButtonAction: () {
-          Navigator.pop(context); // 팝업만 닫기
-        },
-        secondButtonText: '',
-        secondButtonAction: () {},
-      ),
+  void _onTabTapped(int index) {
+    setState(() {
+      _isPageViewScrolling = false;
+    });
+
+    _pageController.animateToPage(
+      index,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
     );
-  }
 
-  /// 오늘 날짜를 포맷팅하는 함수
-  String getTodayFormattedDate() {
-    final now = DateTime.now();
-    final formatter = DateFormat('yyyy년 MM월 dd일', 'ko_KR');
-    return formatter.format(now);
-  }
-
-  /// 경기 날짜 포맷팅 함수 ("2025년 03월 23일 (일)요일" → "2025년 03월 23일 (일)")
-  String _formatGameDate(String gameDate) {
-    if (gameDate.isEmpty) return '';
-
-    // "요일" 부분을 제거
-    final String formatted = gameDate.replaceAll('요일', '');
-    return formatted;
-  }
-
-  /// createdAt 시간을 기준으로 경과 시간을 계산하는 함수
-  String _getTimeAgo(String createdAt) {
-    try {
-      // 먼저 로컬 시간으로 파싱 시도
-      DateTime recordTime;
-      try {
-        // "2025-05-26 17:42:26" 형태를 "2025-05-26T17:42:26"로 변환 후 로컬 시간으로 파싱
-        recordTime = DateTime.parse(createdAt.replaceAll(' ', 'T'));
-      } catch (e) {
-        // 로컬 파싱이 실패하면 UTC로 파싱 후 로컬 변환
-        recordTime = DateTime.parse(createdAt.replaceAll(' ', 'T') + 'Z').toLocal();
-      }
-
-      final DateTime now = DateTime.now();
-      final Duration difference = now.difference(recordTime);
-
-      // 음수가 나오면 "방금 전"으로 처리 (미래 시간인 경우)
-      if (difference.inSeconds < 0) {
-        return '방금 전';
-      }
-
-      // 1년 이상인 경우
-      final int yearDiff = now.year - recordTime.year;
-      if (yearDiff >= 1) {
-        // 해당 월/일이 이미 지났는지 확인
-        final bool hasDatePassed = now.month > recordTime.month ||
-            (now.month == recordTime.month && now.day >= recordTime.day);
-
-        final int actualYearDiff = hasDatePassed ? yearDiff : yearDiff - 1;
-
-        if (actualYearDiff >= 1) {
-          return '${actualYearDiff}년 전';
-        }
-      }
-
-      // 1개월 이상인 경우 (월 단위 계산)
-      int monthDiff = (now.year - recordTime.year) * 12 + (now.month - recordTime.month);
-
-      // 일자까지 고려해서 정확한 월 차이 계산
-      if (now.day < recordTime.day) {
-        monthDiff -= 1;
-      }
-
-      if (monthDiff >= 1) {
-        return '${monthDiff}개월 전';
-      }
-
-      // 1개월 미만인 경우
-      if (difference.inDays >= 1) {
-        return '${difference.inDays}일 전';
-      } else if (difference.inHours >= 1) {
-        return '${difference.inHours}시간 전';
-      } else if (difference.inMinutes >= 1) {
-        return '${difference.inMinutes}분 전';
-      } else {
-        return '방금 전'; // 0초나 음수인 경우도 "방금 전"으로 처리
-      }
-    } catch (e) {
-      print('❌ 시간 파싱 실패: $e, createdAt: $createdAt');
-      return '알 수 없음';
+    if (index == 1) {
+      _animationController.forward();
+    } else {
+      _animationController.reverse();
     }
   }
 
-  /// 감정 코드에 따른 이모지 이미지 경로를 반환하는 함수
-  String _getEmotionImage(int emotionCode) {
-    switch (emotionCode) {
-      case 1: return AppImages.emotion_1;
-      case 2: return AppImages.emotion_2;
-      case 3: return AppImages.emotion_3;
-      case 4: return AppImages.emotion_4;
-      case 5: return AppImages.emotion_5;
-      case 6: return AppImages.emotion_6;
-      case 7: return AppImages.emotion_7;
-      case 8: return AppImages.emotion_8;
-      case 9: return AppImages.emotion_9;
-      default: return AppImages.emotion_1;
+  Color _getTabColor(int tabIndex) {
+    final progress = (_currentPageValue - tabIndex).abs();
+    final opacity = (1.0 - progress).clamp(0.0, 1.0);
+
+    if (tabIndex == 0) {
+      return Color.lerp(AppColors.gray300, AppColors.gray600, opacity) ?? AppColors.gray600;
+    } else {
+      return Color.lerp(AppColors.gray300, AppColors.gray600, opacity) ?? AppColors.gray600;
     }
   }
 
-  /// 팀명에 따른 로고 이미지 경로를 반환하는 함수
-  String _getTeamLogo(String teamName) {
-    switch (teamName) {
-      case 'KIA 타이거즈': return AppImages.tigers;
-      case '두산 베어스': return AppImages.bears;
-      case '롯데 자이언츠': return AppImages.giants;
-      case '삼성 라이온즈': return AppImages.lions;
-      case '키움 히어로즈': return AppImages.kiwoom;
-      case '한화 이글스': return AppImages.eagles;
-      case 'KT WIZ': return AppImages.ktwiz;
-      case 'LG 트윈스': return AppImages.twins;
-      case 'NC 다이노스': return AppImages.dinos;
-      case 'SSG 랜더스': return AppImages.landers;
-      default: return AppImages.tigers; // 기본 로고
-    }
-  }
+  Widget _buildRealtimeIndicator() {
+    final screenWidth = MediaQuery.of(context).size.width - scaleWidth(40);
+    final tabWidth = screenWidth / 2;
 
-  // 스크롤 리스너 - 보이는 월을 계산
-  void _onScroll() {
-    final double offset = _scrollController.offset;
-    final double itemWidth = 45.w; // 각 날짜 아이템의 너비 (40.w + 5.w spacing)
-    final int visibleItemIndex = (offset / itemWidth).round();
+    final scrollProgress = _currentPageValue.clamp(0.0, 1.0);
+    final indicatorOffset = scrollProgress * tabWidth;
 
-    final DateTime today = DateTime.now();
-    final DateTime visibleDate = today.subtract(Duration(days: visibleItemIndex));
-
-    if (_visibleMonth.month != visibleDate.month || _visibleMonth.year != visibleDate.year) {
-      setState(() {
-        _visibleMonth = DateTime(visibleDate.year, visibleDate.month);
-      });
-    }
-  }
-
-  // 특정 월에 맞는 달력 아이콘을 반환하는 메서드
-  String _getMonthIcon(int month) {
-    switch (month) {
-      case 1: return AppImages.month1;
-      case 2: return AppImages.month2;
-      case 3: return AppImages.month3;
-      case 4: return AppImages.month4;
-      case 5: return AppImages.month5;
-      case 6: return AppImages.month6;
-      case 7: return AppImages.month7;
-      case 8: return AppImages.month8;
-      case 9: return AppImages.month9;
-      case 10: return AppImages.month10;
-      case 11: return AppImages.month11;
-      case 12: return AppImages.month12;
-      default: return AppImages.month1;
-    }
-  }
-
-  // 2025년 1월 1일부터 오늘까지의 모든 날짜를 생성
-  List<DateTime> _generateAllDates() {
-    final DateTime today = DateTime.now();
-    final DateTime startDate = DateTime(2025, 1, 1);
-    final List<DateTime> dates = [];
-
-    DateTime currentDate = today;
-    while (currentDate.isAfter(startDate) || currentDate.isAtSameMomentAs(startDate)) {
-      dates.add(currentDate);
-      currentDate = currentDate.subtract(Duration(days: 1));
-    }
-
-    return dates;
-  }
-
-  /// 선택된 날짜에 맞는 기록들을 필터링하는 함수
-  List<Map<String, dynamic>> _filterRecordsBySelectedDate(List<Map<String, dynamic>> records) {
-    final List<DateTime> allDates = _generateAllDates();
-    if (selectedDateIndex >= allDates.length) return [];
-
-    final DateTime selectedDate = allDates[selectedDateIndex];
-
-    return records.where((record) {
-      try {
-        final String gameDate = record['gameDate'] ?? '';
-        if (gameDate.isEmpty) return false;
-
-        // "2025년 03월 23일 (일)요일" 형태의 문자열을 DateTime으로 변환
-        final RegExp dateRegex = RegExp(r'(\d{4})년\s*(\d{2})월\s*(\d{2})일');
-        final Match? match = dateRegex.firstMatch(gameDate);
-
-        if (match != null) {
-          final int year = int.parse(match.group(1)!);
-          final int month = int.parse(match.group(2)!);
-          final int day = int.parse(match.group(3)!);
-
-          final DateTime recordGameDate = DateTime(year, month, day);
-
-          // 날짜만 비교
-          return recordGameDate.year == selectedDate.year &&
-              recordGameDate.month == selectedDate.month &&
-              recordGameDate.day == selectedDate.day;
-        }
-        return false;
-      } catch (e) {
-        return false;
-      }
-    }).toList();
-  }
-
-  /// 선택된 필터(홈팀)에 맞는 기록들을 필터링하는 함수
-  List<Map<String, dynamic>> _filterRecordsByTeam(List<Map<String, dynamic>> records) {
-    if (selectedFilterIndex == 0) return records; // 'ALL' 선택시 전체 반환
-
-    final String selectedTeam = _filters[selectedFilterIndex];
-
-    return records.where((record) {
-      final String homeTeam = record['homeTeam'] ?? '';
-      // 홈팀만 확인
-      return homeTeam == selectedTeam;
-    }).toList();
-  }
-
-  /// 날짜와 홈팀 필터를 모두 적용하는 함수
-  List<Map<String, dynamic>> _applyAllFilters(List<Map<String, dynamic>> records) {
-    // 1. 먼저 날짜 필터링
-    List<Map<String, dynamic>> dateFiltered = _filterRecordsBySelectedDate(records);
-
-    // 2. 그 다음 홈팀 필터링
-    List<Map<String, dynamic>> teamFiltered = _filterRecordsByTeam(dateFiltered);
-
-    return teamFiltered;
-  }
-
-  // 날짜 위젯을 생성하는 메서드
-  Widget _buildDateWidget(DateTime date, int index) {
-    final List<String> weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-    final dayOfWeek = weekdays[date.weekday % 7];
-    final isSelected = selectedDateIndex == index;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedDateIndex = index;
-        });
-      },
-      child: Container(
-        width: 40.w,
-        height: 46.h,
-        margin: EdgeInsets.only(right: 5.w),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.gray950 : Colors.transparent,
-          borderRadius: BorderRadius.circular(21.r),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // 요일
-            FixedText(
-              dayOfWeek,
-              style: AppFonts.pretendard.c1_r(context).copyWith(
-                color: isSelected ? Colors.white : AppColors.gray400,
-              ),
-            ),
-            SizedBox(height: 6.h),
-            // 날짜
-            FixedText(
-              '${date.day}',
-              style: AppFonts.pretendard.b3_b(context).copyWith(
-                color: isSelected ? Colors.white : AppColors.gray400,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 필터 위젯을 생성하는 메서드
-  Widget _buildFilterWidget(String filterText, int index) {
-    final isSelected = selectedFilterIndex == index;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedFilterIndex = index;
-        });
-      },
-      child: Container(
-        height: 36.h,
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.gray600 : AppColors.gray20,
-          borderRadius: BorderRadius.circular(8.r),
-        ),
-        child: Center(
-          child: FixedText(
-            filterText,
-            style: isSelected
-                ? AppFonts.pretendard.c1_b(context).copyWith(color: AppColors.gray20)
-                : AppFonts.pretendard.c1_sb(context).copyWith(color: AppColors.gray300),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 이미지 위젯을 생성하는 헬퍼 메서드
-  Widget _buildMediaImage(dynamic mediaData, double width, double height) {
-    try {
-      // mediaData가 String인지 확인
-      if (mediaData is String) {
-        // URL인지 확인하고 직접 로드
-        if (mediaData.startsWith('http://') || mediaData.startsWith('https://')) {
-          return Image.network(
-            mediaData,
-            width: width,
-            height: height,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Container(
-                width: width,
-                height: height,
-                color: AppColors.gray100,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
-                    color: AppColors.pri400,
-                  ),
-                ),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) {
-              print('❌ Image.network 에러: $error');
-              return _buildImageErrorWidget(width, height);
-            },
-          );
-        }
-        // URL이 아닌 경우 에러 처리
-        print('❌ 지원하지 않는 이미지 형식: $mediaData');
-        return _buildImageErrorWidget(width, height);
-      }
-      // mediaData가 다른 형태인 경우
-      else {
-        print('❌ 알 수 없는 미디어 데이터 형태: ${mediaData.runtimeType}');
-        print('📊 mediaData 값: $mediaData');
-        return _buildImageErrorWidget(width, height);
-      }
-    } catch (e) {
-      print('❌ 이미지 처리 실패: $e');
-      return _buildImageErrorWidget(width, height);
-    }
-  }
-
-  /// 에러 위젯을 생성하는 헬퍼 메서드
-  Widget _buildImageErrorWidget(double width, double height) {
     return Container(
-      width: width,
-      height: height,
-      color: AppColors.gray200,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      width: double.infinity,
+      height: scaleHeight(2),
+      child: Stack(
         children: [
-          Icon(Icons.image, size: 40.w, color: AppColors.gray400),
-          SizedBox(height: 8.h),
-          FixedText(
-            '이미지 로드 실패',
-            style: AppFonts.pretendard.c2_m(context).copyWith(color: AppColors.gray400),
+          AnimatedPositioned(
+            duration: _isPageViewScrolling ? Duration.zero : Duration(milliseconds: 250),
+            left: indicatorOffset,
+            bottom: 0,
+            child: Container(
+              width: tabWidth,
+              height: scaleHeight(2),
+              color: AppColors.gray600,
+            ),
           ),
         ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final List<DateTime> allDates = _generateAllDates();
-
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop) {
-          SystemNavigator.pop();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
+  Widget _buildTabBar() {
+    return Column(
+      children: [
+        Container(
+          height: scaleHeight(36),
+          margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
           child: Column(
             children: [
-              // 헤더 영역
-              Container(
-                width: double.infinity,
-                height: 64.h,
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Column(
+              Expanded(
+                child: Row(
                   children: [
-                    SizedBox(height: 24.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Row(
-                          children: [
-                            FixedText(
-                              '전체',
-                              style: AppFonts.pretendard.h5_b(context).copyWith(color: Colors.black),
-                            ),
-                            SizedBox(width: 16.w),
-                            FixedText(
-                              '팔로잉',
-                              style: AppFonts.pretendard.h5_b(context).copyWith(color: AppColors.gray300),
-                            ),
-                          ],
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder: (context, animation1, animation2) => const SearchScreen(),
-                                transitionDuration: Duration.zero,
-                                reverseTransitionDuration: Duration.zero,
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _onTabTapped(0),
+                        child: Container(
+                          color: Colors.transparent,
+                          child: Center(
+                            child: FixedText(
+                              '추천',
+                              style: AppFonts.suite.body_sm_500(context).copyWith(
+                                color: _getTabColor(0),
                               ),
-                            );
-                          },
-                          child: SvgPicture.asset(
-                            AppImages.search,
-                            width: 24.w,
-                            height: 24.w,
+                            ),
                           ),
                         ),
-                      ],
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _onTabTapped(1),
+                        child: Container(
+                          color: Colors.transparent,
+                          child: Center(
+                            child: FixedText(
+                              '팔로잉',
+                              style: AppFonts.suite.body_sm_500(context).copyWith(
+                                color: _getTabColor(1),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
+              _buildRealtimeIndicator(),
+            ],
+          ),
+        ),
+        Container(
+          height: 1.0,
+          width: double.infinity,
+          color: AppColors.gray50,
+        ),
+      ],
+    );
+  }
 
-              // 나머지 컨텐츠 영역
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 6.h),
-
-                    // 달력 및 날짜 영역
-                    Padding(
-                      padding: EdgeInsets.only(left: 20.w, right: 15.w),
-                      child: Container(
-                        height: 46.h,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // 달력 레이아웃 (고정)
-                            Container(
-                              width: 36.w,
-                              height: 46.h,
-                              padding: EdgeInsets.only(
-                                top: 6.h,
-                                right: 10.w,
-                                bottom: 6.h,
-                              ),
-                              child: SvgPicture.asset(
-                                _getMonthIcon(_visibleMonth.month),
-                                width: 25.w,
-                                height: 33.h,
-                              ),
-                            ),
-
-                            SizedBox(width: 10.w),
-
-                            // 세로선
-                            Container(
-                              width: 1.w,
-                              height: 41.h,
-                              color: AppColors.gray100,
-                            ),
-
-                            SizedBox(width: 10.w),
-
-                            // 스크롤 가능한 날짜 리스트
-                            Expanded(
-                              child: ListView.builder(
-                                controller: _scrollController,
-                                scrollDirection: Axis.horizontal,
-                                reverse: true, // 오늘부터 시작하여 과거로 스크롤
-                                padding: EdgeInsets.zero,
-                                itemCount: allDates.length,
-                                itemBuilder: (context, index) {
-                                  return _buildDateWidget(allDates[index], index);
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: NestedScrollView(
+          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            return <Widget>[
+              SliverAppBar(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                pinned: false,
+                floating: false,
+                expandedHeight: scaleHeight(60),
+                automaticallyImplyLeading: false,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    padding: EdgeInsets.only(
+                      top: scaleHeight(22),
+                      left: scaleWidth(20),
+                      right: scaleWidth(20),
                     ),
-
-                    // 12px 간격
-                    SizedBox(height: 12.h),
-
-                    // 회색 구분선 (360*1 크기, gray50 색상)
-                    Container(width: 360.w, height: 1.h, color: AppColors.gray50),
-
-                    // 12px 간격
-                    SizedBox(height: 12.h),
-
-                    // 필터 영역
-                    Container(
-                      height: 36.h,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.only(left: 20.w, right: 20.w),
-                        itemCount: _filters.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            margin: EdgeInsets.only(
-                              right: index == _filters.length - 1 ? 0 : 8.w,
-                            ),
-                            child: _buildFilterWidget(_filters[index], index),
-                          );
-                        },
-                      ),
-                    ),
-
-                    // 24px 간격
-                    SizedBox(height: 24.h),
-
-                    // 피드 컨텐츠
-                    Expanded(
-                      child: FutureBuilder<List<Map<String, dynamic>>>(
-                        future: RecordApi.getMyRecordsList(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return Center(
-                              child: CircularProgressIndicator(color: AppColors.pri400),
-                            );
-                          }
-
-                          if (snapshot.hasError) {
-                            return Center(
-                              child: FixedText(
-                                '기록을 불러오는데 실패했습니다',
-                                style: AppFonts.pretendard.h5_sb(context).copyWith(color: AppColors.gray300),
-                              ),
-                            );
-                          }
-
-                          final List<Map<String, dynamic>> records = snapshot.data ?? [];
-                          // 최신 기록이 위로 오도록 정렬 (createdAt 기준 내림차순)
-                          records.sort((a, b) {
-                            try {
-                              final DateTime timeA = DateTime.parse(
-                                (a['createdAt'] ?? '').replaceAll(' ', 'T'),
-                              );
-                              final DateTime timeB = DateTime.parse(
-                                (b['createdAt'] ?? '').replaceAll(' ', 'T'),
-                              );
-                              return timeB.compareTo(timeA); // 내림차순 (최신이 위로)
-                            } catch (e) {
-                              return 0;
-                            }
-                          });
-
-                          final List<Map<String, dynamic>> filteredRecords = _applyAllFilters(records);
-
-                          if (filteredRecords.isEmpty) {
-                            return Center(
-                              child: FixedText(
-                                '직관 기록이 없어요',
-                                style: AppFonts.pretendard.h5_sb(context).copyWith(color: AppColors.gray300),
-                              ),
-                            );
-                          }
-
-                          return ListView.builder(
-                            padding: EdgeInsets.only(top: 0),
-                            itemCount: filteredRecords.length * 2 - 1, // 구분선 포함
-                            itemBuilder: (context, index) {
-                              // 구분선 아이템
-                              if (index.isOdd) {
-                                return Column(
-                                  children: [
-                                    SizedBox(height: 25.h),
-                                    Container(width: 320.w, height: 1.h, color: AppColors.gray50),
-                                    SizedBox(height: 20.h),
-                                  ],
-                                );
-                              }
-
-                              // 기록 아이템
-                              final recordIndex = index ~/ 2;
-                              final record = filteredRecords[recordIndex];
-                              final String nickname = record['nickname'] ?? '';
-                              final String favTeam = record['favTeam'] ?? '';
-                              final String profileImageUrl = record['profileImageUrl'] ?? '';
-                              final String createdAt = record['createdAt'] ?? '';
-                              final String longContent = record['longContent'] ?? '';
-                              final String gameDate = record['gameDate'] ?? '';
-                              final String stadium = record['stadium'] ?? '';
-                              final String homeTeam = record['homeTeam'] ?? '';
-                              final String awayTeam = record['awayTeam'] ?? '';
-                              final int homeScore = record['homeScore'] ?? 0;
-                              final int awayScore = record['awayScore'] ?? 0;
-                              final int emotionCode = record['emotionCode'] ?? 1;
-                              final String emotionLabel = record['emotionLabel'] ?? '';
-
-                              // longContent가 비어있는지 확인
-                              final bool hasLongContent = longContent.trim().isNotEmpty;
-
-                              return Container(
-                                margin: EdgeInsets.symmetric(horizontal: 20.w),
-                                decoration: BoxDecoration(color: Colors.white),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 16.h),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // 사용자 정보 헤더 (1~4번)
-                                      Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // 1. 프로필 이미지 (36*36, 원형)
-                                          Container(
-                                            width: 36.w,
-                                            height: 36.h,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: profileImageUrl.isNotEmpty ? null : AppColors.gray50,
-                                              image: profileImageUrl.isNotEmpty
-                                                  ? DecorationImage(
-                                                image: NetworkImage(profileImageUrl),
-                                                fit: BoxFit.cover,
-                                              )
-                                                  : null,
-                                            ),
-                                            child: profileImageUrl.isEmpty
-                                                ? ClipOval(
-                                              child: SvgPicture.asset(
-                                                AppImages.profile,
-                                                width: 36.w,
-                                                height: 36.h,
-                                              ),
-                                            )
-                                                : null,
-                                          ),
-
-                                          SizedBox(width: 8.w),
-
-                                          // 텍스트 영역을 Expanded로 감싸기
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                // 2, 3, 4번을 한 줄에 배치
-                                                Row(
-                                                  children: [
-                                                    // 2. 닉네임 (b3_b 폰트, gray950 색상)
-                                                    FixedText(
-                                                      nickname,
-                                                      style: AppFonts.pretendard.b3_b(context).copyWith(
-                                                        color: AppColors.gray950,
-                                                      ),
-                                                    ),
-
-                                                    SizedBox(width: 8.w),
-
-                                                    // 3. 팬 정보 (c1_r 폰트, gray400 색상)
-                                                    FixedText(
-                                                      '$favTeam 팬',
-                                                      style: AppFonts.pretendard.c1_r(context).copyWith(
-                                                        color: AppColors.gray400,
-                                                      ),
-                                                    ),
-
-                                                    Spacer(),
-
-                                                    // 4. 경과 시간 (c2_m 폰트, gray400 색상)
-                                                    FixedText(
-                                                      _getTimeAgo(createdAt),
-                                                      style: AppFonts.suite.c2_m(context).copyWith(
-                                                        color: AppColors.gray400,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-
-                                                // 5. 긴 내용 - 조건부 렌더링
-                                                if (hasLongContent) ...[
-                                                  SizedBox(height: 8.h),
-                                                  FixedText(
-                                                    longContent,
-                                                    style: AppFonts.pretendard.b3_sb_long(context).copyWith(
-                                                      color: AppColors.gray400,
-                                                    ),
-                                                    maxLines: null, // 여러 줄 허용 (다음줄로 넘어가는 형태)
-                                                  ),
-                                                ],
-
-                                                SizedBox(height: hasLongContent ? 10.h : 15.h), // 내용 유무에 따라 여백 조정
-
-                                                // 경기 정보 카드
-                                                Container(
-                                                  width: 276.w,
-                                                  height: 88.h,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white,
-                                                    borderRadius: BorderRadius.circular(12.r),
-                                                    border: Border.all(color: AppColors.gray30, width: 1),
-                                                  ),
-                                                  padding: EdgeInsets.only(
-                                                    top: 16.h,
-                                                    left: 20.w,
-                                                    right: 20.w,
-                                                    bottom: 0.h,
-                                                  ),
-                                                  child: Row(
-                                                    children: [
-                                                      // 왼쪽: 경기 정보
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                          children: [
-                                                            // 경기 날짜 및 구장
-                                                            FixedText(
-                                                              '${_formatGameDate(gameDate)}, ${stadium}에서',
-                                                              style: AppFonts.suite.c2_m(context).copyWith(
-                                                                color: AppColors.gray400,
-                                                              ),
-                                                            ),
-
-                                                            SizedBox(height: 10.h),
-
-                                                            // 점수 및 팀 로고
-                                                            Row(
-                                                              children: [
-                                                                // 홈팀 로고
-                                                                Container(
-                                                                  width: 31.w,
-                                                                  child: Image.asset(
-                                                                    _getTeamLogo(homeTeam),
-                                                                    width: 30.w,
-                                                                    fit: BoxFit.contain,
-                                                                    errorBuilder: (context, error, stackTrace) {
-                                                                      return Container(
-                                                                        width: 30.w,
-                                                                        height: 30.w,
-                                                                        decoration: BoxDecoration(
-                                                                          color: AppColors.gray200,
-                                                                          shape: BoxShape.circle,
-                                                                        ),
-                                                                      );
-                                                                    },
-                                                                  ),
-                                                                ),
-
-                                                                SizedBox(width: 17.w),
-
-                                                                // 점수
-                                                                FixedText(
-                                                                  '$homeScore',
-                                                                  style: AppFonts.pretendard.h3_sb(context).copyWith(
-                                                                    color: AppColors.gray500,
-                                                                  ),
-                                                                ),
-
-                                                                SizedBox(width: 12.w),
-
-                                                                FixedText(
-                                                                  ':',
-                                                                  style: AppFonts.pretendard.h3_sb(context).copyWith(
-                                                                    color: AppColors.gray500,
-                                                                  ),
-                                                                ),
-
-                                                                SizedBox(width: 12.w),
-
-                                                                FixedText(
-                                                                  '$awayScore',
-                                                                  style: AppFonts.pretendard.h3_sb(context).copyWith(
-                                                                    color: AppColors.gray500,
-                                                                  ),
-                                                                ),
-
-                                                                SizedBox(width: 17.w),
-
-                                                                // 원정팀 로고
-                                                                Container(
-                                                                  width: 30.w,
-                                                                  child: Image.asset(
-                                                                    _getTeamLogo(awayTeam),
-                                                                    width: 30.w,
-                                                                    fit: BoxFit.contain,
-                                                                    errorBuilder: (context, error, stackTrace) {
-                                                                      return Container(
-                                                                        width: 30.w,
-                                                                        height: 30.w,
-                                                                        decoration: BoxDecoration(
-                                                                          color: AppColors.gray200,
-                                                                          shape: BoxShape.circle,
-                                                                        ),
-                                                                      );
-                                                                    },
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-
-                                                      // 오른쪽: 감정 표현
-                                                      Column(
-                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                        children: [
-                                                          // 감정 이모지 (위로 올리기)
-                                                          Transform.translate(
-                                                            offset: Offset(0, -7.h),
-                                                            child: Container(
-                                                              width: 54.w,
-                                                              height: 54.h,
-                                                              child: SvgPicture.asset(
-                                                                _getEmotionImage(emotionCode),
-                                                                width: 54.w,
-                                                                height: 54.h,
-                                                                fit: BoxFit.contain,
-                                                              ),
-                                                            ),
-                                                          ),
-
-                                                          // 감정 라벨 (위로 더 올리기)
-                                                          Transform.translate(
-                                                            offset: Offset(0, -8.h), // 8px 위로 이동
-                                                            child: FixedText(
-                                                              emotionLabel,
-                                                              style: AppFonts.suite.c2_m(context).copyWith(
-                                                                color: AppColors.gray200,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-
-                                                SizedBox(height: 12.h),
-
-                                                // 미디어 이미지들 (가로 스크롤) - 수정된 부분
-                                                if ((record['mediaUrls'] as List<dynamic>?)?.isNotEmpty ?? false) ...[
-                                                  Container(
-                                                    height: 188.h,
-                                                    child: ListView.builder(
-                                                      scrollDirection: Axis.horizontal,
-                                                      itemCount: (record['mediaUrls'] as List<dynamic>).length,
-                                                      itemBuilder: (context, mediaIndex) {
-                                                        final mediaData = (record['mediaUrls'] as List<dynamic>)[mediaIndex];
-
-                                                        return Container(
-                                                          width: 210.w,
-                                                          height: 188.h,
-                                                          margin: EdgeInsets.only(
-                                                            right: mediaIndex == (record['mediaUrls'] as List<dynamic>).length - 1 ? 0 : 12.w,
-                                                          ),
-                                                          decoration: BoxDecoration(
-                                                            borderRadius: BorderRadius.circular(12.r),
-                                                            color: AppColors.gray100,
-                                                          ),
-                                                          child: ClipRRect(
-                                                            borderRadius: BorderRadius.circular(12.r),
-                                                            child: _buildMediaImage(mediaData, 210.w, 188.h),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                                  SizedBox(height: 8.h),
-                                                ],
-
-                                                // 반응 버튼들 (경기 정보 카드 또는 미디어 이미지 8px 아래)
-                                                Padding(
-                                                  padding: EdgeInsets.zero, // 이미 Expanded 내부이므로 추가 패딩 불필요
-                                                  child: Row(
-                                                    children: [
-                                                      // 2-1. 응원해요 버튼
-                                                      Container(
-                                                        height: 24.h,
-                                                        padding: EdgeInsets.symmetric(horizontal: 8.w),
-                                                        decoration: BoxDecoration(
-                                                          borderRadius: BorderRadius.circular(40.r),
-                                                          border: Border.all(color: AppColors.gray50, width: 1),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisSize: MainAxisSize.min,
-                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            SvgPicture.asset(
-                                                              AppImages.good,
-                                                              width: 14.w,
-                                                              height: 14.h,
-                                                              fit: BoxFit.contain,
-                                                            ),
-                                                            SizedBox(width: 4.w),
-                                                            FixedText(
-                                                              '응원해요',
-                                                              style: AppFonts.pretendard.c2_m(context).copyWith(
-                                                                color: AppColors.gray300,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-
-                                                      SizedBox(width: 8.w),
-
-                                                      // 2-2. 힘내요 버튼
-                                                      Container(
-                                                        height: 24.h,
-                                                        padding: EdgeInsets.symmetric(horizontal: 8.w),
-                                                        decoration: BoxDecoration(
-                                                          borderRadius: BorderRadius.circular(40.r),
-                                                          border: Border.all(color: AppColors.gray50, width: 1),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisSize: MainAxisSize.min,
-                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            SvgPicture.asset(
-                                                              AppImages.smile,
-                                                              width: 14.w,
-                                                              height: 14.h,
-                                                              fit: BoxFit.contain,
-                                                            ),
-                                                            SizedBox(width: 4.w),
-                                                            FixedText(
-                                                              '힘내요',
-                                                              style: AppFonts.pretendard.c2_m(context).copyWith(
-                                                                color: AppColors.gray300,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-
-                                                      SizedBox(width: 8.w),
-
-                                                      // 2-3. 축하해요 버튼
-                                                      Container(
-                                                        height: 24.h,
-                                                        padding: EdgeInsets.symmetric(horizontal: 8.w),
-                                                        decoration: BoxDecoration(
-                                                          borderRadius: BorderRadius.circular(40.r),
-                                                          border: Border.all(color: AppColors.gray50, width: 1),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisSize: MainAxisSize.min,
-                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            SvgPicture.asset(
-                                                              AppImages.congratulate,
-                                                              width: 14.w,
-                                                              height: 14.h,
-                                                              fit: BoxFit.contain,
-                                                            ),
-                                                            SizedBox(width: 4.w),
-                                                            FixedText(
-                                                              '축하해요',
-                                                              style: AppFonts.pretendard.c2_m(context).copyWith(
-                                                                color: AppColors.gray300,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                    child: Padding(
+                      padding: EdgeInsets.only(top: scaleHeight(2)),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          FixedText(
+                            '피드',
+                            style: AppFonts.suite.h3_b(context).copyWith(color: Colors.black),
+                          ),
+                          SizedBox(width: scaleWidth(11)),
+                          SvgPicture.asset(
+                            AppImages.filter,
+                            width: scaleWidth(28),
+                            height: scaleHeight(28),
+                            fit: BoxFit.contain,
+                          ),
+                          const Spacer(),
+                          Padding(
+                            padding: EdgeInsets.only(top: scaleHeight(2)),
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation1, animation2) => const SearchScreen(),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
                                   ),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                                );
+                              },
+                              child: SvgPicture.asset(
+                                AppImages.search,
+                                width: scaleWidth(24),
+                                height: scaleHeight(24),
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
+                ),
+              ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyTabBarDelegate(
+                  child: Container(
+                    color: Colors.white,
+                    child: _buildTabBar(),
+                  ),
+                  height: scaleHeight(39),
+                ),
+              ),
+            ];
+          },
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            children: [
+              _buildRecommendTab(),
+              _buildFollowingTab(),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: CustomBottomNavBar(currentIndex: 1),
+    );
+  }
+
+  Widget _buildRecommendTab() {
+    if (_isLoadingRecommend) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification scrollInfo) {
+        if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+          if (!_isLoadingMoreRecommend && _hasMoreRecommend) {
+            _loadMoreRecommendFeed();
+          }
+        }
+        return false;
+      },
+      child: ListView.builder(
+        padding: EdgeInsets.only(top: scaleHeight(21)),
+        itemCount: _recommendFeedItems.length + (_hasMoreRecommend ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _recommendFeedItems.length) {
+            return _buildLoadingIndicator();
+          }
+          return _buildFeedItem(_recommendFeedItems[index]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildFollowingTab() {
+    if (_isLoadingFollowing) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification scrollInfo) {
+        if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+          if (!_isLoadingMoreFollowing && _hasMoreFollowing) {
+            _loadMoreFollowingFeed();
+          }
+        }
+        return false;
+      },
+      child: ListView.builder(
+        padding: EdgeInsets.only(top: scaleHeight(21)),
+        itemCount: _followingFeedItems.length + (_hasMoreFollowing ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _followingFeedItems.length) {
+            return _buildLoadingIndicator();
+          }
+          return _buildFeedItem(_followingFeedItems[index]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: scaleHeight(20)),
+      alignment: Alignment.center,
+      child: CircularProgressIndicator(),
+    );
+  }
+
+  ///===================================================
+  /// 피드 아이템에 대한 처리
+  ///===================================================
+  Widget _buildFeedItem(Map<String, dynamic> feedData) {
+    final recordId = feedData['recordId']?.toString() ?? '';
+    final isLiked = _likedStatus[recordId] ?? feedData['isLiked'] ?? false;
+    final likeCount = _likeCounts[recordId] ?? feedData['likeCount'] ?? 0;
+    final commentCount = feedData['commentCount'] ?? 0;
+
+    return Container(
+      margin: EdgeInsets.only(
+        left: scaleWidth(20),
+        right: scaleWidth(20),
+        bottom: scaleHeight(12),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AppColors.gray50, width: 1),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildProfileSection(feedData),
+          _buildContentSection(feedData),
+          _buildGameInfo(feedData),
+          Container(
+            margin: EdgeInsets.only(
+              top: scaleHeight(10),
+              left: scaleWidth(16),
+              right: scaleWidth(16),
+            ),
+            height: 1,
+            color: AppColors.gray50,
+            width: double.infinity,
+          ),
+          _buildBottomInfo(feedData, recordId, isLiked, likeCount, commentCount),
+        ],
+      ),
+    );
+  }
+
+  //프로필 세션
+  Widget _buildProfileSection(Map<String, dynamic> feedData) {
+    final profileImageUrl = feedData['profileImageUrl'] ?? '';
+    final nickname = feedData['nickname'] ?? '';
+    final favTeam = feedData['favTeam'] ?? '';
+    final favTeamWithFan = favTeam.isNotEmpty ? '$favTeam 팬' : '';
+
+    return Padding(
+      padding: EdgeInsets.only(
+        top: scaleHeight(16),
+        left: scaleWidth(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: scaleWidth(36),
+            height: scaleHeight(36),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.gray100,
+              image: profileImageUrl.isNotEmpty
+                  ? DecorationImage(
+                image: NetworkImage(profileImageUrl),
+                fit: BoxFit.cover,
+              )
+                  : null,
+            ),
+            child: profileImageUrl.isEmpty
+                ? Icon(Icons.person, color: AppColors.gray400, size: scaleWidth(20))
+                : null,
+          ),
+          SizedBox(width: scaleWidth(12)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FixedText(
+                nickname,
+                style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                  color: AppColors.gray950,
+                ),
+              ),
+              FixedText(
+                favTeamWithFan,
+                style: AppFonts.pretendard.caption_md_400(context).copyWith(
+                  color: AppColors.gray400,
                 ),
               ),
             ],
           ),
-        ),
-        bottomNavigationBar: CustomBottomNavBar(currentIndex: 1),
+        ],
       ),
     );
+  }
+
+  // 콘텐츠 세션
+  Widget _buildContentSection(Map<String, dynamic> feedData) {
+    final photos = feedData['mediaUrls'] as List<dynamic>? ?? [];
+    final longContent = feedData['longContent'] ?? '';
+    final emotionLabel = feedData['emotionLabel'] ?? '';
+
+    // 사진이 있을 경우 (총 간격: 프로필-사진 12px + 사진-텍스트 10px)
+    if (photos.isNotEmpty) {
+      // 텍스트/감정 위젯의 상단 패딩을 0으로
+      final contentWidget = longContent.isNotEmpty
+          ? _buildLongContent(longContent, isPhotoPresent: true)
+          : _buildEmotionContent(emotionLabel, isPhotoPresent: true);
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPhotoSection(photos), // 사진 섹션
+          // 사진과 텍스트/감정 사이 간격 (10px)
+          if (longContent.isNotEmpty || emotionLabel.isNotEmpty)
+            SizedBox(height: scaleHeight(10)),
+          contentWidget,
+        ],
+      );
+    }
+    // 사진이 없을 경우 (총 간격: 프로필-텍스트/감정 16px)
+    else if (longContent.isNotEmpty) {
+      return _buildLongContent(longContent);
+    } else {
+      return _buildEmotionContent(emotionLabel);
+    }
+  }
+
+  //사진 세션
+  Widget _buildPhotoSection(List<dynamic> photos) {
+    final photoCount = photos.length;
+
+    if (photoCount == 1) {
+      return Container(
+        margin: EdgeInsets.only(
+          top: scaleHeight(12),
+          left: scaleWidth(16),
+          right: scaleWidth(16),
+        ),
+        height: scaleHeight(153),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          image: DecorationImage(
+            image: NetworkImage(photos[0]),
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    } else if (photoCount == 2) {
+      return Container(
+        margin: EdgeInsets.only(
+          top: scaleHeight(16),
+          left: scaleWidth(16),
+          right: scaleWidth(16),
+        ),
+        height: scaleHeight(153),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: NetworkImage(photos[0]),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: scaleWidth(8)),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: NetworkImage(photos[1]),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        margin: EdgeInsets.only(
+          top: scaleHeight(16),
+          left: scaleWidth(16),
+        ),
+        height: scaleHeight(153),
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: photos.length,
+          itemBuilder: (context, index) {
+            return Container(
+              width: scaleWidth(118),
+              margin: EdgeInsets.only(
+                right: index < photos.length - 1 ? scaleWidth(8) : scaleWidth(16),
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: NetworkImage(photos[index]),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+  }
+
+  // 감정 라벨
+  Widget _buildEmotionContent(String emotionLabel, {bool isPhotoPresent = false}) {
+    if (emotionLabel.isEmpty) return SizedBox.shrink();
+
+    // 사진이 있으면 0px (10px은 위에서 줌), 없으면 16px
+    final topPadding = isPhotoPresent ? scaleHeight(0) : scaleHeight(16);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        top: topPadding, // 상단 간격 설정
+        left: scaleWidth(16),
+        right: scaleWidth(16),
+      ),
+      child: FixedText(
+        emotionLabel,
+        style: AppFonts.pretendard.body_sm_400(context).copyWith(
+          color: Colors.black,
+        ),
+      ),
+    );
+  }
+
+
+  // 야구 일기
+  Widget _buildLongContent(String longContent, {bool isPhotoPresent = false}) {
+    if (longContent.isEmpty) return SizedBox.shrink();
+
+    final topPadding = isPhotoPresent ? scaleHeight(0) : scaleHeight(16);
+
+    return Container(
+      padding: EdgeInsets.only(
+        top: topPadding,
+        left: scaleWidth(16),
+        right: scaleWidth(16),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final TextStyle textStyle = AppFonts.pretendard.body_sm_400(context).copyWith(
+            color: Colors.black,
+          );
+
+          const String ellipsis = '...';
+          final textDirection = Directionality.of(context);
+
+          // 첫 줄의 실제 텍스트만 추출 (줄바꿈 기준)
+          final firstNewlineIndex = longContent.indexOf('\n');
+          final String firstLineText = firstNewlineIndex != -1
+              ? longContent.substring(0, firstNewlineIndex)
+              : longContent;
+
+          // 첫 줄 텍스트의 실제 너비 측정
+          final TextPainter firstLineWidthPainter = TextPainter(
+            text: TextSpan(text: firstLineText, style: textStyle),
+            textDirection: textDirection,
+          );
+          firstLineWidthPainter.layout(maxWidth: double.infinity);
+
+          // 첫 줄이 실제로 길어서 넘치는 경우만 1줄 처리
+          if (firstLineWidthPainter.width > constraints.maxWidth) {
+            final TextPainter ellipsisPainter = TextPainter(
+              text: TextSpan(text: ellipsis, style: textStyle),
+              textDirection: textDirection,
+            );
+            ellipsisPainter.layout();
+
+            final TextPainter firstLinePainter = TextPainter(
+              text: TextSpan(text: firstLineText, style: textStyle),
+              textDirection: textDirection,
+            );
+            firstLinePainter.layout(maxWidth: constraints.maxWidth);
+
+            final int endIndex = firstLinePainter.getPositionForOffset(
+              Offset(constraints.maxWidth - ellipsisPainter.width, 0),
+            ).offset;
+
+            final String truncatedText = firstLineText.substring(0, endIndex).trimRight();
+
+            return RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(text: truncatedText, style: textStyle),
+                  TextSpan(text: ellipsis, style: textStyle),
+                ],
+              ),
+              maxLines: 1,
+            );
+          }
+
+          // 첫 줄이 안 넘치면 2줄로 체크
+          final TextPainter twoLinePainter = TextPainter(
+            text: TextSpan(text: longContent, style: textStyle),
+            maxLines: 2,
+            textDirection: textDirection,
+          );
+          twoLinePainter.layout(maxWidth: constraints.maxWidth);
+
+          // 전체 텍스트를 무제한으로 렌더링하여 실제 줄 수 확인
+          final TextPainter fullPainter = TextPainter(
+            text: TextSpan(text: longContent, style: textStyle),
+            textDirection: textDirection,
+          );
+          fullPainter.layout(maxWidth: constraints.maxWidth);
+
+          // 2줄을 초과하지 않으면 그대로 표시
+          if (fullPainter.height <= twoLinePainter.height + 1.0) {
+            return Text(
+              longContent,
+              style: textStyle,
+            );
+          }
+
+          // 2줄을 초과하므로 ... 처리
+          final TextPainter ellipsisPainter = TextPainter(
+            text: TextSpan(text: ellipsis, style: textStyle),
+            textDirection: textDirection,
+          );
+          ellipsisPainter.layout();
+
+          // 2줄 레이아웃에서 마지막에 표시할 수 있는 문자 위치 찾기
+          final double secondLineY = twoLinePainter.height - (textStyle.fontSize ?? 14) / 2;
+
+          final int endIndex = twoLinePainter.getPositionForOffset(
+            Offset(
+              constraints.maxWidth - ellipsisPainter.width,
+              secondLineY,
+            ),
+          ).offset;
+
+          String truncatedText = longContent.substring(0, endIndex).trimRight();
+
+          // 혹시 truncatedText가 비어있으면 첫 줄만 표시
+          if (truncatedText.isEmpty || truncatedText == firstLineText.trimRight()) {
+            return RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(text: firstLineText, style: textStyle),
+                  TextSpan(text: '\n$ellipsis', style: textStyle),
+                ],
+              ),
+              maxLines: 2,
+            );
+          }
+
+          return RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(text: truncatedText, style: textStyle),
+                TextSpan(text: ellipsis, style: textStyle),
+              ],
+            ),
+            maxLines: 2,
+          );
+        },
+      ),
+    );
+  }
+
+  //게임 정보
+  Widget _buildGameInfo(Map<String, dynamic> feedData) {
+    final homeTeam = feedData['homeTeam'] ?? '';
+    final awayTeam = feedData['awayTeam'] ?? '';
+
+    if (homeTeam.isEmpty || awayTeam.isEmpty) return SizedBox.shrink();
+
+    final homeTeamFull = _teamFullNames[homeTeam] ?? homeTeam;
+    final awayTeamFull = _teamFullNames[awayTeam] ?? awayTeam;
+
+    return Padding(
+      padding: EdgeInsets.only(top: scaleHeight(6)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _getTeamLogo(homeTeam),
+          SizedBox(width: scaleWidth(4)),
+          FixedText(
+            '$homeTeamFull VS $awayTeamFull',
+            style: AppFonts.suite.caption_md_500(context).copyWith(
+              color: AppColors.gray400,
+            ),
+          ),
+          SizedBox(width: scaleWidth(4)),
+          _getTeamLogo(awayTeam),
+        ],
+      ),
+    );
+  }
+
+  Widget _getTeamLogo(String team) {
+    final teamLogos = {
+      'LG': AppImages.twins,
+      'KT': AppImages.ktwiz,
+      '두산': AppImages.bears,
+      '삼성': AppImages.lions,
+      'SSG': AppImages.landers,
+      'NC': AppImages.dinos,
+      '롯데': AppImages.giants,
+      'KIA': AppImages.tigers,
+      '한화': AppImages.eagles,
+      '키움': AppImages.kiwoom,
+    };
+
+    final logoPath = teamLogos[team];
+    if (logoPath == null) return SizedBox(width: scaleWidth(18), height: scaleHeight(18));
+
+    return Image.asset(
+      logoPath,
+      width: scaleWidth(18),
+      height: scaleHeight(18),
+      fit: BoxFit.contain,
+    );
+  }
+
+  Widget _buildBottomInfo(
+      Map<String, dynamic> feedData,
+      String recordId,
+      bool isLiked,
+      int likeCount,
+      int commentCount,
+      ) {
+    final stadium = feedData['stadium'] ?? '';
+    final gameDate = feedData['gameDate'] ?? '';
+
+    final stadiumFull = _getStadiumFullName(stadium);
+    final formattedDate = _formatGameDate(gameDate);
+
+    return Container(
+      padding: EdgeInsets.only(
+        top: scaleHeight(9),
+        bottom: scaleHeight(16),
+        left: scaleWidth(16),
+        right: scaleWidth(17),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => _toggleLike(recordId),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: scaleHeight(4),
+                horizontal: scaleWidth(4),
+              ),
+              child: Row(
+                children: [
+                  SvgPicture.asset(
+                    isLiked ? AppImages.heart_filled : AppImages.heart_outlined,
+                    width: scaleWidth(16),
+                    height: scaleHeight(16),
+                  ),
+                  SizedBox(width: scaleWidth(4)),
+                  FixedText(
+                    likeCount.toString(),
+                    style: AppFonts.suite.caption_re_400(context).copyWith(
+                      color: AppColors.gray300,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(width: scaleWidth(8)),
+          Row(
+            children: [
+              SvgPicture.asset(
+                AppImages.comment,
+                width: scaleWidth(16),
+                height: scaleHeight(16),
+              ),
+              SizedBox(width: scaleWidth(4)),
+              FixedText(
+                commentCount.toString(),
+                style: AppFonts.suite.caption_re_400(context).copyWith(
+                  color: AppColors.gray300,
+                ),
+              ),
+            ],
+          ),
+          Spacer(),
+          Row(
+            children: [
+              FixedText(
+                formattedDate,
+                style: AppFonts.suite.caption_re_400(context).copyWith(
+                  color: AppColors.gray300,
+                ),
+              ),
+              SizedBox(width: scaleWidth(4)),
+              SvgPicture.asset(
+                AppImages.ellipse,
+                width: scaleWidth(2),
+                height: scaleHeight(2),
+              ),
+              SizedBox(width: scaleWidth(4)),
+              FixedText(
+                stadiumFull,
+                style: AppFonts.suite.caption_re_400(context).copyWith(
+                  color: AppColors.gray300,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getStadiumFullName(String stadium) {
+    return _stadiumFullNames[stadium] ?? stadium;
+  }
+
+  String _formatGameDate(String gameDate) {
+    if (gameDate.isEmpty) return '';
+
+    try {
+      // 백엔드에서 "2025년 03월 23일 (Sun)요일" 형식으로 오는 경우
+      if (gameDate.contains('년')) {
+        // "2025년 03월 23일 (Sun)요일" -> "2025년 3월 23일"
+        final dateOnly = gameDate.split('(')[0].trim();
+
+        // 정규식으로 0으로 시작하는 월 변환
+        final formatted = dateOnly.replaceAllMapped(
+          RegExp(r'년 0(\d)월'),
+              (match) => '년 ${match.group(1)}월',
+        );
+
+        return formatted;
+      }
+
+      // ISO 형식인 경우
+      final date = DateTime.parse(gameDate);
+      return DateFormat('yyyy년 M월 d일').format(date);
+    } catch (e) {
+      return gameDate;
+    }
+  }
+}
+
+class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final double height;
+
+  _StickyTabBarDelegate({
+    required this.child,
+    required this.height,
+  });
+
+  @override
+  double get minExtent => height;
+  @override
+  double get maxExtent => height;
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+  @override
+  bool shouldRebuild(_StickyTabBarDelegate oldDelegate) {
+    return child != oldDelegate.child;
   }
 }

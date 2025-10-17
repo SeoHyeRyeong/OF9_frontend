@@ -825,7 +825,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
       backgroundColor: Colors.transparent,
       barrierColor: AppColors.trans700,
       builder: (BuildContext sheetContext) {
-        bool isLoading = false; // ✅ 로컬 상태 변수 추가
+        bool isLoading = false; // 로컬 상태 변수 추가
 
         return StatefulBuilder(
           builder: (BuildContext modalContext, StateSetter setModalState) {
@@ -895,11 +895,11 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                               child: ElevatedButton(
                                 onPressed: isLoading ? null : () async {
                                   setModalState(() {
-                                    isLoading = true; // ✅ 모달 내부 로딩만 활성화
+                                    isLoading = true; // 모달 내부 로딩만 활성화
                                   });
 
-                                  Navigator.pop(context); // ✅ 모달 닫기
-                                  await _handleSkipSubmit(); // ✅ 제출
+                                  Navigator.pop(context); // 모달 닫기
+                                  await _handleSkipSubmit(); // 제출
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.pri900,

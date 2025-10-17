@@ -9,7 +9,6 @@ import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/api/feed_api.dart';
 import 'package:intl/intl.dart';
-import 'dart:ui' as ui;
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});

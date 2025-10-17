@@ -26,6 +26,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String favTeam = "로딩중...";
   String? profileImageUrl;
   bool isLoading = true;
+  int followingCount = 0;
+  int followerCount = 0;
 
   // 푸시 알림 토글 상태
   bool isPushNotificationOn = false;
@@ -47,7 +49,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final response = await UserApi.getMyProfile();
       final userInfo = response['data'];
 
-      // ✅ 디버깅: 실제 값 확인
       print('🔍 받은 profileImageUrl: "${userInfo['profileImageUrl']}"');
       print('🔍 타입: ${userInfo['profileImageUrl'].runtimeType}');
 
@@ -55,7 +56,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         nickname = userInfo['nickname'] ?? '알 수 없음';
         favTeam = userInfo['favTeam'] ?? '응원팀 없음';
         profileImageUrl = userInfo['profileImageUrl'];
-        isAccountPublic = !(userInfo['isPrivate'] ?? false); // 계정 공개/비공개 설정
+        isAccountPublic = !(userInfo['isPrivate'] ?? false);
+        followingCount = userInfo['followingCount'] ?? 0;
+        followerCount = userInfo['followerCount'] ?? 0;
         isLoading = false;
       });
     } catch (e) {
@@ -208,14 +211,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: onTap,
       child: Container(
         color: Colors.transparent,
-        height: scaleHeight(54),
+        height: scaleHeight(60),
         child: Align(
           alignment: Alignment.centerLeft,
           child: Padding(
             padding: EdgeInsets.only(left: scaleWidth(16)),
             child: FixedText(
               title,
-              style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+              style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
             ),
           ),
         ),
@@ -232,7 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: scaleWidth(42),
         height: scaleHeight(24),
         decoration: BoxDecoration(
-          color: isOn ? AppColors.pri400 : AppColors.gray200,
+          color: isOn ? AppColors.pri600 : AppColors.gray200,
           borderRadius: BorderRadius.circular(scaleHeight(92.31)),
         ),
         child: Stack(
@@ -303,135 +306,191 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.gray30,
         body: SafeArea(
-          child: Stack(
+          child: Column(
             children: [
-              // 메인 컨텐츠 (먼저 그려짐)
-              Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Padding(
+              // 뒤로가기 영역 (고정)
+              Container(
+                height: scaleHeight(60),
+                color: AppColors.gray30,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: scaleWidth(20)),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
+                            transitionDuration: Duration.zero,
+                            reverseTransitionDuration: Duration.zero,
+                          ),
+                        );
+                      },
+                      child: SvgPicture.asset(
+                        AppImages.backBlack,
+                        width: scaleWidth(24),
+                        height: scaleHeight(24),
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // 스크롤 가능한 컨텐츠
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      SizedBox(height: scaleHeight(8)),
+
+                      // 프로필 카드
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                        child: Container(
+                          height: scaleHeight(130),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    // 프로필 이미지
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(30),
+                                      child: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
+                                          ? Image.network(
+                                        profileImageUrl!,
+                                        width: scaleWidth(80),
+                                        height: scaleHeight(80),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => SvgPicture.asset(
+                                          AppImages.profile,
+                                          width: scaleWidth(80),
+                                          height: scaleHeight(80),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                          : SvgPicture.asset(
+                                        AppImages.profile,
+                                        width: scaleWidth(80),
+                                        height: scaleHeight(80),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+
+                                    SizedBox(width: scaleWidth(20)),
+
+                                    // 사용자 정보
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(height: scaleHeight(25)),
+                                        // 닉네임
+                                        isLoading
+                                            ? CircularProgressIndicator()
+                                            : FixedText(
+                                          nickname,
+                                          style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.black),
+                                        ),
+                                        SizedBox(height: scaleHeight(4)),
+                                        // 최애구단
+                                        isLoading
+                                            ? Container()
+                                            : FixedText(
+                                          "$favTeam 팬",
+                                          style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400),
+                                        ),
+                                        SizedBox(height: scaleHeight(7)),
+                                        // 팔로잉/팔로워
+                                        Row(
+                                          children: [
+                                            FixedText(
+                                              "팔로잉",
+                                              style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray500),
+                                            ),
+                                            SizedBox(width: scaleWidth(2)),
+                                            FixedText(
+                                              "$followingCount",
+                                              style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900),
+                                            ),
+                                            SizedBox(width: scaleWidth(10)),
+                                            FixedText(
+                                              "팔로워",
+                                              style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray500),
+                                            ),
+                                            SizedBox(width: scaleWidth(2)),
+                                            FixedText(
+                                              "$followerCount",
+                                              style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+
+                                Spacer(),
+
+                                // 수정 버튼
+                                Padding(
+                                  padding: EdgeInsets.only(top: scaleHeight(32)),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        PageRouteBuilder(
+                                          pageBuilder: (context, animation1, animation2) => const EditProfileScreen(),
+                                          transitionDuration: Duration.zero,
+                                          reverseTransitionDuration: Duration.zero,
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      width: scaleWidth(42),
+                                      height: scaleHeight(20),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.gray30,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Center(
+                                        child: FixedText(
+                                          "수정",
+                                          style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri800),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: scaleHeight(16)),
+
+                      // 메인 컨텐츠
+                      Padding(
                         padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                         child: Column(
                           children: [
-                            SizedBox(height: scaleHeight(36)),
-
-                            // 프로필 이미지
-                            Center(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(40),
-                                child: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
-                                    ? Image.network(
-                                  profileImageUrl!,
-                                  width: scaleWidth(100),
-                                  height: scaleHeight(100),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => SvgPicture.asset(
-                                    AppImages.profile,
-                                    width: scaleWidth(100),
-                                    height: scaleHeight(100),
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                                    : SvgPicture.asset(
-                                  AppImages.profile,
-                                  width: scaleWidth(100),
-                                  height: scaleHeight(100),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-
-                            SizedBox(height: scaleHeight(16)),
-
-                            // 닉네임
-                            isLoading
-                                ? CircularProgressIndicator()
-                                : FixedText(
-                              nickname,
-                              style: AppFonts.pretendard.h5_sb(context).copyWith(color: AppColors.black),
-                            ),
-
-                            SizedBox(height: scaleHeight(12)),
-
-                            // 최애구단
-                            isLoading
-                                ? Container()
-                                : FixedText(
-                              "$favTeam 팬",
-                              style: AppFonts.pretendard.b3_r(context).copyWith(color: AppColors.gray300),
-                            ),
-
-                            SizedBox(height: scaleHeight(12)),
-
-                            // 내 정보 수정 버튼
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation1, animation2) => const EditProfileScreen(),
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                width: scaleWidth(76),
-                                height: scaleHeight(28),
-                                decoration: BoxDecoration(
-                                  color: AppColors.gray50,
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                padding: EdgeInsets.only(
-                                  top: scaleHeight(8),
-                                  right: scaleWidth(10),
-                                  bottom: scaleHeight(8),
-                                  left: scaleWidth(10),
-                                ),
-                                child: Center(
-                                  child: FixedText(
-                                    "내 정보 수정",
-                                    style: AppFonts.pretendard.c1_sb(context).copyWith(color: AppColors.gray500),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            SizedBox(height: scaleHeight(16)),
-
-                            // 테마 변경 메뉴
-                            GestureDetector(
-                              onTap: () {
-                                print('테마 변경 버튼 클릭');
-                              },
-                              child: Container(
-                                height: scaleHeight(48),
-                                decoration: BoxDecoration(
-                                  color: AppColors.gray30,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: EdgeInsets.all(scaleWidth(16)),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: FixedText(
-                                    "테마 변경",
-                                    style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            SizedBox(height: scaleHeight(16)),
-
                             // 푸시 알림 메뉴
                             Container(
                               height: scaleHeight(56),
                               decoration: BoxDecoration(
-                                color: AppColors.gray30,
-                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
                               ),
                               child: Padding(
                                 padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
@@ -439,7 +498,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   children: [
                                     FixedText(
                                       "푸시 알림",
-                                      style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+                                      style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
                                     ),
                                     const Spacer(),
                                     _buildCustomToggle(isPushNotificationOn, () {
@@ -457,10 +516,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                             // 계정 공개 / 차단된 계정 메뉴
                             Container(
-                              height: scaleHeight(104),
                               decoration: BoxDecoration(
-                                color: AppColors.gray30,
-                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
                               ),
                               child: Column(
                                 children: [
@@ -473,7 +531,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         children: [
                                           FixedText(
                                             "계정 공개",
-                                            style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+                                            style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
                                           ),
                                           const Spacer(),
                                           _buildCustomToggle(isAccountPublic, () {
@@ -490,14 +548,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     },
                                     child: Container(
                                       color: Colors.transparent,
-                                      height: scaleHeight(48),
+                                      height: scaleHeight(52),
                                       child: Align(
                                         alignment: Alignment.centerLeft,
                                         child: Padding(
                                           padding: EdgeInsets.only(left: scaleWidth(16)),
                                           child: FixedText(
                                             "차단된 계정",
-                                            style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900),
+                                            style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
                                           ),
                                         ),
                                       ),
@@ -512,8 +570,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             // 기타 설정 메뉴들
                             Container(
                               decoration: BoxDecoration(
-                                color: AppColors.gray30,
-                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
                               ),
                               child: Column(
                                 children: [
@@ -531,42 +589,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ],
                               ),
                             ),
-                            SizedBox(height: scaleHeight(24)),
+                            SizedBox(height: scaleHeight(20)),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // 뒤로가기 버튼 (나중에 그려짐 - 최상단)
-              Positioned(
-                top: scaleHeight(18),
-                left: scaleWidth(20),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
-                  },
-                  child: SvgPicture.asset(
-                    AppImages.backBlack,
-                    width: scaleWidth(24),
-                    height: scaleHeight(24),
-                    fit: BoxFit.contain,
+                    ],
                   ),
                 ),
               ),
             ],
           ),
         ),
-        bottomNavigationBar: CustomBottomNavBar(currentIndex: 4),
       ),
     );
   }

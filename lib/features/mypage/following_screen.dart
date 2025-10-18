@@ -223,8 +223,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
   Widget _buildEmptyState() {
     return Center(
       child: FixedText(
-        "아직 팔로잉하는 사람이 없어요",
-        style: AppFonts.suite.h3_b(context).copyWith(color: AppColors.gray300),
+        "아직 팔로잉이 없어요",
+        style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray300),
       ),
     );
   }
@@ -241,57 +241,57 @@ class _FollowingScreenState extends State<FollowingScreen> {
   }
 
   // 팔로잉 아이템 위젯
-  Widget _buildFollowingItem(Map<String, dynamic> following, int index) {
+  Widget _buildFollowingItem(Map<String, dynamic> follower, int index) {
     return Container(
       width: double.infinity,
       height: scaleHeight(74),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: scaleWidth(19)),
+        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)), //전체 양쪽 여백
         child: Row(
           children: [
             // 프로필 이미지
             ClipRRect(
-              borderRadius: BorderRadius.circular(scaleHeight(27)), // 54/2 = 27
-              child: following['profileImageUrl'] != null
+              borderRadius: BorderRadius.circular(scaleHeight(12.43)),
+              child: follower['profileImageUrl'] != null
                   ? Image.network(
-                following['profileImageUrl']!,
-                width: scaleHeight(54),
-                height: scaleHeight(54),
+                follower['profileImageUrl']!,
+                width: scaleHeight(42),
+                height: scaleHeight(42),
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => SvgPicture.asset(
                   AppImages.profile,
-                  width: scaleHeight(54),
-                  height: scaleHeight(54),
+                  width: scaleHeight(42),
+                  height: scaleHeight(42),
                   fit: BoxFit.cover,
                 ),
               )
                   : SvgPicture.asset(
                 AppImages.profile,
-                width: scaleHeight(54),
-                height: scaleHeight(54),
+                width: scaleHeight(42),
+                height: scaleHeight(42),
                 fit: BoxFit.cover,
               ),
             ),
 
-            SizedBox(width: scaleWidth(18)),
+            SizedBox(width: scaleWidth(12)),
 
             // 닉네임과 최애구단 컬럼
             Expanded(
               child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(20)),
+                padding: EdgeInsets.only(top: scaleHeight(19)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 닉네임
                     FixedText(
-                      following['nickname'] ?? '알 수 없음',
-                      style: AppFonts.pretendard.b2_b(context).copyWith(color: AppColors.gray800),
+                      follower['nickname'] ?? '알 수 없음',
+                      style: AppFonts.pretendard.b3_sb(context).copyWith(color: Colors.black),
                     ),
-                    SizedBox(height: scaleHeight(8)),
-                    // 최애구단
+                    SizedBox(height: scaleHeight(6)),
+                    // 최애 구단
                     FixedText(
-                      "${following['favTeam'] ?? '응원팀 없음'} 팬",
-                      style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray300),
+                      "${follower['favTeam'] ?? '응원팀 없음'} 팬",
+                      style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400),
                     ),
                   ],
                 ),
@@ -300,22 +300,20 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
             // 팔로우 버튼
             Container(
-              width: scaleWidth(79),
-              height: scaleHeight(36),
+              width: scaleWidth(88),
+              height: scaleHeight(32),
               child: ElevatedButton(
                 onPressed: () => _handleFollow(index),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _getButtonBackgroundColor(following),
+                  backgroundColor: _getButtonBackgroundColor(follower),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(scaleHeight(8))),
                   elevation: 0,
                   padding: EdgeInsets.zero,
                 ),
                 child: Center(
                   child: FixedText(
-                    _getButtonText(following),
-                    style: AppFonts.suite.c1_b(context).copyWith(
-                      color: _getButtonTextColor(following),
-                    ),
+                    _getButtonText(follower),
+                    style: AppFonts.suite.c1_m(context).copyWith(color: _getButtonTextColor(follower)),
                   ),
                 ),
               ),

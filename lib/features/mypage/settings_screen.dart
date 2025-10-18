@@ -361,83 +361,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  children: [
-                                    // 프로필 이미지
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(30),
-                                      child: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
-                                          ? Image.network(
-                                        profileImageUrl!,
-                                        width: scaleWidth(80),
-                                        height: scaleHeight(80),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => SvgPicture.asset(
-                                          AppImages.profile,
-                                          width: scaleWidth(80),
-                                          height: scaleHeight(80),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                          : SvgPicture.asset(
+                                // 프로필 이미지
+                                Padding(
+                                  padding: EdgeInsets.only(top: scaleHeight(28)),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(30),
+                                    child: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
+                                        ? Image.network(
+                                      profileImageUrl!,
+                                      width: scaleWidth(80),
+                                      height: scaleHeight(80),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => SvgPicture.asset(
                                         AppImages.profile,
                                         width: scaleWidth(80),
                                         height: scaleHeight(80),
                                         fit: BoxFit.cover,
                                       ),
+                                    )
+                                        : SvgPicture.asset(
+                                      AppImages.profile,
+                                      width: scaleWidth(80),
+                                      height: scaleHeight(80),
+                                      fit: BoxFit.cover,
                                     ),
+                                  ),
+                                ),
 
-                                    SizedBox(width: scaleWidth(20)),
+                                SizedBox(width: scaleWidth(20)),
 
-                                    // 사용자 정보
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        SizedBox(height: scaleHeight(25)),
-                                        // 닉네임
-                                        isLoading
-                                            ? CircularProgressIndicator()
-                                            : FixedText(
-                                          nickname,
-                                          style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.black),
-                                        ),
-                                        SizedBox(height: scaleHeight(4)),
-                                        // 최애구단
-                                        isLoading
-                                            ? Container()
-                                            : FixedText(
-                                          "$favTeam 팬",
-                                          style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400),
-                                        ),
-                                        SizedBox(height: scaleHeight(7)),
-                                        // 팔로잉/팔로워
-                                        Row(
-                                          children: [
-                                            FixedText(
-                                              "팔로잉",
-                                              style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray500),
-                                            ),
-                                            SizedBox(width: scaleWidth(2)),
-                                            FixedText(
-                                              "$followingCount",
-                                              style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900),
-                                            ),
-                                            SizedBox(width: scaleWidth(10)),
-                                            FixedText(
-                                              "팔로워",
-                                              style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray500),
-                                            ),
-                                            SizedBox(width: scaleWidth(2)),
-                                            FixedText(
-                                              "$followerCount",
-                                              style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                // 사용자 정보
+                                Padding(
+                                  padding: EdgeInsets.only(top: scaleHeight(32)),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      // 닉네임
+                                      isLoading
+                                          ? CircularProgressIndicator()
+                                          : FixedText(
+                                        nickname,
+                                        style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.black),
+                                      ),
+                                      SizedBox(height: scaleHeight(4)),
+                                      // 최애구단
+                                      isLoading
+                                          ? Container()
+                                          : FixedText(
+                                        "$favTeam 팬",
+                                        style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400),
+                                      ),
+                                      SizedBox(height: scaleHeight(7)),
+                                      // 팔로잉/팔로워
+                                      Row(
+                                        children: [
+                                          FixedText(
+                                            "팔로잉",
+                                            style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray500),
+                                          ),
+                                          SizedBox(width: scaleWidth(2)),
+                                          FixedText(
+                                            "$followingCount",
+                                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900),
+                                          ),
+                                          SizedBox(width: scaleWidth(10)),
+                                          FixedText(
+                                            "팔로워",
+                                            style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray500),
+                                          ),
+                                          SizedBox(width: scaleWidth(2)),
+                                          FixedText(
+                                            "$followerCount",
+                                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
 
                                 Spacer(),

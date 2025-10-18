@@ -15,7 +15,7 @@ class NotificationModel {
   final String timeAgo;
   final String? userNickname;
   final String? userProfileImage;
-  final String? reactionImageUrl;
+  final int? relatedRecordId;
   final bool isRead;
   final bool? isPrivateAccount;
   int? userId;
@@ -28,7 +28,7 @@ class NotificationModel {
         timeAgo = json['timeAgo'] ?? '',
         userNickname = json['userNickname'],
         userProfileImage = json['userProfileImage'],
-        reactionImageUrl = json['reactionImageUrl'],
+        relatedRecordId = json['relatedRecordId'],
         isRead = json['isRead'] ?? true,
         isPrivateAccount = json['isPrivateAccount'],
         userId = json['userId'],
@@ -44,7 +44,7 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> with WidgetsBindingObserver {
   int _selectedTabIndex = 0;
-  final List<String> _tabTexts = ["ALL", "친구의 직관 기록", "받은 공감", "소식"];
+  final List<String> _tabTexts = ["ALL", "친구의 직관 기록", "반응", "소식"];
   final List<String> _categories = ["ALL", "FRIEND_RECORD", "REACTION", "NEWS"];
 
   List<NotificationModel> _notifications = [];
@@ -53,6 +53,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
   final Map<String, FollowButtonStatus> _followStatusMap = {};
   bool? _isMyAccountPrivate;
   bool _isAutoAccepting = false;
+  Set<String> _currentFollowerNicknames = {};
 
   @override
   void initState() {
@@ -85,14 +86,10 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
     _loadData();
   }
 
-  // ⚡ 초고속 자동 팔로우 수락 처리
   Future<void> _autoAcceptAllRequests() async {
     if (_isAutoAccepting) return;
-
     setState(() => _isAutoAccepting = true);
-
     try {
-      print('🚀 초고속 자동 팔로우 수락 시작');
       final requests = await UserApi.getFollowRequests();
       final pendingRequests = requests['data'] as List<dynamic>;
 
@@ -101,26 +98,22 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
           ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('${pendingRequests.length}개의 팔로우 요청을 자동으로 수락하고 있습니다...'),
-                duration: const Duration(seconds: 1), // ⚡ 1초로 단축
+                duration: const Duration(seconds: 1),
                 backgroundColor: AppColors.pri500,
               )
           );
         }
 
         int acceptedCount = 0;
-        // ⚡ 병렬 처리로 최대 속도 달성
         final acceptFutures = pendingRequests.map((request) async {
           try {
-            final requestId = request['requestId'];
-            await UserApi.acceptFollowRequest(requestId);
+            await UserApi.acceptFollowRequest(request['requestId']);
             acceptedCount++;
-            print('✅ 초고속 자동 수락 완료: ${request['requesterNickname']}');
           } catch (e) {
             print('❌ 자동 수락 실패: ${request['requesterNickname']} - $e');
           }
         });
 
-        // ⚡ 모든 요청을 병렬로 처리
         await Future.wait(acceptFutures);
 
         if (mounted && acceptedCount > 0) {
@@ -132,16 +125,9 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
               )
           );
         }
-
-        // ⚡ 즉시 데이터 새로고침 (지연 없음)
-        if (mounted) {
-          _loadData();
-        }
-      } else {
-        print('📭 자동 수락할 팔로우 요청이 없음');
+        if (mounted) _loadData();
       }
     } catch (e) {
-      print('❌ 자동 수락 처리 실패: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -151,42 +137,30 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isAutoAccepting = false);
-      }
+      if (mounted) setState(() => _isAutoAccepting = false);
     }
   }
 
   Future<void> _loadData() async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
-    _followStatusMap.clear();
+    setState(() {
+      _isLoading = true;
+      _followStatusMap.clear();
+      _currentFollowerNicknames.clear();
+    });
 
     try {
       final category = _categories[_selectedTabIndex];
-      print('🔄 _loadData 시작: category=$category');
-
       final myProfile = await UserApi.getMyProfile();
       final myUserId = myProfile['data']['id'];
       final newPrivateStatus = myProfile['data']['isPrivate'] ?? false;
 
-      print('🧪 디버그: _isMyAccountPrivate = $_isMyAccountPrivate');
-      print('🧪 디버그: newPrivateStatus = $newPrivateStatus');
-
-      // ⚡ 계정 상태 변화 감지 - 즉시 실행
       if (_isMyAccountPrivate != null && _isMyAccountPrivate != newPrivateStatus) {
-        print('🔄 계정 상태 변화 감지: $_isMyAccountPrivate → $newPrivateStatus');
         if (_isMyAccountPrivate == true && newPrivateStatus == false) {
-          print('🚀 비공개 → 공개 변경 감지! 즉시 자동 수락 처리 시작');
-          // ⚡ 즉시 실행 (지연 없음)
-          if (mounted) {
-            _autoAcceptAllRequests();
-          }
+          if (mounted) _autoAcceptAllRequests();
         }
       }
       _isMyAccountPrivate = newPrivateStatus;
-
-      print('👤 내 계정 정보: userId=$myUserId, isPrivate=$_isMyAccountPrivate');
 
       final results = await Future.wait([
         NotificationApi.getNotificationsByCategory(category),
@@ -198,74 +172,53 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
       final followingResponse = results[1] as Map<String, dynamic>;
       final followersResponse = results[2] as Map<String, dynamic>;
 
-      print('📊 받은 알림 데이터: ${notificationsData.length}개');
-
-      // 팔로잉 상태 확인
       final List<dynamic> followingListRaw = followingResponse['data'] ?? [];
       final Set<String> iFollowTheseNicknames = followingListRaw
           .where((user) => user != null && user['nickname'] != null)
           .map((user) => user['nickname'] as String)
           .toSet();
 
-      // 팔로워 목록에서 followStatus 추출
       final List<dynamic> followersListRaw = followersResponse['data'] ?? [];
+
       final Map<String, String> followerStatusMap = {};
       for (var follower in followersListRaw) {
         if (follower != null && follower['nickname'] != null) {
-          followerStatusMap[follower['nickname']] = follower['followStatus'] ?? 'NOT_FOLLOWING';
+          final nickname = follower['nickname'] as String;
+          followerStatusMap[nickname] = follower['followStatus'] ?? 'NOT_FOLLOWING';
+          _currentFollowerNicknames.add(nickname);
         }
       }
 
-      print('👥 내가 팔로우하는 사용자들: $iFollowTheseNicknames');
-      print('👥 팔로워 상태 맵: $followerStatusMap');
+      print('👥 현재 나를 팔로우하는 사용자들: $_currentFollowerNicknames');
 
       List<NotificationModel> newNotifications = notificationsData.map((data) => NotificationModel.fromJson(data)).toList();
 
-      // followStatus 기반 정확한 상태 설정
       for (var notification in newNotifications) {
         if (notification.userNickname != null) {
           final nickname = notification.userNickname!;
-
           if (iFollowTheseNicknames.contains(nickname)) {
             _followStatusMap[nickname] = FollowButtonStatus.following;
-            print('  → 팔로잉 상태: $nickname');
           } else {
             final status = followerStatusMap[nickname] ?? 'NOT_FOLLOWING';
             if (status == 'REQUESTED') {
               _followStatusMap[nickname] = FollowButtonStatus.requestSent;
-              print('  → 요청됨 상태: $nickname');
             } else {
               _followStatusMap[nickname] = FollowButtonStatus.canFollow;
-              print('  → 팔로우 가능 상태: $nickname');
             }
           }
         }
       }
 
-      print('🗺️ 최종 팔로우 상태 맵: $_followStatusMap');
-
       if (mounted) {
         setState(() => _notifications = newNotifications);
-        print('🎨 UI 업데이트 완료: ${_notifications.length}개 알림 표시');
-
-        // ⚡ fallback 로직 - 즉시 실행
         if (_isMyAccountPrivate == false && !_isAutoAccepting) {
           final followRequests = await UserApi.getFollowRequests();
-          final pendingRequests = followRequests['data'] as List<dynamic>;
-
-          if (pendingRequests.isNotEmpty) {
-            print('🚀 추가 체크: 공개 계정 + 팔로우 요청 존재 → 즉시 자동 수락 실행');
-            // ⚡ 즉시 실행 (지연 없음)
-            if (mounted) {
-              _autoAcceptAllRequests();
-            }
+          if ((followRequests['data'] as List<dynamic>).isNotEmpty) {
+            if (mounted) _autoAcceptAllRequests();
           }
         }
       }
     } catch (e) {
-      print('❌ _loadData 에러: $e');
-      debugPrint('데이터 로딩 실패: $e');
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('데이터를 불러오는데 실패했습니다: $e')),
@@ -277,44 +230,25 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
   }
 
   Future<void> _handleAcceptFollow(NotificationModel notification) async {
-    if (notification.requestId == null || notification.userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('오류: 요청 정보가 없습니다.'))
-      );
-      return;
-    }
-
+    if (notification.requestId == null || notification.userId == null) return;
     setState(() => _processingId = notification.id);
     try {
-      print('✅ 팔로우 요청 수락: ${notification.userNickname}');
-      final result = await NotificationApi.acceptFollowRequest(
-          notification.requestId!,
-          notification.userId!
-      );
-
+      final result = await NotificationApi.acceptFollowRequest(notification.requestId!, notification.userId!);
       if (mounted && result.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.message))
-        );
-
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
         final index = _notifications.indexWhere((n) => n.id == notification.id);
         if (index != -1) {
           setState(() {
             _notifications[index].type = 'FOLLOW';
             if (notification.userNickname != null) {
               _followStatusMap[notification.userNickname!] = FollowButtonStatus.canFollow;
+              _currentFollowerNicknames.add(notification.userNickname!);
             }
           });
-          print('🔄 수락 후 타입 변경: FOLLOW_REQUEST → FOLLOW');
         }
       }
     } catch (e) {
-      print('❌ 팔로우 수락 실패: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('팔로우 수락 실패: $e'))
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('팔로우 수락 실패: $e')));
     } finally {
       if (mounted) setState(() => _processingId = null);
     }
@@ -326,9 +260,16 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
     try {
       print('❌ 팔로우 요청 거절: ${notification.userNickname}');
       await NotificationApi.rejectFollowRequest(notification.requestId!, notification.userId!);
+
       if (mounted) {
+        setState(() {
+          _notifications.removeWhere((n) => n.id == notification.id);
+        });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('팔로우 요청을 거절했습니다.')));
-        _loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('요청 거절에 실패했습니다: $e')));
       }
     } finally {
       if (mounted) setState(() => _processingId = null);
@@ -338,10 +279,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
   Future<void> _handleFollowAction(NotificationModel notification, FollowButtonStatus currentStatus) async {
     if (notification.userId == null) return;
     setState(() => _processingId = notification.userId);
-
     try {
-      print('👥 팔로우 액션: ${notification.userNickname} - $currentStatus');
-
       final result = await (currentStatus == FollowButtonStatus.canFollow
           ? NotificationApi.followUser(notification.userId!)
           : NotificationApi.unfollowUser(notification.userId!));
@@ -351,7 +289,6 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
         if (notification.userNickname != null) {
           setState(() => _followStatusMap[notification.userNickname!] = result.buttonState);
         }
-        print('🔄 팔로우 상태 변경: $currentStatus → ${result.buttonState}');
       }
     } finally {
       if (mounted) setState(() => _processingId = null);
@@ -368,6 +305,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleSpacing: scaleWidth(22),
+        automaticallyImplyLeading: false,
         title: Row(
           children: [
             Text("알림", style: AppFonts.suite.h3_b(context)),
@@ -409,8 +347,6 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
     );
   }
-
-  // ... 나머지 build 메서드들은 동일 (생략)
 
   Widget _buildTabButton(int index) {
     final isSelected = _selectedTabIndex == index;
@@ -460,7 +396,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: scaleHeight(16)),
-      color: notification.isRead ? AppColors.white : AppColors.pri100.withOpacity(0.2),
+      color: notification.isRead ? Colors.white : AppColors.pri100.withOpacity(0.2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -468,7 +404,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
           SizedBox(width: scaleWidth(12)),
           Expanded(child: _buildNotificationText(notification)),
           if (trailingWidget != null) ...[
-            SizedBox(width: scaleWidth(12)),
+            SizedBox(width: scaleWidth(20)),
             trailingWidget,
           ]
         ],
@@ -477,70 +413,43 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
   }
 
   Widget _buildNotificationText(NotificationModel notification) {
-    const double lineSpacing = 1.45;
-    final bool isTextOnly = ['SYSTEM', 'NEWS', 'NEW_RECORD', 'FRIEND_RECORD'].contains(notification.type);
+    final double lineSpacing = 1.45;
 
-    final mainText = Text.rich(
-      _buildTextSpans(notification, lineSpacing),
-      textAlign: TextAlign.left,
-    );
+    final nicknameStyle = AppFonts.suite.b3_sb(context).copyWith(color: AppColors.black, height: lineSpacing);
+    final actionStyle = AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray600, height: lineSpacing);
+    final timeStyle = AppFonts.suite.c1_r(context).copyWith(color: AppColors.gray300, height: lineSpacing);
 
-    if (isTextOnly) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final unbreakableTimeAgo = notification.timeAgo
+        .replaceAll(' ', '\u{00A0}')
+        .replaceAllMapped(
+        RegExp(r'(\d)([가-힣])'), (match) => '${match.group(1)}\u{2060}${match.group(2)}');
+
+    final actionText = _getActionText(notification);
+
+    return Text.rich(
+      TextSpan(
         children: [
-          mainText,
-          SizedBox(height: scaleHeight(6)),
-          Text(notification.timeAgo, style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400)),
+          if (notification.userNickname != null)
+            TextSpan(text: notification.userNickname, style: nicknameStyle),
+
+          // 공백을 포함한 본문 텍스트 Span
+          TextSpan(text: '$actionText  ', style: actionStyle),
+
+          // 시간 텍스트만 포함하는 WidgetSpan
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Text(
+              unbreakableTimeAgo,
+              style: timeStyle,
+            ),
+          ),
         ],
-      );
-    } else {
-      return mainText;
-    }
-  }
-
-  InlineSpan _buildTextSpans(NotificationModel notification, double lineSpacing) {
-    if (notification.type == 'SYSTEM' || notification.type == 'NEWS') {
-      return TextSpan(
-        text: notification.content,
-        style: AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray800, height: lineSpacing),
-      );
-    }
-
-    return TextSpan(
-      children: [
-        if (notification.userNickname != null)
-          TextSpan(
-            text: notification.userNickname,
-            style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray900, height: lineSpacing),
-          ),
-        TextSpan(
-          text: _getActionText(notification),
-          style: AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray700, height: lineSpacing),
-        ),
-        if (!['SYSTEM', 'NEWS', 'NEW_RECORD', 'FRIEND_RECORD'].contains(notification.type))
-          TextSpan(
-            text: ' \u{00A0}${notification.timeAgo}',
-            style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400, height: lineSpacing),
-          ),
-      ],
+      ),
     );
   }
 
   String _getActionText(NotificationModel notification) {
-    switch (notification.type) {
-      case 'NEW_RECORD':
-      case 'FRIEND_RECORD':
-        return '님이 직관 기록을 업로드했어요.';
-      case 'REACTION':
-        return '님이 회원님의 기록에 공감했어요.';
-      case 'FOLLOW':
-        return '님이 회원님을 팔로우합니다.';
-      case 'FOLLOW_REQUEST':
-        return '님의 팔로우 요청';
-      default:
-        return notification.content;
-    }
+    return notification.content;
   }
 
   Widget _buildProfileImage(NotificationModel notification) {
@@ -557,7 +466,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
             : null,
       ),
       child: (notification.userProfileImage == null || isSystem)
-          ? Center(child: isSystem ? SvgPicture.asset(AppImages.dodada, width: scaleWidth(24), color: AppColors.gray400) : Icon(Icons.person, color: AppColors.gray400, size: scaleWidth(24)))
+          ? Center(child: isSystem ? SvgPicture.asset(AppImages.dodada, width: scaleWidth(24), color: AppColors.gray400) : SvgPicture.asset(AppImages.profile, width: scaleWidth(42), height: scaleWidth(42)))
           : null,
     );
   }
@@ -568,22 +477,17 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
         return _buildAcceptRejectButtons(notification, isProcessing);
       case 'FOLLOW':
         if(notification.userNickname == null) return null;
+
+        final isStillFollower = _currentFollowerNicknames.contains(notification.userNickname!);
+
+        if (!isStillFollower) {
+          print('🚫 ${notification.userNickname} 님은 현재 팔로워가 아니므로 버튼을 표시하지 않습니다.');
+          return null;
+        }
+
         final status = _followStatusMap[notification.userNickname] ?? FollowButtonStatus.canFollow;
         return _buildFollowButton(notification, status, isProcessing);
-      case 'REACTION':
-        if(notification.reactionImageUrl != null) {
-          return Image.network(
-            notification.reactionImageUrl!,
-            width: scaleWidth(40),
-            height: scaleWidth(40),
-            errorBuilder: (context, error, stackTrace) => Container(
-              width: scaleWidth(40),
-              height: scaleWidth(40),
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFCB4BA)),
-            ),
-          );
-        }
-        return null;
+
       default:
         return null;
     }
@@ -600,8 +504,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
           child: ElevatedButton(
             onPressed: () => _handleAcceptFollow(notification),
             style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.pri500,
-                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.gray600,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: EdgeInsets.zero,
                 elevation: 0
@@ -616,11 +519,11 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
           child: TextButton(
             onPressed: () => _handleRejectFollow(notification),
             style: TextButton.styleFrom(
-                backgroundColor: AppColors.pri100,
+                backgroundColor: AppColors.gray50,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: EdgeInsets.zero
             ),
-            child: Text('삭제', style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri500)),
+            child: Text('삭제', style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray600)),
           ),
         ),
       ],
@@ -633,13 +536,13 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
 
     switch (status) {
       case FollowButtonStatus.canFollow:
-        text = '맞팔로우'; buttonColor = AppColors.gray700; textColor = AppColors.white;
+        text = '맞팔로우'; buttonColor = AppColors.gray600; textColor = AppColors.white;
         break;
       case FollowButtonStatus.following:
         text = '팔로잉'; buttonColor = AppColors.gray50; textColor = AppColors.gray600;
         break;
       case FollowButtonStatus.requestSent:
-        text = '요청됨'; buttonColor = AppColors.gray50; textColor = AppColors.gray400;
+        text = '요청됨'; buttonColor = AppColors.gray50; textColor = AppColors.gray600;
         break;
     }
 

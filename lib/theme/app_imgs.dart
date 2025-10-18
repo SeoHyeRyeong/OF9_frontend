@@ -102,6 +102,9 @@ class AppImages {
   static const heart_outlined = 'assets/imgs/ic_feed/ic_heart_outlined.svg';
   static const comment = 'assets/imgs/ic_feed/ic_comment.svg';
   static const ellipse = 'assets/imgs/ic_feed/ellipse.svg';
+  static const dots = 'assets/imgs/ic_feed/dots_vertical.svg';
+  static const send = 'assets/imgs/ic_feed/send.svg';
+  static const comment_detail = 'assets/imgs/ic_feed/comment_detail.svg';
 
   //마이페이지
   static const btn_camera = 'assets/imgs/btn_camera_24.svg';

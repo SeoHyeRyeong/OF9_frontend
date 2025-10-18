@@ -12,6 +12,7 @@ import 'package:frontend/api/record_api.dart'; // S3 업로드용 추가
 import 'package:frontend/features/mypage/settings_screen.dart';
 import 'package:frontend/features/upload/show_team_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:frontend/components/custom_action_sheet.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -182,69 +183,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showImageSourceActionSheet() {
-    showModalBottomSheet(
+    showCustomActionSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: AppColors.trans300,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: scaleWidth(20),
-              right: scaleWidth(20),
-              top: scaleHeight(8),
-              bottom: scaleHeight(10),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(scaleHeight(12)),
-                  ),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        title: Center(
-                            child: FixedText('앨범에서 사진 선택',
-                                style: AppFonts.suite.b2_m(context).copyWith(color: AppColors.gray950))),
-                        onTap: _pickImageFromGallery,
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                        child: const Divider(color: AppColors.trans100, height: 1, thickness: 1),
-                      ),
-                      ListTile(
-                        title: Center(
-                            child: FixedText('현재 사진 삭제',
-                                style: AppFonts.suite.b2_m(context).copyWith(color: AppColors.error))),
-                        onTap: _deleteProfileImage,
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: scaleHeight(8)),
-                SizedBox(
-                  width: double.infinity,
-                  height: scaleHeight(54),
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.gray20,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(scaleHeight(16))),
-                    ),
-                    child: FixedText('취소',
-                        style: AppFonts.suite.b2_m(context).copyWith(color: AppColors.gray300)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      options: [
+        ActionSheetOption(
+          text: '앨범에서 사진 선택',
+          textColor: AppColors.gray950,
+          onTap: () {
+            Navigator.pop(context);
+            _pickImageFromGallery();
+          },
+        ),
+        ActionSheetOption(
+          text: '현재 사진 삭제',
+          textColor: AppColors.error,
+          onTap: () {
+            Navigator.pop(context);
+            _deleteProfileImage();
+          },
+        ),
+      ],
     );
   }
 

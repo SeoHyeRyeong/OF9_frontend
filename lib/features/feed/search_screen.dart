@@ -7,6 +7,9 @@ import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/utils/fixed_text.dart';
+import 'package:frontend/features/feed/feed_item_widget.dart';
+import 'package:frontend/features/feed/detail_feed_screen.dart';
+import 'package:frontend/utils/like_state_manager.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -365,7 +368,6 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
     if (widget.searchResult == null) {
       return Center(child: FixedText('검색 결과가 없습니다.'));
     }
-
     return Column(
       children: [
         Container(
@@ -731,574 +733,128 @@ class RecentSearchItemWidget extends StatelessWidget {
   }
 }
 
-/// 게시글 검색 결과
-class RecordsListWidget extends StatelessWidget {
+/// 게시글 검색 결과 - FeedItemWidget 사용
+class RecordsListWidget extends StatefulWidget {
   final List<Record> records;
 
   const RecordsListWidget({Key? key, required this.records}) : super(key: key);
 
   @override
+  State<RecordsListWidget> createState() => _RecordsListWidgetState();
+}
+
+class _RecordsListWidgetState extends State<RecordsListWidget> {
+  final _likeManager = LikeStateManager();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 전역 상태에 초기값 등록
+    for (var record in widget.records) {
+      _likeManager.setInitialState(
+        record.recordId,
+        record.isLiked,
+        record.likeCount,
+      );
+    }
+
+    // 전역 상태 변경 리스닝 (Feed/Detail에서 좋아요 누르면 여기도 업데이트)
+    _likeManager.addListener(_onGlobalLikeStateChanged);
+  }
+
+  @override
+  void dispose() {
+    _likeManager.removeListener(_onGlobalLikeStateChanged);
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(RecordsListWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.records != widget.records) {
+      // 새 검색 결과 전역 상태에 등록 (기존 상태는 유지)
+      for (var record in widget.records) {
+        _likeManager.setInitialState(
+          record.recordId,
+          record.isLiked,
+          record.likeCount,
+        );
+      }
+      print('🔄 [Search] 검색 결과 업데이트 (기존 좋아요 상태 유지)');
+    }
+  }
+
+  // 전역 상태 변경 감지 → 화면 갱신
+  void _onGlobalLikeStateChanged() {
+    setState(() {
+      // 리스트 전체 rebuild → 각 FeedItemWidget이 최신 전역 상태 가져감
+    });
+    print('✅ [Search] 전역 좋아요 상태 변경 감지 → 화면 갱신');
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.gray30,
-      child: records.isEmpty
-          ? Center(
+    if (widget.records.isEmpty) {
+      return Center(
         child: FixedText(
           "게시글 검색 결과가 없습니다.",
           style: AppFonts.pretendard.b2_m(context).copyWith(color: AppColors.gray400),
         ),
-      )
-          : ListView.separated(
-        padding: EdgeInsets.all(scaleWidth(20)),
-        itemCount: records.length,
-        separatorBuilder: (context, index) => SizedBox(height: scaleHeight(16)),
+      );
+    }
+
+    return Container(
+      color: AppColors.gray30,
+      child: ListView.builder(
+        padding: EdgeInsets.only(top: scaleHeight(19)),
+        itemCount: widget.records.length,
         itemBuilder: (context, index) {
-          final record = records[index];
-          return RecordCardWidget(record: record);
+          final record = widget.records[index];
+
+          // 전역 상태 우선 사용
+          final isLiked = _likeManager.getLikedStatus(record.recordId) ?? record.isLiked;
+          final likeCount = _likeManager.getLikeCount(record.recordId) ?? record.likeCount;
+
+          final feedData = {
+            'recordId': record.recordId,
+            'authorProfileImage': record.authorProfileImage,
+            'authorNickname': record.authorNickname,
+            'authorFavTeam': record.authorFavTeam,
+            'mediaUrls': record.mediaUrls,
+            'longContent': record.longContent,
+            'emotionCode': record.emotionCode,
+            'homeTeam': record.homeTeam,
+            'awayTeam': record.awayTeam,
+            'stadium': record.stadium,
+            'gameDate': record.gameDate,
+            'isLiked': isLiked,
+            'likeCount': likeCount,
+            'commentCount': record.commentCount,
+          };
+
+          return FeedItemWidget(
+            feedData: feedData,
+            onTap: () async {
+              await Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                      DetailFeedScreen(recordId: record.recordId),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+
+              print('✅ [Search] Detail에서 돌아옴 (전역 상태로 동기화됨)');
+            },
+          );
         },
       ),
     );
   }
 }
 
-class RecordCardWidget extends StatelessWidget {
-  final Record record;
-
-  const RecordCardWidget({Key? key, required this.record}) : super(key: key);
-
-  String _getTeamLogo(String teamName) {
-    switch (teamName) {
-      case 'KIA 타이거즈': return AppImages.tigers;
-      case '두산 베어스': return AppImages.bears;
-      case '롯데 자이언츠': return AppImages.giants;
-      case '삼성 라이온즈': return AppImages.lions;
-      case '키움 히어로즈': return AppImages.kiwoom;
-      case '한화 이글스': return AppImages.eagles;
-      case 'KT WIZ': return AppImages.ktwiz;
-      case 'LG 트윈스': return AppImages.twins;
-      case 'NC 다이노스': return AppImages.dinos;
-      case 'SSG 랜더스': return AppImages.landers;
-      default: return AppImages.tigers;
-    }
-  }
-
-  Map<String, String> _getEmotionData(int emotionCode) {
-    switch (emotionCode) {
-      case 1: return {'image': AppImages.emotion_1, 'label': '짜릿해요'};
-      case 2: return {'image': AppImages.emotion_2, 'label': '만족해요'};
-      case 3: return {'image': AppImages.emotion_3, 'label': '감동이에요'};
-      case 4: return {'image': AppImages.emotion_4, 'label': '놀랐어요'};
-      case 5: return {'image': AppImages.emotion_5, 'label': '행복해요'};
-      case 6: return {'image': AppImages.emotion_6, 'label': '답답해요'};
-      case 7: return {'image': AppImages.emotion_7, 'label': '아쉬워요'};
-      case 8: return {'image': AppImages.emotion_8, 'label': '화났어요'};
-      case 9: return {'image': AppImages.emotion_9, 'label': '지쳤어요'};
-      default: return {'image': AppImages.emotion_1, 'label': '짜릿해요'};
-    }
-  }
-
-  String _getTimeAgo(String createdAt) {
-    try {
-      // 먼저 로컬 시간으로 파싱 시도
-      DateTime recordTime;
-      try {
-        // "2025-05-26 17:42:26" 형태를 "2025-05-26T17:42:26"로 변환 후 로컬 시간으로 파싱
-        recordTime = DateTime.parse(createdAt.replaceAll(' ', 'T'));
-      } catch (e) {
-        // 로컬 파싱이 실패하면 UTC로 파싱 후 로컬 변환
-        recordTime = DateTime.parse(createdAt.replaceAll(' ', 'T') + 'Z').toLocal();
-      }
-
-      final DateTime now = DateTime.now();
-      final Duration difference = now.difference(recordTime);
-
-      // 음수가 나오면 "방금 전"으로 처리 (미래 시간인 경우)
-      if (difference.inSeconds < 0) {
-        return '방금 전';
-      }
-
-      // 1년 이상인 경우
-      final int yearDiff = now.year - recordTime.year;
-      if (yearDiff >= 1) {
-        // 해당 월/일이 이미 지났는지 확인
-        final bool hasDatePassed = now.month > recordTime.month ||
-            (now.month == recordTime.month && now.day >= recordTime.day);
-
-        final int actualYearDiff = hasDatePassed ? yearDiff : yearDiff - 1;
-
-        if (actualYearDiff >= 1) {
-          return '${actualYearDiff}년 전';
-        }
-      }
-
-      // 1개월 이상인 경우 (월 단위 계산)
-      int monthDiff = (now.year - recordTime.year) * 12 + (now.month - recordTime.month);
-
-      // 일자까지 고려해서 정확한 월 차이 계산
-      if (now.day < recordTime.day) {
-        monthDiff -= 1;
-      }
-
-      if (monthDiff >= 1) {
-        return '${monthDiff}개월 전';
-      }
-
-      // 1개월 미만인 경우
-      if (difference.inDays >= 1) {
-        return '${difference.inDays}일 전';
-      } else if (difference.inHours >= 1) {
-        return '${difference.inHours}시간 전';
-      } else if (difference.inMinutes >= 1) {
-        return '${difference.inMinutes}분 전';
-      } else {
-        return '방금 전'; // 0초나 음수인 경우도 "방금 전"으로 처리
-      }
-    } catch (e) {
-      print('❌ 시간 파싱 실패: $e, createdAt: $createdAt');
-      return '알 수 없음';
-    }
-  }
-
-  Widget _buildLongContentWidget(String longContent, BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final TextStyle textStyle = AppFonts.pretendard.c1_m_narrow(context).copyWith(
-          color: AppColors.gray600,
-        );
-
-        final TextPainter textPainter = TextPainter(
-          text: TextSpan(text: longContent, style: textStyle),
-          maxLines: 4,
-          textDirection: TextDirection.ltr,
-        );
-
-        textPainter.layout(maxWidth: constraints.maxWidth);
-
-        if (!textPainter.didExceedMaxLines) {
-          return FixedText(
-            longContent,
-            style: textStyle,
-            maxLines: 4,
-          );
-        } else {
-          const String moreText = '...더보기';
-          final TextPainter moreTextPainter = TextPainter(
-            text: TextSpan(text: moreText, style: textStyle),
-            textDirection: TextDirection.ltr,
-          );
-          moreTextPainter.layout();
-
-          final TextPainter truncatedPainter = TextPainter(
-            text: TextSpan(text: longContent, style: textStyle),
-            maxLines: 4,
-            textDirection: TextDirection.ltr,
-          );
-
-          truncatedPainter.layout(maxWidth: constraints.maxWidth);
-
-          final int endIndex = truncatedPainter.getPositionForOffset(
-            Offset(constraints.maxWidth - moreTextPainter.width,
-                truncatedPainter.height - textStyle.fontSize!),
-          ).offset;
-
-          final String truncatedText = longContent.substring(0, endIndex).trimRight();
-
-          return RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: truncatedText,
-                  style: textStyle,
-                ),
-                TextSpan(
-                  text: moreText,
-                  style: textStyle.copyWith(color: AppColors.gray400),
-                ),
-              ],
-            ),
-            maxLines: 4,
-          );
-        }
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(scaleHeight(16)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            height: scaleHeight(60),
-            decoration: BoxDecoration(
-              color: AppColors.gray700,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(scaleHeight(16)),
-                topRight: Radius.circular(scaleHeight(16)),
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: scaleWidth(25),
-                right: scaleWidth(20),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        children: [
-                          SvgPicture.asset(
-                            AppImages.location,
-                            width: scaleWidth(10),
-                            height: scaleHeight(11.7),
-                            color: AppColors.gray50,
-                            fit: BoxFit.contain,
-                          ),
-                          SizedBox(width: scaleWidth(9)),
-                          FixedText(
-                            record.gameDate.replaceAll("요일", ""),
-                            style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray50),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: scaleHeight(8)),
-                      Padding(
-                        padding: EdgeInsets.only(left: scaleWidth(19)),
-                        child: FixedText(
-                          record.stadium,
-                          style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: scaleWidth(24),
-                        height: scaleHeight(24),
-                        child: Image.asset(
-                          _getTeamLogo(record.homeTeam),
-                          width: scaleWidth(24),
-                          height: scaleHeight(24),
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: scaleWidth(24),
-                              height: scaleHeight(24),
-                              decoration: BoxDecoration(
-                                color: AppColors.gray200,
-                                shape: BoxShape.circle,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      SizedBox(width: scaleWidth(12)),
-                      FixedText(
-                        '${record.homeScore}',
-                        style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
-                      ),
-                      SizedBox(width: scaleWidth(10)),
-                      FixedText(
-                        ':',
-                        style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
-                      ),
-                      SizedBox(width: scaleWidth(10)),
-                      FixedText(
-                        '${record.awayScore}',
-                        style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray20),
-                      ),
-                      SizedBox(width: scaleWidth(12)),
-                      Container(
-                        width: scaleWidth(24),
-                        height: scaleHeight(24),
-                        child: Image.asset(
-                          _getTeamLogo(record.awayTeam),
-                          width: scaleWidth(24),
-                          height: scaleHeight(24),
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: scaleWidth(24),
-                              height: scaleHeight(24),
-                              decoration: BoxDecoration(
-                                color: AppColors.gray200,
-                                shape: BoxShape.circle,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(height: scaleHeight(16)),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: scaleWidth(28),
-                      height: scaleHeight(28),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.gray50, width: 0.8),
-                      ),
-                      child: ClipOval(
-                        child: record.authorProfileImage != null && record.authorProfileImage!.isNotEmpty
-                            ? Image.network(
-                          record.authorProfileImage!,
-                          width: scaleWidth(28),
-                          height: scaleHeight(28),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return SvgPicture.asset(
-                              AppImages.profile,
-                              width: scaleWidth(28),
-                              height: scaleHeight(28),
-                              fit: BoxFit.cover,
-                            );
-                          },
-                        )
-                            : SvgPicture.asset(
-                          AppImages.profile,
-                          width: scaleWidth(28),
-                          height: scaleHeight(28),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: scaleWidth(8)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: scaleHeight(4)),
-                          Row(
-                            children: [
-                              FixedText(
-                                record.authorNickname,
-                                style: AppFonts.pretendard.b3_m(context).copyWith(color: Colors.black),
-                              ),
-                              SizedBox(width: scaleWidth(6)),
-                              FixedText(
-                                '${record.authorFavTeam} 팬',
-                                style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400),
-                              ),
-                              SizedBox(width: scaleWidth(6)),
-                              FixedText(
-                                _getTimeAgo(record.createdAt),
-                                style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: scaleHeight(8)),
-                          if (record.longContent != null && record.longContent!.trim().isNotEmpty)
-                            _buildLongContentWidget(record.longContent!, context),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (record.longContent != null && record.longContent!.trim().isNotEmpty) ...[
-                  if (record.mediaUrls != null && record.mediaUrls!.isNotEmpty) ...[
-                    SizedBox(height: scaleHeight(12)),
-                    Padding(
-                      padding: EdgeInsets.only(left: scaleWidth(36)),
-                      child: Container(
-                        height: scaleHeight(96),
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: record.mediaUrls!.length,
-                          separatorBuilder: (context, index) => SizedBox(width: scaleWidth(4)),
-                          itemBuilder: (context, index) {
-                            return GestureDetector(
-                              onTap: () {
-                                print('사진 클릭: ${record.mediaUrls![index]}');
-                              },
-                              child: Container(
-                                width: scaleWidth(96),
-                                height: scaleHeight(96),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                  border: Border.all(color: AppColors.gray100, width: 0.5),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(scaleHeight(8)),
-                                  child: Image.network(
-                                    record.mediaUrls![index],
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return Container(
-                                        color: AppColors.gray50,
-                                        child: Center(
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: AppColors.gray400,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: AppColors.gray100,
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.broken_image,
-                                            size: scaleWidth(24),
-                                            color: AppColors.gray400,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-                if (record.longContent == null || record.longContent!.trim().isEmpty) ...[
-                  Padding(
-                    padding: EdgeInsets.only(left: scaleWidth(36)),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          _getEmotionData(record.emotionCode)['image']!,
-                          width: scaleWidth(45),
-                          height: scaleHeight(45),
-                          fit: BoxFit.contain,
-                        ),
-                        SizedBox(width: scaleWidth(8)),
-                        FixedText(
-                          _getEmotionData(record.emotionCode)['label']!,
-                          style: AppFonts.suite.b3_m(context).copyWith(color: AppColors.gray700),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                SizedBox(height: scaleHeight(12)),
-                Padding(
-                  padding: EdgeInsets.only(left: scaleWidth(36)),
-                  child: Row(
-                    children: [
-                      Container(
-                        height: scaleHeight(24),
-                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(8)),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(scaleHeight(40)),
-                          border: Border.all(color: AppColors.gray50, width: 1),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              AppImages.good,
-                              width: scaleWidth(14),
-                              height: scaleHeight(14),
-                              fit: BoxFit.contain,
-                            ),
-                            SizedBox(width: scaleWidth(4)),
-                            FixedText(
-                              '응원해요',
-                              style: AppFonts.pretendard.c2_m(context).copyWith(color: AppColors.gray300),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: scaleWidth(8)),
-                      Container(
-                        height: scaleHeight(24),
-                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(8)),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(scaleHeight(40)),
-                          border: Border.all(color: AppColors.gray50, width: 1),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              AppImages.smile,
-                              width: scaleWidth(14),
-                              height: scaleHeight(14),
-                              fit: BoxFit.contain,
-                            ),
-                            SizedBox(width: scaleWidth(4)),
-                            FixedText(
-                              '힘내요',
-                              style: AppFonts.pretendard.c2_m(context).copyWith(color: AppColors.gray300),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: scaleWidth(8)),
-                      Container(
-                        height: scaleHeight(24),
-                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(8)),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(scaleHeight(40)),
-                          border: Border.all(color: AppColors.gray50, width: 1),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              AppImages.congratulate,
-                              width: scaleWidth(14),
-                              height: scaleHeight(14),
-                              fit: BoxFit.contain,
-                            ),
-                            SizedBox(width: scaleWidth(4)),
-                            FixedText(
-                              '축하해요',
-                              style: AppFonts.pretendard.c2_m(context).copyWith(color: AppColors.gray300),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: scaleHeight(16)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// 사용자 검색 결과
 class UsersListWidget extends StatelessWidget {

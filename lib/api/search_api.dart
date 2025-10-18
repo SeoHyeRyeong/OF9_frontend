@@ -24,6 +24,9 @@ class Record {
   final String result;
   final List<String> mediaUrls;
   final String createdAt;
+  final int likeCount;
+  final bool isLiked;
+  final int commentCount;
 
   Record.fromJson(Map<String, dynamic> json)
       : recordId = json['recordId'],
@@ -44,7 +47,10 @@ class Record {
         longContent = json['longContent'],
         result = json['result'],
         mediaUrls = List<String>.from(json['mediaUrls']),
-        createdAt = json['createdAt'];
+        createdAt = json['createdAt'],
+        likeCount = json['likeCount'] ?? 0,
+        isLiked = json['isLiked'] ?? false,
+        commentCount = json['commentCount'] ?? 0;
 }
 
 // 검색 결과 - 사용자 모델

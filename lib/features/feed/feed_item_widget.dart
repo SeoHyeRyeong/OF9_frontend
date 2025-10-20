@@ -63,20 +63,28 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
     final recordId = widget.feedData['recordId'] as int?;
     if (recordId != null) {
-      // 🔥 전역 상태 우선 확인
-      _isLiked = _likeManager.getLikedStatus(recordId) ?? widget.feedData['isLiked'] ?? false;
-      _likeCount = _likeManager.getLikeCount(recordId) ?? widget.feedData['likeCount'] ?? 0;
+      // 전역 상태 우선 사용 (최신 값)
+      _isLiked = _likeManager.getLikedStatus(recordId)
+          ?? widget.feedData['isLiked']
+          ?? false;
+      _likeCount = _likeManager.getLikeCount(recordId)
+          ?? widget.feedData['likeCount']
+          ?? 0;
 
-      // 초기값 전역 상태에 등록
-      _likeManager.setInitialState(recordId, _isLiked, _likeCount);
+      // 전역 상태 없으면 feedData로 초기화
+      if (_likeManager.getLikedStatus(recordId) == null) {
+        _likeManager.setInitialState(recordId, _isLiked, _likeCount);
+      }
     } else {
       _isLiked = widget.feedData['isLiked'] ?? false;
       _likeCount = widget.feedData['likeCount'] ?? 0;
     }
 
-    // 🔥 전역 상태 변경 리스닝
+    // 전역 상태 변경 리스너 등록
     _likeManager.addListener(_onGlobalLikeStateChanged);
   }
+
+  @override
 
   @override
   void dispose() {
@@ -84,7 +92,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     super.dispose();
   }
 
-  // 🔥 전역 상태 변경 감지
+  // 전역 상태 변경 감지
   void _onGlobalLikeStateChanged() {
     final recordId = widget.feedData['recordId'] as int?;
     if (recordId != null) {
@@ -107,18 +115,35 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
   void didUpdateWidget(covariant FeedItemWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // feedData가 변경되어도 전역 상태 우선
     final recordId = widget.feedData['recordId'] as int?;
     if (recordId != null) {
+      // 전역 상태 우선 확인
       final globalIsLiked = _likeManager.getLikedStatus(recordId);
       final globalLikeCount = _likeManager.getLikeCount(recordId);
 
       if (globalIsLiked != null && globalLikeCount != null) {
+        // 전역 상태 사용 (더 최신)
         if (_isLiked != globalIsLiked || _likeCount != globalLikeCount) {
           setState(() {
             _isLiked = globalIsLiked;
             _likeCount = globalLikeCount;
           });
+          print('📱 [FeedItem] 전역 상태 사용: recordId=$recordId, count=$globalLikeCount');
+        }
+      } else {
+        // 전역 상태 없으면 feedData 사용
+        final newIsLiked = widget.feedData['isLiked'];
+        final newLikeCount = widget.feedData['likeCount'];
+
+        if (newIsLiked != null && newLikeCount != null) {
+          if (_isLiked != newIsLiked || _likeCount != newLikeCount) {
+            setState(() {
+              _isLiked = newIsLiked;
+              _likeCount = newLikeCount;
+            });
+            _likeManager.setInitialState(recordId, newIsLiked, newLikeCount);
+            print('📱 [FeedItem] feedData 사용: recordId=$recordId, count=$newLikeCount');
+          }
         }
       }
     }
@@ -562,9 +587,9 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     };
 
     final logoPath = teamLogos[team];
-    if (logoPath == null) return SizedBox(width: scaleWidth(18), height: scaleHeight(18));
+    if (logoPath == null) return SizedBox(width: scaleWidth(24), height: scaleHeight(24));
 
-    return Image.asset(logoPath, width: scaleWidth(18), height: scaleHeight(18), fit: BoxFit.contain);
+    return Image.asset(logoPath, width: scaleWidth(24), height: scaleHeight(24), fit: BoxFit.contain);
   }
 
   Widget _buildBottomInfo(int commentCount) {

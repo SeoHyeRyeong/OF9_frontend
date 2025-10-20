@@ -799,7 +799,8 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
       return Center(
         child: FixedText(
           "게시글 검색 결과가 없습니다.",
-          style: AppFonts.pretendard.b2_m(context).copyWith(color: AppColors.gray400),
+          style: AppFonts.pretendard.b2_m(context).copyWith(
+              color: AppColors.gray400),
         ),
       );
     }
@@ -812,9 +813,10 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
         itemBuilder: (context, index) {
           final record = widget.records[index];
 
-          // 전역 상태 우선 사용
-          final isLiked = _likeManager.getLikedStatus(record.recordId) ?? record.isLiked;
-          final likeCount = _likeManager.getLikeCount(record.recordId) ?? record.likeCount;
+          final isLiked = _likeManager.getLikedStatus(record.recordId) ??
+              record.isLiked;
+          final likeCount = _likeManager.getLikeCount(record.recordId) ??
+              record.likeCount;
 
           final feedData = {
             'recordId': record.recordId,
@@ -836,7 +838,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
           return FeedItemWidget(
             feedData: feedData,
             onTap: () async {
-              await Navigator.push(
+              final result = await Navigator.push(
                 context,
                 PageRouteBuilder(
                   pageBuilder: (context, animation1, animation2) =>
@@ -846,7 +848,18 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
                 ),
               );
 
-              print('✅ [Search] Detail에서 돌아옴 (전역 상태로 동기화됨)');
+              // 삭제되었으면 리스트 업데이트
+              if (result != null && result is Map &&
+                  result['deleted'] == true) {
+                final deletedRecordId = result['recordId'];
+                setState(() {
+                  widget.records.removeWhere((r) =>
+                  r.recordId == deletedRecordId);
+                });
+                print('[Search] 게시글 ${deletedRecordId}번 삭제됨');
+              } else {
+                print('[Search] Detail에서 돌아옴 (전역 상태로 동기화됨)');
+              }
             },
           );
         },

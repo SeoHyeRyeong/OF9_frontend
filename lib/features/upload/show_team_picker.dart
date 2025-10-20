@@ -105,8 +105,8 @@ Future<String?> showTeamPicker({
                                   children: [
                                     Image.asset(
                                       image,
-                                      width: scaleHeight(35),
-                                      height: scaleHeight(35),
+                                      width: scaleHeight(40),
+                                      height: scaleHeight(40),
                                       fit: BoxFit.contain,
                                     ),
                                     SizedBox(width: scaleWidth(11.5)),

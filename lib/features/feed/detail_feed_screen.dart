@@ -8,6 +8,9 @@ import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/api/record_api.dart';
 import 'package:frontend/api/feed_api.dart';
 import 'package:frontend/utils/like_state_manager.dart';
+import 'dart:math' as math;
+import 'package:frontend/components/custom_action_sheet.dart';
+import 'package:frontend/api/user_api.dart';
 
 class DetailFeedScreen extends StatefulWidget {
   final int recordId;
@@ -31,12 +34,35 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   bool _isLiked = false;
   int _likeCount = 0;
+  int? _currentUserId;
+  bool _isGameCardExpanded = false;
+
+  // 작성자 여부 확인
+  bool get _isMyPost {
+    if (_recordDetail == null || _currentUserId == null) return false;
+    final authorId = _recordDetail!['userId'];
+    return authorId == _currentUserId;
+  }
 
   @override
   void initState() {
     super.initState();
     _likeManager.addListener(_onGlobalLikeStateChanged);
+    _loadCurrentUserId();
     _loadRecordDetail();
+  }
+
+  Future<void> _loadCurrentUserId() async {
+    try {
+      final userProfile = await UserApi.getMyProfile();
+      final userId = userProfile['data']['id'];
+      setState(() {
+        _currentUserId = userId;
+      });
+      print('✅ 현재 사용자 ID: $userId');
+    } catch (e) {
+      print('❌ 사용자 ID 조회 실패: $e');
+    }
   }
 
   @override
@@ -70,7 +96,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
       print('📋 직관 기록 조회 시작: recordId=${widget.recordId}');
 
-      // 백엔드 API 호출
       final data = await RecordApi.getRecordDetail(widget.recordId.toString());
 
       final globalIsLiked = _likeManager.getLikedStatus(widget.recordId);
@@ -78,17 +103,14 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
       setState(() {
         _recordDetail = data;
-
         _isLiked = globalIsLiked ?? (data['isLiked'] ?? false);
         _likeCount = globalLikeCount ?? (data['likeCount'] ?? 0);
-
         _isLoading = false;
       });
 
       _likeManager.setInitialState(widget.recordId, _isLiked, _likeCount);
 
       print('✅ 직관 기록 조회 성공: ${data['nickname']}');
-      print('📊 데이터: $data');
     } catch (e) {
       print('❌ 직관 기록 조회 실패: $e');
       setState(() {
@@ -98,7 +120,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     }
   }
 
-  // 좋아요 토글
   Future<void> _toggleLike() async {
     try {
       print('🔄 좋아요 토글 시작: recordId=${widget.recordId}');
@@ -122,13 +143,70 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     }
   }
 
-
   void _handleSendComment() {
     if (_commentController.text.trim().isEmpty) return;
 
     // TODO: 댓글 작성 API 호출
     print('댓글 작성: ${_commentController.text}');
     _commentController.clear();
+  }
+
+  Future<void> _deleteRecord() async {
+    try {
+      print('🗑️ 게시글 삭제 시작: recordId=${widget.recordId}');
+
+      await RecordApi.deleteRecord(widget.recordId.toString());
+
+      print('✅ 게시글 삭제 성공');
+
+      if (mounted) {
+        Navigator.pop(context, {
+          'deleted': true,
+          'recordId': widget.recordId,
+        });
+      }
+    } catch (e) {
+      print('❌ 게시글 삭제 실패: $e');
+    }
+  }
+
+  void _showMoreOptions() {
+    showCustomActionSheet(
+      context: context,
+      options: [
+        ActionSheetOption(
+          text: '게시글 수정',
+          textColor: AppColors.gray950,
+          onTap: () {
+            Navigator.pop(context);
+            // TODO: 게시글 수정 화면으로 이동
+            print('게시글 수정');
+          },
+        ),
+        ActionSheetOption(
+          text: '게시글 삭제',
+          textColor: AppColors.error,
+          onTap: () {
+            Navigator.pop(context);
+            _deleteRecord();
+          },
+        ),
+      ],
+    );
+  }
+
+  String _extractShortTeamName(String fullTeamName) {
+    if (fullTeamName.contains('KIA')) return 'KIA';
+    if (fullTeamName.contains('두산')) return '두산';
+    if (fullTeamName.contains('롯데')) return '롯데';
+    if (fullTeamName.contains('삼성')) return '삼성';
+    if (fullTeamName.contains('키움')) return '키움';
+    if (fullTeamName.contains('한화')) return '한화';
+    if (fullTeamName.contains('KT')) return 'KT';
+    if (fullTeamName.contains('LG')) return 'LG';
+    if (fullTeamName.contains('NC')) return 'NC';
+    if (fullTeamName.contains('SSG')) return 'SSG';
+    return fullTeamName;
   }
 
   @override
@@ -145,10 +223,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              // 1. 헤더 영역
               _buildHeader(),
-
-              // 2. 스크롤 가능한 본문 영역
               Expanded(
                 child: _isLoading
                     ? Center(child: CircularProgressIndicator())
@@ -175,8 +250,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                   child: _buildContent(),
                 ),
               ),
-
-              // 3. 댓글 입력 영역 (하단 고정)
               _buildCommentInputArea(),
             ],
           ),
@@ -185,7 +258,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     );
   }
 
-  // 1. 헤더 영역
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
@@ -194,7 +266,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 왼쪽: 뒤로가기 버튼
           GestureDetector(
             onTap: () {
               Navigator.pop(context);
@@ -206,13 +277,11 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               fit: BoxFit.contain,
             ),
           ),
-
-          // 오른쪽: Share & Dots
-          Row(
+          _isMyPost
+              ? Row(
             children: [
               GestureDetector(
                 onTap: () {
-                  // TODO: 공유 기능
                   print('공유하기');
                 },
                 child: SvgPicture.asset(
@@ -220,13 +289,13 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                   width: scaleWidth(24),
                   height: scaleHeight(24),
                   fit: BoxFit.contain,
+                  color: AppColors.gray900,
                 ),
               ),
               SizedBox(width: scaleWidth(12)),
               GestureDetector(
                 onTap: () {
-                  // TODO: 더보기 메뉴 (신고, 차단 등)
-                  print('더보기');
+                  _showMoreOptions();
                 },
                 child: SvgPicture.asset(
                   AppImages.dots,
@@ -236,13 +305,24 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 ),
               ),
             ],
+          )
+              : GestureDetector(
+            onTap: () {
+              print('공유하기');
+            },
+            child: SvgPicture.asset(
+              AppImages.Share,
+              width: scaleWidth(24),
+              height: scaleHeight(24),
+              fit: BoxFit.contain,
+              color: AppColors.gray900,
+            ),
           ),
         ],
       ),
     );
   }
 
-  // 2. 본문 영역
   Widget _buildContent() {
     if (_recordDetail == null) return SizedBox.shrink();
 
@@ -252,6 +332,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     final longContent = _recordDetail!['longContent'] ?? '';
     final companions = _recordDetail!['companions'] as List<dynamic>? ?? [];
     final gameDate = _recordDetail!['gameDate'] ?? '';
+    final gameTime = _recordDetail!['gameTime'] ?? '';
     final stadium = _recordDetail!['stadium'] ?? '';
     final homeTeam = _recordDetail!['homeTeam'] ?? '';
     final awayTeam = _recordDetail!['awayTeam'] ?? '';
@@ -262,10 +343,14 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     final mediaUrls = _recordDetail!['mediaUrls'] as List<dynamic>? ?? [];
     final commentCount = _recordDetail!['commentCount'] ?? 0;
 
+    final bool hasLongContent = longContent.trim().isNotEmpty;
+    final homeTeamShort = _extractShortTeamName(homeTeam);
+    final awayTeamShort = _extractShortTeamName(awayTeam);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. 프로필 영역
+        // 프로필 영역
         Container(
           padding: EdgeInsets.only(
             top: scaleHeight(12),
@@ -274,7 +359,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 프로필 이미지
               ClipRRect(
                 borderRadius: BorderRadius.circular(scaleWidth(18)),
                 child: (profileImageUrl.isNotEmpty)
@@ -298,7 +382,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 ),
               ),
               SizedBox(width: scaleWidth(12)),
-              // 닉네임 & 팬 정보
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -323,161 +406,175 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
         SizedBox(height: scaleHeight(12)),
 
-        // 4-1. longContent
-        if (longContent.isNotEmpty) ...[
+        // longContent
+        if (hasLongContent) ...[
           Padding(
             padding: EdgeInsets.only(left: scaleWidth(20), right: scaleWidth(20)),
             child: FixedText(
               longContent,
-              style: AppFonts.pretendard.body_md_400(context).copyWith(
+              style: AppFonts.pretendard.body_sm_400(context).copyWith(
                 color: Colors.black,
               ),
             ),
           ),
-          SizedBox(height: scaleHeight(8)),
+          SizedBox(height: scaleHeight(12)),
         ],
 
-        // 4-2. companions
-        if (companions.isNotEmpty) ...[
-          Padding(
-            padding: EdgeInsets.only(left: scaleWidth(20), right: scaleWidth(20)),
-            child: Wrap(
-              spacing: scaleWidth(8),
-              children: companions.map((companion) {
-                final companionNickname = companion['nickname'] ?? '';
-                return FixedText(
-                  '@$companionNickname',
-                  style: AppFonts.pretendard.caption_md_400(context).copyWith(
-                    color: AppColors.pri600,
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          SizedBox(height: scaleHeight(8)),
-        ],
-
-        // 4-3. 경기 정보 및 감정 이모지 영역
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-          height: scaleHeight(83),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(scaleHeight(12)),
-            border: Border.all(color: AppColors.gray50, width: 1),
-          ),
-          child: Stack(
-            children: [
-              // 왼쪽: 경기 정보
-              Positioned(
+        // 경기 정보 카드
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _isGameCardExpanded = !_isGameCardExpanded;
+            });
+          },
+          child: AnimatedSize( // 카드의 높이가 내용에 따라 부드럽게 변하도록
+            duration: Duration(milliseconds: 250),
+            curve: Curves.fastOutSlowIn,
+            alignment: Alignment.topCenter,
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+              padding: EdgeInsets.only(
                 top: scaleHeight(12),
-                left: scaleWidth(48),
-                child: Column(
+                left: scaleWidth(20),
+                right: scaleWidth(16),
+                bottom: scaleHeight(12),
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(scaleHeight(12)),
+                border: Border.all(color: AppColors.gray50, width: 1),
+              ),
+              child: IntrinsicHeight( // Row 내부의 위젯들이 가장 큰 위젯의 높이에 맞춰지도록 (특히 구분선)
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 날짜 & 경기장
-                    Row(
+                    // 감정 이미지 & 텍스트 (세로 중앙으로 표시되도록)
+                    Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        _getEmotionImage(emotionCode),
                         FixedText(
-                          _formatGameDate(gameDate),
-                          style: AppFonts.suite.caption_re_400(context).copyWith(
-                            color: AppColors.gray300,
-                          ),
-                        ),
-                        SizedBox(width: scaleWidth(4)),
-                        SvgPicture.asset(
-                          AppImages.ellipse,
-                          width: scaleWidth(2),
-                          height: scaleHeight(2),
-                        ),
-                        SizedBox(width: scaleWidth(4)),
-                        FixedText(
-                          stadium,
-                          style: AppFonts.suite.caption_re_400(context).copyWith(
-                            color: AppColors.gray300,
+                          emotionLabel,
+                          style: AppFonts.suite.caption_md_500(context).copyWith(
+                            color: AppColors.gray600,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: scaleHeight(2)),
-                    // 경기 스코어
-                    Row(
-                      children: [
-                        _getTeamLogo(homeTeam, size: 35),
-                        SizedBox(width: scaleWidth(11)),
-                        FixedText(
-                          homeScore?.toString() ?? '0',
-                          style: AppFonts.suite.title_lg_700(context).copyWith(
-                            color: AppColors.gray500,
-                          ),
-                        ),
-                        SizedBox(width: scaleWidth(10)),
-                        FixedText(
-                          ':',
-                          style: AppFonts.suite.title_lg_700(context).copyWith(
-                            color: AppColors.gray500,
-                          ),
-                        ),
-                        SizedBox(width: scaleWidth(10)),
-                        FixedText(
-                          awayScore?.toString() ?? '0',
-                          style: AppFonts.suite.title_lg_700(context).copyWith(
-                            color: AppColors.gray500,
-                          ),
-                        ),
-                        SizedBox(width: scaleWidth(11)),
-                        _getTeamLogo(awayTeam, size: 35),
-                      ],
+                    SizedBox(width: scaleWidth(17)),
+                    // 구분선 (동적 크기에 맞춰 길어지도록)
+                    Container(
+                      width: 1,
+                      height: double.infinity,
+                      color: AppColors.gray50,
+                      margin: EdgeInsets.symmetric(vertical: scaleHeight(4)),
                     ),
-                  ],
-                ),
-              ),
-
-              // 중앙: 구분선
-              Positioned(
-                top: scaleHeight(20),
-                right: scaleWidth(88),
-                child: Container(
-                  width: 1,
-                  height: scaleHeight(46),
-                  color: AppColors.gray50,
-                ),
-              ),
-
-              // 오른쪽: 감정 이모지
-              Positioned(
-                top: scaleHeight(12),
-                right: scaleWidth(30),
-                child: Column(
-                  children: [
-                    _getEmotionImage(emotionCode),
-                    SizedBox(height: scaleHeight(4)),
-                    FixedText(
-                      emotionLabel,
-                      style: AppFonts.suite.caption_md_500(context).copyWith(
-                        color: AppColors.gray600,
+                    SizedBox(width: scaleWidth(20)),
+                    // 경기 정보
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              FixedText(
+                                _formatGameDateTime(gameDate, gameTime),
+                                style: AppFonts.suite.caption_re_400(context).copyWith(
+                                  color: AppColors.gray300,
+                                  fontSize: scaleFont(10),
+                                  height: 14 / 10,
+                                ),
+                              ),
+                              SizedBox(width: scaleWidth(4)),
+                              SvgPicture.asset(
+                                AppImages.ellipse,
+                                width: scaleWidth(2),
+                                height: scaleHeight(2),
+                              ),
+                              SizedBox(width: scaleWidth(3)),
+                              FixedText(
+                                stadium,
+                                style: AppFonts.suite.caption_re_400(context).copyWith(
+                                  color: AppColors.gray300,
+                                  fontSize: scaleFont(10),
+                                  height: 14 / 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: scaleHeight(7)),
+                          Row(
+                            children: [
+                              SizedBox(width: scaleWidth(2)),
+                              _getTeamLogo(homeTeamShort, size: 35),
+                              SizedBox(width: scaleWidth(13)),
+                              FixedText(
+                                homeScore?.toString() ?? '0',
+                                style: AppFonts.suite.title_lg_700(context).copyWith(
+                                  color: AppColors.gray500,
+                                ),
+                              ),
+                              SizedBox(width: scaleWidth(10)),
+                              FixedText(
+                                ':',
+                                style: AppFonts.suite.title_lg_700(context).copyWith(
+                                  color: AppColors.gray500,
+                                ),
+                              ),
+                              SizedBox(width: scaleWidth(13)),
+                              FixedText(
+                                awayScore?.toString() ?? '0',
+                                style: AppFonts.suite.title_lg_700(context).copyWith(
+                                  color: AppColors.gray500,
+                                ),
+                              ),
+                              SizedBox(width: scaleWidth(11)),
+                              _getTeamLogo(awayTeamShort, size: 35),
+                            ],
+                          ),
+                          // 확장된 정보
+                          if (_isGameCardExpanded) ...[
+                            SizedBox(height: scaleHeight(10)),
+                            _buildExpandedInfo(_recordDetail!),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(top: scaleHeight(20)),
+                      child: AnimatedRotation(
+                        duration: Duration(milliseconds: 300),
+                        turns: _isGameCardExpanded ? -0.25 : 0.25,
+                        child: SvgPicture.asset(
+                          AppImages.backBlack,
+                          width: scaleWidth(20),
+                          height: scaleHeight(20),
+                          fit: BoxFit.contain,
+                          color: AppColors.gray200,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
 
-        SizedBox(height: mediaUrls.isNotEmpty ? scaleHeight(16) : scaleHeight(12)),
-
-        // 5. 미디어 영역
+        // 미디어 영역
         if (mediaUrls.isNotEmpty) ...[
+          SizedBox(height: scaleHeight(16)),
           _buildMediaSection(mediaUrls),
-          SizedBox(height: scaleHeight(12)),
         ],
 
-        // 6. 좋아요 & 댓글
+        // 좋아요 & 댓글
+        SizedBox(height: scaleHeight(16)),
         Padding(
           padding: EdgeInsets.only(left: scaleWidth(20), bottom: scaleHeight(20)),
           child: Row(
             children: [
-              // 좋아요
               GestureDetector(
                 onTap: _toggleLike,
                 behavior: HitTestBehavior.opaque,
@@ -499,7 +596,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 ),
               ),
               SizedBox(width: scaleWidth(18)),
-              // 댓글
               Row(
                 children: [
                   SvgPicture.asset(
@@ -523,7 +619,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     );
   }
 
-  // 미디어 섹션
   Widget _buildMediaSection(List<dynamic> mediaUrls) {
     if (mediaUrls.length == 1) {
       return Container(
@@ -594,7 +689,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     }
   }
 
-  // 팀 로고
   Widget _getTeamLogo(String team, {double size = 18}) {
     final teamLogos = {
       'LG': AppImages.twins,
@@ -622,7 +716,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     );
   }
 
-  // 감정 이미지
   Widget _getEmotionImage(int? emotionCode) {
     final emotionImages = {
       1: AppImages.emotion_1,
@@ -638,51 +731,116 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
     final imagePath = emotionImages[emotionCode];
     if (imagePath == null) {
-      return SizedBox(width: scaleWidth(38), height: scaleHeight(38));
+      return SizedBox(width: scaleWidth(50), height: scaleHeight(50));
     }
 
     return SvgPicture.asset(
       imagePath,
-      width: scaleWidth(38),
-      height: scaleHeight(38),
+      width: scaleWidth(50),
+      height: scaleHeight(50),
     );
   }
 
-  // 날짜 포맷
-  String _formatGameDate(String gameDate) {
-    if (gameDate.isEmpty) return '';
+  String _formatGameDateTime(String gameDate, String gameTime) {
+    if (gameDate.isEmpty || gameTime.isEmpty) return '';
 
     try {
-      if (gameDate.contains('년')) {
-        final dateOnly = gameDate.split('(')[0].trim();
-        final formatted = dateOnly.replaceAllMapped(
-          RegExp(r'년 0(\d)월'),
-              (match) => '년 ${match.group(1)}월',
-        );
-        return formatted;
+      final dateOnlyPart = gameDate.split('(')[0].trim();
+      final yearMatch = RegExp(r'(\d{4})년').firstMatch(dateOnlyPart);
+      final monthMatch = RegExp(r'(\d{2})월').firstMatch(dateOnlyPart);
+      final dayMatch = RegExp(r'(\d{2})일').firstMatch(dateOnlyPart);
+
+      if (yearMatch == null || monthMatch == null || dayMatch == null) {
+        return '';
       }
-      return gameDate;
+
+      final year = yearMatch.group(1)!;
+      final month = int.parse(monthMatch.group(1)!).toString();
+      final day = int.parse(dayMatch.group(1)!).toString();
+
+      final timeComponents = gameTime.split(':');
+      if (timeComponents.length == 2) {
+        final hour = timeComponents[0];
+        final minute = timeComponents[1];
+        return '$year년 $month월 $day일 $hour시 $minute분';
+      }
+
+      return '';
     } catch (e) {
-      return gameDate;
+      print('❌ 날짜 포맷 변환 실패: $e');
+      return '';
     }
   }
 
-  // 3. 댓글 입력 영역
+  // 확장된 정보 빌드
+  Widget _buildExpandedInfo(Map<String, dynamic> recordDetail) {
+    final seatInfo = recordDetail['seatInfo'] ?? '';
+    final bestPlayer = recordDetail['bestPlayer'];
+    final companions = recordDetail['companions'] as List<dynamic>?;
+
+    final hasBestPlayer = bestPlayer != null && bestPlayer.toString().trim().isNotEmpty;
+    final hasCompanions = companions != null && companions.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 좌석 (항상 표시)
+        _buildInfoRow('좌석', seatInfo, AppColors.gray400),
+
+        // MVP (있는 경우만 표시)
+        if (hasBestPlayer) ...[
+          SizedBox(height: scaleHeight(6)),
+          _buildInfoRow('MVP', bestPlayer.toString(), AppColors.gray400),
+        ],
+
+        // 직관친구 (있는 경우만 표시)
+        if (hasCompanions) ...[
+          SizedBox(height: scaleHeight(6)),
+          _buildInfoRow(
+            '직관친구', // 띄어쓰기 제거
+            companions!.map((c) => '@${c is Map ? c['nickname'] ?? '' : c}').join(' '),
+            AppColors.pri600,
+          ),
+        ],
+      ],
+    );
+  }
+
+  // 정보 행 빌드
+  Widget _buildInfoRow(String label, String value, Color valueColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: scaleWidth(40),
+          child: Center(
+            child: FixedText(
+              label,
+              style: AppFonts.suite.caption_re_400(context).copyWith(
+                color: AppColors.gray300,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: scaleWidth(8)),
+        Expanded(
+          child: FixedText(
+            value,
+            style: AppFonts.suite.caption_re_400(context).copyWith(
+              color: valueColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildCommentInputArea() {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: scaleWidth(20),
         vertical: scaleHeight(10),
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.gray50,
-            width: 1,
-          ),
-        ),
       ),
       child: Container(
         height: scaleHeight(48),
@@ -692,7 +850,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         ),
         child: Row(
           children: [
-            // 텍스트 입력 필드
             Expanded(
               child: TextField(
                 controller: _commentController,
@@ -714,8 +871,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 maxLines: 1,
               ),
             ),
-
-            // 전송 버튼
             GestureDetector(
               onTap: _handleSendComment,
               child: Padding(

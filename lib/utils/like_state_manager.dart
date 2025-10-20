@@ -30,11 +30,9 @@ class LikeStateManager extends ChangeNotifier {
 
   /// 초기 상태 설정 (백엔드에서 불러온 데이터로 초기화)
   void setInitialState(int recordId, bool isLiked, int likeCount) {
-    // 이미 전역 상태가 있으면 덮어쓰지 않음 (최신 상태 유지)
-    if (!_likedStatus.containsKey(recordId)) {
-      _likedStatus[recordId] = isLiked;
-      _likeCounts[recordId] = likeCount;
-    }
+    // 항상 최신값으로 업데이트
+    _likedStatus[recordId] = isLiked;
+    _likeCounts[recordId] = likeCount;
   }
 
   /// 배치 초기화 (여러 게시글 한번에)
@@ -49,6 +47,9 @@ class LikeStateManager extends ChangeNotifier {
         );
       }
     }
+    // 배치 업데이트 후 리스너에게 알림
+    notifyListeners();
+    print('📢 [LikeStateManager] 배치 업데이트 완료 (${items.length}개)');
   }
 
   /// 상태 초기화

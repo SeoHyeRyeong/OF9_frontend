@@ -93,7 +93,7 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
                     builder: (context, constraints) {
                       final containerWidth = constraints.maxWidth;
                       return Padding(
-                        padding: EdgeInsets.only(left: containerWidth * 0.109),
+                        padding: EdgeInsets.only(left: containerWidth * 0.105),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -101,14 +101,14 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
                               '최애 구단',
                               style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray800),
                             ),
-                            SizedBox(width: containerWidth * 0.138),
+                            SizedBox(width: containerWidth * 0.12),
                             if (widget.selectedTeam != null) ...[
                               Image.asset(
                                 _teamImages[widget.selectedTeam!]!,
-                                width: scaleWidth(38),
-                                height: scaleHeight(38),
+                                width: scaleWidth(40),
+                                height: scaleHeight(40),
                               ),
-                              SizedBox(width: containerWidth * 0.035),
+                              SizedBox(width: containerWidth * 0.02),
                               FixedText(
                                 widget.selectedTeam!,
                                 style: AppFonts.suite.b2_m_long(context).copyWith(color: AppColors.gray800),

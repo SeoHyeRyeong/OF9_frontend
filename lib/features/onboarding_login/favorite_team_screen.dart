@@ -188,10 +188,10 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                   children: [
                                     Image.asset(
                                       team['image']!,
-                                      width: scaleHeight(60),
-                                      height: scaleHeight(60),
+                                      width: scaleHeight(76),
+                                      height: scaleHeight(76),
                                     ),
-                                    SizedBox(height: scaleHeight(8)),
+                                    SizedBox(height: scaleHeight(2)),
                                     FixedText(
                                       team['name']!,
                                       style: AppFonts.suite.body_md_500(context).copyWith(

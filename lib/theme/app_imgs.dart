@@ -105,6 +105,7 @@ class AppImages {
   static const dots = 'assets/imgs/ic_feed/dots_vertical.svg';
   static const send = 'assets/imgs/ic_feed/send.svg';
   static const comment_detail = 'assets/imgs/ic_feed/comment_detail.svg';
+  static const logo_dodada = 'assets/imgs/ic_feed/logo_dodada.png';
 
   //마이페이지
   static const btn_camera = 'assets/imgs/btn_camera_24.svg';

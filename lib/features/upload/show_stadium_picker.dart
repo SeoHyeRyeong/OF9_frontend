@@ -110,8 +110,8 @@ Future<String?> showStadiumPicker({
                                       if (images.length == 1)
                                         Image.asset(
                                           images[0],
-                                          width: scaleHeight(35),
-                                          height: scaleHeight(35),
+                                          width: scaleHeight(40),
+                                          height: scaleHeight(40),
                                           fit: BoxFit.contain,
                                         )
                                       else
@@ -120,15 +120,15 @@ Future<String?> showStadiumPicker({
                                             for (int i = 0; i < images.length; i++) ...[
                                               Image.asset(
                                                 images[i],
-                                                width: scaleHeight(30),
-                                                height: scaleHeight(30),
+                                                width: scaleHeight(40),
+                                                height: scaleHeight(40),
                                                 fit: BoxFit.contain,
                                               ),
-                                              if (i < images.length - 1) SizedBox(width: scaleWidth(5)),
+                                              if (i < images.length - 1) SizedBox(width: scaleWidth(2)),
                                             ],
                                           ],
                                         ),
-                                      SizedBox(width: scaleWidth(11.5)),
+                                      SizedBox(width: scaleWidth(8)),
                                     ],
                                     // 구장명 텍스트
                                     Expanded(

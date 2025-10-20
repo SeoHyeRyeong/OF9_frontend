@@ -43,8 +43,8 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   // 전역 상태 매니저
   final _likeManager = LikeStateManager();
 
-  // 필터링 관련
-  String? _selectedTeamFilter;
+  // 필터링 관련 - 다중 선택
+  Set<String> _selectedTeamFilters = {};
 
   @override
   void initState() {
@@ -190,19 +190,22 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
 
   // 필터링된 추천 피드 가져오기
   List<Map<String, dynamic>> _getFilteredRecommendItems() {
-    if (_selectedTeamFilter == null) {
+    // ALL이 선택되었거나 아무것도 선택되지 않은 경우
+    if (_selectedTeamFilters.isEmpty || _selectedTeamFilters.contains('ALL')) {
       return _recommendFeedItems;
     }
 
+    // 선택된 팀들로 필터링
     return _recommendFeedItems.where((item) {
       final homeTeam = item['homeTeam'] ?? '';
-      return homeTeam == _selectedTeamFilter;
+      return _selectedTeamFilters.contains(homeTeam);
     }).toList();
   }
 
   // 필터 액션시트 표시
   Future<void> _showFilterSheet() async {
     final teams = [
+      {'name': 'ALL', 'image': AppImages.logo_dodada},
       {'name': '두산', 'image': AppImages.bears},
       {'name': '롯데', 'image': AppImages.giants},
       {'name': '삼성', 'image': AppImages.lions},
@@ -215,12 +218,14 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
       {'name': 'SSG', 'image': AppImages.landers},
     ];
 
-    final result = await showModalBottomSheet<String>(
+    final allTeamsExceptAll = teams.where((t) => t['name'] != 'ALL').map((t) => t['name']!).toSet();
+
+    final result = await showModalBottomSheet<Set<String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        String? selected = _selectedTeamFilter;
+        Set<String> selected = Set.from(_selectedTeamFilters);
         return StatefulBuilder(
           builder: (ctx, setModalState) {
             return SafeArea(
@@ -280,18 +285,41 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
                             final team = teams[index];
                             final teamName = team['name']!;
                             final teamImage = team['image']!;
-                            final isSelected = teamName == selected;
+                            final isSelected = selected.contains(teamName);
 
                             return GestureDetector(
                               onTap: () {
                                 setModalState(() {
-                                  selected = selected == teamName ? null : teamName;
+                                  if (teamName == 'ALL') {
+                                    // ALL 선택: 다른 모든 선택 취소하고 ALL만 선택
+                                    if (selected.contains('ALL')) {
+                                      selected.remove('ALL');
+                                    } else {
+                                      selected.clear();
+                                      selected.add('ALL');
+                                    }
+                                  } else {
+                                    // 일반 팀 선택
+                                    if (selected.contains(teamName)) {
+                                      selected.remove(teamName);
+                                    } else {
+                                      // ALL이 선택되어 있으면 먼저 제거
+                                      selected.remove('ALL');
+                                      selected.add(teamName);
+
+                                      // 모든 팀을 선택했는지 확인
+                                      if (selected.containsAll(allTeamsExceptAll)) {
+                                        selected.clear();
+                                        selected.add('ALL');
+                                      }
+                                    }
+                                  }
                                 });
                               },
                               child: Container(
                                 height: scaleHeight(44),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.pri100 : AppColors.gray50,
+                                  color: isSelected ? AppColors.gray700 : AppColors.gray50,
                                   borderRadius: BorderRadius.circular(scaleHeight(12)),
                                 ),
                                 child: Row(
@@ -299,15 +327,15 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
                                   children: [
                                     Image.asset(
                                       teamImage,
-                                      width: scaleWidth(22),
-                                      height: scaleHeight(22),
+                                      width: scaleWidth(28),
+                                      height: scaleHeight(28),
                                       fit: BoxFit.contain,
                                     ),
-                                    SizedBox(width: scaleWidth(6)),
+                                    SizedBox(width: scaleWidth(4)),
                                     FixedText(
                                       teamName,
                                       style: AppFonts.suite.body_sm_500(context).copyWith(
-                                        color: AppColors.gray900,
+                                        color: isSelected ? AppColors.gray20 : AppColors.gray900,
                                       ),
                                     ),
                                   ],
@@ -324,7 +352,7 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
                             flex: 12,
                             child: ElevatedButton(
                               onPressed: () {
-                                Navigator.pop(context, 'reset');
+                                Navigator.pop(context, <String>{});
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.gray50,
@@ -381,13 +409,9 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
       },
     );
 
-    if (result == 'reset') {
+    if (result != null) {
       setState(() {
-        _selectedTeamFilter = null;
-      });
-    } else if (result != null) {
-      setState(() {
-        _selectedTeamFilter = result;
+        _selectedTeamFilters = result;
       });
     }
   }
@@ -625,24 +649,28 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
 
     final filteredItems = _getFilteredRecommendItems();
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification scrollInfo) {
-        if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-          if (!_isLoadingMoreRecommend && _hasMoreRecommend) {
-            _loadMoreRecommendFeed();
+    return RefreshIndicator(
+      onRefresh: _refreshRecommendFeed,
+      color: AppColors.pri900,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+            if (!_isLoadingMoreRecommend && _hasMoreRecommend) {
+              _loadMoreRecommendFeed();
+            }
           }
-        }
-        return false;
-      },
-      child: ListView.builder(
-        padding: EdgeInsets.only(top: scaleHeight(21)),
-        itemCount: filteredItems.length + (_hasMoreRecommend ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == filteredItems.length) {
-            return _buildLoadingIndicator();
-          }
-          return _buildFeedItem(filteredItems[index]);
+          return false;
         },
+        child: ListView.builder(
+          padding: EdgeInsets.only(top: scaleHeight(21)),
+          itemCount: filteredItems.length + (_hasMoreRecommend ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == filteredItems.length) {
+              return _buildLoadingIndicator();
+            }
+            return _buildFeedItem(filteredItems[index]);
+          },
+        ),
       ),
     );
   }
@@ -652,26 +680,71 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
       return Center(child: CircularProgressIndicator());
     }
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification scrollInfo) {
-        if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-          if (!_isLoadingMoreFollowing && _hasMoreFollowing) {
-            _loadMoreFollowingFeed();
+    return RefreshIndicator(
+      onRefresh: _refreshFollowingFeed,
+      color: AppColors.pri900,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+            if (!_isLoadingMoreFollowing && _hasMoreFollowing) {
+              _loadMoreFollowingFeed();
+            }
           }
-        }
-        return false;
-      },
-      child: ListView.builder(
-        padding: EdgeInsets.only(top: scaleHeight(21)),
-        itemCount: _followingFeedItems.length + (_hasMoreFollowing ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == _followingFeedItems.length) {
-            return _buildLoadingIndicator();
-          }
-          return _buildFeedItem(_followingFeedItems[index]);
+          return false;
         },
+        child: ListView.builder(
+          padding: EdgeInsets.only(top: scaleHeight(21)),
+          itemCount: _followingFeedItems.length + (_hasMoreFollowing ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == _followingFeedItems.length) {
+              return _buildLoadingIndicator();
+            }
+            return _buildFeedItem(_followingFeedItems[index]);
+          },
+        ),
       ),
     );
+  }
+
+  Future<void> _refreshRecommendFeed() async {
+    try {
+      final feeds = await FeedApi.getAllFeed(page: 0, size: 20);
+      _likeManager.clear();
+
+      setState(() {
+        _recommendFeedItems = feeds;
+        _recommendCurrentPage = 0;
+        _hasMoreRecommend = feeds.length >= 20;
+      });
+
+      // 새로운 데이터로 전역 상태 재설정
+      _likeManager.setInitialStates(feeds);
+
+      print('✅ 추천 피드 새로고침 완료');
+      print('📊 첫 번째 아이템 - likeCount: ${feeds.isNotEmpty ? feeds[0]['likeCount'] : 'N/A'}');
+    } catch (e) {
+      print('❌ 추천 피드 새로고침 실패: $e');
+    }
+  }
+
+  Future<void> _refreshFollowingFeed() async {
+    try {
+      final feeds = await FeedApi.getFollowingFeed(page: 0, size: 20);
+      _likeManager.clear();
+
+      setState(() {
+        _followingFeedItems = feeds;
+        _followingCurrentPage = 0;
+        _hasMoreFollowing = feeds.length >= 20;
+      });
+
+      // 새로운 데이터로 전역 상태 재설정
+      _likeManager.setInitialStates(feeds);
+
+      print('✅ 팔로잉 피드 새로고침 완료');
+    } catch (e) {
+      print('❌ 팔로잉 피드 새로고침 실패: $e');
+    }
   }
 
   Widget _buildLoadingIndicator() {
@@ -687,7 +760,7 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
     return FeedItemWidget(
       feedData: feedData,
       onTap: () async {
-        await Navigator.push(
+        final result = await Navigator.push(
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation1, animation2) => DetailFeedScreen(
@@ -698,11 +771,22 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
           ),
         );
 
-        print('✅ [Feed] Detail에서 돌아옴 (전역 상태로 동기화됨)');
+        // 삭제되었으면 해당 게시글 제거
+        if (result != null && result is Map && result['deleted'] == true) {
+          final deletedRecordId = result['recordId'];
+          setState(() {
+            _recommendFeedItems.removeWhere((item) => item['recordId'] == deletedRecordId);
+            _followingFeedItems.removeWhere((item) => item['recordId'] == deletedRecordId);
+          });
+          print('게시글 ${deletedRecordId}번 삭제됨 - 스크롤 위치 유지');
+        } else {
+          print('[Feed] Detail에서 돌아옴 (전역 상태로 동기화됨)');
+        }
       },
     );
   }
 }
+
 
 class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;

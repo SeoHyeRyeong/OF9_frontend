@@ -67,7 +67,7 @@ void showCustomActionSheet({
               // 옵션 리스트
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.gray30,
                   borderRadius: BorderRadius.circular(scaleHeight(12)),
                 ),
                 child: Column(
@@ -115,7 +115,7 @@ void showCustomActionSheet({
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gray20,
+                    backgroundColor: AppColors.gray30,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(scaleHeight(16)),

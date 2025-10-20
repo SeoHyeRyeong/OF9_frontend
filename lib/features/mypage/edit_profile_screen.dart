@@ -8,14 +8,16 @@ import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/api/user_api.dart';
-import 'package:frontend/api/record_api.dart'; // S3 업로드용 추가
+import 'package:frontend/api/record_api.dart';
 import 'package:frontend/features/mypage/settings_screen.dart';
 import 'package:frontend/features/upload/show_team_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:frontend/components/custom_action_sheet.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({Key? key}) : super(key: key);
+  final String? previousRoute; // 이전 화면 구분용 파라미터 추가
+
+  const EditProfileScreen({Key? key, this.previousRoute}) : super(key: key);
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -207,17 +209,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImageFromGallery() async {
-    Navigator.pop(context);
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 1024,        // 크기 제한으로 압축 대신 사용
+        maxWidth: 1024,
         maxHeight: 1024,
-        imageQuality: 85,      // 품질 제한으로 압축 대신 사용
+        imageQuality: 85,
       );
 
       if (pickedFile != null) {
-        // 파일 크기 로그
         final fileSize = await File(pickedFile.path).length();
         print('📷 선택된 이미지 크기: ${(fileSize / 1024).toStringAsFixed(2)} KB');
 
@@ -233,7 +233,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _deleteProfileImage() {
-    Navigator.pop(context);
     setState(() {
       _newProfileImageFile = null;
       profileImageUrl = null;
@@ -241,19 +240,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
-  // S3 업로드 함수 추가
   Future<String?> _uploadProfileImageToS3(XFile imageFile) async {
     try {
       print('📤 프로필 이미지 S3 업로드 시작');
 
-      // 1. Pre-signed URL 요청
       final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final urlData = await RecordApi.getPresignedUrl(
         domain: 'profiles',
         fileName: fileName,
       );
 
-      // 2. S3에 파일 업로드
       await RecordApi.uploadFileToS3(
         presignedUrl: urlData['presignedUrl']!,
         file: File(imageFile.path),
@@ -277,11 +273,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       String? updatedImageUrl;
 
       if (_newProfileImageFile != null) {
-        // S3 업로드 사용
         updatedImageUrl = await _uploadProfileImageToS3(_newProfileImageFile!);
         if (updatedImageUrl == null) throw Exception('이미지 업로드 실패');
       } else if (_isProfileImageDeleted) {
-        updatedImageUrl = null; // null로 변경 (빈 문자열 대신)
+        updatedImageUrl = null;
       }
 
       await UserApi.updateMyProfile(
@@ -293,14 +288,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const SettingsScreen(),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-          ),
-        );
+        // 이전 화면에 따라 분기 처리
+        if (widget.previousRoute == 'mypage') {
+          // 마이페이지에서 온 경우
+          Navigator.pop(context); // 단순히 뒤로가기
+        } else {
+          // 설정 화면에서 온 경우 (기본값)
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => const SettingsScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -314,6 +316,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  // 뒤로가기 처리도 동일하게 분기
+  void _goBackToPreviousScreen() {
+    if (widget.previousRoute == 'mypage') {
+      Navigator.pop(context);
+    } else {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => const SettingsScreen(),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool canComplete = _canComplete();
@@ -322,15 +340,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       canPop: false,
       onPopInvoked: (didPop) {
         if (!didPop) {
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder:
-                  (context, animation1, animation2) => const SettingsScreen(),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
+          _goBackToPreviousScreen();
         }
       },
       child: Scaffold(
@@ -353,18 +363,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: Row(
                         children: [
                           GestureDetector(
-                            onTap: () {
-                              Navigator.pushReplacement(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder:
-                                      (context, animation1, animation2) =>
-                                  const SettingsScreen(),
-                                  transitionDuration: Duration.zero,
-                                  reverseTransitionDuration: Duration.zero,
-                                ),
-                              );
-                            },
+                            onTap: _goBackToPreviousScreen,
                             child: Container(
                               alignment: Alignment.center,
                               child: SvgPicture.asset(
@@ -420,7 +419,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ),
                   ),
-
 
                   SizedBox(height: scaleHeight(40)),
 

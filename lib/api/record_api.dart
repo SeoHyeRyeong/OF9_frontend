@@ -407,18 +407,33 @@ class RecordApi {
   }
 
   /// 내 캘린더 조회
-  static Future<List<Map<String, dynamic>>> getMyRecordsCalendar() async {
+  static Future<Map<String, dynamic>> getMyRecordsCalendar({
+    required int year,
+    required int month,
+  }) async {
+    // 1. 쿼리 파라미터 추가
+    final uri = Uri.parse('$baseUrl/records/me/calendar').replace(
+      queryParameters: {
+        'year': year.toString(),
+        'month': month.toString(),
+      },
+    );
+
     final res = await _makeRequestWithRetry(
-      uri: Uri.parse('$baseUrl/records/me/calendar'),
+      uri: uri,
       method: 'GET',
     );
 
-    print('📅 CALENDAR 응답: ${res.statusCode} - ${res.body}');
+    print('📅 CALENDAR 응답 ($year-$month): ${res.statusCode} - ${res.body}');
 
     if (res.statusCode == 200) {
       final responseData = jsonDecode(utf8.decode(res.bodyBytes));
-      final List<dynamic> calendarData = responseData['data'];
-      return calendarData.cast<Map<String, dynamic>>();
+      // 2. 응답 구조 변경: List 대신 Map 반환, 'data' 키 아래의 내용 반환
+      if (responseData['success'] == true && responseData['data'] is Map<String, dynamic>) {
+        return responseData['data'] as Map<String, dynamic>;
+      } else {
+        throw Exception('캘린더 데이터 형식이 올바르지 않습니다.');
+      }
     } else {
       throw Exception('캘린더 조회 실패: ${res.statusCode}');
     }

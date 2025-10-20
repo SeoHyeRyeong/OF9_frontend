@@ -44,7 +44,7 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> with WidgetsBindingObserver {
   int _selectedTabIndex = 0;
-  final List<String> _tabTexts = ["ALL", "친구의 직관 기록", "반응", "소식"];
+  final List<String> _tabTexts = ["ALL", "친구의 직관 기록", "받은 공감", "소식"];
   final List<String> _categories = ["ALL", "FRIEND_RECORD", "REACTION", "NEWS"];
 
   List<NotificationModel> _notifications = [];

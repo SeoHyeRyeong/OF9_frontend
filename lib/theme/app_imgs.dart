@@ -100,6 +100,7 @@ class AppImages {
   static const filter = 'assets/imgs/ic_feed/ic_filter.svg';
   static const heart_filled = 'assets/imgs/ic_feed/ic_heart_filled.svg';
   static const heart_outlined = 'assets/imgs/ic_feed/ic_heart_outlined.svg';
+  static const heart_white = 'assets/imgs/ic_heart_white.svg';
   static const comment = 'assets/imgs/ic_feed/ic_comment.svg';
   static const ellipse = 'assets/imgs/ic_feed/ellipse.svg';
   static const dots = 'assets/imgs/ic_feed/dots_vertical.svg';

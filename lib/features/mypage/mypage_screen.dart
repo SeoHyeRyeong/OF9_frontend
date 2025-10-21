@@ -17,6 +17,9 @@ import 'dart:typed_data';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:frontend/features/feed/detail_feed_screen.dart';
+import 'package:frontend/features/feed/feed_item_widget.dart';
+import 'package:frontend/utils/feed_count_manager.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({Key? key}) : super(key: key);
@@ -35,6 +38,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   int followingCount = 0;
   int followerCount = 0;
   bool isPrivate = false;
+  final _likeManager = FeedCountManager();
 
   // 탭 애니메이션 관련 변수
   late AnimationController _tabAnimationController;
@@ -65,6 +69,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _selectedDay = _focusedDay; //캘린더 선택된 날짜 초기화
+    _likeManager.addListener(_onGlobalStateChanged);
 
     _tabAnimationController = AnimationController(     // 탭 애니메이션 초기화
       duration: Duration(milliseconds: 250),
@@ -89,9 +94,16 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
+    _likeManager.removeListener(_onGlobalStateChanged);
     _tabAnimationController.dispose();
     _tabPageController.dispose();
     super.dispose();
+  }
+
+  void _onGlobalStateChanged() {
+    setState(() {
+    });
+
   }
 
   //탭 관련 함수 추가
@@ -767,9 +779,61 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         ),
       );
     }
+
+    // FeedItemWidget 사용
     return Container(
-      alignment: Alignment.center,
-      child: const Text("리스트 뷰 (구현 필요)"),
+      color: AppColors.white,
+      child: ListView.builder(
+        padding: EdgeInsets.only(top: scaleHeight(19)),
+        itemCount: feedList.length,
+        itemBuilder: (context, index) {
+          final record = feedList[index];
+
+          final isLiked = _likeManager.getLikedStatus(record['recordId']) ?? record['isLiked'] ?? false;
+          final likeCount = _likeManager.getLikeCount(record['recordId']) ?? record['likeCount'] ?? 0;
+          final commentCount = _likeManager.getCommentCount(record['recordId']) ?? record['commentCount'] ?? 0;
+
+          final feedData = {
+            'recordId': record['recordId'],
+            'profileImageUrl': record['profileImageUrl'],
+            'nickname': record['nickname'],
+            'favTeam': record['favTeam'],
+            'mediaUrls': record['mediaUrls'] ?? [],
+            'longContent': record['longContent'] ?? '',
+            'emotionCode': record['emotionCode'],
+            'emotionLabel': record['emotionLabel'] ?? '',
+            'homeTeam': record['homeTeam'] ?? '',
+            'awayTeam': record['awayTeam'] ?? '',
+            'stadium': record['stadium'] ?? '',
+            'gameDate': record['gameDate'] ?? '',
+            'isLiked': isLiked,
+            'likeCount': likeCount,
+            'commentCount': commentCount,
+          };
+
+          return FeedItemWidget(
+            feedData: feedData,
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) => DetailFeedScreen(recordId: record['recordId']),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+
+              // 삭제되었으면 리스트 업데이트
+              if (result != null && result is Map && result['deleted'] == true) {
+                final deletedRecordId = result['recordId'];
+                setState(() {
+                  feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
+                });
+              }
+            },
+          );
+        },
+      ),
     );
   }
 

@@ -101,6 +101,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() {});
   }
 
+  // Delete 버튼 표시 조건
+  bool _shouldShowDeleteButton() {
+    if (_nicknameFocusNode.hasFocus) {
+      // 포커스가 있을 때: 텍스트가 있으면 표시
+      return _nicknameController.text.isNotEmpty;
+    } else {
+      // 포커스가 없을 때: 원본과 다르면 표시
+      return _nicknameController.text.trim() != originalNickname.trim();
+    }
+  }
+
+  // 포커스 해제 함수
+  void _unfocusTextField() {
+    if (_nicknameFocusNode.hasFocus) {
+      _nicknameFocusNode.unfocus();
+    }
+  }
+
   bool _isNicknameEmpty() {
     return _nicknameController.text.trim().isEmpty;
   }
@@ -170,6 +188,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _selectFavTeam() async {
+    _unfocusTextField();
     final selectedTeam = await showTeamPicker(
       context: context,
       title: "최애 구단",
@@ -291,7 +310,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         // 이전 화면에 따라 분기 처리
         if (widget.previousRoute == 'mypage') {
           // 마이페이지에서 온 경우
-          Navigator.pop(context); // 단순히 뒤로가기
+          Navigator.pop(context, true); // 단순히 뒤로가기
         } else {
           // 설정 화면에서 온 경우 (기본값)
           Navigator.pushReplacement(
@@ -343,282 +362,310 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _goBackToPreviousScreen();
         }
       },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        resizeToAvoidBottomInset: false,
-        body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final screenHeight = constraints.maxHeight;
+      child: GestureDetector(
+        onTap: _unfocusTextField, // 화면 어디든 누르면 포커스 해제
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          resizeToAvoidBottomInset: false,
+          body: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final screenHeight = constraints.maxHeight;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 뒤로가기 영역 + 타이틀
-                  Container(
-                    width: double.infinity,
-                    height: scaleHeight(60),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: _goBackToPreviousScreen,
-                            child: Container(
-                              alignment: Alignment.center,
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 뒤로가기 영역 + 타이틀
+                    Container(
+                      width: double.infinity,
+                      height: scaleHeight(60),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: _goBackToPreviousScreen,
+                              child: Container(
+                                alignment: Alignment.center,
+                                child: SvgPicture.asset(
+                                  AppImages.backBlack,
+                                  width: scaleHeight(24),
+                                  height: scaleHeight(24),
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Center(
+                                child: FixedText(
+                                  "내 정보 수정",
+                                  style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray950),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: scaleHeight(24)),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: scaleHeight(12)),
+
+                    // 프로필 이미지 영역
+                    Center(
+                      child: GestureDetector(
+                        onTap: _showImageSourceActionSheet,
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(scaleHeight(29.59)),
+                              child: SizedBox(
+                                width: scaleWidth(100),
+                                height: scaleHeight(100),
+                                child: _buildProfileImage(),
+                              ),
+                            ),
+                            // 카메라 아이콘 오버레이 (우측 하단)
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
                               child: SvgPicture.asset(
-                                AppImages.backBlack,
-                                width: scaleHeight(24),
+                                AppImages.btn_camera,
+                                width: scaleWidth(24),
                                 height: scaleHeight(24),
                                 fit: BoxFit.contain,
                               ),
                             ),
-                          ),
-                          Expanded(
-                            child: Center(
-                              child: FixedText(
-                                "내 정보 수정",
-                                style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray950),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: scaleHeight(24)),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
-                  SizedBox(height: scaleHeight(22)),
+                    SizedBox(height: scaleHeight(36)),
 
-                  // 프로필 이미지 영역
-                  Center(
-                    child: GestureDetector(
-                      onTap: _showImageSourceActionSheet,
-                      child: Stack(
+                    // 닉네임 라벨
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                      child: Row(
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(scaleHeight(29.59)),
-                            child: SizedBox(
-                              width: scaleWidth(100),
-                              height: scaleHeight(100),
-                              child: _buildProfileImage(),
+                          FixedText(
+                            "닉네임",
+                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600),
+                          ),
+                          SizedBox(width: scaleWidth(2)),
+                          FixedText(
+                            "*",
+                            style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: scaleHeight(8)),
+
+                    // 닉네임 입력 필드
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            height: scaleHeight(54),
+                            decoration: BoxDecoration(
+                              color: AppColors.gray30,
+                              borderRadius: BorderRadius.circular(scaleWidth(12)),
+                              border: _hasNicknameError()
+                                  ? Border.all(
+                                color: AppColors.error,
+                                width: 1,
+                              )
+                                  : _nicknameFocusNode.hasFocus
+                                  ? Border.all(
+                                color: AppColors.pri700,
+                                width: 1,
+                              )
+                                  : null,
+                            ),
+                            child: TextField(
+                              controller: _nicknameController,
+                              focusNode: _nicknameFocusNode,
+                              maxLength: _maxLength,
+                              buildCounter: (
+                                  context, {
+                                    required currentLength,
+                                    required isFocused,
+                                    maxLength,
+                                  }) =>
+                              null,
+                              decoration: InputDecoration(
+                                isCollapsed: true,
+                                contentPadding: EdgeInsets.only(
+                                  left: scaleWidth(16),
+                                  right: scaleWidth(16),
+                                  top: scaleHeight(17),
+                                ),
+                                border: InputBorder.none,
+                                suffixIcon: _shouldShowDeleteButton()
+                                    ? GestureDetector(
+                                  onTap: () {
+                                    _nicknameController.clear();
+                                    setState(() {});
+                                  },
+                                  child: Padding(
+                                    padding: EdgeInsets.only(top: scaleHeight(17), right: scaleWidth(16)),
+                                    child: Image.asset(
+                                      AppImages.textfield_delete,
+                                      width: scaleWidth(18),
+                                      height: scaleHeight(18),
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                )
+                                    : null,
+                                suffixIconConstraints: BoxConstraints(
+                                  minWidth: scaleWidth(18),
+                                  minHeight: scaleHeight(18),
+                                ),
+                              ),
+                              textAlignVertical: TextAlignVertical.center,
+                              style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray900),
                             ),
                           ),
-                          // 카메라 아이콘 오버레이 (우측 하단)
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: SvgPicture.asset(
-                              AppImages.btn_camera,
-                              width: scaleWidth(24),
-                              height: scaleHeight(24),
-                              fit: BoxFit.contain,
+                          SizedBox(height: scaleHeight(4)),
+                          SizedBox(
+                            width: double.infinity,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _hasNicknameError()
+                                    ? FixedText(
+                                  _isNicknameEmpty()
+                                      ? '* 닉네임을 작성해 주세요'
+                                      : '* 이미 등록된 닉네임이에요',
+                                  style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.error),
+                                )
+                                    : const SizedBox.shrink(),
+                                _hasNicknameError()
+                                    ? FixedText(
+                                  '$_currentLength / $_maxLength',
+                                  style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.error),
+                                )
+                                    : FixedText(
+                                  '$_currentLength / $_maxLength',
+                                  style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray800),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
 
-                  SizedBox(height: scaleHeight(40)),
+                    SizedBox(height: scaleHeight(24)),
 
-                  // 닉네임 라벨
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                    child: Row(
-                      children: [
-                        FixedText(
-                          "닉네임",
-                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray600),
-                        ),
-                        SizedBox(width: scaleWidth(2)),
-                        FixedText(
-                          "*",
-                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
-                        ),
-                      ],
+                    // 최애 구단 라벨
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                      child: Row(
+                        children: [
+                          FixedText(
+                            "최애 구단",
+                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600),
+                          ),
+                          SizedBox(width: scaleWidth(2)),
+                          FixedText(
+                            "*",
+                            style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(height: scaleHeight(8)),
+                    SizedBox(height: scaleHeight(8)),
 
-                  // 닉네임 입력 필드
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
+                    // 최애구단 선택 필드
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                      child: GestureDetector(
+                        onTap: _selectFavTeam,
+                        child: Container(
                           width: double.infinity,
                           height: scaleHeight(54),
                           decoration: BoxDecoration(
                             color: AppColors.gray30,
-                            borderRadius: BorderRadius.circular(scaleWidth(8)),
-                            border: _hasNicknameError()
-                                ? Border.all(
-                              color: AppColors.error,
-                              width: 1,
-                            )
-                                : null,
+                            borderRadius: BorderRadius.circular(scaleWidth(12)),
                           ),
-                          child: TextField(
-                            controller: _nicknameController,
-                            focusNode: _nicknameFocusNode,
-                            maxLength: _maxLength,
-                            buildCounter: (
-                                context, {
-                                  required currentLength,
-                                  required isFocused,
-                                  maxLength,
-                                }) =>
-                            null,
-                            decoration: InputDecoration(
-                              isCollapsed: true,
-                              contentPadding: EdgeInsets.only(
-                                left: scaleWidth(16),
-                                top: scaleHeight(15),
-                                bottom: scaleHeight(15),
-                              ),
-                              border: InputBorder.none,
-                            ),
-                            textAlignVertical: TextAlignVertical.center,
-                            style: AppFonts.pretendard.b3_r_long(context).copyWith(color: AppColors.black),
-                          ),
-                        ),
-                        SizedBox(height: scaleHeight(8)),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _hasNicknameError()
-                                  ? FixedText(
-                                _isNicknameEmpty()
-                                    ? '닉네임을 작성해 주세요.'
-                                    : '이미 등록된 닉네임이에요.',
-                                style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.error),
-                              )
-                                  : const SizedBox.shrink(),
-                              _hasNicknameError()
-                                  ? FixedText(
-                                '$_currentLength / $_maxLength',
-                                style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.error),
-                              )
-                                  : FixedText(
-                                '$_currentLength / $_maxLength',
-                                style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri900),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: scaleHeight(24)),
-
-                  // 최애 구단 라벨
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                    child: Row(
-                      children: [
-                        FixedText(
-                          "최애 구단",
-                          style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray600),
-                        ),
-                        SizedBox(width: scaleWidth(2)),
-                        FixedText(
-                          "*",
-                          style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri200),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: scaleHeight(8)),
-
-                  // 최애구단 선택 필드
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                    child: GestureDetector(
-                      onTap: _selectFavTeam,
-                      child: Container(
-                        width: double.infinity,
-                        height: scaleHeight(54),
-                        decoration: BoxDecoration(
-                          color: AppColors.gray30,
-                          borderRadius: BorderRadius.circular(scaleWidth(8)),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(16),),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: FixedText(
-                                  favTeam == "정보 불러오기 실패"
-                                      ? "최애 구단을 선택해주세요"
-                                      : favTeam,
-                                  style: AppFonts.pretendard.b3_r_long(context).copyWith(
-                                    color: favTeam == "정보 불러오기 실패"
-                                        ? AppColors.gray400
-                                        : AppColors.black,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(16),),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: FixedText(
+                                    favTeam == "정보 불러오기 실패"
+                                        ? "최애 구단을 선택해주세요"
+                                        : favTeam,
+                                    style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                                      color: favTeam == "정보 불러오기 실패"
+                                          ? AppColors.gray400
+                                          : AppColors.gray900,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Transform.rotate(
-                                angle: -1.5708,
-                                child: SvgPicture.asset(
-                                  AppImages.backBlack,
-                                  width: scaleWidth(20),
-                                  height: scaleHeight(20),
-                                  fit: BoxFit.contain,
+                                Transform.rotate(
+                                  angle: -1.5708,
+                                  child: SvgPicture.asset(
+                                    AppImages.backBlack,
+                                    width: scaleWidth(20),
+                                    height: scaleHeight(20),
+                                    fit: BoxFit.contain,
+                                    color: AppColors.gray200,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const Spacer(),
+                    const Spacer(),
 
-                  // 완료 버튼
-                  Container(
-                    width: double.infinity,
-                    height: scaleHeight(88),
-                    decoration: BoxDecoration(
-                      border: Border(top: BorderSide(color: AppColors.gray20, width: 1)),
-                    ),
-                    padding: EdgeInsets.only(
-                      top: scaleHeight(24),
-                      right: scaleWidth(20),
-                      bottom: scaleHeight(10),
-                      left: scaleWidth(20),
-                    ),
-                    child: ElevatedButton(
-                      onPressed: canComplete ? _onCompletePressed : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: canComplete
-                            ? AppColors.gray700
-                            : AppColors.gray200,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(scaleHeight(16)),
-                        ),
-                        elevation: 0,
-                        padding: EdgeInsets.zero,
+                    // 완료 버튼
+                    Container(
+                      width: double.infinity,
+                      height: scaleHeight(88),
+                      decoration: BoxDecoration(
+                        border: Border(top: BorderSide(color: AppColors.gray20, width: 1)),
                       ),
-                      child: Center(
-                        child: FixedText(
-                          '완료',
-                          style: AppFonts.suite
-                              .body_md_500(context)
-                              .copyWith(color: AppColors.gray20),
+                      padding: EdgeInsets.only(
+                        top: scaleHeight(24),
+                        right: scaleWidth(20),
+                        bottom: scaleHeight(10),
+                        left: scaleWidth(20),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: canComplete ? _onCompletePressed : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: canComplete
+                              ? AppColors.gray700
+                              : AppColors.gray200,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(scaleHeight(16)),
+                          ),
+                          elevation: 0,
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Center(
+                          child: FixedText(
+                            '완료',
+                            style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray20),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),

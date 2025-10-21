@@ -9,7 +9,7 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
-import 'package:frontend/utils/like_state_manager.dart';
+import 'package:frontend/utils/feed_count_manager.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -744,7 +744,7 @@ class RecordsListWidget extends StatefulWidget {
 }
 
 class _RecordsListWidgetState extends State<RecordsListWidget> {
-  final _likeManager = LikeStateManager();
+  final _likeManager = FeedCountManager();
 
   @override
   void initState() {
@@ -756,6 +756,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
         record.recordId,
         record.isLiked,
         record.likeCount,
+        commentCount: record.commentCount,
       );
     }
 
@@ -779,6 +780,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
           record.recordId,
           record.isLiked,
           record.likeCount,
+          commentCount: record.commentCount,
         );
       }
       print('🔄 [Search] 검색 결과 업데이트 (기존 좋아요 상태 유지)');
@@ -817,6 +819,8 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
               record.isLiked;
           final likeCount = _likeManager.getLikeCount(record.recordId) ??
               record.likeCount;
+          final commentCount = _likeManager.getCommentCount(record.recordId) ??
+              record.commentCount;
 
           final feedData = {
             'recordId': record.recordId,
@@ -833,6 +837,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
             'isLiked': isLiked,
             'likeCount': likeCount,
             'commentCount': record.commentCount,
+            'commentCount': commentCount,
           };
 
           return FeedItemWidget(

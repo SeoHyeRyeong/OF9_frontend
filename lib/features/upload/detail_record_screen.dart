@@ -1748,17 +1748,25 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
       _showDropdown = _focusNode.hasFocus;
     });
 
-    if (_isFocused && _controller.text.isEmpty) {
-      _controller.removeListener(_updateState);
-      _controller.text = '@';
-      _controller.selection = TextSelection.fromPosition(
-        TextPosition(offset: 1),
-      );
-      _controller.addListener(_updateState);
-    }
-
     if (_isFocused) {
-      _scrollToTextField(); // 초기 스크롤만
+      _controller.removeListener(_updateState);
+
+      // 텍스트가 비어있거나, 친구가 선택되어 있으면 마지막에 @ 추가
+      if (_controller.text.isEmpty) {
+        _controller.text = '@';
+        _controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: 1),
+        );
+      } else if (_selectedFriends.isNotEmpty && !_controller.text.endsWith('@')) {
+        // 이미 선택된 친구가 있고 @로 끝나지 않으면 @ 추가
+        _controller.text = '${_controller.text} @';
+        _controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: _controller.text.length),
+        );
+      }
+
+      _controller.addListener(_updateState);
+      _scrollToTextField();
     }
   }
 
@@ -1785,11 +1793,10 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
         _selectedFriends.add(friend);
         _searchResults = [];
 
-        // 선택된 친구들을 @닉네임 형태로 표시하고, 마지막에 @ 추가
         final nicknames = _selectedFriends.map((f) => '@${f['nickname']}').join(' ');
 
         _controller.removeListener(_updateState);
-        _controller.text = '$nicknames @';
+        _controller.text = nicknames;
         _isAllSelected = true;
 
         // 커서를 맨 끝으로 이동
@@ -1801,6 +1808,8 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
 
       final companionIds = _selectedFriends.map((f) => f['id'] as int).toList();
       Provider.of<RecordState>(context, listen: false).updateCompanions(companionIds);
+
+      _focusNode.unfocus();
     }
   }
 

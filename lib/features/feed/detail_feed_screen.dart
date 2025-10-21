@@ -7,7 +7,8 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/api/record_api.dart';
 import 'package:frontend/api/feed_api.dart';
-import 'package:frontend/utils/like_state_manager.dart';
+import 'package:frontend/utils/feed_count_manager.dart';
+import 'package:frontend/utils/comment_state_manager.dart';
 import 'dart:math' as math;
 import 'package:frontend/components/custom_action_sheet.dart';
 import 'package:frontend/api/user_api.dart';
@@ -26,7 +27,9 @@ class DetailFeedScreen extends StatefulWidget {
 
 class _DetailFeedScreenState extends State<DetailFeedScreen> {
   final TextEditingController _commentController = TextEditingController();
-  final _likeManager = LikeStateManager();
+  final _feedCountManager = FeedCountManager();
+  final _commentListManager = CommentListManager();
+  final FocusNode _commentFocusNode = FocusNode();
 
   Map<String, dynamic>? _recordDetail;
   bool _isLoading = true;
@@ -34,10 +37,18 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   bool _isLiked = false;
   int _likeCount = 0;
+  int _commentCount = 0;
+  List<CommentDto> _comments = [];
+
   int? _currentUserId;
   bool _isGameCardExpanded = false;
 
-  // 작성자 여부 확인
+  // 댓글 수정 관련 상태
+  int? _editingCommentId;
+
+  // 댓글별 GlobalKey 저장
+  final Map<int, GlobalKey> _commentKeys = {};
+
   bool get _isMyPost {
     if (_recordDetail == null || _currentUserId == null) return false;
     final authorId = _recordDetail!['userId'];
@@ -47,9 +58,20 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
   @override
   void initState() {
     super.initState();
-    _likeManager.addListener(_onGlobalLikeStateChanged);
+    _feedCountManager.addListener(_onGlobalCountChanged);
+    _commentListManager.addListener(_onGlobalCommentListChanged);
     _loadCurrentUserId();
     _loadRecordDetail();
+    _loadComments();
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    _commentFocusNode.dispose();
+    _feedCountManager.removeListener(_onGlobalCountChanged);
+    _commentListManager.removeListener(_onGlobalCommentListChanged);
+    super.dispose();
   }
 
   Future<void> _loadCurrentUserId() async {
@@ -65,25 +87,31 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _commentController.dispose();
-    _likeManager.removeListener(_onGlobalLikeStateChanged);
-    super.dispose();
-  }
+  void _onGlobalCountChanged() {
+    final newIsLiked = _feedCountManager.getLikedStatus(widget.recordId);
+    final newLikeCount = _feedCountManager.getLikeCount(widget.recordId);
+    final newCommentCount = _feedCountManager.getCommentCount(widget.recordId);
 
-  void _onGlobalLikeStateChanged() {
-    final newIsLiked = _likeManager.getLikedStatus(widget.recordId);
-    final newLikeCount = _likeManager.getLikeCount(widget.recordId);
-
-    if (newIsLiked != null && newLikeCount != null) {
-      if (_isLiked != newIsLiked || _likeCount != newLikeCount) {
+    if (newIsLiked != null && newLikeCount != null && newCommentCount != null) {
+      if (_isLiked != newIsLiked || _likeCount != newLikeCount || _commentCount != newCommentCount) {
         setState(() {
           _isLiked = newIsLiked;
           _likeCount = newLikeCount;
+          _commentCount = newCommentCount;
         });
-        print('✅ [DetailFeedScreen] 전역 상태 동기화');
+        print('✅ [DetailFeedScreen] 전역 카운트 동기화 - commentCount: $newCommentCount');
       }
+    }
+  }
+
+  void _onGlobalCommentListChanged() {
+    final comments = _commentListManager.getComments(widget.recordId);
+
+    if (comments != null) {
+      setState(() {
+        _comments = List.from(comments);
+      });
+      print('✅ [DetailFeedScreen] 전역 댓글 목록 동기화: ${comments.length}개');
     }
   }
 
@@ -98,17 +126,24 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
       final data = await RecordApi.getRecordDetail(widget.recordId.toString());
 
-      final globalIsLiked = _likeManager.getLikedStatus(widget.recordId);
-      final globalLikeCount = _likeManager.getLikeCount(widget.recordId);
+      final globalIsLiked = _feedCountManager.getLikedStatus(widget.recordId);
+      final globalLikeCount = _feedCountManager.getLikeCount(widget.recordId);
+      final globalCommentCount = _feedCountManager.getCommentCount(widget.recordId);
 
       setState(() {
         _recordDetail = data;
         _isLiked = globalIsLiked ?? (data['isLiked'] ?? false);
         _likeCount = globalLikeCount ?? (data['likeCount'] ?? 0);
+        _commentCount = globalCommentCount ?? (data['commentCount'] ?? 0);
         _isLoading = false;
       });
 
-      _likeManager.setInitialState(widget.recordId, _isLiked, _likeCount);
+      _feedCountManager.setInitialState(
+        widget.recordId,
+        _isLiked,
+        _likeCount,
+        commentCount: _commentCount,
+      );
 
       print('✅ 직관 기록 조회 성공: ${data['nickname']}');
     } catch (e) {
@@ -117,6 +152,25 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         _isLoading = false;
         _errorMessage = '직관 기록을 불러올 수 없습니다.';
       });
+    }
+  }
+
+  Future<void> _loadComments() async {
+    try {
+      print('💬 댓글 목록 조회 시작: recordId=${widget.recordId}');
+
+      final data = await FeedApi.getComments(widget.recordId.toString());
+      final comments = data.map((e) => CommentDto.fromJson(e)).toList();
+
+      _commentListManager.setInitialState(widget.recordId, comments);
+
+      setState(() {
+        _comments = comments;
+      });
+
+      print('✅ 댓글 목록 조회 성공: ${comments.length}개');
+    } catch (e) {
+      print('❌ 댓글 목록 조회 실패: $e');
     }
   }
 
@@ -130,7 +184,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       final likeCountRaw = result['likeCount'];
       final likeCount = likeCountRaw is int ? likeCountRaw : (likeCountRaw as num).toInt();
 
-      _likeManager.updateLikeState(widget.recordId, isLiked, likeCount);
+      _feedCountManager.updateLikeState(widget.recordId, isLiked, likeCount);
 
       setState(() {
         _isLiked = isLiked;
@@ -143,12 +197,72 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     }
   }
 
-  void _handleSendComment() {
-    if (_commentController.text.trim().isEmpty) return;
+  Future<void> _handleSendComment() async {
+    final content = _commentController.text.trim();
+    if (content.isEmpty) return;
 
-    // TODO: 댓글 작성 API 호출
-    print('댓글 작성: ${_commentController.text}');
+    final originalContent = content;
     _commentController.clear();
+
+    _commentFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+    await Future.delayed(Duration(milliseconds: 100));
+
+    try {
+      if (_editingCommentId != null) {
+        // 댓글 수정 모드
+        print('✏️ 댓글 수정 시작: commentId=$_editingCommentId');
+
+        await FeedApi.updateComment(
+          widget.recordId.toString(),
+          _editingCommentId.toString(),
+          originalContent,
+        );
+
+        print('✅ 댓글 수정 성공');
+
+        // 수정 모드 종료
+        setState(() {
+          _editingCommentId = null;
+        });
+
+        // 댓글 목록 다시 불러오기
+        await _loadComments();
+      } else {
+        // 댓글 작성 모드
+        final result = await FeedApi.createComment(widget.recordId.toString(), originalContent);
+        print('💬 댓글 작성 응답: $result');
+
+        final newComment = CommentDto.fromJson(result);
+        _commentListManager.addComment(widget.recordId, newComment);
+
+        print('✅ 댓글 작성 성공 - totalCommentCount: ${newComment.totalCommentCount}');
+      }
+    } catch (e, stackTrace) {
+      print('❌ 댓글 ${_editingCommentId != null ? "수정" : "작성"} 실패: $e');
+      print('스택트레이스: $stackTrace');
+      _commentController.text = originalContent;
+    }
+  }
+
+  Future<void> _deleteComment(int commentId) async {
+    if (_commentFocusNode.hasFocus) {
+      _commentFocusNode.unfocus();
+    }
+    FocusScope.of(context).unfocus();
+
+    try {
+      print('🗑️ 댓글 삭제 시작: commentId=$commentId');
+      await FeedApi.deleteComment(
+          widget.recordId.toString(),
+          commentId.toString()
+      );
+      print('✅ 댓글 삭제 API 호출 완료');
+      _commentListManager.removeComment(widget.recordId, commentId);
+      print('✅ 댓글 삭제 성공');
+    } catch (e) {
+      print('❌ 댓글 삭제 실패: $e');
+    }
   }
 
   Future<void> _deleteRecord() async {
@@ -179,7 +293,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           textColor: AppColors.gray950,
           onTap: () {
             Navigator.pop(context);
-            // TODO: 게시글 수정 화면으로 이동
             print('게시글 수정');
           },
         ),
@@ -193,6 +306,51 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         ),
       ],
     );
+  }
+
+  void _showCommentOptions(CommentDto comment) {
+    if (comment.userId != _currentUserId) {
+      return;
+    }
+
+    _commentFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+
+    showCustomActionSheet(
+      context: context,
+      options: [
+        ActionSheetOption(
+          text: '댓글 수정',
+          textColor: AppColors.gray950,
+          onTap: () {
+            Navigator.pop(context);
+            _startEditComment(comment);
+          },
+        ),
+        ActionSheetOption(
+          text: '댓글 삭제',
+          textColor: AppColors.error,
+          onTap: () {
+            Navigator.pop(context);
+            _deleteComment(comment.id);
+          },
+        ),
+      ],
+    );
+  }
+
+  void _startEditComment(CommentDto comment) {
+    setState(() {
+      _editingCommentId = comment.id;
+      _commentController.text = comment.content;
+    });
+
+    // 텍스트필드에 포커스
+    Future.delayed(Duration(milliseconds: 100), () {
+      _commentFocusNode.requestFocus();
+    });
+
+    print('✏️ 댓글 수정 모드 진입: commentId=${comment.id}');
   }
 
   String _extractShortTeamName(String fullTeamName) {
@@ -211,50 +369,64 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: true,
-      onPopInvoked: (didPop) {
-        if (didPop) {
-          print('🔙 [Detail PopScope] 뒤로가기 (전역 상태로 이미 동기화됨)');
-        }
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
       },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: _isLoading
-                    ? Center(child: CircularProgressIndicator())
-                    : _errorMessage != null
-                    ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FixedText(
-                        _errorMessage!,
-                        style: AppFonts.pretendard.body_md_400(context).copyWith(
-                          color: AppColors.gray400,
-                        ),
-                      ),
-                      SizedBox(height: scaleHeight(16)),
-                      ElevatedButton(
-                        onPressed: _loadRecordDetail,
-                        child: Text('다시 시도'),
-                      ),
+      child: PopScope(
+        canPop: true,
+        onPopInvoked: (didPop) {
+          if (didPop) {
+            print('🔙 [Detail PopScope] 뒤로가기');
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: _isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : _errorMessage != null
+                      ? Center(child: _buildErrorState())
+                      : CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(child: _buildContent()),
+                      SliverToBoxAdapter(child: _buildCommentHeaderAndDivider()),
+                      _buildCommentAreaSliver(),
                     ],
                   ),
-                )
-                    : SingleChildScrollView(
-                  child: _buildContent(),
                 ),
-              ),
-              _buildCommentInputArea(),
-            ],
+                _buildCommentInputArea(),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        FixedText(
+          _errorMessage!,
+          style: AppFonts.pretendard.body_md_400(context).copyWith(
+            color: AppColors.gray400,
+          ),
+        ),
+        SizedBox(height: scaleHeight(16)),
+        ElevatedButton(
+          onPressed: () {
+            _loadRecordDetail();
+            _loadComments();
+          },
+          child: Text('다시 시도'),
+        ),
+      ],
     );
   }
 
@@ -267,9 +439,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-            },
+            onTap: () => Navigator.pop(context),
             child: SvgPicture.asset(
               AppImages.backBlack,
               width: scaleWidth(24),
@@ -281,9 +451,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               ? Row(
             children: [
               GestureDetector(
-                onTap: () {
-                  print('공유하기');
-                },
+                onTap: () => print('공유하기'),
                 child: SvgPicture.asset(
                   AppImages.Share,
                   width: scaleWidth(24),
@@ -294,9 +462,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               ),
               SizedBox(width: scaleWidth(12)),
               GestureDetector(
-                onTap: () {
-                  _showMoreOptions();
-                },
+                onTap: _showMoreOptions,
                 child: SvgPicture.asset(
                   AppImages.dots,
                   width: scaleWidth(24),
@@ -307,9 +473,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
             ],
           )
               : GestureDetector(
-            onTap: () {
-              print('공유하기');
-            },
+            onTap: () => print('공유하기'),
             child: SvgPicture.asset(
               AppImages.Share,
               width: scaleWidth(24),
@@ -330,7 +494,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     final profileImageUrl = _recordDetail!['profileImageUrl'] ?? '';
     final favTeam = _recordDetail!['favTeam'] ?? '';
     final longContent = _recordDetail!['longContent'] ?? '';
-    final companions = _recordDetail!['companions'] as List<dynamic>? ?? [];
     final gameDate = _recordDetail!['gameDate'] ?? '';
     final gameTime = _recordDetail!['gameTime'] ?? '';
     final stadium = _recordDetail!['stadium'] ?? '';
@@ -341,7 +504,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     final emotionCode = _recordDetail!['emotionCode'];
     final emotionLabel = _recordDetail!['emotionLabel'] ?? '';
     final mediaUrls = _recordDetail!['mediaUrls'] as List<dynamic>? ?? [];
-    final commentCount = _recordDetail!['commentCount'] ?? 0;
 
     final bool hasLongContent = longContent.trim().isNotEmpty;
     final homeTeamShort = _extractShortTeamName(homeTeam);
@@ -350,12 +512,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 프로필 영역
         Container(
-          padding: EdgeInsets.only(
-            top: scaleHeight(12),
-            left: scaleWidth(20),
-          ),
+          padding: EdgeInsets.only(top: scaleHeight(12), left: scaleWidth(20)),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -387,192 +545,37 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 children: [
                   FixedText(
                     nickname,
-                    style: AppFonts.pretendard.body_sm_500(context).copyWith(
-                      color: AppColors.gray950,
-                    ),
+                    style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
                   ),
                   SizedBox(height: scaleHeight(2)),
                   FixedText(
                     '$favTeam 팬',
-                    style: AppFonts.pretendard.caption_md_400(context).copyWith(
-                      color: AppColors.gray400,
-                    ),
+                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray400),
                   ),
                 ],
               ),
             ],
           ),
         ),
-
         SizedBox(height: scaleHeight(12)),
-
-        // longContent
         if (hasLongContent) ...[
           Padding(
-            padding: EdgeInsets.only(left: scaleWidth(20), right: scaleWidth(20)),
+            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
             child: FixedText(
               longContent,
-              style: AppFonts.pretendard.body_sm_400(context).copyWith(
-                color: Colors.black,
-              ),
+              style: AppFonts.pretendard.body_sm_400(context).copyWith(color: Colors.black),
             ),
           ),
           SizedBox(height: scaleHeight(12)),
         ],
-
-        // 경기 정보 카드
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _isGameCardExpanded = !_isGameCardExpanded;
-            });
-          },
-          child: AnimatedSize( // 카드의 높이가 내용에 따라 부드럽게 변하도록
-            duration: Duration(milliseconds: 250),
-            curve: Curves.fastOutSlowIn,
-            alignment: Alignment.topCenter,
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-              padding: EdgeInsets.only(
-                top: scaleHeight(12),
-                left: scaleWidth(20),
-                right: scaleWidth(16),
-                bottom: scaleHeight(12),
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(scaleHeight(12)),
-                border: Border.all(color: AppColors.gray50, width: 1),
-              ),
-              child: IntrinsicHeight( // Row 내부의 위젯들이 가장 큰 위젯의 높이에 맞춰지도록 (특히 구분선)
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 감정 이미지 & 텍스트 (세로 중앙으로 표시되도록)
-                    Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _getEmotionImage(emotionCode),
-                        FixedText(
-                          emotionLabel,
-                          style: AppFonts.suite.caption_md_500(context).copyWith(
-                            color: AppColors.gray600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: scaleWidth(17)),
-                    // 구분선 (동적 크기에 맞춰 길어지도록)
-                    Container(
-                      width: 1,
-                      height: double.infinity,
-                      color: AppColors.gray50,
-                      margin: EdgeInsets.symmetric(vertical: scaleHeight(4)),
-                    ),
-                    SizedBox(width: scaleWidth(20)),
-                    // 경기 정보
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              FixedText(
-                                _formatGameDateTime(gameDate, gameTime),
-                                style: AppFonts.suite.caption_re_400(context).copyWith(
-                                  color: AppColors.gray300,
-                                  fontSize: scaleFont(10),
-                                  height: 14 / 10,
-                                ),
-                              ),
-                              SizedBox(width: scaleWidth(4)),
-                              SvgPicture.asset(
-                                AppImages.ellipse,
-                                width: scaleWidth(2),
-                                height: scaleHeight(2),
-                              ),
-                              SizedBox(width: scaleWidth(3)),
-                              FixedText(
-                                stadium,
-                                style: AppFonts.suite.caption_re_400(context).copyWith(
-                                  color: AppColors.gray300,
-                                  fontSize: scaleFont(10),
-                                  height: 14 / 10,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: scaleHeight(7)),
-                          Row(
-                            children: [
-                              SizedBox(width: scaleWidth(2)),
-                              _getTeamLogo(homeTeamShort, size: 35),
-                              SizedBox(width: scaleWidth(13)),
-                              FixedText(
-                                homeScore?.toString() ?? '0',
-                                style: AppFonts.suite.title_lg_700(context).copyWith(
-                                  color: AppColors.gray500,
-                                ),
-                              ),
-                              SizedBox(width: scaleWidth(10)),
-                              FixedText(
-                                ':',
-                                style: AppFonts.suite.title_lg_700(context).copyWith(
-                                  color: AppColors.gray500,
-                                ),
-                              ),
-                              SizedBox(width: scaleWidth(13)),
-                              FixedText(
-                                awayScore?.toString() ?? '0',
-                                style: AppFonts.suite.title_lg_700(context).copyWith(
-                                  color: AppColors.gray500,
-                                ),
-                              ),
-                              SizedBox(width: scaleWidth(11)),
-                              _getTeamLogo(awayTeamShort, size: 35),
-                            ],
-                          ),
-                          // 확장된 정보
-                          if (_isGameCardExpanded) ...[
-                            SizedBox(height: scaleHeight(10)),
-                            _buildExpandedInfo(_recordDetail!),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(top: scaleHeight(20)),
-                      child: AnimatedRotation(
-                        duration: Duration(milliseconds: 300),
-                        turns: _isGameCardExpanded ? -0.25 : 0.25,
-                        child: SvgPicture.asset(
-                          AppImages.backBlack,
-                          width: scaleWidth(20),
-                          height: scaleHeight(20),
-                          fit: BoxFit.contain,
-                          color: AppColors.gray200,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // 미디어 영역
+        _buildGameCard(homeTeamShort, awayTeamShort, homeScore, awayScore, emotionCode, emotionLabel, gameDate, gameTime, stadium, _recordDetail!),
         if (mediaUrls.isNotEmpty) ...[
           SizedBox(height: scaleHeight(16)),
           _buildMediaSection(mediaUrls),
         ],
-
-        // 좋아요 & 댓글
         SizedBox(height: scaleHeight(16)),
         Padding(
-          padding: EdgeInsets.only(left: scaleWidth(20), bottom: scaleHeight(20)),
+          padding: EdgeInsets.only(left: scaleWidth(20), bottom: scaleHeight(16)),
           child: Row(
             children: [
               GestureDetector(
@@ -588,27 +591,19 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                     SizedBox(width: scaleWidth(4)),
                     FixedText(
                       _likeCount.toString(),
-                      style: AppFonts.suite.caption_re_400(context).copyWith(
-                        color: AppColors.gray300,
-                      ),
+                      style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: scaleWidth(18)),
+              SizedBox(width: scaleWidth(8)),
               Row(
                 children: [
-                  SvgPicture.asset(
-                    AppImages.comment_detail,
-                    width: scaleWidth(24),
-                    height: scaleHeight(24),
-                  ),
+                  SvgPicture.asset(AppImages.comment_detail, width: scaleWidth(24), height: scaleHeight(24)),
                   SizedBox(width: scaleWidth(6)),
                   FixedText(
-                    commentCount.toString(),
-                    style: AppFonts.suite.caption_re_400(context).copyWith(
-                      color: AppColors.gray300,
-                    ),
+                    _commentCount.toString(),
+                    style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
                   ),
                 ],
               ),
@@ -619,6 +614,236 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     );
   }
 
+  Widget _buildCommentHeaderAndDivider() {
+    if (_recordDetail == null) return SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+          child: Container(height: 1, color: AppColors.gray50),
+        ),
+        Padding(
+          padding: EdgeInsets.only(top: scaleHeight(16), left: scaleWidth(20), bottom: scaleHeight(16)),
+          child: FixedText(
+            '댓글',
+            style: AppFonts.suite.body_re_400(context).copyWith(color: AppColors.gray300),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommentAreaSliver() {
+    if (_comments.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: scaleHeight(120)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FixedText(
+                  '댓글이 없어요.',
+                  style: AppFonts.pretendard.body_md_400(context).copyWith(color: AppColors.gray400),
+                ),
+                SizedBox(height: scaleHeight(4)),
+                FixedText(
+                  '가장 먼저 남겨보세요.',
+                  style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray400),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+            (context, index) {
+          final comment = _comments[index];
+          final bottomPadding = index < _comments.length - 1 ? scaleHeight(20) : scaleHeight(0);
+          return Padding(
+            padding: EdgeInsets.only(bottom: bottomPadding),
+            child: _buildCommentItem(comment),
+          );
+        },
+        childCount: _comments.length,
+      ),
+    );
+  }
+
+  Widget _buildCommentItem(CommentDto comment) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(scaleWidth(14)),
+                child: (comment.profileImageUrl.isNotEmpty)
+                    ? Image.network(
+                  comment.profileImageUrl,
+                  width: scaleWidth(28),
+                  height: scaleHeight(28),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => SvgPicture.asset(
+                    AppImages.profile,
+                    width: scaleWidth(28),
+                    height: scaleHeight(28),
+                    fit: BoxFit.cover,
+                  ),
+                )
+                    : SvgPicture.asset(
+                  AppImages.profile,
+                  width: scaleWidth(28),
+                  height: scaleHeight(28),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              SizedBox(width: scaleWidth(8)),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    FixedText(
+                      comment.nickname,
+                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
+                    ),
+                    SizedBox(width: scaleWidth(4)),
+                    SvgPicture.asset(AppImages.ellipse, width: scaleWidth(2), height: scaleHeight(2)),
+                    SizedBox(width: scaleWidth(4)),
+                    FixedText(
+                      '${comment.favTeam} 팬',
+                      style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400),
+                    ),
+                  ],
+                ),
+              ),
+              if (comment.userId == _currentUserId)
+                GestureDetector(
+                  onTap: () => _showCommentOptions(comment),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: EdgeInsets.all(scaleWidth(4)),
+                    child: SvgPicture.asset(
+                        AppImages.more,
+                        width: scaleWidth(20),
+                        height: scaleHeight(20),
+                        fit: BoxFit.contain
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: scaleWidth(36), top: scaleHeight(4)),
+            child: FixedText(
+              comment.content,
+              style: AppFonts.pretendard.body_sm_400(context).copyWith(color: Colors.black),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGameCard(String homeTeamShort, String awayTeamShort, int? homeScore, int? awayScore, int? emotionCode, String emotionLabel, String gameDate, String gameTime, String stadium, Map<String, dynamic> recordDetail) {
+    return GestureDetector(
+      onTap: () => setState(() => _isGameCardExpanded = !_isGameCardExpanded),
+      child: AnimatedSize(
+        duration: Duration(milliseconds: 250),
+        curve: Curves.fastOutSlowIn,
+        alignment: Alignment.topCenter,
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+          padding: EdgeInsets.all(scaleHeight(12)),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(scaleHeight(12)),
+            border: Border.all(color: AppColors.gray50, width: 1),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _getEmotionImage(emotionCode),
+                    FixedText(emotionLabel, style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                  ],
+                ),
+                SizedBox(width: scaleWidth(17)),
+                Container(width: 1, height: double.infinity, color: AppColors.gray50, margin: EdgeInsets.symmetric(vertical: scaleHeight(4))),
+                SizedBox(width: scaleWidth(20)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          FixedText(
+                            _formatGameDateTime(gameDate, gameTime),
+                            style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300, fontSize: scaleFont(10), height: 14 / 10),
+                          ),
+                          SizedBox(width: scaleWidth(4)),
+                          SvgPicture.asset(AppImages.ellipse, width: scaleWidth(2), height: scaleHeight(2)),
+                          SizedBox(width: scaleWidth(3)),
+                          FixedText(
+                            stadium,
+                            style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300, fontSize: scaleFont(10), height: 14 / 10),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: scaleHeight(7)),
+                      Row(
+                        children: [
+                          _getTeamLogo(homeTeamShort, size: 40),
+                          SizedBox(width: scaleWidth(13)),
+                          FixedText(homeScore?.toString() ?? '0', style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray500)),
+                          SizedBox(width: scaleWidth(10)),
+                          FixedText(':', style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray500)),
+                          SizedBox(width: scaleWidth(13)),
+                          FixedText(awayScore?.toString() ?? '0', style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray500)),
+                          SizedBox(width: scaleWidth(11)),
+                          _getTeamLogo(awayTeamShort, size: 40),
+                        ],
+                      ),
+                      if (_isGameCardExpanded) ...[
+                        SizedBox(height: scaleHeight(10)),
+                        _buildExpandedInfo(recordDetail),
+                      ],
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: scaleHeight(20)),
+                  child: AnimatedRotation(
+                    duration: Duration(milliseconds: 300),
+                    turns: _isGameCardExpanded ? -0.25 : 0.25,
+                    child: SvgPicture.asset(
+                      AppImages.backBlack,
+                      width: scaleWidth(20),
+                      height: scaleHeight(20),
+                      fit: BoxFit.contain,
+                      color: AppColors.gray200,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMediaSection(List<dynamic> mediaUrls) {
     if (mediaUrls.length == 1) {
       return Container(
@@ -626,10 +851,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         height: scaleHeight(159),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          image: DecorationImage(
-            image: NetworkImage(mediaUrls[0]),
-            fit: BoxFit.cover,
-          ),
+          image: DecorationImage(image: NetworkImage(mediaUrls[0]), fit: BoxFit.cover),
         ),
       );
     } else if (mediaUrls.length == 2) {
@@ -642,10 +864,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: NetworkImage(mediaUrls[0]),
-                    fit: BoxFit.cover,
-                  ),
+                  image: DecorationImage(image: NetworkImage(mediaUrls[0]), fit: BoxFit.cover),
                 ),
               ),
             ),
@@ -654,10 +873,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: NetworkImage(mediaUrls[1]),
-                    fit: BoxFit.cover,
-                  ),
+                  image: DecorationImage(image: NetworkImage(mediaUrls[1]), fit: BoxFit.cover),
                 ),
               ),
             ),
@@ -677,10 +893,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               margin: EdgeInsets.only(right: scaleWidth(8)),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(
-                  image: NetworkImage(mediaUrls[index]),
-                  fit: BoxFit.cover,
-                ),
+                image: DecorationImage(image: NetworkImage(mediaUrls[index]), fit: BoxFit.cover),
               ),
             );
           },
@@ -772,7 +985,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     }
   }
 
-  // 확장된 정보 빌드
   Widget _buildExpandedInfo(Map<String, dynamic> recordDetail) {
     final seatInfo = recordDetail['seatInfo'] ?? '';
     final bestPlayer = recordDetail['bestPlayer'];
@@ -784,20 +996,15 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 좌석 (항상 표시)
         _buildInfoRow('좌석', seatInfo, AppColors.gray400),
-
-        // MVP (있는 경우만 표시)
         if (hasBestPlayer) ...[
           SizedBox(height: scaleHeight(6)),
           _buildInfoRow('MVP', bestPlayer.toString(), AppColors.gray400),
         ],
-
-        // 직관친구 (있는 경우만 표시)
         if (hasCompanions) ...[
           SizedBox(height: scaleHeight(6)),
           _buildInfoRow(
-            '직관친구', // 띄어쓰기 제거
+            '직관친구',
             companions!.map((c) => '@${c is Map ? c['nickname'] ?? '' : c}').join(' '),
             AppColors.pri600,
           ),
@@ -806,7 +1013,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     );
   }
 
-  // 정보 행 빌드
   Widget _buildInfoRow(String label, String value, Color valueColor) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -816,9 +1022,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           child: Center(
             child: FixedText(
               label,
-              style: AppFonts.suite.caption_re_400(context).copyWith(
-                color: AppColors.gray300,
-              ),
+              style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
             ),
           ),
         ),
@@ -826,9 +1030,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         Expanded(
           child: FixedText(
             value,
-            style: AppFonts.suite.caption_re_400(context).copyWith(
-              color: valueColor,
-            ),
+            style: AppFonts.suite.caption_re_400(context).copyWith(color: valueColor),
           ),
         ),
       ],
@@ -853,14 +1055,11 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
             Expanded(
               child: TextField(
                 controller: _commentController,
-                style: AppFonts.pretendard.body_sm_400(context).copyWith(
-                  color: AppColors.gray900,
-                ),
+                focusNode: _commentFocusNode,
+                style: AppFonts.pretendard.body_sm_400(context).copyWith(color: AppColors.gray900),
                 decoration: InputDecoration(
                   hintText: '댓글을 작성해 보세요',
-                  hintStyle: AppFonts.pretendard.body_sm_400(context).copyWith(
-                    color: AppColors.gray200,
-                  ),
+                  hintStyle: AppFonts.pretendard.body_sm_400(context).copyWith(color: AppColors.gray200),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.only(
                     left: scaleWidth(16),
@@ -869,6 +1068,10 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                   ),
                 ),
                 maxLines: 1,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (value) {
+                  _handleSendComment();
+                },
               ),
             ),
             GestureDetector(

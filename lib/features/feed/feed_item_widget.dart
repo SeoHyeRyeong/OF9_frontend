@@ -7,7 +7,7 @@ import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:intl/intl.dart';
-import 'package:frontend/utils/like_state_manager.dart';
+import 'package:frontend/utils/feed_count_manager.dart';
 
 /// 피드/검색 화면에서 공통으로 사용하는 피드 아이템 위젯
 class FeedItemWidget extends StatefulWidget {
@@ -52,10 +52,11 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     '인천': '인천SSG랜더스필드',
   };
 
-  final _likeManager = LikeStateManager();
+  final _likeManager = FeedCountManager();
 
   late bool _isLiked;
   late int _likeCount;
+  late int _commentCount; // ✅ 추가
 
   @override
   void initState() {
@@ -70,42 +71,51 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       _likeCount = _likeManager.getLikeCount(recordId)
           ?? widget.feedData['likeCount']
           ?? 0;
+      _commentCount = _likeManager.getCommentCount(recordId)
+          ?? widget.feedData['commentCount']
+          ?? 0; // ✅ 추가
 
       // 전역 상태 없으면 feedData로 초기화
       if (_likeManager.getLikedStatus(recordId) == null) {
-        _likeManager.setInitialState(recordId, _isLiked, _likeCount);
+        _likeManager.setInitialState(
+          recordId,
+          _isLiked,
+          _likeCount,
+          commentCount: _commentCount, // ✅ 추가
+        );
       }
     } else {
       _isLiked = widget.feedData['isLiked'] ?? false;
       _likeCount = widget.feedData['likeCount'] ?? 0;
+      _commentCount = widget.feedData['commentCount'] ?? 0; // ✅ 추가
     }
 
-    // 전역 상태 변경 리스너 등록
-    _likeManager.addListener(_onGlobalLikeStateChanged);
+    // ✅ 전역 상태 변경 리스너 등록 (좋아요 + 댓글)
+    _likeManager.addListener(_onGlobalStateChanged);
   }
-
-  @override
 
   @override
   void dispose() {
-    _likeManager.removeListener(_onGlobalLikeStateChanged);
+    _likeManager.removeListener(_onGlobalStateChanged);
     super.dispose();
   }
 
-  // 전역 상태 변경 감지
-  void _onGlobalLikeStateChanged() {
+  // ✅ 전역 상태 변경 감지 (좋아요 + 댓글 개수)
+  void _onGlobalStateChanged() {
     final recordId = widget.feedData['recordId'] as int?;
     if (recordId != null) {
       final newIsLiked = _likeManager.getLikedStatus(recordId);
       final newLikeCount = _likeManager.getLikeCount(recordId);
+      final newCommentCount = _likeManager.getCommentCount(recordId); // ✅ 추가
 
-      if (newIsLiked != null && newLikeCount != null) {
-        if (_isLiked != newIsLiked || _likeCount != newLikeCount) {
+      if (newIsLiked != null && newLikeCount != null && newCommentCount != null) {
+        if (_isLiked != newIsLiked || _likeCount != newLikeCount || _commentCount != newCommentCount) {
           setState(() {
             _isLiked = newIsLiked;
             _likeCount = newLikeCount;
+            _commentCount = newCommentCount; // ✅ 추가
           });
-          print('✅ [FeedItemWidget] 전역 상태 동기화: recordId=$recordId');
+          print('✅ [FeedItemWidget] 전역 상태 동기화: recordId=$recordId, commentCount=$newCommentCount');
         }
       }
     }
@@ -120,29 +130,38 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       // 전역 상태 우선 확인
       final globalIsLiked = _likeManager.getLikedStatus(recordId);
       final globalLikeCount = _likeManager.getLikeCount(recordId);
+      final globalCommentCount = _likeManager.getCommentCount(recordId); // ✅ 추가
 
-      if (globalIsLiked != null && globalLikeCount != null) {
+      if (globalIsLiked != null && globalLikeCount != null && globalCommentCount != null) {
         // 전역 상태 사용 (더 최신)
-        if (_isLiked != globalIsLiked || _likeCount != globalLikeCount) {
+        if (_isLiked != globalIsLiked || _likeCount != globalLikeCount || _commentCount != globalCommentCount) {
           setState(() {
             _isLiked = globalIsLiked;
             _likeCount = globalLikeCount;
+            _commentCount = globalCommentCount; // ✅ 추가
           });
-          print('📱 [FeedItem] 전역 상태 사용: recordId=$recordId, count=$globalLikeCount');
+          print('📱 [FeedItem] 전역 상태 사용: recordId=$recordId, commentCount=$globalCommentCount');
         }
       } else {
         // 전역 상태 없으면 feedData 사용
         final newIsLiked = widget.feedData['isLiked'];
         final newLikeCount = widget.feedData['likeCount'];
+        final newCommentCount = widget.feedData['commentCount']; // ✅ 추가
 
-        if (newIsLiked != null && newLikeCount != null) {
-          if (_isLiked != newIsLiked || _likeCount != newLikeCount) {
+        if (newIsLiked != null && newLikeCount != null && newCommentCount != null) {
+          if (_isLiked != newIsLiked || _likeCount != newLikeCount || _commentCount != newCommentCount) {
             setState(() {
               _isLiked = newIsLiked;
               _likeCount = newLikeCount;
+              _commentCount = newCommentCount; // ✅ 추가
             });
-            _likeManager.setInitialState(recordId, newIsLiked, newLikeCount);
-            print('📱 [FeedItem] feedData 사용: recordId=$recordId, count=$newLikeCount');
+            _likeManager.setInitialState(
+              recordId,
+              newIsLiked,
+              newLikeCount,
+              commentCount: newCommentCount, // ✅ 추가
+            );
+            print('📱 [FeedItem] feedData 사용: recordId=$recordId, commentCount=$newCommentCount');
           }
         }
       }
@@ -174,8 +193,6 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final commentCount = widget.feedData['commentCount'] ?? 0;
-
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
@@ -205,7 +222,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
               color: AppColors.gray50,
               width: double.infinity,
             ),
-            _buildBottomInfo(commentCount),
+            _buildBottomInfo(),
           ],
         ),
       ),
@@ -223,7 +240,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       onTap: () {
         print('프로필 클릭: $nickname');
       },
-      behavior: HitTestBehavior.opaque, //프로필 섹션 - 이벤트 전파 차단 (클릭되면 프로필 들어가야 하니까)
+      behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: EdgeInsets.only(
           top: scaleHeight(16),
@@ -565,7 +582,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
             '$homeTeamFull VS $awayTeamFull',
             style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400),
           ),
-          SizedBox(width: scaleWidth(4)),
+          SizedBox(width: scaleWidth(3)),
           _getTeamLogo(awayTeam),
         ],
       ),
@@ -592,7 +609,8 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     return Image.asset(logoPath, width: scaleWidth(24), height: scaleHeight(24), fit: BoxFit.contain);
   }
 
-  Widget _buildBottomInfo(int commentCount) {
+  // ✅ _buildBottomInfo 수정 (파라미터 제거, 로컬 _commentCount 사용)
+  Widget _buildBottomInfo() {
     final stadium = _extractShortStadiumName(widget.feedData['stadium'] ?? '');
     final gameDate = widget.feedData['gameDate'] ?? '';
 
@@ -609,7 +627,6 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       child: Row(
         children: [
           GestureDetector(
-            // 좋아요 버튼 - 이벤트 전파 차단
             onTap: _toggleLike,
             behavior: HitTestBehavior.opaque,
             child: Padding(
@@ -639,7 +656,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
               SvgPicture.asset(AppImages.comment, width: scaleWidth(16), height: scaleHeight(16)),
               SizedBox(width: scaleWidth(4)),
               FixedText(
-                commentCount.toString(),
+                _commentCount.toString(), // ✅ 로컬 상태 _commentCount 사용 (전역 상태와 동기화됨)
                 style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
               ),
             ],

@@ -10,7 +10,7 @@ import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/api/feed_api.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
-import 'package:frontend/utils/like_state_manager.dart';
+import 'package:frontend/utils/feed_count_manager.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -41,7 +41,7 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   bool _hasMoreFollowing = true;
 
   // 전역 상태 매니저
-  final _likeManager = LikeStateManager();
+  final _likeManager = FeedCountManager();
 
   // 필터링 관련 - 다중 선택
   Set<String> _selectedTeamFilters = {};

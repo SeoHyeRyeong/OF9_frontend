@@ -302,14 +302,17 @@ class FeedApi {
   }
 
   /// 4. 댓글 삭제
-  static Future<void> deleteComment(String recordId, String commentId) async {
+  static Future<Map<String, dynamic>?> deleteComment(String recordId, String commentId) async {
     final uri = Uri.parse('$baseUrl/records/$recordId/comments/$commentId');
 
     final res = await _makeRequestWithRetry(uri: uri, method: 'DELETE');
 
     print('🗑️ 댓글 삭제 응답 코드: ${res.statusCode}');
 
-    if (res.statusCode != 200) {
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+      return decoded['data'] as Map<String, dynamic>?;
+    } else {
       throw Exception('댓글 삭제 실패: ${res.statusCode}');
     }
   }

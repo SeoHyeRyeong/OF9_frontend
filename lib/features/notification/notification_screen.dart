@@ -44,7 +44,7 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> with WidgetsBindingObserver {
   int _selectedTabIndex = 0;
-  final List<String> _tabTexts = ["ALL", "친구의 직관 기록", "반응", "소식"];
+  final List<String> _tabTexts = ["ALL", "친구의 직관 기록", "받은 공감", "소식"];
   final List<String> _categories = ["ALL", "FRIEND_RECORD", "REACTION", "NEWS"];
 
   List<NotificationModel> _notifications = [];
@@ -299,44 +299,58 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: scaleWidth(22),
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            Text("알림", style: AppFonts.suite.h3_b(context)),
-            if (_isAutoAccepting) ...[
-              SizedBox(width: scaleWidth(8)),
-              SizedBox(
-                width: scaleWidth(16),
-                height: scaleWidth(16),
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.pri500),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20), vertical: scaleHeight(10)),
-              child: SizedBox(
-                height: scaleHeight(40),
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _tabTexts.length,
-                  itemBuilder: (context, index) => Padding(
-                    padding: EdgeInsets.only(right: scaleWidth(6)),
-                    child: _buildTabButton(index),
+            Container(
+              height: scaleHeight(60),
+              color: AppColors.white,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: scaleHeight(24),
+                  left: scaleWidth(20),
+                ),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "알림",
+                        style: AppFonts.suite.h3_b(context).copyWith(
+                          height: 1.0,
+                        ),
+                      ),
+                      if (_isAutoAccepting) ...[
+                        SizedBox(width: scaleWidth(8)),
+                        SizedBox(
+                          width: scaleWidth(16),
+                          height: scaleWidth(16),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.pri500),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
+                ),
+              ),
+            ),
+            Container(
+              height: scaleHeight(56),
+              color: AppColors.white,
+              padding: EdgeInsets.only(
+                top: scaleHeight(10),
+                bottom: scaleHeight(10),
+                left: scaleWidth(20),
+              ),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _tabTexts.length,
+                itemBuilder: (context, index) => Padding(
+                  padding: EdgeInsets.only(right: scaleWidth(6)),
+                  child: _buildTabButton(index),
                 ),
               ),
             ),
@@ -353,7 +367,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
     return GestureDetector(
       onTap: () => _onTabChanged(index),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: scaleWidth(14), vertical: scaleHeight(10)),
+        padding: EdgeInsets.symmetric(horizontal: scaleWidth(14)),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.gray700 : AppColors.gray30,
           borderRadius: BorderRadius.circular(68),
@@ -376,14 +390,14 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
     }
     if (_notifications.isEmpty) {
       return Center(
-        child: Text("받은 알림이 없어요", style: AppFonts.suite.b1_sb(context).copyWith(color: AppColors.gray400)),
+        child: Text("받은 알림이 없어요", style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray400)),
       );
     }
     return RefreshIndicator(
       onRefresh: _loadData,
       color: AppColors.pri500,
       child: ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20), vertical: scaleHeight(10)),
+        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
         itemCount: _notifications.length,
         itemBuilder: (context, index) => _buildNotificationItem(_notifications[index]),
       ),
@@ -415,9 +429,9 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
   Widget _buildNotificationText(NotificationModel notification) {
     final double lineSpacing = 1.45;
 
-    final nicknameStyle = AppFonts.suite.b3_sb(context).copyWith(color: AppColors.black, height: lineSpacing);
-    final actionStyle = AppFonts.suite.b3_r(context).copyWith(color: AppColors.gray600, height: lineSpacing);
-    final timeStyle = AppFonts.suite.c1_r(context).copyWith(color: AppColors.gray300, height: lineSpacing);
+    final nicknameStyle = AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.black, height: lineSpacing);
+    final actionStyle = AppFonts.pretendard.b3_r(context).copyWith(color: AppColors.gray600, height: lineSpacing);
+    final timeStyle = AppFonts.pretendard.c1_r(context).copyWith(color: AppColors.gray300, height: lineSpacing);
 
     final unbreakableTimeAgo = notification.timeAgo
         .replaceAll(' ', '\u{00A0}')
@@ -437,7 +451,8 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
 
           // 시간 텍스트만 포함하는 WidgetSpan
           WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
             child: Text(
               unbreakableTimeAgo,
               style: timeStyle,
@@ -559,7 +574,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
         ),
         child: isProcessing
             ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: textColor))
-            : Text(text, style: AppFonts.suite.c1_m(context).copyWith(color: textColor)),
+            : Text(text, style: AppFonts.pretendard.c1_m(context).copyWith(color: textColor)),
       ),
     );
   }

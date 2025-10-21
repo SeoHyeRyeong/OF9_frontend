@@ -565,18 +565,21 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
                 flexibleSpace: FlexibleSpaceBar(
                   background: Container(
                     padding: EdgeInsets.only(
-                      top: scaleHeight(22),
+                      top: scaleHeight(24),
                       left: scaleWidth(20),
                       right: scaleWidth(20),
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.only(top: scaleHeight(2)),
+                    child: Align(
+                      alignment: Alignment.topLeft,
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center, // 👈 이 부분을 center로 변경
                         children: [
                           FixedText(
                             '피드',
-                            style: AppFonts.suite.h3_b(context).copyWith(color: Colors.black),
+                            style: AppFonts.suite.h3_b(context).copyWith(
+                              color: Colors.black,
+                              height: 1.0,
+                            ),
                           ),
                           SizedBox(width: scaleWidth(11)),
                           GestureDetector(
@@ -589,25 +592,23 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
                             ),
                           ),
                           const Spacer(),
-                          Padding(
-                            padding: EdgeInsets.only(top: scaleHeight(2)),
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation1, animation2) => const SearchScreen(),
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
-                                  ),
-                                );
-                              },
-                              child: SvgPicture.asset(
-                                AppImages.search,
-                                width: scaleWidth(24),
-                                height: scaleHeight(24),
-                                fit: BoxFit.contain,
-                              ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation1,
+                                      animation2) => const SearchScreen(),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
+                            child: SvgPicture.asset(
+                              AppImages.search,
+                              width: scaleWidth(24),
+                              height: scaleHeight(24),
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ],

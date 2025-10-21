@@ -37,6 +37,7 @@ class CustomBottomNavBar extends StatelessWidget {
     Widget? target;
 
     switch (index) {
+      case 0:
       // 0은 미구현
 
       case 1:

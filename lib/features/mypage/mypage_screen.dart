@@ -367,30 +367,38 @@ class _MyPageScreenState extends State<MyPageScreen> {
   // 새로 추가된 함수: 상단 액션 바 (Share, Settings 아이콘)
   Widget _buildTopActionsBar() {
     return Container(
-      height: scaleHeight(60), // AppBar와 동일한 높이
-      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+      height: scaleHeight(60),
+      padding: EdgeInsets.only(right: scaleWidth(20)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          IconButton(
-            icon: SvgPicture.asset(
+          GestureDetector(
+            onTap: () { print("공유 버튼 클릭"); },
+            child: SvgPicture.asset(
               AppImages.Share,
               width: scaleWidth(24),
               height: scaleHeight(24),
               color: AppColors.gray600,
             ),
-            onPressed: () { print("공유 버튼 클릭"); },
           ),
-          IconButton(
-            icon: SvgPicture.asset(
+          SizedBox(width: scaleWidth(20)),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => const SettingsScreen(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            },
+            child: SvgPicture.asset(
               AppImages.Setting,
               width: scaleWidth(24),
               height: scaleHeight(24),
               color: AppColors.gray600,
             ),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
-            },
           ),
         ],
       ),
@@ -477,11 +485,25 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     _buildStatItem("게시글", postCount),
                     SizedBox(width: scaleWidth(10)),
                     _buildStatItem("팔로잉", followingCount, onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const FollowingScreen()));
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) => const FollowingScreen(),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
                     }),
                     SizedBox(width: scaleWidth(10)),
                     _buildStatItem("팔로워", followerCount, onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const FollowerScreen()));
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) => const FollowerScreen(),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
                     }),
                   ],
                 ),
@@ -521,8 +543,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
       );
     }
 
-    return
-      content;
+    return content;
   }
 
   Widget _buildEditProfileButton() {
@@ -534,12 +555,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
         child: ElevatedButton(
           onPressed: () {
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const EditProfileScreen(
-                      previousRoute: 'mypage', // 마이페이지에서 왔다고 표시
-                    )
-                )
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => const EditProfileScreen(
+                  previousRoute: 'mypage',
+                ),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
             );
           },
           style: ElevatedButton.styleFrom(

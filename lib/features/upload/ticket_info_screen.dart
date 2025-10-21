@@ -780,6 +780,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                               final recordState = Provider.of<RecordState>(context, listen: false);
 
                               final finalGameId = selectedGameId ?? (matchedGames.isNotEmpty ? matchedGames[0].gameId : null);
+                              final currentImagePath = _selectedImage?.path ?? widget.imagePath;
 
                               print('🎮 최종 gameId 결정:');
                               print('  - selectedGameId (바텀시트): $selectedGameId');
@@ -788,7 +789,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
 
                               // 티켓 정보 저장
                               recordState.setTicketInfo(
-                                ticketImagePath: widget.imagePath,
+                                ticketImagePath: currentImagePath,
                                 selectedHome: selectedHome,
                                 selectedAway: selectedAway,
                                 selectedDateTime: selectedDateTime,

@@ -56,7 +56,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
   late bool _isLiked;
   late int _likeCount;
-  late int _commentCount; // ✅ 추가
+  late int _commentCount;
 
   @override
   void initState() {
@@ -73,7 +73,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
           ?? 0;
       _commentCount = _likeManager.getCommentCount(recordId)
           ?? widget.feedData['commentCount']
-          ?? 0; // ✅ 추가
+          ?? 0;
 
       // 전역 상태 없으면 feedData로 초기화
       if (_likeManager.getLikedStatus(recordId) == null) {
@@ -81,16 +81,16 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
           recordId,
           _isLiked,
           _likeCount,
-          commentCount: _commentCount, // ✅ 추가
+          commentCount: _commentCount,
         );
       }
     } else {
       _isLiked = widget.feedData['isLiked'] ?? false;
       _likeCount = widget.feedData['likeCount'] ?? 0;
-      _commentCount = widget.feedData['commentCount'] ?? 0; // ✅ 추가
+      _commentCount = widget.feedData['commentCount'] ?? 0;
     }
 
-    // ✅ 전역 상태 변경 리스너 등록 (좋아요 + 댓글)
+    // 전역 상태 변경 리스너 등록 (좋아요 + 댓글)
     _likeManager.addListener(_onGlobalStateChanged);
   }
 
@@ -106,14 +106,14 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     if (recordId != null) {
       final newIsLiked = _likeManager.getLikedStatus(recordId);
       final newLikeCount = _likeManager.getLikeCount(recordId);
-      final newCommentCount = _likeManager.getCommentCount(recordId); // ✅ 추가
+      final newCommentCount = _likeManager.getCommentCount(recordId);
 
       if (newIsLiked != null && newLikeCount != null && newCommentCount != null) {
         if (_isLiked != newIsLiked || _likeCount != newLikeCount || _commentCount != newCommentCount) {
           setState(() {
             _isLiked = newIsLiked;
             _likeCount = newLikeCount;
-            _commentCount = newCommentCount; // ✅ 추가
+            _commentCount = newCommentCount;
           });
           print('✅ [FeedItemWidget] 전역 상태 동기화: recordId=$recordId, commentCount=$newCommentCount');
         }
@@ -130,7 +130,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       // 전역 상태 우선 확인
       final globalIsLiked = _likeManager.getLikedStatus(recordId);
       final globalLikeCount = _likeManager.getLikeCount(recordId);
-      final globalCommentCount = _likeManager.getCommentCount(recordId); // ✅ 추가
+      final globalCommentCount = _likeManager.getCommentCount(recordId);
 
       if (globalIsLiked != null && globalLikeCount != null && globalCommentCount != null) {
         // 전역 상태 사용 (더 최신)
@@ -138,7 +138,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
           setState(() {
             _isLiked = globalIsLiked;
             _likeCount = globalLikeCount;
-            _commentCount = globalCommentCount; // ✅ 추가
+            _commentCount = globalCommentCount;
           });
           print('📱 [FeedItem] 전역 상태 사용: recordId=$recordId, commentCount=$globalCommentCount');
         }
@@ -146,20 +146,20 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
         // 전역 상태 없으면 feedData 사용
         final newIsLiked = widget.feedData['isLiked'];
         final newLikeCount = widget.feedData['likeCount'];
-        final newCommentCount = widget.feedData['commentCount']; // ✅ 추가
+        final newCommentCount = widget.feedData['commentCount'];
 
         if (newIsLiked != null && newLikeCount != null && newCommentCount != null) {
           if (_isLiked != newIsLiked || _likeCount != newLikeCount || _commentCount != newCommentCount) {
             setState(() {
               _isLiked = newIsLiked;
               _likeCount = newLikeCount;
-              _commentCount = newCommentCount; // ✅ 추가
+              _commentCount = newCommentCount;
             });
             _likeManager.setInitialState(
               recordId,
               newIsLiked,
               newLikeCount,
-              commentCount: newCommentCount, // ✅ 추가
+              commentCount: newCommentCount,
             );
             print('📱 [FeedItem] feedData 사용: recordId=$recordId, commentCount=$newCommentCount');
           }

@@ -208,7 +208,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
           final screenWidth = MediaQuery.of(layoutContext).size.width;
           final bottomPadding = MediaQuery.of(layoutContext).padding.bottom;
 
-          // ✨ 바텀시트 콘텐츠 높이 (800px 기준 600px = 75%, SafeArea 제외한 순수 콘텐츠)
+          // 800px 기준 600px = 75%, SafeArea 제외
           final contentHeight = (screenHeight * 0.75) - bottomPadding;
 
           return Container(
@@ -224,7 +224,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
               top: false,
               child: StatefulBuilder(
                 builder: (ctx, setState) {
-                  // 💡 내부 계산은 contentHeight 기준
+                  // 내부 계산은 contentHeight 기준
                   final sheetHeight = contentHeight;
 
                   // 초기 상태 설정
@@ -261,7 +261,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                       Duration(days: (6 - lastOfMonth.weekday % 7) % 7));
                   final totalWeeks = (endOfCalendar.difference(startOfCalendar).inDays + 1) ~/ 7;
 
-                  // ✨ 비율 기반 크기 계산
+                  // 비율 기반 크기 계산
                   final calendarInnerWidth = screenWidth - (scaleWidth(20) * 2);
                   final dateAreaPadding = scaleWidth(9);
 
@@ -289,7 +289,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
 
                   return Column(
                     children: [
-                      // 헤더 영역 (바텀시트의 10%)
+                      // 헤더 영역
                       Container(
                         height: sheetHeight * 0.10,
                         padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
@@ -323,7 +323,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
 
                       SizedBox(height: sheetHeight * 0.013), // 8px
 
-                      // 년/월 네비게이션 (바텀시트의 4%)
+                      // 년/월 네비게이션
                       SizedBox(
                         height: sheetHeight * 0.04,
                         child: Row(
@@ -361,7 +361,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
 
                       SizedBox(height: sheetHeight * 0.02), // 년/월 네비게이션과 달력 사이 간격
 
-                      // 달력 영역 (바텀시트의 정확히 50% = 300px)
+                      // 달력 영역 (바텀시트의 50% = 300px)
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                         child: SizedBox(
@@ -415,7 +415,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                                     calendarStyle: CalendarStyle(
                                       outsideDaysVisible: false,
                                       canMarkersOverflow: false,
-                                      cellMargin: EdgeInsets.zero, // 간격 제거!
+                                      cellMargin: EdgeInsets.zero,
                                     ),
                                     selectedDayPredicate: (d) =>
                                     selectedDay != null && isSameDay(d, selectedDay),
@@ -478,7 +478,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                                         return Container(
                                           width: cellWidth,
                                           height: cellWidth,
-                                          alignment: Alignment.center, // 명시적 센터 정렬
+                                          alignment: Alignment.center,
                                           child: FixedText(
                                             '${date.day}',
                                             style: AppFonts.suite.b2_m_long(ctx).copyWith(
@@ -486,7 +486,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                                                   ? AppColors.gray900
                                                   : AppColors.gray200,
                                             ),
-                                            textAlign: TextAlign.center, // 텍스트도 센터
+                                            textAlign: TextAlign.center,
                                           ),
                                         );
                                       },
@@ -495,10 +495,10 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                                         return Container(
                                           width: cellWidth,
                                           height: cellWidth,
-                                          alignment: Alignment.center, // 명시적 센터 정렬
+                                          alignment: Alignment.center,
                                           child: Stack(
                                             clipBehavior: Clip.none,
-                                            alignment: Alignment.center, // Stack도 센터
+                                            alignment: Alignment.center,
                                             children: [
                                               // 원형 배경 (4px 패딩)
                                               Padding(
@@ -510,7 +510,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                                                     color: AppColors.pri100,
                                                     shape: BoxShape.circle,
                                                   ),
-                                                  alignment: Alignment.center, // 내부도 센터
+                                                  alignment: Alignment.center,
                                                   child: FixedText(
                                                     '${date.day}',
                                                     style: AppFonts.suite.b2_m_long(ctx).copyWith(
@@ -544,11 +544,11 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                                         return Container(
                                           width: cellWidth,
                                           height: cellWidth,
-                                          alignment: Alignment.center, // 명시적 센터 정렬
+                                          alignment: Alignment.center,
                                           child: isSel
                                               ? Stack(
                                             clipBehavior: Clip.none,
-                                            alignment: Alignment.center, // Stack도 센터
+                                            alignment: Alignment.center,
                                             children: [
                                               // 원형 배경 (4px 패딩)
                                               Padding(
@@ -560,7 +560,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                                                     color: AppColors.pri100,
                                                     shape: BoxShape.circle,
                                                   ),
-                                                  alignment: Alignment.center, // 내부도 센터
+                                                  alignment: Alignment.center,
                                                   child: FixedText(
                                                     '${date.day}',
                                                     style: AppFonts.suite.b2_m_long(ctx).copyWith(
@@ -605,10 +605,9 @@ Future<Map<String, dynamic>?> showDateTimePicker({
 
                       SizedBox(height: sheetHeight * 0.02), // 12px
 
-                      // Spacer를 여기로 이동! (달력과 경기 시간 사이 공간 확보)
                       const Spacer(),
 
-                      // 경기 시간 표시 영역 (바텀시트의 6.7%)
+                      // 경기 시간 표시 영역
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Container(
@@ -657,7 +656,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                         ),
                       ),
 
-                      SizedBox(height: sheetHeight * 0.023), // 14px
+                      SizedBox(height: sheetHeight * 0.023),
 
                       // 구분선
                       Container(
@@ -667,9 +666,9 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                         margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                       ),
 
-                      SizedBox(height: sheetHeight * 0.017), // 10px
+                      SizedBox(height: sheetHeight * 0.017),
 
-                      // 선택 결과 텍스트 (바텀시트의 3.3%)
+                      // 선택 결과 텍스트
                       Container(
                         height: sheetHeight * 0.033,
                         padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),

@@ -208,34 +208,69 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
     return fullName ?? teamName;
   }
 
-  // 문자열 변환
+  //문자열 포맷
   String? formatDisplayDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return null;
 
     try {
-      String cleanedStr = dateStr
-          .split('(')
-          .first
-          .trim();
+      // 1. 이미 원하는 형식(yyyy.MM.dd (요일))인 경우 그대로 반환
+      final alreadyFormattedPattern = RegExp(r'^\d{4}\.\d{2}\.\d{2}\s*\([가-힣]+\)');
+      if (alreadyFormattedPattern.hasMatch(dateStr)) {
+        return dateStr;
+      }
 
-      final datePattern = RegExp(r'(\d{4})\s*-\s*(\d{2})\s*-\s*(\d{2})');
-      final dateMatch = datePattern.firstMatch(cleanedStr);
+      // 2. "2025 - 04 - 15 (수) 14시 00분" 형식 처리 (바텀시트에서 선택한 경우)
+      final fullDateTimePattern = RegExp(r'(\d{4})\s*-\s*(\d{2})\s*-\s*(\d{2})\s*\(([가-힣]+)\)');
+      final fullMatch = fullDateTimePattern.firstMatch(dateStr);
 
-      if (dateMatch != null) {
-        final datePart = dateMatch.group(0)!;
-        final date = DateTime.parse(datePart);
+      if (fullMatch != null) {
+        final year = fullMatch.group(1);
+        final month = fullMatch.group(2);
+        final day = fullMatch.group(3);
+        final weekday = fullMatch.group(4);
+        return '$year.$month.$day ($weekday)';
+      }
+
+      // 3. "2025 - 04 - 15" 형식 처리 (하이픈과 공백 포함)
+      final dateWithSpacePattern = RegExp(r'(\d{4})\s*-\s*(\d{2})\s*-\s*(\d{2})');
+      final dateWithSpaceMatch = dateWithSpacePattern.firstMatch(dateStr);
+
+      if (dateWithSpaceMatch != null) {
+        final year = dateWithSpaceMatch.group(1)!;
+        final month = dateWithSpaceMatch.group(2)!;
+        final day = dateWithSpaceMatch.group(3)!;
+
+        // 공백 제거하고 DateTime으로 파싱
+        final date = DateTime.parse('$year-$month-$day');
         final formattedDate = DateFormat('yyyy.MM.dd').format(date);
-        final weekday = DateFormat('E', 'ko_KR').format(
-            date); // '월', '화', '수' 등
-
+        final weekday = DateFormat('E', 'ko_KR').format(date);
         return '$formattedDate ($weekday)';
       }
 
-      // 정규식 파싱 실패 시 원본 반환
+      // 4. yyyy-MM-dd 형식 처리 (OCR 추출 결과)
+      if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(dateStr)) {
+        final date = DateTime.parse(dateStr);
+        final formattedDate = DateFormat('yyyy.MM.dd').format(date);
+        final weekday = DateFormat('E', 'ko_KR').format(date);
+        return '$formattedDate ($weekday)';
+      }
+
+      // 5. "2025-04-15 14:00:00" 형식 처리
+      if (dateStr.contains(' ')) {
+        final parts = dateStr.split(' ');
+        if (parts.isNotEmpty && RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(parts[0])) {
+          final date = DateTime.parse(parts[0]);
+          final formattedDate = DateFormat('yyyy.MM.dd').format(date);
+          final weekday = DateFormat('E', 'ko_KR').format(date);
+          return '$formattedDate ($weekday)';
+        }
+      }
+
+      // 6. 파싱 실패 시 원본 반환
+      print('⚠️ formatDisplayDate 파싱 실패: $dateStr');
       return dateStr;
     } catch (e) {
-      // DateTime 파싱 실패 등 예외 발생 시 원본 반환
-      print('날짜 포맷팅 오류: $e');
+      print('❌ 날짜 포맷팅 오류: $e, 입력값: $dateStr');
       return dateStr;
     }
   }

@@ -210,9 +210,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
     try {
       if (_editingCommentId != null) {
-        // 댓글 수정 모드
-        print('✏️ 댓글 수정 시작: commentId=$_editingCommentId');
-
         await FeedApi.updateComment(
           widget.recordId.toString(),
           _editingCommentId.toString(),
@@ -252,7 +249,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     FocusScope.of(context).unfocus();
 
     try {
-      print('🗑️ 댓글 삭제 시작: commentId=$commentId');
       await FeedApi.deleteComment(
           widget.recordId.toString(),
           commentId.toString()
@@ -267,8 +263,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   Future<void> _deleteRecord() async {
     try {
-      print('🗑️ 게시글 삭제 시작: recordId=${widget.recordId}');
-
       await RecordApi.deleteRecord(widget.recordId.toString());
 
       print('✅ 게시글 삭제 성공');
@@ -349,8 +343,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     Future.delayed(Duration(milliseconds: 100), () {
       _commentFocusNode.requestFocus();
     });
-
-    print('✏️ 댓글 수정 모드 진입: commentId=${comment.id}');
   }
 
   String _extractShortTeamName(String fullTeamName) {
@@ -376,9 +368,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       child: PopScope(
         canPop: true,
         onPopInvoked: (didPop) {
-          if (didPop) {
-            print('🔙 [Detail PopScope] 뒤로가기');
-          }
         },
         child: Scaffold(
           backgroundColor: Colors.white,

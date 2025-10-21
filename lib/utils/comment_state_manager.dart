@@ -17,7 +17,7 @@ class CommentDto {
   final int? parentCommentId;
   final int replyCount;
   final List<CommentDto>? replies;
-  final int? totalCommentCount;  // ✅ 추가
+  final int? totalCommentCount;
 
   CommentDto({
     required this.id,
@@ -34,7 +34,7 @@ class CommentDto {
     this.parentCommentId,
     this.replyCount = 0,
     this.replies,
-    this.totalCommentCount,  // ✅ 추가
+    this.totalCommentCount,
   });
 
   factory CommentDto.fromJson(Map<String, dynamic> json) {
@@ -59,7 +59,7 @@ class CommentDto {
           .map((e) => CommentDto.fromJson(e as Map<String, dynamic>))
           .toList()
           : null,
-      totalCommentCount: json['totalCommentCount'] is int  // ✅ 추가
+      totalCommentCount: json['totalCommentCount'] is int
           ? json['totalCommentCount']
           : (json['totalCommentCount'] as num?)?.toInt(),
     );
@@ -80,7 +80,7 @@ class CommentListManager extends ChangeNotifier {
   void setInitialState(int recordId, List<CommentDto> comments) {
     _comments[recordId] = comments;
 
-    // ✅ totalCommentCount가 있으면 FeedCountManager 업데이트
+    // totalCommentCount가 있으면 FeedCountManager 업데이트
     if (comments.isNotEmpty && comments.first.totalCommentCount != null) {
       FeedCountManager().updateCommentCount(recordId, comments.first.totalCommentCount!);
     }

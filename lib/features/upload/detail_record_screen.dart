@@ -8,6 +8,7 @@ import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/features/feed/feed_screen.dart';
+import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'dart:ui' as ui;
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
@@ -811,6 +812,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
       );
 
       print('✅ 기록 저장 성공${includeDetailData ? "" : " (건너뛰기)"}: $result');
+
+      final recordId = result['recordId'] as int;
+      print('📋 생성된 recordId: $recordId');
+
       recordState.reset();
 
       if (mounted) {

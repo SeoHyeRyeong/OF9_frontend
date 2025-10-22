@@ -418,7 +418,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         child: Stack(
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(scaleHeight(29.59)),
+                              borderRadius: BorderRadius.circular(scaleHeight(36)),
                               child: SizedBox(
                                 width: scaleWidth(100),
                                 height: scaleHeight(100),

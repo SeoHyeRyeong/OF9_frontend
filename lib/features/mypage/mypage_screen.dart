@@ -870,60 +870,67 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     );
   }
 
-
-  // 캘린더 커스텀 헤더 (날짜 + 오늘 버튼)
+  // 달력헤더
   Widget _buildCalendarHeader() {
     return Padding(
-      // 캘린더 헤더는 좌우 패딩 0 (디자인 일치)
       padding: EdgeInsets.symmetric(vertical: scaleHeight(16)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // 좌측 여백을 위한 투명한 컨테이너 (오늘 버튼과 동일한 크기)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: scaleWidth(12), vertical: scaleHeight(4)),
+            child: Text(
+              '오늘', // 투명하게 만들어서 레이아웃 균형 맞춤
+              style: AppFonts.suite.c2_m(context).copyWith(color: Colors.transparent),
+            ),
+          ),
+          // 가운데 정렬된 화살표와 년월
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: BoxConstraints(),
-                icon: Icon(Icons.chevron_left, color: AppColors.gray900, size: scaleWidth(24)),
+                icon: Icon(Icons.arrow_back_ios, color: AppColors.gray100, size: scaleWidth(14)),
                 onPressed: () {
                   setState(() {
                     _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
                   });
-                  _loadMyRecords(); // 이전 달 데이터 다시 로드
+                  _loadMyRecords();
                 },
               ),
               SizedBox(width: scaleWidth(8)),
               Text(
                 DateFormat('yyyy년 M월', 'ko_KR').format(_focusedDay),
-                style: AppFonts.suite.h4_b(context).copyWith(color: Colors.black),
+                style: AppFonts.suite.head_sm_700(context).copyWith(color: Colors.black),
               ),
               SizedBox(width: scaleWidth(8)),
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: BoxConstraints(),
-                icon: Icon(Icons.chevron_right, color: AppColors.gray900, size: scaleWidth(24)),
+                icon: Icon(Icons.play_arrow, color: AppColors.gray100, size: scaleWidth(14)),
                 onPressed: () {
                   setState(() {
                     _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
                   });
-                  _loadMyRecords(); // 다음 달 데이터 다시 로드
+                  _loadMyRecords();
                 },
               ),
             ],
           ),
+          // 우측 오늘 버튼 (기존 기능 유지)
           GestureDetector(
             onTap: () {
-              // '오늘'이 속한 달/연도와 이미 같은지 확인
               final now = DateTime.now();
-              // [수정] isSameMonth 대신 연/월 직접 비교
-              if (_focusedDay.year == now.year && _focusedDay.month == now.month) return;
-
+              if (_focusedDay.year == now.year && _focusedDay.month == now.month) {
+                return;
+              }
               setState(() {
                 _focusedDay = now;
                 _selectedDay = now;
               });
-              _loadMyRecords(); // 오늘이 속한 달 데이터 다시 로드
+              _loadMyRecords();
             },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: scaleWidth(12), vertical: scaleHeight(4)),
@@ -933,7 +940,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               ),
               child: Text(
                 '오늘',
-                style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray700),
+                style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray800),
               ),
             ),
           ),
@@ -941,6 +948,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       ),
     );
   }
+
+
 
   // TableCalendar 위젯
   Widget _buildTableCalendar() {
@@ -950,175 +959,245 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       firstDay: DateTime.utc(2000),
       lastDay: DateTime.utc(2100),
       calendarFormat: _calendarFormat,
-      availableGestures: AvailableGestures.horizontalSwipe,
+      availableGestures: AvailableGestures.horizontalSwipe, // 좌우 스와이프만 가능하게
       headerVisible: false, // 커스텀 헤더를 사용하므로 기본 헤더 숨김
-      eventLoader: _getEventsForDay, // 날짜별 이벤트 로더 연결
-      sixWeekMonthsEnforced: true, // 6주 고정
+      sixWeekMonthsEnforced: true, // 항상 6주 표시
       rowHeight: scaleHeight(60), // 셀 높이
 
-      // '오늘' 날짜 스타일
       calendarStyle: CalendarStyle(
-        cellMargin: EdgeInsets.all(scaleWidth(2)),
+        cellMargin: EdgeInsets.all(scaleWidth(2)), // 셀 간격
+        // ▼▼▼ 기록 없는 날 배경 gray30
         defaultDecoration: BoxDecoration(
-          color: AppColors.gray30, // 기록 없는 날 회색 배경
+          color: AppColors.gray30,
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
         weekendDecoration: BoxDecoration(
-          color: AppColors.gray30, // 주말도 동일한 회색 배경
+          color: AppColors.gray30, // 주말도 동일
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
+        // ▲▲▲
+
         outsideDecoration: BoxDecoration(
-          color: Colors.white, // 바깥 날짜는 흰색 배경
+          color: Colors.white, // 이번 달 아닌 날짜 배경 흰색
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
-        // '오늘' 날짜 기본 스타일 (기록이 없을 때)
+
+        // ▼▼▼ '오늘' 날짜 스타일
         todayDecoration: BoxDecoration(
-          color: AppColors.pri50, // 오늘 날짜 파란 배경
+          color: AppColors.pri100, // 오늘 배경 pri300
           borderRadius: BorderRadius.circular(scaleWidth(6)),
-          border: Border.all(color: AppColors.pri200, width: 1),
+          border: Border.all(color: AppColors.pri300, width: 1), // 오늘 윤곽선 pri600
         ),
-        todayTextStyle: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri500),
-        defaultTextStyle: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray800),
-        weekendTextStyle: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray800),
-        outsideTextStyle: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200),
+        todayTextStyle: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri700), // 오늘 날짜숫자 pri700
+        // ▲▲▲
+
+        // ▼▼▼ 기본/주말/다른달 Text 스타일 (기록 있는 날은 defaultBuilder에서 덮어씀)
+        defaultTextStyle: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200), // 기록 없는 날짜숫자 gray200 (기본값)
+        weekendTextStyle: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200), // 기록 없는 주말 날짜숫자 gray200
+        outsideTextStyle: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200), // 이번 달 아닌 날 Text (gray200)
+        // ▲▲▲
       ),
 
-      // '일, 월, 화...' 요일 스타일
+      // ▼▼▼ '일, 월, 화...' 요일 스타일 gray700
       daysOfWeekStyle: DaysOfWeekStyle(
-        weekdayStyle: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray800),
-        weekendStyle: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400), // 토, 일
+        weekdayStyle: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray700), // 월화수목금 gray700
+        weekendStyle: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray700), // 토, 일 gray700
       ),
+      // ▲▲▲
 
-      // 캘린더 셀 커스텀 빌더
       calendarBuilders: CalendarBuilders(
-        // '오늘' 날짜 밑에 '오늘' 텍스트 추가
+        // '오늘' 날짜 UI 커스텀
         todayBuilder: (context, day, focusedDay) {
           final events = _getEventsForDay(day);
-          // '오늘' 날짜 UI
           return Container(
+            constraints: BoxConstraints.expand(),
             margin: EdgeInsets.all(scaleWidth(2)),
             decoration: BoxDecoration(
-              color: AppColors.pri50, // 오늘 날짜 파란 배경
+              color: AppColors.pri100,
               borderRadius: BorderRadius.circular(scaleWidth(6)),
-              border: Border.all(color: AppColors.pri200, width: 1),
+              border: Border.all(color: AppColors.pri300, width: 1),
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${day.day}',
-                      style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri500),
-                    ),
-                    Text(
-                      '오늘',
-                      // ▼▼▼ [수정] c3_m -> c3_sb
-                      style: AppFonts.suite.c3_sb(context).copyWith(color: AppColors.pri400),
-                    )
-                  ],
+                Positioned(
+                  top: scaleHeight(4), // 기존 6에서 4로 변경하여 더 위로
+                  child: Text(
+                    '${day.day}',
+                    style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.pri700),
+                  ),
+                ),
+                Positioned(
+                  top: scaleHeight(22), // 오늘 텍스트도 약간 조정
+                  child: Text(
+                    '오늘',
+                    style: AppFonts.suite.c3_sb(context).copyWith(color: AppColors.pri600, fontSize: 10.sp),
+                  ),
                 ),
                 if (events.isNotEmpty)
-                  _buildCalendarDayMarker(events.first['gameResult']),
+                  _buildCalendarDayMarker(events.first['result']),
               ],
             ),
           );
         },
-        // '오늘'을 제외한 날짜 (기본)
+
+        // 기본 날짜 UI 커스텀
         defaultBuilder: (context, day, focusedDay) {
           final events = _getEventsForDay(day);
           if (events.isNotEmpty) {
-            // 기록이 있으면 흰색 배경 + 테두리
-            final gameResult = events.first['gameResult'];
+            final gameResult = events.first['result'];
             return Container(
+              constraints: BoxConstraints.expand(),
               margin: EdgeInsets.all(scaleWidth(2)),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.gray20,
                 borderRadius: BorderRadius.circular(scaleWidth(6)),
                 border: Border.all(color: AppColors.gray100, width: 1),
               ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Text(
-                    '${day.day}',
-                    style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray800),
+                  Positioned(
+                    top: scaleHeight(4), // 기존 6에서 4로 변경
+                    child: Text(
+                      '${day.day}',
+                      style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray700),
+                    ),
                   ),
-                  _buildCalendarDayMarker(gameResult), // 마커 오버레이
+                  _buildCalendarDayMarker(gameResult),
                 ],
               ),
             );
           }
-          // 기록 없으면 null 반환 (calendarStyle의 defaultDecoration 적용)
-          return null;
+          return Container(
+            constraints: BoxConstraints.expand(),
+            margin: EdgeInsets.all(scaleWidth(2)),
+            decoration: BoxDecoration(
+              color: AppColors.gray30,
+              borderRadius: BorderRadius.circular(scaleWidth(6)),
+            ),
+            child: Align(
+              alignment: Alignment.topCenter, // 상단 정렬
+              child: Padding(
+                padding: EdgeInsets.only(top: scaleHeight(4)), // 상단 여백
+                child: Text(
+                  '${day.day}',
+                  style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200),
+                ),
+              ),
+            ),
+          );
+        },
+
+        // 다른 달 날짜 UI 커스텀
+        outsideBuilder: (context, day, focusedDay) {
+          return Container(
+            constraints: BoxConstraints.expand(),
+            margin: EdgeInsets.all(scaleWidth(2)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(scaleWidth(6)),
+            ),
+            child: Align(
+              alignment: Alignment.topCenter, // 상단 정렬
+              child: Padding(
+                padding: EdgeInsets.only(top: scaleHeight(4)), // 상단 여백
+                child: Text(
+                  '${day.day}',
+                  style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200),
+                ),
+              ),
+            ),
+          );
         },
       ),
+
       onDaySelected: (selectedDay, focusedDay) {
+        // 날짜 선택 시 호출되는 콜백
         setState(() {
           _selectedDay = selectedDay;
-          _focusedDay = focusedDay; // focusedDay도 함께 업데이트
+          _focusedDay = focusedDay; // focusedDay도 함께 업데이트해야 선택 표시 유지됨
         });
-        // TODO: 선택된 날짜의 기록을 아래에 표시하는 로직
-        print('Selected day: $selectedDay');
+        // TODO: 선택된 날짜의 기록 상세 뷰 표시 또는 다른 액션
+        print('Selected day: $selectedDay, Events: ${_getEventsForDay(selectedDay)}');
       },
       onPageChanged: (focusedDay) {
-        // 캘린더를 스와이프했을 때
-        // ▼▼▼ [수정] !isSameMonth(...) -> 연/월 직접 비교
+        // 달력 페이지 변경 시 호출되는 콜백
+        // isSameMonth 대신 연/월 직접 비교
         if (_focusedDay.year != focusedDay.year || _focusedDay.month != focusedDay.month) {
           setState(() {
-            _focusedDay = focusedDay;
+            _focusedDay = focusedDay; // 현재 포커스된 날짜 업데이트
           });
-          _loadMyRecords();
+          _loadMyRecords(); // 변경된 달의 데이터 로드
         }
       },
     );
   }
 
-  // '승/패/무' 마커 위젯
+  // '승/패/무/ETC' 마커 위젯 (SVG 아이콘 사용)
   Widget _buildCalendarDayMarker(String? gameResult) {
     String text;
-    Color color;
-    // TODO: 승/패/무 아이콘 SVG로 교체 필요
-    IconData icon; // 임시 아이콘
+    String imagePath; // SVG 이미지 경로
+    Color textColor;   // 텍스트 색상
 
-    switch (gameResult) {
+    switch (gameResult?.toUpperCase()) { // 대소문자 구분 없이 비교
       case 'WIN':
         text = '승';
-        color = const Color(0xFFFFC200); // Yellow
-        icon = Icons.star;
+        imagePath = AppImages.win; // SVG 경로 사용
+        textColor = const Color(0xFFFFC200); // Yellow Text
         break;
       case 'LOSE':
         text = '패';
-        color = AppColors.gray400; // Gray
-        icon = Icons.star_border; // 임시
+        imagePath = AppImages.lose; // SVG 경로 사용
+        textColor = const Color(0xFFBF6F2D); // 디자인 참고
         break;
-      case 'DRAW':
+      case 'TIE':  // 기존 코드 호환
         text = '무';
-        color = const Color(0xFF5B96F0); // Blue
-        icon = Icons.star_half; // 임시
+        imagePath = AppImages.tie; // SVG 경로 사용
+        textColor = const Color(0xFF7D7D86); // 디자인 참고
+        break;
+      case 'ETC': // ETC 케이스 추가
+        text = 'ETC'; // 또는 다른 적절한 텍스트
+        imagePath = AppImages.etc; // etc 아이콘 경로
+        textColor = const Color(0xFF5E9EFF); // 디자인 참고
         break;
       default:
       // gameResult가 null이거나 예상 못한 값일 때 (예: 'SCHEDULED')
         text = '기록';
-        color = AppColors.gray700;
-        icon = Icons.bookmark; // 임시
+        imagePath = AppImages.calendar; // 기본값으로 etc 아이콘 사용
+        textColor = const Color(0xFFD9D9D9);
+        textColor = AppColors.gray700;
+    }
+
+    // SVG 파일 확장자(.svg)가 누락되었다면 추가 (AppImages에 확장자 포함 여부 확인)
+    if (!imagePath.endsWith('.svg')) {
+      imagePath += '.svg';
     }
 
     return Positioned(
-      bottom: scaleHeight(4), // 셀 하단에 위치
+      // ▼▼▼ 마커 위치 조정 (아이콘이 중앙 하단에 오도록)
+      bottom: scaleHeight(8),
+      // ▲▲▲
       left: 0,
       right: 0,
       child: Column(
+        mainAxisSize: MainAxisSize.min, // Column 크기를 내용물에 맞춤
         children: [
-          Icon(icon, color: color, size: scaleWidth(16.5)),
-          SizedBox(height: scaleHeight(1)),
+          // ▼▼▼ Icon -> SvgPicture.asset 으로 변경
+          SvgPicture.asset(
+            imagePath,
+            width: scaleWidth(16.5), // 아이콘 크기
+            height: scaleHeight(16.5),
+          ),
+          // ▲▲▲
+          SizedBox(height: scaleHeight(1)), // 아이콘과 텍스트 간격
           Text(
             text,
-            style: AppFonts.suite.c3_sb(context).copyWith(
-              color: color,
+            style: AppFonts.suite.c3_sb(context).copyWith( // c3_sb (8pt Semibold)
+              color: textColor,
               fontSize: 8.sp, // 8pt
-              letterSpacing: 0,
+              height: 1.25, // lineSpacing 10 / fontSize 8 = 1.25
+              letterSpacing: 0, // 자간 0
             ),
           ),
         ],
@@ -1150,34 +1229,31 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildStatsPanelHeader(),
-          if (!hasData) ...[
-            // 데이터가 없는 경우 (image_2cdeff.png)
-            SizedBox(height: scaleHeight(16)), // 헤더와의 간격
-            Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: scaleHeight(10)), // 높이 확보
-                child: Text(
-                  '업로드한 기록이 아직 없어요',
-                  // ▼▼▼ [수정] b1_m -> h5_b
-                  style: AppFonts.suite.h5_b(context).copyWith(color: AppColors.gray300),
-                ),
-              ),
-            )
-          ] else ...[
-            // 데이터가 있는 경우
-            SizedBox(height: scaleHeight(16)),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatColumn("직관 승률", ((stats!['winRate'] ?? 0.0) * 100).toInt().toString(), "%"),
-                _buildStatColumn("기록 횟수", (stats['recordCount'] ?? 0).toString(), "회"),
-                _buildStatColumn("공감 받은 횟수", (stats['totalLikes'] ?? 0).toString(), "회"),
-              ],
-            ),
-          ],
+          // hasData 조건문을 제거하고 항상 통계 항목들을 표시
+          SizedBox(height: scaleHeight(16)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatColumn("직관 승률", hasData ? _formatWinRate(stats!['winRate'] ?? 0.0) : "--", "%"),
+              _buildStatColumn("기록 횟수", hasData ? (stats!['recordCount'] ?? 0).toString() : "--", "회"),
+              _buildStatColumn("공감 받은 횟수", hasData ? (stats!['totalLikes'] ?? 0).toString() : "--", "회"),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  // 승률 포맷팅 함수 (0과 100만 정수, 나머지는 백엔드 값 그대로)
+  String _formatWinRate(double winRate) {
+
+    // 0 또는 100인 경우만 정수로 표시
+    if (winRate == 0.0 || winRate == 100.0 || (winRate*10)%10==0) {
+      return winRate.toInt().toString();
+    }
+
+    // 나머지는 백엔드에서 온 값 그대로 toString()
+    return winRate.toString();
   }
 
   // 통계 패널 헤더 (O월 직관 분석 [리포트])
@@ -1197,12 +1273,12 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: scaleWidth(8), vertical: scaleHeight(2)),
             decoration: BoxDecoration(
-              color: AppColors.pri50, // Light blue
+              color: AppColors.pri100, // Light blue
               borderRadius: BorderRadius.circular(scaleWidth(4)),
             ),
             child: Text(
               '리포트',
-              style: AppFonts.suite.c3_sb(context).copyWith(color: AppColors.pri500),
+              style: AppFonts.suite.c3_sb(context).copyWith(color: AppColors.pri700),
             ),
           ),
         ),
@@ -1213,7 +1289,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   // 통계 항목 (승률, 횟수 등)
   Widget _buildStatColumn(String label, String value, String unit) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
@@ -1223,14 +1299,15 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              value.padLeft(2, '0'), // 2자리로 패딩 (예: 9% -> 09%)
+              value,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.gray950,
+                color: AppColors.gray900,
                 height: 1.0,
               ),
             ),
@@ -1239,9 +1316,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               unit,
               style: TextStyle(
                 fontFamily: 'Pretendard',
-                fontSize: 18.sp, // 단위는 조금 더 작게
+                fontSize: 22.sp, // 단위는 조금 더 작게
                 fontWeight: FontWeight.w600,
-                color: AppColors.gray950,
+                color: AppColors.gray900,
                 height: 1.0,
               ),
             ),

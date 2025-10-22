@@ -112,4 +112,8 @@ class AppImages {
   //마이페이지
   static const btn_camera = 'assets/imgs/btn_camera_24.svg';
   static const delete = 'assets/imgs/ic_delete_18.svg';
+  static const win = 'assets/imgs/ic_win.svg';
+  static const tie = 'assets/imgs/ic_tie.svg';
+  static const lose = 'assets/imgs/ic_lose.svg';
+  static const etc = 'assets/imgs/ic_etc';
 }

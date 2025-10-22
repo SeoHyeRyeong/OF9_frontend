@@ -231,6 +231,10 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         print('💬 댓글 작성 응답: $result');
 
         final newComment = CommentDto.fromJson(result);
+        if (newComment.totalCommentCount == null) {
+          final currentCount = _feedCountManager.getCommentCount(widget.recordId) ?? _commentCount;
+          _feedCountManager.updateCommentCount(widget.recordId, currentCount + 1);
+        }
         _commentListManager.addComment(widget.recordId, newComment);
 
         print('✅ 댓글 작성 성공 - totalCommentCount: ${newComment.totalCommentCount}');
@@ -249,13 +253,26 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     FocusScope.of(context).unfocus();
 
     try {
-      await FeedApi.deleteComment(
+      final response = await FeedApi.deleteComment(
           widget.recordId.toString(),
           commentId.toString()
       );
-      print('✅ 댓글 삭제 API 호출 완료');
-      _commentListManager.removeComment(widget.recordId, commentId);
-      print('✅ 댓글 삭제 성공');
+
+      if (response != null && response['totalCommentCount'] != null) {
+        final totalCount = response['totalCommentCount'] is int
+            ? response['totalCommentCount']
+            : (response['totalCommentCount'] as num).toInt();
+
+        _commentListManager.removeComment(
+            widget.recordId,
+            commentId,
+            totalCommentCount: totalCount
+        );
+        print('✅ 댓글 삭제 성공 - totalCommentCount: $totalCount');
+      } else {
+        _commentListManager.removeComment(widget.recordId, commentId);
+        print('⚠️ 댓글 삭제 성공 (백엔드 응답 없음, 로컬 카운트 사용)');
+      }
     } catch (e) {
       print('❌ 댓글 삭제 실패: $e');
     }

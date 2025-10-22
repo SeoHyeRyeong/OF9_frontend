@@ -48,8 +48,8 @@ class CommentDto {
       content: json['content'] as String? ?? '',
       createdAt: json['createdAt'] as String? ?? '',
       updatedAt: json['updatedAt'] as String? ?? '',
-      isAuthor: json['isAuthor'] as bool? ?? false,
-      isEdited: json['isEdited'] as bool? ?? false,
+      isAuthor: json['isAuthor'] as bool? ?? json['author'] as bool? ?? false,
+      isEdited: json['isEdited'] as bool? ?? json['edited'] as bool? ?? false,
       parentCommentId: json['parentCommentId'] as int?,
       replyCount: json['replyCount'] is int
           ? json['replyCount']
@@ -80,7 +80,6 @@ class CommentListManager extends ChangeNotifier {
   void setInitialState(int recordId, List<CommentDto> comments) {
     _comments[recordId] = comments;
 
-    // totalCommentCount가 있으면 FeedCountManager 업데이트
     if (comments.isNotEmpty && comments.first.totalCommentCount != null) {
       FeedCountManager().updateCommentCount(recordId, comments.first.totalCommentCount!);
     }
@@ -88,28 +87,36 @@ class CommentListManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 댓글 추가
+  /// 댓글 추가 (백엔드 응답의 totalCommentCount 사용)
   void addComment(int recordId, CommentDto newComment) {
     final currentComments = _comments[recordId] ?? [];
     currentComments.add(newComment);
     _comments[recordId] = currentComments;
 
-    // totalCommentCount가 있으면 FeedCountManager 업데이트
     if (newComment.totalCommentCount != null) {
       FeedCountManager().updateCommentCount(recordId, newComment.totalCommentCount!);
+      print('✅ 댓글 추가 - 백엔드 totalCommentCount 사용: ${newComment.totalCommentCount}');
+    } else {
+      FeedCountManager().updateCommentCount(recordId, currentComments.length);
+      print('⚠️ 댓글 추가 - 로컬 카운트 사용: ${currentComments.length}');
     }
 
     notifyListeners();
   }
 
-  /// 댓글 삭제
-  void removeComment(int recordId, int commentId) {
+  /// 댓글 삭제 (백엔드 응답의 totalCommentCount 사용)
+  void removeComment(int recordId, int commentId, {int? totalCommentCount}) {
     final currentComments = _comments[recordId] ?? [];
     final updatedComments = currentComments.where((c) => c.id != commentId).toList();
     _comments[recordId] = updatedComments;
 
-    // 삭제 후 FeedCountManager도 자동 업데이트
-    FeedCountManager().updateCommentCount(recordId, updatedComments.length);
+    if (totalCommentCount != null) {
+      FeedCountManager().updateCommentCount(recordId, totalCommentCount);
+      print('✅ 댓글 삭제 - 백엔드 totalCommentCount 사용: $totalCommentCount');
+    } else {
+      FeedCountManager().updateCommentCount(recordId, updatedComments.length);
+      print('⚠️ 댓글 삭제 - 로컬 카운트 사용: ${updatedComments.length}');
+    }
 
     notifyListeners();
   }

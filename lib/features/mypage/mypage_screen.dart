@@ -909,7 +909,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: BoxConstraints(),
-                icon: Icon(Icons.play_arrow, color: AppColors.gray100, size: scaleWidth(14)),
+                icon: Icon(Icons.arrow_forward_ios, color: AppColors.gray100, size: scaleWidth(14)),
                 onPressed: () {
                   setState(() {
                     _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);

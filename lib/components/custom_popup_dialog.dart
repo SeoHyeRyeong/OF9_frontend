@@ -245,3 +245,139 @@ class CustomPopupDialog extends StatelessWidget {
     );
   }
 }
+
+// ======================================================================
+// =================== ⬇️ 여기부터 새 팝업 클래스 ⬇️ ===================
+// ======================================================================
+
+/// 로그아웃, 회원탈퇴 등 아이콘이 없는 확인용 팝업
+///
+/// 사용 예시:
+/// import 'package:frontend/components/custom_popup_dialog.dart';
+///
+/// void _showConfirmLogout() {
+///   showDialog(
+///     context: context,
+///     builder: (context) => CustomConfirmDialog(
+///       title: "로그아웃 하시겠어요?",
+///       subtitle: "재접속 시, 다시 로그인 하셔야 해요.",
+///       leftButtonText: "취소",
+///       leftButtonAction: () => Navigator.of(context).pop(),
+///       rightButtonText: "로그아웃",
+///       rightButtonAction: () {
+///         Navigator.of(context).pop();
+///         // ... 로그아웃 로직
+///       },
+///     ),
+///   );
+/// }
+class CustomConfirmDialog extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String leftButtonText;
+  final String rightButtonText;
+  final VoidCallback leftButtonAction;
+  final VoidCallback rightButtonAction;
+
+  const CustomConfirmDialog({
+    Key? key,
+    required this.title,
+    required this.subtitle,
+    required this.leftButtonText,
+    required this.rightButtonText,
+    required this.leftButtonAction,
+    required this.rightButtonAction,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // 👇 [수정] Center를 Material 위젯으로 감싸고,
+    // 팝업 배경이 투명하도록 color: Colors.transparent를 추가합니다.
+    return Material(
+      color: Colors.transparent,
+      child: Center(
+        child: Container(
+          width: scaleWidth(320),
+          height: scaleHeight(184), // 고정 높이 184
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(scaleWidth(20)), // 레디어스 20
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: scaleWidth(20),
+            vertical: scaleHeight(24),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, // 컨텐츠를 위아래로 분리
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 텍스트 영역
+              Column(
+                children: [
+                  SizedBox(height: scaleHeight(12)), // 텍스트 상단 여백
+                  FixedText(
+                    title,
+                    style: AppFonts.suite.head_sm_700(context) // 큰 폰트
+                        .copyWith(color: AppColors.gray900), // 큰 폰트 색상
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: scaleHeight(8)),
+                  FixedText(
+                    subtitle,
+                    style: AppFonts.suite.body_sm_400(context) // 작은 폰트
+                        .copyWith(color: AppColors.gray400), // 작은 폰트 색상
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+              // 버튼 영역 (이하 동일)
+              Row(
+                children: [
+                  // 왼쪽 버튼
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: leftButtonAction,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gray50, // 왼쪽 버튼 배경
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(scaleWidth(16)), // 버튼 레디어스 16
+                        ),
+                        elevation: 0,
+                        minimumSize: Size(0, scaleHeight(46)), // 버튼 높이 46
+                      ),
+                      child: FixedText(
+                        leftButtonText,
+                        style: AppFonts.suite.body_sm_500(context) // 버튼 폰트
+                            .copyWith(color: AppColors.gray700), // 왼쪽 버튼 폰트색
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: scaleWidth(8)),
+                  // 오른쪽 버튼
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: rightButtonAction,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.pri900, // 오른쪽 버튼 배경
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(scaleWidth(16)), // 버튼 레디어스 16
+                        ),
+                        elevation: 0,
+                        minimumSize: Size(0, scaleHeight(46)), // 버튼 높이 46
+                      ),
+                      child: FixedText(
+                        rightButtonText,
+                        style: AppFonts.suite.body_sm_500(context) // 버튼 폰트
+                            .copyWith(color: AppColors.gray20), // 오른쪽 버튼 폰트색
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

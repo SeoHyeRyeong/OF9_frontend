@@ -291,6 +291,14 @@ class _SuiteFonts {
     letterSpacing: -0.28,
   );
 
+  TextStyle body_sm_400(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w400,
+    fontSize: scaleFont(14),
+    height: 20 / 14,
+    letterSpacing: -0.28,
+  );
+
   TextStyle body_re_400(BuildContext context) => TextStyle(
     fontFamily: _fontFamily,
     fontWeight: FontWeight.w400,

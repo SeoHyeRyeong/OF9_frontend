@@ -6,12 +6,12 @@ import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/api/user_api.dart';
-import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:frontend/features/mypage/edit_profile_screen.dart';
 import 'package:frontend/features/onboarding_login/login_screen.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:frontend/components/custom_popup_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -96,8 +96,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// 로그아웃 처리
+  // 👈 [수정] 1. 로그아웃 확인 팝업 (CustomConfirmDialog 사용)
   Future<void> _handleLogout() async {
+    showDialog(
+      context: context,
+      builder: (context) => CustomConfirmDialog( // 👈 새 컴포넌트 사용
+        title: "로그아웃 하시겠어요?",
+        subtitle: "재접속 시, 다시 로그인 하셔야 해요.",
+        leftButtonText: "취소", // 👈 파라미터 이름 변경됨
+        leftButtonAction: () => Navigator.of(context).pop(),
+        rightButtonText: "로그아웃", // 👈 파라미터 이름 변경됨
+        rightButtonAction: () async {
+          Navigator.of(context).pop(); // 팝업 닫기
+          await _performLogout(); // 실제 로그아웃 로직 실행
+        },
+      ),
+    );
+  }
+
+  /// 👈 [수정] 2. 실제 로그아웃 "처리" 로직 (기존 코드를 분리)
+  Future<void> _performLogout() async {
     try {
       print('🚪 로그아웃 시작');
 
@@ -125,30 +143,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// 회원 탈퇴 처리
+  // 👈 [수정] 3. 회원 탈퇴 확인 팝업 (CustomConfirmDialog 사용)
   Future<void> _handleAccountDeletion() async {
+    // 👈 [수정] 기존 AlertDialog 코드를 CustomConfirmDialog로 대체
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('회원 탈퇴'),
-          content: const Text('정말로 탈퇴하시겠습니까?\n탈퇴 후 모든 데이터가 삭제되며 복구할 수 없습니다.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('탈퇴', style: TextStyle(color: Colors.red)),
-            ),
-          ],
+        return CustomConfirmDialog( // 👈 새 컴포넌트 사용
+          title: "정말로 탈퇴 하시겠어요?",
+          subtitle: "탈퇴 시, 기록한 정보는 모두 삭제돼요.",
+          leftButtonText: "취소", // 👈 파라미터 이름 변경됨
+          leftButtonAction: () => Navigator.of(context).pop(false), // 👈 false 반환
+          rightButtonText: "탈퇴", // 👈 파라미터 이름 변경됨
+          rightButtonAction: () => Navigator.of(context).pop(true), // 👈 true 반환
         );
       },
     );
 
     if (confirmed != true) return;
 
+    // 👈 [수정] 4. 실제 탈퇴 로직을 별도 메서드로 분리
+    await _performAccountDeletion();
+  }
+
+  /// 👈 [수정] 4. 실제 회원 탈퇴 "처리" 로직 (기존 코드를 분리)
+  Future<void> _performAccountDeletion() async {
     try {
       print('🗑️ 회원탈퇴 시작');
 
@@ -585,8 +604,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   _buildMenuButton("개인정보 처리방침", () {
                                     _launchUrl('https://www.notion.so/24bf22b2f4cd80f0a0efeab79c6861ae?source=copy_link');
                                   }),
-                                  _buildMenuButton("로그아웃", _handleLogout),
-                                  _buildMenuButton("회원 탈퇴", _handleAccountDeletion),
+                                  _buildMenuButton("로그아웃", _handleLogout), // 👈 수정됨
+                                  _buildMenuButton("회원 탈퇴", _handleAccountDeletion), // 👈 수정됨
                                 ],
                               ),
                             ),

@@ -108,7 +108,12 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
       child: Scaffold(
         backgroundColor: Colors.white,
         resizeToAvoidBottomInset: false,
-        body: SafeArea(
+        body: GestureDetector(
+          onTap: () {
+            // 빈 공간 탭 시 키보드 포커스 해제
+            FocusScope.of(context).unfocus();
+          },
+          child: SafeArea(
           child: Column(
             children: [
               _buildBackButtonArea(),
@@ -141,6 +146,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -1058,6 +1064,8 @@ Widget _buildInputWithCounter({
             color: isActive ? AppColors.gray900 : AppColors.gray200,
             height: 1.5,
           ),
+          textInputAction: TextInputAction.done,
+          onEditingComplete: () => focusNode.unfocus(),
         ),
       ),
       SizedBox(height: scaleHeight(counterTopSpacing)),
@@ -1126,6 +1134,8 @@ Widget _buildSimpleInput({
                   color: isSelected ? AppColors.pri600 : AppColors.gray900,
                   height: 1.0,
                 ),
+                textInputAction: TextInputAction.done,
+                onEditingComplete: () => focusNode.unfocus(),
               ),
             ),
             GestureDetector(

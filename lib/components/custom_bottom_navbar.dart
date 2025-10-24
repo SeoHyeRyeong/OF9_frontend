@@ -9,6 +9,7 @@ import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/notification/notification_screen.dart';
+import 'package:frontend/features/report/report_screen.dart';
 
 // 사용법
 // import 'package:frontend/components/custom_bottom_navbar.dart';
@@ -38,7 +39,8 @@ class CustomBottomNavBar extends StatelessWidget {
 
     switch (index) {
       case 0:
-      // 0은 미구현
+        target = const ReportScreen();
+        break;
 
       case 1:
         target = const FeedScreen();

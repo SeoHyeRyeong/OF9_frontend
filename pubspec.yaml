@@ -90,6 +90,7 @@ flutter:
     - assets/imgs/ic_detail_record/
     - assets/imgs/ic_feed/
     - assets/imgs/img_team/
+    - assets/imgs/ic_report/
     - assets/fonts/
     - assets/tessdata/
     - assets/animations/

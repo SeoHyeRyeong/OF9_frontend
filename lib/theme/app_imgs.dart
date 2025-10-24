@@ -58,7 +58,7 @@ class AppImages {
   static const back_black = 'assets/imgs/ic_back_black_16.svg';
   static const right_black = 'assets/imgs/ic_right_black_16.svg';
 
-  // 이모지 선택
+  // 직관 감정
   static const emotion_1 = 'assets/imgs/ic_emotion/emotion_1.svg';
   static const emotion_2 = 'assets/imgs/ic_emotion/emotion_2.svg';
   static const emotion_3 = 'assets/imgs/ic_emotion/emotion_3.svg';
@@ -68,6 +68,16 @@ class AppImages {
   static const emotion_7 = 'assets/imgs/ic_emotion/emotion_7.svg';
   static const emotion_8 = 'assets/imgs/ic_emotion/emotion_8.svg';
   static const emotion_9 = 'assets/imgs/ic_emotion/emotion_9.svg';
+
+  static const emotion_1_transparent = 'assets/imgs/ic_emotion/emotion_1_transparent.svg';
+  static const emotion_2_transparent = 'assets/imgs/ic_emotion/emotion_2_transparent.svg';
+  static const emotion_3_transparent = 'assets/imgs/ic_emotion/emotion_3_transparent.svg';
+  static const emotion_4_transparent = 'assets/imgs/ic_emotion/emotion_4_transparent.svg';
+  static const emotion_5_transparent = 'assets/imgs/ic_emotion/emotion_5_transparent.svg';
+  static const emotion_6_transparent = 'assets/imgs/ic_emotion/emotion_6_transparent.svg';
+  static const emotion_7_transparent = 'assets/imgs/ic_emotion/emotion_7_transparent.svg';
+  static const emotion_8_transparent = 'assets/imgs/ic_emotion/emotion_8_transparent.svg';
+  static const emotion_9_transparent = 'assets/imgs/ic_emotion/emotion_9_transparent.svg';
 
   // 상세 기록
   static const maincheck = 'assets/imgs/ic_detail_record/chip_main_check.svg';
@@ -116,4 +126,8 @@ class AppImages {
   static const tie = 'assets/imgs/ic_tie.svg';
   static const lose = 'assets/imgs/ic_lose.svg';
   static const etc = 'assets/imgs/ic_etc';
+
+  //리포트
+  static const telescope = 'assets/imgs/ic_report/ic_telescope.svg';
+  static const location_marker = 'assets/imgs/ic_report/ic_location_marker.svg';
 }

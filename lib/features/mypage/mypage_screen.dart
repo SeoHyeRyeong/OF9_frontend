@@ -1186,8 +1186,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           // ▼▼▼ Icon -> SvgPicture.asset 으로 변경
           SvgPicture.asset(
             imagePath,
-            width: scaleWidth(16.5), // 아이콘 크기
-            height: scaleHeight(16.5),
+            width: scaleWidth(17), // 아이콘 크기
+            height: scaleHeight(17),
           ),
           // ▲▲▲
           SizedBox(height: scaleHeight(1)), // 아이콘과 텍스트 간격

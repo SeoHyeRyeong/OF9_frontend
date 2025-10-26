@@ -9,6 +9,7 @@ import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/report/report_screen.dart';
+import 'package:frontend/features/feed/detail_feed_screen.dart';
 
 class NotificationModel {
   final int id;
@@ -430,8 +431,22 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
 
     return GestureDetector(
       onTap: () {
-        // userId가 있고 시스템 알림이 아닌 경우에만 프로필로 이동
-        if (notification.userId != null &&
+        // COMMENT나 LIKE 알림은 relatedRecordId가 있으면 DetailFeedScreen으로 이동
+        if ((notification.type == 'COMMENT' || notification.type == 'LIKE') &&
+            notification.relatedRecordId != null) {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => DetailFeedScreen(
+                recordId: notification.relatedRecordId!,
+              ),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+        // 그 외 userId가 있고 시스템 알림이 아닌 경우에는 프로필로 이동
+        else if (notification.userId != null &&
             notification.type != 'SYSTEM' &&
             notification.type != 'NEWS') {
           Navigator.push(

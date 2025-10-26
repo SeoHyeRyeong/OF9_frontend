@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:frontend/api/feed_api.dart';
+import 'package:frontend/api/user_api.dart';
 import 'package:frontend/features/mypage/friend_profile_screen.dart';
+import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
@@ -14,11 +16,13 @@ import 'package:frontend/utils/feed_count_manager.dart';
 class FeedItemWidget extends StatefulWidget {
   final Map<String, dynamic> feedData;
   final VoidCallback? onTap;
+  final VoidCallback? onProfileNavigated;
 
   const FeedItemWidget({
     Key? key,
     required this.feedData,
     this.onTap,
+    this.onProfileNavigated,
   }) : super(key: key);
 
   @override
@@ -240,20 +244,43 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     final userId = widget.feedData['userId'] ?? widget.feedData['authorId'];
 
     return GestureDetector(
-      onTap: () {
-        if (userId != null) {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(
-                userId: userId,
+      onTap: () async {
+        try {
+          final myProfile = await UserApi.getMyProfile();
+          final myUserId = myProfile['data']['id'];
+
+          if (userId == myUserId) {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                const MyPageScreen(
+                  fromNavigation: false,
+                  showBackButton: true,
+                ),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
               ),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
-        } else {
-          print('userId 없음: 프로필 화면으로 이동 불가');
+            );
+          } else {
+            final result = await Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    FriendProfileScreen(userId: userId),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+            if (result != null && result is String) {
+              setState(() {
+                widget.feedData['followStatus'] = result;
+              });
+              widget.onProfileNavigated?.call();
+            }
+          }
+        } catch (e) {
+          print('프로필 이동 실패: $e');
         }
       },
       behavior: HitTestBehavior.opaque,

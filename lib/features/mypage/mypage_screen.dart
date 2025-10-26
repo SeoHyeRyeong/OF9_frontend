@@ -1264,20 +1264,23 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       padding: EdgeInsets.only(
         top: scaleHeight(18),
         left: scaleWidth(32),
-        right: scaleWidth(32),
+        right: scaleWidth(30),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 월 직관 분석 + 리포트 태그
           Row(
             children: [
               Text(
                 '${_focusedDay.month}월 직관 분석',
-                style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+                style: AppFonts.suite.body_sm_500(context).copyWith(
+                  color: AppColors.gray900,
+                ),
               ),
               SizedBox(width: scaleWidth(6)),
               Container(
-                height: scaleHeight(20),
+                height: scaleHeight(20), // 20px height
                 padding: EdgeInsets.symmetric(horizontal: scaleWidth(8)),
                 decoration: BoxDecoration(
                   color: AppColors.pri100,
@@ -1294,13 +1297,18 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               ),
             ],
           ),
+
+          // 조건부 SizedBox - 데이터 없을 때 25px, 있을 때 13px
           SizedBox(height: hasData ? scaleHeight(13) : scaleHeight(25)),
 
+          // 데이터가 없을 때 메시지 표시
           if (!hasData)
             Center(
               child: Text(
                 '업로드한 기록이 아직 없어요',
-                style: AppFonts.suite.body_md_500(context).copyWith(color: AppColors.gray300),
+                style: AppFonts.suite.body_md_500(context).copyWith(
+                  color: AppColors.gray300,
+                ),
               ),
             )
           else
@@ -1309,41 +1317,49 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 직관 승률
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '직관 승률',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
-                          color: AppColors.gray500,
-                          fontSize: 10.sp,
+                  // 직관 승률 (왼쪽)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '직관 승률',
+                          style: AppFonts.suite.caption_md_500(context).copyWith(
+                            color: AppColors.gray500,
+                            fontSize: 10.sp,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${_formatWinRate(stats!['winRate'] ?? 0.0)} %',
-                        style: AppFonts.pretendard.title_sm_600(context).copyWith(color: AppColors.gray900),
-                      ),
-                    ],
-                  ),
-                  // 기록 횟수
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '기록 횟수',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
-                          color: AppColors.gray500,
-                          fontSize: 10.sp,
+                        Text(
+                          '${_formatWinRate(stats!['winRate'] ?? 0.0)} %',
+                          style: AppFonts.pretendard.title_sm_600(context).copyWith(
+                            color: AppColors.gray900,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${stats!['recordCount'] ?? 0} 회',
-                        style: AppFonts.pretendard.title_sm_600(context).copyWith(color: AppColors.gray900),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  // 공감 받은 횟수
+                  // 기록 횟수 (센터)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '기록 횟수',
+                          style: AppFonts.suite.caption_md_500(context).copyWith(
+                            color: AppColors.gray500,
+                            fontSize: 10.sp,
+                          ),
+                        ),
+                        Text(
+                          '${stats!['recordCount'] ?? 0} 회',
+                          style: AppFonts.pretendard.title_sm_600(context).copyWith(
+                            color: AppColors.gray900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 공감 받은 횟수 (오른쪽)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1356,7 +1372,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                       ),
                       Text(
                         '${stats!['totalLikes'] ?? 0} 회',
-                        style: AppFonts.pretendard.title_sm_600(context).copyWith(color: AppColors.gray900),
+                        style: AppFonts.pretendard.title_sm_600(context).copyWith(
+                          color: AppColors.gray900,
+                        ),
                       ),
                     ],
                   ),

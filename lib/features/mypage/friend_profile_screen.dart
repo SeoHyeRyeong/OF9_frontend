@@ -22,10 +22,12 @@ import 'package:frontend/utils/feed_count_manager.dart';
 
 class FriendProfileScreen extends StatefulWidget {
   final int userId;
+  final String? initialFollowStatus;
 
   const FriendProfileScreen({
     Key? key,
     required this.userId,
+    this.initialFollowStatus,
   }) : super(key: key);
 
   @override
@@ -70,6 +72,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   @override
   void initState() {
     super.initState();
+    followStatus = widget.initialFollowStatus;
     _selectedDay = _focusedDay;
     _likeManager.addListener(_onGlobalStateChanged);
 
@@ -551,8 +554,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          final navigator = Navigator.of(context);
+          navigator.pop(followStatus);
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -560,7 +567,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           child: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
-                // 상단 액션바를 고정 헤더로 변경
                 SliverPersistentHeader(
                   pinned: true,
                   floating: false,
@@ -569,7 +575,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     nickname: nickname,
                     isScrolled: innerBoxIsScrolled,
                     followStatus: followStatus,
-                    onBackPressed: () => Navigator.pop(context),
+                    onBackPressed: () => Navigator.pop(context, followStatus),
                     onFollowPressed: _handleFollow,
                   ),
                 ),

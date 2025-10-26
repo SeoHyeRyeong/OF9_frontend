@@ -156,6 +156,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     _selectedTabIndex = index;
                   });
                 },
+                onRefreshRequired: _refreshSearchResults,
               )
                   : InitialSearchWidget(
                 popularSearches: _popularSearches,
@@ -260,6 +261,28 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> _refreshSearchResults() async {
+    final query = _searchController.text;
+    if (query.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await SearchApi.search(query);
+      setState(() {
+        _searchResult = result;
+      });
+    } catch (e) {
+      print("검색 새로고침 실패: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _clearAllRecentSearches() async {
     await SearchApi.deleteAllRecentSearches();
     _loadInitialData();
@@ -276,12 +299,14 @@ class SearchResultsWidget extends StatefulWidget {
   final SearchResult? searchResult;
   final int selectedTabIndex;
   final Function(int) onTabChanged;
+  final VoidCallback onRefreshRequired;
 
   const SearchResultsWidget({
     Key? key,
     required this.searchResult,
     required this.selectedTabIndex,
     required this.onTabChanged,
+    required this.onRefreshRequired,
   }) : super(key: key);
 
   @override
@@ -447,7 +472,10 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
             controller: _pageController,
             onPageChanged: _onPageChanged,
             children: [
-              RecordsListWidget(records: widget.searchResult!.records.records),
+              RecordsListWidget(
+                records: widget.searchResult!.records.records,
+                onRefreshRequired: widget.onRefreshRequired,
+              ),
               UsersListWidget(users: widget.searchResult!.users.users),
             ],
           ),
@@ -738,8 +766,14 @@ class RecentSearchItemWidget extends StatelessWidget {
 /// 게시글 검색 결과 - FeedItemWidget 사용
 class RecordsListWidget extends StatefulWidget {
   final List<Record> records;
+  final VoidCallback? onRefreshRequired;
 
-  const RecordsListWidget({Key? key, required this.records}) : super(key: key);
+  const RecordsListWidget({
+    Key? key,
+    required this.records,
+    this.onRefreshRequired,
+  }) : super(key: key);
+
 
   @override
   State<RecordsListWidget> createState() => _RecordsListWidgetState();
@@ -845,6 +879,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
 
           return FeedItemWidget(
             feedData: feedData,
+            onProfileNavigated: widget.onRefreshRequired,
             onTap: () async {
               final result = await Navigator.push(
                 context,
@@ -1029,12 +1064,26 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
         Navigator.push(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(userId: widget.user.userId),
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                FriendProfileScreen(
+                  userId: widget.user.userId,
+                  initialFollowStatus: _currentFollowStatus,
+                ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),
-        ).then((_) async {
-          await _refreshFollowStatus();
+        ).then((returnedFollowStatus) {
+          if (returnedFollowStatus != null && mounted) {
+            _currentFollowStatus = returnedFollowStatus;
+            setState(() {});
+
+            final searchScreenState = context.findAncestorStateOfType<_SearchScreenState>();
+            if (searchScreenState != null && searchScreenState._hasSearched) {
+              searchScreenState._refreshSearchResults();
+            }
+          } else {
+            _refreshFollowStatus();
+          }
         });
       },
       child: Container(

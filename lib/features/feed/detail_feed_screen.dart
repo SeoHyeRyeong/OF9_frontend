@@ -13,6 +13,7 @@ import 'package:frontend/utils/comment_state_manager.dart';
 import 'dart:math' as math;
 import 'package:frontend/components/custom_action_sheet.dart';
 import 'package:frontend/api/user_api.dart';
+import 'package:frontend/features/mypage/mypage_screen.dart';
 
 class DetailFeedScreen extends StatefulWidget {
   final int recordId;
@@ -520,19 +521,35 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: () {
+          onTap: () async {
             final userId = _recordDetail!['userId'];
             if (userId != null) {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(
-                    userId: userId,
+              if (userId == _currentUserId) {
+                // 내 프로필이면 MyPage로 이동
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                    const MyPageScreen(
+                      fromNavigation: false,
+                      showBackButton: true,
+                    ),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
                   ),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
+                );
+              } else {
+                // 다른 사람 프로필이면 FriendProfileScreen으로 이동
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        FriendProfileScreen(userId: userId),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              }
             }
           },
           behavior: HitTestBehavior.opaque,
@@ -707,65 +724,94 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(scaleWidth(14)),
-                child: (comment.profileImageUrl.isNotEmpty)
-                    ? Image.network(
-                  comment.profileImageUrl,
-                  width: scaleWidth(28),
-                  height: scaleHeight(28),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => SvgPicture.asset(
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () async {
+              if (comment.userId == _currentUserId) {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                    const MyPageScreen(
+                      fromNavigation: false,
+                      showBackButton: true,
+                    ),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        FriendProfileScreen(userId: comment.userId),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              }
+            },
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(scaleWidth(14)),
+                  child: (comment.profileImageUrl.isNotEmpty)
+                      ? Image.network(
+                    comment.profileImageUrl,
+                    width: scaleWidth(28),
+                    height: scaleHeight(28),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => SvgPicture.asset(
+                      AppImages.profile,
+                      width: scaleWidth(28),
+                      height: scaleHeight(28),
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                      : SvgPicture.asset(
                     AppImages.profile,
                     width: scaleWidth(28),
                     height: scaleHeight(28),
                     fit: BoxFit.cover,
                   ),
-                )
-                    : SvgPicture.asset(
-                  AppImages.profile,
-                  width: scaleWidth(28),
-                  height: scaleHeight(28),
-                  fit: BoxFit.cover,
                 ),
-              ),
-              SizedBox(width: scaleWidth(8)),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    FixedText(
-                      comment.nickname,
-                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
-                    ),
-                    SizedBox(width: scaleWidth(4)),
-                    SvgPicture.asset(AppImages.ellipse, width: scaleWidth(2), height: scaleHeight(2)),
-                    SizedBox(width: scaleWidth(4)),
-                    FixedText(
-                      '${comment.favTeam} 팬',
-                      style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400),
-                    ),
-                  ],
-                ),
-              ),
-              if (comment.userId == _currentUserId)
-                GestureDetector(
-                  onTap: () => _showCommentOptions(comment),
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: EdgeInsets.all(scaleWidth(4)),
-                    child: SvgPicture.asset(
-                        AppImages.more,
-                        width: scaleWidth(20),
-                        height: scaleHeight(20),
-                        fit: BoxFit.contain
-                    ),
+                SizedBox(width: scaleWidth(8)),
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      FixedText(
+                        comment.nickname,
+                        style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
+                      ),
+                      SizedBox(width: scaleWidth(4)),
+                      SvgPicture.asset(AppImages.ellipse, width: scaleWidth(2), height: scaleHeight(2)),
+                      SizedBox(width: scaleWidth(4)),
+                      FixedText(
+                        '${comment.favTeam} 팬',
+                        style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400),
+                      ),
+                    ],
                   ),
                 ),
-            ],
+                if (comment.userId == _currentUserId)
+                  GestureDetector(
+                    onTap: () => _showCommentOptions(comment),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: EdgeInsets.all(scaleWidth(4)),
+                      child: SvgPicture.asset(
+                          AppImages.more,
+                          width: scaleWidth(20),
+                          height: scaleHeight(20),
+                          fit: BoxFit.contain
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           Padding(
             padding: EdgeInsets.only(left: scaleWidth(36), top: scaleHeight(4)),

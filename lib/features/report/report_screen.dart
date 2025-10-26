@@ -50,8 +50,6 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Future<void> _loadReportData() async {
     if (!mounted) return; // 위젯 unmount 시 중단
-    // 이미 로딩 중이면 중복 호출 방지 (선택 사항)
-    // if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
@@ -162,7 +160,9 @@ class _ReportScreenState extends State<ReportScreen> {
                   style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400),
                 ),
                 SizedBox(width: scaleWidth(4)),
-                Icon(Icons.arrow_forward_ios, size: scaleWidth(12), color: AppColors.gray400),
+                // ▼▼▼ [수정] 아이콘 다시 표시
+                //Icon(Icons.arrow_forward_ios, size: scaleWidth(12), color: AppColors.gray400),
+                // ▲▲▲
               ],
             ),
           ),
@@ -180,6 +180,9 @@ class _ReportScreenState extends State<ReportScreen> {
     String dDay1 = dDayStr[0];
     String dDay2 = dDayStr[1];
 
+    // D-Day 10일 이내 여부 확인 (0~10)
+    final bool isDDay = daysRemaining >= 0 && daysRemaining <= 10;
+
     return Container(
       width: double.infinity,
       color: AppColors.gray900,
@@ -195,7 +198,9 @@ class _ReportScreenState extends State<ReportScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildDDayBox("D"),
+              // ▼▼▼ [수정] isDDay: false 전달
+              _buildDDayBox("D", isDDay: false),
+              // ▲▲▲
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: scaleWidth(4)),
                 child: Container(
@@ -207,31 +212,45 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                 ),
               ),
-              _buildDDayBox(dDay1),
+              // ▼▼▼ [수정] isDDay: isDDay 전달
+              _buildDDayBox(dDay1, isDDay: isDDay),
               SizedBox(width: scaleWidth(4)),
-              _buildDDayBox(dDay2),
+              _buildDDayBox(dDay2, isDDay: isDDay),
+              // ▲▲▲
             ],
           ),
           SizedBox(height: scaleHeight(32)),
           // ▼▼▼ hasRecords 값에 따라 다른 카드 표시
           hasRecords ? _buildSummaryCard() : _buildNoRecordCard(),
           // ▲▲▲
-          SizedBox(height: scaleHeight(16)),
+          // ▼▼▼ [수정] 간격 22로 수정
+          SizedBox(height: scaleHeight(22)), // 디자인 반영 (26 -> 22)
+          // ▲▲▲
           // 이미지 저장 버튼은 기록 유무와 상관없이 표시 (디자인 참고)
           _buildImageSaveButton(),
+          // ▼▼▼ [수정] 하단 여백 추가 (디자인 반영)
+          SizedBox(height: scaleHeight(22)), // 22 간격 동일하게
+          // ▲▲▲
         ],
       ),
     );
   }
 
+  // ▼▼▼ [수정] _buildCountdownSection 밖으로 이동
   // D-Day 숫자 표시 박스
-  Widget _buildDDayBox(String text) {
+  Widget _buildDDayBox(String text, {required bool isDDay}) { // isDDay 파라미터 추가
     // TODO: Jalnan 폰트 추가 및 AppFonts에 정의
+
+    // D-Day 여부에 따라 색상 결정
+    // D-Day이고, 텍스트가 "D"가 아닌 숫자일 때만 빨간색(error) 적용
+    final bool isNumeric = int.tryParse(text) != null;
+    final Color textColor = (isDDay && isNumeric) ? AppColors.error : AppColors.gray900;
+
     TextStyle dDayStyle = TextStyle(
-      fontFamily: 'Jalnan',
+      fontFamily: 'Jalnan', // Jalnan 폰트 적용
       fontSize: 30.sp,
-      color: AppColors.gray900,
-      height: 1.2,
+      color: textColor, // textColor 변수 적용
+      height: 1.2, // 글자가 잘리지 않도록 높이 조절
       letterSpacing: -1,
     );
 
@@ -246,11 +265,10 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Text(text, style: dDayStyle),
     );
   }
+  // ▲▲▲ [수정]
 
   // 사용자 승률 요약 카드 (기록 있을 때)
   Widget _buildSummaryCard() {
-    // ... (기존 _buildSummaryCard 코드 내용과 동일) ...
-    // (이전 답변 코드 복사)
     final winRateInfo = _reportData?['winRateInfo'];
     final totalWinRate = winRateInfo?['totalWinRate'] ?? 0.0;
     final totalWin = winRateInfo?['totalWinCount'] ?? 0;
@@ -270,89 +288,121 @@ class _ReportScreenState extends State<ReportScreen> {
     final favTeam = _userData?['favTeam'] ?? '응원팀 없음';
     final profileImageUrl = _userData?['profileImageUrl'];
 
-
     return Container(
-      width: scaleWidth(320), // 가로 크기 지정 (360 - 좌우 패딩 20*2)
-      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20), vertical: scaleHeight(24)), // 내부 패딩
-      decoration: BoxDecoration(
-        color: Colors.white, // 배경 흰색
-        borderRadius: BorderRadius.circular(scaleWidth(16)), // 둥근 모서리
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start, // 상단 정렬
-        children: [
-          // 왼쪽: 프로필, 승률, 경기수, 승무패
-          Expanded( // 남은 공간 모두 차지
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start, // 왼쪽 정렬
-              children: [
-                Row(
-                  children: [
-                    // 프로필 이미지
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(scaleWidth(16)), // SwiftUI 코드엔 11.85, 디자인은 더 둥글어 보임. 16 정도로 조정
-                      child: Container(
-                        width: scaleWidth(32),
-                        height: scaleHeight(32),
-                        color: AppColors.gray100, // 이미지 로딩 전 배경
-                        child: profileImageUrl != null && profileImageUrl.isNotEmpty
-                            ? Image.network(profileImageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _defaultProfileIcon())
-                            : _defaultProfileIcon(), // 기본 이미지
-                      ),
-                    ),
-                    SizedBox(width: scaleWidth(8)),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(nickname, style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900)), // 변경된 스타일 (12pt Medium)
-                        if (favTeam != '응원팀 없음')
-                          Text("$favTeam 팬", style: AppFonts.suite.caption_md_400(context).copyWith(color: AppColors.gray500)), // 변경된 스타일 (10pt Regular)
-                      ],
-                    ),
-                  ],
-                ),
-                SizedBox(height: scaleHeight(16)), // 프로필과 승률 사이 간격
-                Text(
-                  "${totalWinRate.toStringAsFixed(1)}%", // 소수점 첫째 자리
-                  style: TextStyle( // SwiftUI 코드는 SUITE 42 Bold, 해당 스타일 없으므로 직접 정의
-                      fontFamily: AppFonts.suiteFontFamily,
-                      fontSize: 42.sp, // 42pt
-                      fontWeight: FontWeight.w700, // Bold
-                      color: AppColors.gray800, // SwiftUI 코드엔 38414C (gray700과 유사하나 gray800 사용)
-                      height: 1.2, // 라인 높이 조절
-                      letterSpacing: -1.26 // 자간 조절 (42 * -0.03)
-                  ),
-                ),
-                SizedBox(height: scaleHeight(4)), // 승률과 경기수 사이 간격
-                Text(
-                  "총 ${totalGames}회의 경기를 관람했어요",
-                  style: AppFonts.suite.caption_md_400(context).copyWith(color: AppColors.gray600), // 변경된 스타일 (10pt Regular)
-                ),
-                SizedBox(height: scaleHeight(16)), // 경기수와 뱃지 사이 간격
-                Row( // 승/패/무 뱃지
-                  children: [
-                    _buildWinLossDrawBadge(AppImages.win, totalWin), // 승
-                    SizedBox(width: scaleWidth(10)),
-                    _buildWinLossDrawBadge(AppImages.lose, totalLose), // 패
-                    SizedBox(width: scaleWidth(10)),
-                    _buildWinLossDrawBadge(AppImages.tie, totalDraw), // 무
-                  ],
-                ),
-              ],
-            ),
-          ),
-          // TODO: 구분선 (세로 점선) 구현 필요
-          SizedBox(width: scaleWidth(16)), // 임시 간격
-          // 오른쪽: 홈/어웨이 승률
-          Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, // 위 아래 간격 벌리기
-            children: [
-              _buildHomeAwayBox("홈", homeWinRate, homeWin, homeLose, homeDraw),
-              SizedBox(height: scaleHeight(8)), // 홈/어웨이 박스 사이 간격
-              _buildHomeAwayBox("원정", awayWinRate, awayWin, awayLose, awayDraw),
-            ],
+      width: scaleWidth(320), // 가로 크기 지정
+      // height: scaleHeight(187), // 고정 높이 제거
+      decoration: BoxDecoration( // 그림자 효과를 위해 BoxShadow 추가
+        borderRadius: BorderRadius.circular(scaleWidth(16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05), // 연한 그림자
+            blurRadius: 8.0,
+            offset: Offset(0, 2),
           ),
         ],
+      ),
+      child: CustomPaint( // CustomPaint로 티켓 모양 그리기
+        painter: TicketShapePainter(
+          backgroundColor: Colors.white,
+          dividerColor: AppColors.gray100, // 점선 색상
+          notchRadius: scaleWidth(8), // 반원 노치 반지름
+          dividerDashWidth: scaleHeight(4),
+          dividerDashSpace: scaleHeight(3),
+          dividerXPosition: scaleWidth(320) * 0.64, // 64% 위치에 구분선 (디자인 비율)
+        ),
+        child: Row( // 내용물 배치
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- 왼쪽 섹션 ---
+            Container(
+              width: scaleWidth(320) * 0.64, // 구분선 X위치와 동일하게
+              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20), vertical: scaleHeight(24)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(scaleWidth(16)),
+                        child: Container(
+                          width: scaleWidth(32),
+                          height: scaleHeight(32),
+                          color: AppColors.gray100,
+                          child: profileImageUrl != null && profileImageUrl.isNotEmpty
+                              ? Image.network(profileImageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _defaultProfileIcon())
+                              : _defaultProfileIcon(),
+                        ),
+                      ),
+                      SizedBox(width: scaleWidth(8)),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(nickname, style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900)),
+                          if (favTeam != '응원팀 없음')
+                            Text("$favTeam 팬", style: AppFonts.suite.caption_md_400(context).copyWith(color: AppColors.gray500)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: scaleHeight(16)),
+                  Center(
+                    child: Text(
+                      "${totalWinRate.toStringAsFixed(1)}%",
+                      style: TextStyle(
+                          fontFamily: AppFonts.suiteFontFamily,
+                          fontSize: 42.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.gray800,
+                          height: 1.2,
+                          letterSpacing: -1.26
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: scaleHeight(4)),
+
+                  Center(
+                    child: Text(
+                      "총 ${totalGames}회의 경기를 관람했어요",
+                      style: AppFonts.suite.caption_md_400(context).copyWith(color: AppColors.gray600),
+                    ),
+                  ),
+
+                  SizedBox(height: scaleHeight(16)),
+                  Row(
+                    children: [
+                      _buildWinLossDrawBadge(AppImages.win, totalWin),
+                      SizedBox(width: scaleWidth(10)),
+                      _buildWinLossDrawBadge(AppImages.lose, totalLose),
+                      SizedBox(width: scaleWidth(10)),
+                      _buildWinLossDrawBadge(AppImages.tie, totalDraw),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // --- 오른쪽 섹션 ---
+            Expanded( // 남은 공간 차지
+              child: Padding(
+                // 오른쪽 섹션 패딩 (좌우 패딩 줄임)
+                padding: EdgeInsets.symmetric(vertical: scaleHeight(24), horizontal: scaleWidth(12)),
+                child: Column(
+                  // ▼▼▼ [수정] spaceAround -> spaceBetween
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween, // 홈/어웨이 위젯 간격 균등하게
+                  // ▲▲▲ [수정]
+                  children: [
+                    _buildHomeAwayBox("홈", homeWinRate, homeWin, homeLose, homeDraw),
+                    // ▼▼▼ [수정] SizedBox 대신 spaceBetween이 간격 조절
+                    SizedBox(height: scaleHeight(8)),
+                    // ▲▲▲
+                    _buildHomeAwayBox("원정", awayWinRate, awayWin, awayLose, awayDraw),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -466,7 +516,10 @@ class _ReportScreenState extends State<ReportScreen> {
         borderRadius: BorderRadius.circular(scaleWidth(12)),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center, // 세로 중앙 정렬
+        // ▼▼▼ [수정] 가로 중앙 정렬 추가
+        crossAxisAlignment: CrossAxisAlignment.center,
+        // ▲▲▲ [수정]
         children: [
           Text(title, style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
           SizedBox(height: scaleHeight(4)),
@@ -774,5 +827,102 @@ class _MyPageTabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_MyPageTabBarDelegate oldDelegate) {
     return height != oldDelegate.height || child != oldDelegate.child;
+  }
+}
+
+// ▼▼▼ [새 클래스 추가] 티켓 모양 배경을 그리는 CustomPainter
+class TicketShapePainter extends CustomPainter {
+  final Color backgroundColor;
+  final Color dividerColor;
+  final double notchRadius;
+  final double dividerDashWidth;
+  final double dividerDashSpace;
+  final double dividerXPosition; // 구분선 X 좌표
+
+  TicketShapePainter({
+    this.backgroundColor = Colors.white,
+    required this.dividerColor,
+    required this.notchRadius,
+    required this.dividerDashWidth,
+    required this.dividerDashSpace,
+    required this.dividerXPosition,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint backgroundPaint = Paint()..color = backgroundColor;
+    final Path path = Path();
+
+    // --- 1. 티켓 모양(외곽선 + 노치) 그리기 ---
+    // 시작 (왼쪽 상단)
+    path.moveTo(scaleWidth(16), 0); // 왼쪽 상단 모서리 시작점
+    // 상단 가장자리 (왼쪽)
+    path.lineTo(dividerXPosition - notchRadius, 0);
+    // 상단 노치 (반원)
+    path.arcToPoint(
+      Offset(dividerXPosition + notchRadius, 0),
+      radius: Radius.circular(notchRadius),
+      clockwise: false, // 아래로 파인 모양
+    );
+    // 상단 가장자리 (오른쪽)
+    path.lineTo(size.width - scaleWidth(16), 0);
+    // 오른쪽 상단 모서리 (둥글게)
+    path.quadraticBezierTo(size.width, 0, size.width, scaleWidth(16));
+    // 오른쪽 가장자리
+    path.lineTo(size.width, size.height - scaleWidth(16));
+    // 오른쪽 하단 모서리 (둥글게)
+    path.quadraticBezierTo(size.width, size.height, size.width - scaleWidth(16), size.height);
+    // 하단 가장자리 (오른쪽)
+    path.lineTo(dividerXPosition + notchRadius, size.height);
+    // 하단 노치 (반원)
+    path.arcToPoint(
+      Offset(dividerXPosition - notchRadius, size.height),
+      radius: Radius.circular(notchRadius),
+      clockwise: false, // 위로 파인 모양
+    );
+    // 하단 가장자리 (왼쪽)
+    path.lineTo(scaleWidth(16), size.height);
+    // 왼쪽 하단 모서리 (둥글게)
+    path.quadraticBezierTo(0, size.height, 0, size.height - scaleWidth(16));
+    // 왼쪽 가장자리
+    path.lineTo(0, scaleWidth(16));
+    // 왼쪽 상단 모서리 (둥글게)
+    path.quadraticBezierTo(0, 0, scaleWidth(16), 0);
+    path.close();
+
+
+    // --- 2. 배경 채우기 ---
+    // (그림자는 Container의 BoxShadow로 처리했으므로 여기서는 생략)
+    canvas.drawPath(path, backgroundPaint);
+
+    // --- 3. 점선 그리기 ---
+    final Paint dashPaint = Paint()
+      ..color = dividerColor
+      ..strokeWidth = 1.0 // 1.5 -> 1.0 (더 얇게)
+      ..style = PaintingStyle.stroke;
+
+    final double dashStart = notchRadius + scaleHeight(5); // 상단 노치 아래에서 시작
+    final double dashEnd = size.height - notchRadius - scaleHeight(5); // 하단 노치 위에서 끝
+    double currentY = dashStart;
+
+    while (currentY < dashEnd) {
+      canvas.drawLine(
+        Offset(dividerXPosition, currentY),
+        Offset(dividerXPosition, currentY + dividerDashWidth),
+        dashPaint,
+      );
+      currentY += (dividerDashWidth + dividerDashSpace);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant TicketShapePainter oldDelegate) {
+    // 필요한 속성들이 변경될 때만 다시 그리도록 최적화
+    return backgroundColor != oldDelegate.backgroundColor ||
+        dividerColor != oldDelegate.dividerColor ||
+        notchRadius != oldDelegate.notchRadius ||
+        dividerDashWidth != oldDelegate.dividerDashWidth ||
+        dividerDashSpace != oldDelegate.dividerDashSpace ||
+        dividerXPosition != oldDelegate.dividerXPosition;
   }
 }

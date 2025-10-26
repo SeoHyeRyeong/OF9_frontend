@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:frontend/features/mypage/friend_profile_screen.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
@@ -518,49 +519,67 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: EdgeInsets.only(top: scaleHeight(12), left: scaleWidth(20)),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(scaleWidth(18)),
-                child: (profileImageUrl.isNotEmpty)
-                    ? Image.network(
-                  profileImageUrl,
-                  width: scaleWidth(36),
-                  height: scaleHeight(36),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => SvgPicture.asset(
+        GestureDetector(
+          onTap: () {
+            final userId = _recordDetail!['userId'];
+            if (userId != null) {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(
+                    userId: userId,
+                  ),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            }
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: EdgeInsets.only(top: scaleHeight(12), left: scaleWidth(20)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(scaleWidth(18)),
+                  child: (profileImageUrl.isNotEmpty)
+                      ? Image.network(
+                    profileImageUrl,
+                    width: scaleWidth(36),
+                    height: scaleHeight(36),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => SvgPicture.asset(
+                      AppImages.profile,
+                      width: scaleWidth(36),
+                      height: scaleHeight(36),
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                      : SvgPicture.asset(
                     AppImages.profile,
                     width: scaleWidth(36),
                     height: scaleHeight(36),
                     fit: BoxFit.cover,
                   ),
-                )
-                    : SvgPicture.asset(
-                  AppImages.profile,
-                  width: scaleWidth(36),
-                  height: scaleHeight(36),
-                  fit: BoxFit.cover,
                 ),
-              ),
-              SizedBox(width: scaleWidth(12)),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FixedText(
-                    nickname,
-                    style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
-                  ),
-                  SizedBox(height: scaleHeight(2)),
-                  FixedText(
-                    '$favTeam 팬',
-                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray400),
-                  ),
-                ],
-              ),
-            ],
+                SizedBox(width: scaleWidth(12)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FixedText(
+                      nickname,
+                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
+                    ),
+                    SizedBox(height: scaleHeight(2)),
+                    FixedText(
+                      '$favTeam 팬',
+                      style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray400),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         SizedBox(height: scaleHeight(12)),

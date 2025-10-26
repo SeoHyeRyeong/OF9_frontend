@@ -9,6 +9,7 @@ import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dart:ui'; // BackdropFilter 사용을 위해 import
+import 'package:flutter/services.dart';
 
 // TODO: 뱃지 전체보기, 분석 상세보기 페이지 import 필요
 // import 'badge_report_screen.dart';
@@ -82,29 +83,38 @@ class _ReportScreenState extends State<ReportScreen> {
   @override
   Widget build(BuildContext context) {
     // totalGames 값 확인 (로딩 완료 후, 에러 없을 때)
-    final bool hasRecords = !_isLoading && _errorMessage == null && (_reportData?['winRateInfo']?['totalGameCount'] ?? 0) > 0;
+    final bool hasRecords = !_isLoading && _errorMessage == null &&
+        (_reportData?['winRateInfo']?['totalGameCount'] ?? 0) > 0;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: _buildAppBar(),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
-          : _errorMessage != null
-          ? _buildErrorWidget(_errorMessage!)
-          : RefreshIndicator(
-        onRefresh: _loadReportData,
-        color: AppColors.pri500,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              _buildCountdownSection(hasRecords: hasRecords), // hasRecords 전달
-              _buildReportContent(hasRecords: hasRecords),   // hasRecords 전달
-            ],
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          SystemNavigator.pop(); // 앱 종료
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: _buildAppBar(),
+        body: _isLoading
+            ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
+            : _errorMessage != null
+            ? _buildErrorWidget(_errorMessage!)
+            : RefreshIndicator(
+          onRefresh: _loadReportData,
+          color: AppColors.pri500,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                _buildCountdownSection(hasRecords: hasRecords), // hasRecords 전달
+                _buildReportContent(hasRecords: hasRecords), // hasRecords 전달
+              ],
+            ),
           ),
         ),
+        bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
     );
   }
 

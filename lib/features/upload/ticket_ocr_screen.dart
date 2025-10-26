@@ -16,6 +16,7 @@ import 'package:frontend/utils/ticket_info_extractor.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
+import 'package:frontend/features/report/report_screen.dart';
 
 class ExtractedTicketInfo {
   final String? awayTeam;
@@ -383,7 +384,14 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       canPop: false,
       onPopInvoked: (didPop) {
         if (!didPop) {
-          SystemNavigator.pop(); // 앱 종료
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1, animation2) => const ReportScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
         }
       },
       child: Scaffold(

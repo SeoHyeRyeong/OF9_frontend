@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:frontend/api/feed_api.dart';
+import 'package:frontend/features/mypage/friend_profile_screen.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
@@ -50,6 +51,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     '사직': '사직야구장',
     '대전': '대전한화생명이글스파크',
     '인천': '인천SSG랜더스필드',
+    '문학': '문학야구장',
   };
 
   final _likeManager = FeedCountManager();
@@ -235,10 +237,24 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     final nickname = widget.feedData['nickname'] ?? widget.feedData['authorNickname'] ?? '';
     final favTeam = widget.feedData['favTeam'] ?? widget.feedData['authorFavTeam'] ?? '';
     final favTeamWithFan = favTeam.isNotEmpty ? '$favTeam 팬' : '';
+    final userId = widget.feedData['userId'] ?? widget.feedData['authorId'];
 
     return GestureDetector(
       onTap: () {
-        print('프로필 클릭: $nickname');
+        if (userId != null) {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(
+                userId: userId,
+              ),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        } else {
+          print('userId 없음: 프로필 화면으로 이동 불가');
+        }
       },
       behavior: HitTestBehavior.opaque,
       child: Padding(

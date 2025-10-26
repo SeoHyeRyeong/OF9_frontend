@@ -89,6 +89,8 @@ class FeedApi {
 
   // ================================================================================
   // =============================== 피드 관련 API ====================================
+  // ================================================================================
+
   /// 1. 전체 피드 조회
   static Future<List<Map<String, dynamic>>> getAllFeed({
     String? team,
@@ -153,9 +155,70 @@ class FeedApi {
     }
   }
 
+  /// 3. 친구 피드 조회 (그리드뷰)
+  static Future<Map<String, dynamic>> getUserFeed(int userId) async {
+    final uri = Uri.parse('$baseUrl/feed/user/$userId');
+
+    final res = await _makeRequestWithRetry(uri: uri, method: 'GET');
+
+    print('👤 사용자 프로필 피드 조회 응답 코드: ${res.statusCode}');
+
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+      return decoded['data'] as Map<String, dynamic>;
+    } else {
+      throw Exception('사용자 프로필 피드 조회 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 4. 친구 리스트 조회 (리스트뷰)
+  static Future<List<Map<String, dynamic>>> getUserList(int userId) async {
+    final uri = Uri.parse('$baseUrl/feed/user/$userId/list');
+
+    final res = await _makeRequestWithRetry(uri: uri, method: 'GET');
+
+    print('📋 사용자 리스트 조회 응답 코드: ${res.statusCode}');
+
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+      final data = decoded['data'] as List<dynamic>;
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('사용자 리스트 조회 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 5. 친구 캘린더 조회 (캘린더뷰)
+  static Future<Map<String, dynamic>> getUserCalendar({
+    required int userId,
+    required int year,
+    required int month,
+  }) async {
+    final queryParams = {
+      'year': year.toString(),
+      'month': month.toString(),
+    };
+
+    final uri = Uri.parse('$baseUrl/feed/user/$userId/calendar').replace(
+      queryParameters: queryParams,
+    );
+
+    final res = await _makeRequestWithRetry(uri: uri, method: 'GET');
+
+    print('📅 사용자 캘린더 조회 응답 코드: ${res.statusCode}');
+
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+      return decoded['data'] as Map<String, dynamic>;
+    } else {
+      throw Exception('사용자 캘린더 조회 실패: ${res.statusCode}');
+    }
+  }
 
   // ================================================================================
   // =============================== 좋아요 관련 API ====================================
+  // ================================================================================
+
   /// 1. 좋아요 토글 (추가/삭제)
   static Future<Map<String, dynamic>> toggleLike(String recordId) async {
     final uri = Uri.parse('$baseUrl/records/$recordId/likes');
@@ -226,9 +289,10 @@ class FeedApi {
     }
   }
 
-
   // ================================================================================
   // =============================== 댓글 관련 API ====================================
+  // ================================================================================
+
   /// 1. 댓글 작성
   static Future<Map<String, dynamic>> createComment(
       String recordId,

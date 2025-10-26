@@ -11,6 +11,7 @@ import 'package:frontend/api/feed_api.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
+import 'package:frontend/features/report/report_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -549,97 +550,114 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: NestedScrollView(
-          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-            return <Widget>[
-              SliverAppBar(
-                backgroundColor: Colors.white,
-                elevation: 0,
-                pinned: false,
-                floating: false,
-                expandedHeight: scaleHeight(60),
-                automaticallyImplyLeading: false,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    padding: EdgeInsets.only(
-                      top: scaleHeight(24),
-                      left: scaleWidth(20),
-                      right: scaleWidth(20),
-                    ),
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center, // 👈 이 부분을 center로 변경
-                        children: [
-                          FixedText(
-                            '피드',
-                            style: AppFonts.suite.h3_b(context).copyWith(
-                              color: Colors.black,
-                              height: 1.0,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder:
+                  (context, animation1, animation2) => const ReportScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: NestedScrollView(
+            headerSliverBuilder: (
+              BuildContext context,
+              bool innerBoxIsScrolled,
+            ) {
+              return <Widget>[
+                SliverAppBar(
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                  pinned: false,
+                  floating: false,
+                  expandedHeight: scaleHeight(60),
+                  automaticallyImplyLeading: false,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Container(
+                      padding: EdgeInsets.only(
+                        top: scaleHeight(24),
+                        left: scaleWidth(20),
+                        right: scaleWidth(20),
+                      ),
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          // 👈 이 부분을 center로 변경
+                          children: [
+                            FixedText(
+                              '피드',
+                              style: AppFonts.suite
+                                  .h3_b(context)
+                                  .copyWith(color: Colors.black, height: 1.0),
                             ),
-                          ),
-                          SizedBox(width: scaleWidth(11)),
-                          GestureDetector(
-                            onTap: _showFilterSheet,
-                            child: SvgPicture.asset(
-                              AppImages.filter,
-                              width: scaleWidth(28),
-                              height: scaleHeight(28),
-                              fit: BoxFit.contain,
+                            SizedBox(width: scaleWidth(11)),
+                            GestureDetector(
+                              onTap: _showFilterSheet,
+                              child: SvgPicture.asset(
+                                AppImages.filter,
+                                width: scaleWidth(28),
+                                height: scaleHeight(28),
+                                fit: BoxFit.contain,
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation1,
-                                      animation2) => const SearchScreen(),
-                                  transitionDuration: Duration.zero,
-                                  reverseTransitionDuration: Duration.zero,
-                                ),
-                              );
-                            },
-                            child: SvgPicture.asset(
-                              AppImages.search,
-                              width: scaleWidth(24),
-                              height: scaleHeight(24),
-                              fit: BoxFit.contain,
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder:
+                                        (context, animation1, animation2) =>
+                                            const SearchScreen(),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
+                                  ),
+                                );
+                              },
+                              child: SvgPicture.asset(
+                                AppImages.search,
+                                width: scaleWidth(24),
+                                height: scaleHeight(24),
+                                fit: BoxFit.contain,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _StickyTabBarDelegate(
-                  child: Container(
-                    color: Colors.white,
-                    child: _buildTabBar(),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _StickyTabBarDelegate(
+                    child: Container(
+                      color: Colors.white,
+                      child: _buildTabBar(),
+                    ),
+                    height: scaleHeight(39),
                   ),
-                  height: scaleHeight(39),
                 ),
-              ),
-            ];
-          },
-          body: PageView(
-            controller: _pageController,
-            onPageChanged: _onPageChanged,
-            children: [
-              _buildRecommendTab(),
-              _buildFollowingTab(),
-            ],
+              ];
+            },
+            body: PageView(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              children: [_buildRecommendTab(), _buildFollowingTab()],
+            ),
           ),
         ),
+        bottomNavigationBar: CustomBottomNavBar(currentIndex: 1),
       ),
-      bottomNavigationBar: CustomBottomNavBar(currentIndex: 1),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
+import 'package:frontend/features/mypage/friend_profile_screen.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/theme/app_colors.dart';
@@ -10,7 +11,11 @@ import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/api/user_api.dart';
 
 class FollowerScreen extends StatefulWidget {
-  const FollowerScreen({Key? key}) : super(key: key);
+  final int? targetUserId;
+  const FollowerScreen({
+    Key? key,
+    this.targetUserId,
+  }) : super(key: key);
 
   @override
   State<FollowerScreen> createState() => _FollowerScreenState();
@@ -20,6 +25,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
   // 팔로워 목록
   List<Map<String, dynamic>> followers = [];
   bool isLoading = true;
+  int? myUserId;
 
   @override
   void initState() {
@@ -37,13 +43,19 @@ class _FollowerScreenState extends State<FollowerScreen> {
   // 팔로워 목록 불러오기
   Future<void> _loadFollowers() async {
     try {
-      // 먼저 내 정보를 가져와서 userId를 얻기
       final myProfile = await UserApi.getMyProfile();
-      final myUserId = myProfile['data']['id'];
+      myUserId = myProfile['data']['id'];
 
-      // 내 팔로워 목록 조회
-      final response = await UserApi.getFollowers(myUserId);
+      int targetUserId;
+      if (widget.targetUserId != null) {
+        targetUserId = widget.targetUserId!;
+      } else {
+        targetUserId = myUserId!;
+      }
+
+      final response = await UserApi.getFollowers(targetUserId);
       final followersData = response['data'] as List<dynamic>? ?? [];
+
 
       setState(() {
         followers = followersData.map((follower) {
@@ -58,6 +70,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
             'followStatus': followStatus,
             'isFollowing': followStatus == 'FOLLOWING',
             'isRequested': followStatus == 'REQUESTED',
+            'isMe': (follower['id'] ?? follower['userId']) == myUserId,
           };
         }).toList();
         isLoading = false;
@@ -133,20 +146,17 @@ class _FollowerScreenState extends State<FollowerScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: widget.targetUserId != null,
       onPopInvoked: (didPop) {
-        if (!didPop) {
-          Navigator.push(
+        if (!didPop && widget.targetUserId == null) {
+          Navigator.pushReplacement(
             context,
             PageRouteBuilder(
               pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
-          ).then((_) {
-            // 돌아왔을 때 데이터 새로고침
-            _loadFollowers();
-          });
+          );
         }
       },
       child: Scaffold(
@@ -168,17 +178,21 @@ class _FollowerScreenState extends State<FollowerScreen> {
                       child: Row(
                         children: [
                           GestureDetector(
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
-                                  transitionDuration: Duration.zero,
-                                  reverseTransitionDuration: Duration.zero,
-                                ),
-                              );
-                              // 돌아왔을 때 데이터 새로고침
-                              _loadFollowers();
+                            onTap: () {
+                              if (widget.targetUserId != null) {
+                                // 친구 프로필에서 온 경우: 일반 뒤로가기
+                                Navigator.pop(context);
+                              } else {
+                                // 내 팔로워 목록에서 온 경우: MyPage로 이동
+                                Navigator.pushReplacement(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
+                                  ),
+                                );
+                              }
                             },
                             child: Container(
                               alignment: Alignment.center,
@@ -254,75 +268,143 @@ class _FollowerScreenState extends State<FollowerScreen> {
         padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)), //전체 양쪽 여백
         child: Row(
           children: [
-            // 프로필 이미지
-            ClipRRect(
-              borderRadius: BorderRadius.circular(scaleHeight(12.43)),
-              child: follower['profileImageUrl'] != null
-                  ? Image.network(
-                follower['profileImageUrl']!,
-                width: scaleHeight(42),
-                height: scaleHeight(42),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => SvgPicture.asset(
+            // 프로필 이미지 - 클릭 시 친구 프로필로 이동
+            GestureDetector(
+              onTap: () {
+                if (follower['isMe'] == true) {
+                  // 내가 맞으면 MyPage로 이동
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                      const MyPageScreen(
+                        fromNavigation: false, // 일반 뒤로가기 허용
+                        showBackButton: true,  // 뒤로가기 버튼 표시
+                      ),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                } else {
+                  // 다른 사람이면 FriendProfileScreen으로 이동
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          FriendProfileScreen(userId: follower['userId']),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  ).then((_) => _loadFollowers());
+                }
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(scaleHeight(12.43)),
+                child: follower['profileImageUrl'] != null
+                    ? Image.network(
+                  follower['profileImageUrl']!,
+                  width: scaleHeight(42),
+                  height: scaleHeight(42),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => SvgPicture.asset(
+                    AppImages.profile,
+                    width: scaleHeight(42),
+                    height: scaleHeight(42),
+                    fit: BoxFit.cover,
+                  ),
+                )
+                    : SvgPicture.asset(
                   AppImages.profile,
                   width: scaleHeight(42),
                   height: scaleHeight(42),
                   fit: BoxFit.cover,
                 ),
-              )
-                  : SvgPicture.asset(
-                AppImages.profile,
-                width: scaleHeight(42),
-                height: scaleHeight(42),
-                fit: BoxFit.cover,
               ),
             ),
 
             SizedBox(width: scaleWidth(12)),
 
-            // 닉네임과 최애구단 컬럼
+            // 닉네임과 최애구단 컬럼 - 클릭 시 친구 프로필로 이동
             Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(19)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 닉네임
-                    FixedText(
-                      follower['nickname'] ?? '알 수 없음',
-                      style: AppFonts.pretendard.b3_sb(context).copyWith(color: Colors.black),
-                    ),
-                    SizedBox(height: scaleHeight(6)),
-                    // 최애 구단
-                    FixedText(
-                      "${follower['favTeam'] ?? '응원팀 없음'} 팬",
-                      style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400),
-                    ),
-                  ],
+              child: GestureDetector(
+                onTap: () {
+                  if (follower['isMe'] == true) {
+                    // 내가 맞으면 MyPage로 이동
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                        const MyPageScreen(
+                          fromNavigation: false, // 일반 뒤로가기 허용
+                          showBackButton: true,  // 뒤로가기 버튼 표시
+                        ),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                  } else {
+                    // 다른 사람이면 FriendProfileScreen으로 이동
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(
+                          userId: follower['userId'],
+                        ),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    ).then((_) => _loadFollowers());
+                  }
+                },
+                child: Padding(
+                  padding: EdgeInsets.only(top: scaleHeight(19)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 닉네임
+                      FixedText(
+                        follower['nickname'] ?? '알 수 없음',
+                        style: AppFonts.pretendard.b3_sb(context).copyWith(color: Colors.black),
+                      ),
+                      SizedBox(height: scaleHeight(6)),
+                      // 최애 구단
+                      FixedText(
+                        "${follower['favTeam'] ?? '응원팀 없음'} 팬",
+                        style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
 
             // 팔로우 버튼
-            Container(
-              width: scaleWidth(88),
-              height: scaleHeight(32),
-              child: ElevatedButton(
-                onPressed: () => _handleFollow(index),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _getButtonBackgroundColor(follower),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(scaleHeight(8))),
-                  elevation: 0,
-                  padding: EdgeInsets.zero,
-                ),
-                child: Center(
-                  child: FixedText(
-                    _getButtonText(follower),
-                    style: AppFonts.suite.c1_m(context).copyWith(color: _getButtonTextColor(follower)),
+            if (follower['isMe'] != true)
+              Container(
+                width: scaleWidth(88),
+                height: scaleHeight(32),
+                child: ElevatedButton(
+                  onPressed: () => _handleFollow(index),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _getButtonBackgroundColor(follower),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(scaleHeight(8)),
+                    ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Center(
+                    child: FixedText(
+                      _getButtonText(follower),
+                      style: AppFonts.suite.c1_m(context).copyWith(
+                        color: _getButtonTextColor(follower),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              )
+            else
+              SizedBox(width: scaleWidth(88)),
           ],
         ),
       ),

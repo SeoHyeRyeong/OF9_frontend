@@ -118,6 +118,7 @@ class AppImages {
   static const comment_detail = 'assets/imgs/ic_feed/comment_detail.svg';
   static const logo_dodada = 'assets/imgs/ic_feed/logo_dodada.png';
   static const more = 'assets/imgs/ic_feed/more_vert.svg';
+  static const dots_horizontal = 'assets/imgs/ic_feed/dots_horizontal.svg';
 
   //마이페이지
   static const btn_camera = 'assets/imgs/btn_camera_24.svg';
@@ -125,7 +126,9 @@ class AppImages {
   static const win = 'assets/imgs/ic_win.svg';
   static const tie = 'assets/imgs/ic_tie.svg';
   static const lose = 'assets/imgs/ic_lose.svg';
-  static const etc = 'assets/imgs/ic_etc';
+  static const etc = 'assets/imgs/ic_etc.svg';
+  static const polygon_left = 'assets/imgs/polygon_left.svg';
+  static const polygon_right = 'assets/imgs/polygon_right.svg';
 
   //리포트
   static const telescope = 'assets/imgs/ic_report/ic_telescope.svg';

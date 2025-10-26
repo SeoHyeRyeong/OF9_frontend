@@ -298,39 +298,36 @@ class CustomConfirmDialog extends StatelessWidget {
       child: Center(
         child: Container(
           width: scaleWidth(320),
-          height: scaleHeight(184), // 고정 높이 184
+          height: scaleHeight(184),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(scaleWidth(20)), // 레디어스 20
+            borderRadius: BorderRadius.circular(scaleWidth(20)),
           ),
           padding: EdgeInsets.symmetric(
-            horizontal: scaleWidth(20),
-            vertical: scaleHeight(24),
+            horizontal: scaleWidth(18),
+            vertical: scaleHeight(29),
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, // 컨텐츠를 위아래로 분리
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // 텍스트 영역
               Column(
                 children: [
-                  SizedBox(height: scaleHeight(12)), // 텍스트 상단 여백
                   FixedText(
                     title,
-                    style: AppFonts.suite.head_sm_700(context) // 큰 폰트
-                        .copyWith(color: AppColors.gray900), // 큰 폰트 색상
+                    style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray900),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: scaleHeight(8)),
                   FixedText(
                     subtitle,
-                    style: AppFonts.suite.body_sm_400(context) // 작은 폰트
-                        .copyWith(color: AppColors.gray400), // 작은 폰트 색상
+                    style: AppFonts.suite.body_sm_400(context).copyWith(color: AppColors.gray400),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
-              // 버튼 영역 (이하 동일)
+              // 버튼 영역
               Row(
                 children: [
                   // 왼쪽 버튼
@@ -338,17 +335,16 @@ class CustomConfirmDialog extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: leftButtonAction,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.gray50, // 왼쪽 버튼 배경
+                        backgroundColor: AppColors.gray50,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(scaleWidth(16)), // 버튼 레디어스 16
+                          borderRadius: BorderRadius.circular(scaleWidth(16)),
                         ),
                         elevation: 0,
-                        minimumSize: Size(0, scaleHeight(46)), // 버튼 높이 46
+                        minimumSize: Size(0, scaleHeight(46)),
                       ),
                       child: FixedText(
                         leftButtonText,
-                        style: AppFonts.suite.body_sm_500(context) // 버튼 폰트
-                            .copyWith(color: AppColors.gray700), // 왼쪽 버튼 폰트색
+                        style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray700),
                       ),
                     ),
                   ),
@@ -358,17 +354,16 @@ class CustomConfirmDialog extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: rightButtonAction,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.pri900, // 오른쪽 버튼 배경
+                        backgroundColor: AppColors.pri900,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(scaleWidth(16)), // 버튼 레디어스 16
+                          borderRadius: BorderRadius.circular(scaleWidth(16)),
                         ),
                         elevation: 0,
-                        minimumSize: Size(0, scaleHeight(46)), // 버튼 높이 46
+                        minimumSize: Size(0, scaleHeight(46)),
                       ),
                       child: FixedText(
                         rightButtonText,
-                        style: AppFonts.suite.body_sm_500(context) // 버튼 폰트
-                            .copyWith(color: AppColors.gray20), // 오른쪽 버튼 폰트색
+                        style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray20),
                       ),
                     ),
                   ),

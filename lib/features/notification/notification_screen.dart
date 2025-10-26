@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/api/notification_api.dart';
 import 'package:frontend/api/user_api.dart';
+import 'package:frontend/features/mypage/friend_profile_screen.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
+import 'package:frontend/features/report/report_screen.dart';
 
 class NotificationModel {
   final int id;
@@ -297,68 +299,86 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              height: scaleHeight(60),
-              color: AppColors.white,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: scaleHeight(24),
-                  left: scaleWidth(20),
-                ),
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "알림",
-                        style: AppFonts.suite.h3_b(context).copyWith(
-                          height: 1.0,
-                        ),
-                      ),
-                      if (_isAutoAccepting) ...[
-                        SizedBox(width: scaleWidth(8)),
-                        SizedBox(
-                          width: scaleWidth(16),
-                          height: scaleWidth(16),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.pri500),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1,
+                  animation2) => const ReportScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                height: scaleHeight(60),
+                color: AppColors.white,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: scaleHeight(24),
+                    left: scaleWidth(20),
+                  ),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "알림",
+                          style: AppFonts.suite.h3_b(context).copyWith(
+                            height: 1.0,
                           ),
                         ),
+                        if (_isAutoAccepting) ...[
+                          SizedBox(width: scaleWidth(8)),
+                          SizedBox(
+                            width: scaleWidth(16),
+                            height: scaleWidth(16),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.pri500),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Container(
-              height: scaleHeight(56),
-              color: AppColors.white,
-              padding: EdgeInsets.only(
-                top: scaleHeight(10),
-                bottom: scaleHeight(10),
-                left: scaleWidth(20),
-              ),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _tabTexts.length,
-                itemBuilder: (context, index) => Padding(
-                  padding: EdgeInsets.only(right: scaleWidth(6)),
-                  child: _buildTabButton(index),
+              Container(
+                height: scaleHeight(56),
+                color: AppColors.white,
+                padding: EdgeInsets.only(
+                  top: scaleHeight(10),
+                  bottom: scaleHeight(10),
+                  left: scaleWidth(20),
+                ),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _tabTexts.length,
+                  itemBuilder: (context, index) =>
+                      Padding(
+                        padding: EdgeInsets.only(right: scaleWidth(6)),
+                        child: _buildTabButton(index),
+                      ),
                 ),
               ),
-            ),
-            Expanded(child: _buildContent()),
-          ],
+              Expanded(child: _buildContent()),
+            ],
+          ),
         ),
+        bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
       ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
     );
   }
 
@@ -408,20 +428,39 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
     final isProcessing = _processingId == notification.id || (_processingId == notification.userId && notification.userId != null);
     final trailingWidget = _buildTrailingWidget(notification, isProcessing);
 
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: scaleHeight(16)),
-      color: notification.isRead ? Colors.white : AppColors.pri100.withOpacity(0.2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _buildProfileImage(notification),
-          SizedBox(width: scaleWidth(12)),
-          Expanded(child: _buildNotificationText(notification)),
-          if (trailingWidget != null) ...[
-            SizedBox(width: scaleWidth(20)),
-            trailingWidget,
-          ]
-        ],
+    return GestureDetector(
+      onTap: () {
+        // userId가 있고 시스템 알림이 아닌 경우에만 프로필로 이동
+        if (notification.userId != null &&
+            notification.type != 'SYSTEM' &&
+            notification.type != 'NEWS') {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(
+                userId: notification.userId!,
+              ),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: scaleHeight(16)),
+        color: notification.isRead ? Colors.white : AppColors.pri100.withOpacity(0.2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _buildProfileImage(notification),
+            SizedBox(width: scaleWidth(12)),
+            Expanded(child: _buildNotificationText(notification)),
+            if (trailingWidget != null) ...[
+              SizedBox(width: scaleWidth(20)),
+              trailingWidget,
+            ]
+          ],
+        ),
       ),
     );
   }

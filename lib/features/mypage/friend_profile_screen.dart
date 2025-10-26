@@ -7,11 +7,10 @@ import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/api/user_api.dart';
-import 'package:frontend/api/record_api.dart';
-import 'package:frontend/features/mypage/settings_screen.dart';
+import 'package:frontend/api/feed_api.dart';
+import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:frontend/features/mypage/follower_screen.dart';
 import 'package:frontend/features/mypage/following_screen.dart';
-import 'package:frontend/features/mypage/edit_profile_screen.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:table_calendar/table_calendar.dart';
@@ -20,26 +19,22 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
-import 'package:frontend/features/report/report_screen.dart';
 
-class MyPageScreen extends StatefulWidget {
-  final bool fromNavigation;
-  final bool showBackButton;
+class FriendProfileScreen extends StatefulWidget {
+  final int userId;
 
-  const MyPageScreen({
+  const FriendProfileScreen({
     Key? key,
-    this.fromNavigation = true,
-    this.showBackButton = false,
+    required this.userId,
   }) : super(key: key);
 
-
   @override
-  State<MyPageScreen> createState() => _MyPageScreenState();
+  State<FriendProfileScreen> createState() => _FriendProfileScreenState();
 }
 
-class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderStateMixin{
-  int selectedTabIndex = 2; // 0: 캘린더, 1: 리스트, 2: 모아보기(그리드)
-
+class _FriendProfileScreenState extends State<FriendProfileScreen>
+    with SingleTickerProviderStateMixin {
+  int selectedTabIndex = 2; // 0: 캘린더, 1: 리스트, 2: 모아보기
   String nickname = "로딩중...";
   String favTeam = "로딩중...";
   String? profileImageUrl;
@@ -47,16 +42,16 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   int followingCount = 0;
   int followerCount = 0;
   bool isPrivate = false;
+  String? followStatus;
   final _likeManager = FeedCountManager();
 
-  // 탭 애니메이션 관련 변수
   late AnimationController _tabAnimationController;
   late PageController _tabPageController;
   double _currentTabPageValue = 0.0;
   bool _isTabPageScrolling = false;
 
   List<Map<String, dynamic>> feedList = [];
-  Map<String, dynamic> calendarData = {}; // 캘린더 데이터 (Map)
+  Map<String, dynamic> calendarData = {};
   bool isLoading = true;
   bool isLoadingRecords = true;
 
@@ -67,8 +62,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   List<Map<String, dynamic>> _getEventsForDay(DateTime day) {
     final String formattedDay = DateFormat('yyyy-MM-dd').format(day);
     final List<dynamic> records = calendarData['records'] ?? [];
-
-    // API 응답의 'records' 리스트에서 'gameDate'가 일치하는 것만 필터링
     return records.where((record) {
       return record['gameDate'] == formattedDay;
     }).toList().cast<Map<String, dynamic>>();
@@ -77,17 +70,16 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _selectedDay = _focusedDay; //캘린더 선택된 날짜 초기화
+    _selectedDay = _focusedDay;
     _likeManager.addListener(_onGlobalStateChanged);
 
-    _tabAnimationController = AnimationController(     // 탭 애니메이션 초기화
+    _tabAnimationController = AnimationController(
       duration: Duration(milliseconds: 250),
       vsync: this,
     );
 
-    _tabPageController = PageController(initialPage: 2); // 초기 페이지 설정: 모아보기
+    _tabPageController = PageController(initialPage: 2);
     _currentTabPageValue = 2.0;
-
     _tabPageController.addListener(() {
       if (_tabPageController.hasClients) {
         setState(() {
@@ -97,8 +89,41 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       }
     });
 
+    _checkAndLoadUserInfo();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _loadUserInfo();
-    _loadMyRecords();
+  }
+
+  Future<void> _checkAndLoadUserInfo() async {
+    try {
+      final myProfile = await UserApi.getMyProfile();
+      final myUserId = myProfile['data']['id'];
+
+      if (myUserId == widget.userId) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const MyPageScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+        return;
+      }
+
+      await _loadUserInfo();
+      await _loadMyRecords();
+    } catch (e) {
+      print('❌ 사용자 확인 실패: $e');
+      await _loadUserInfo();
+      await _loadMyRecords();
+    }
   }
 
   @override
@@ -110,23 +135,22 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   }
 
   void _onGlobalStateChanged() {
-    setState(() {
-    });
-
+    if (mounted) {
+      setState(() {});
+    }
   }
 
-  //탭 관련 함수 추가
   void _onTabTapped(int index) {
     setState(() {
       _isTabPageScrolling = false;
     });
-
     _tabPageController.animateToPage(
       index,
       duration: Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
   }
+
   void _onTabPageChanged(int index) {
     setState(() {
       _isTabPageScrolling = false;
@@ -136,103 +160,222 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   }
 
   Future<void> _loadUserInfo() async {
-    setState(() => isLoading = true);
+    setState(() {
+      isLoading = true;
+    });
+
     try {
-      final response = await UserApi.getMyProfile();
+      final response = await FeedApi.getUserFeed(widget.userId);
+
       if (!mounted) return;
-      final userInfo = response['data'];
+      final newFollowStatus = response['followStatus'] ?? 'NOT_FOLLOWING';
+
       setState(() {
-        nickname = userInfo['nickname'] ?? '알 수 없음';
-        favTeam = userInfo['favTeam'] ?? '응원팀 없음';
-        profileImageUrl = userInfo['profileImageUrl'];
-        postCount = userInfo['recordCount'] ?? 0;
-        followingCount = userInfo['followingCount'] ?? 0;
-        followerCount = userInfo['followerCount'] ?? 0;
-        isPrivate = userInfo['isPrivate'] ?? false;
+        nickname = response['nickname'] ?? '알 수 없음';
+        favTeam = response['favTeam'] ?? '응원팀 없음';
+        profileImageUrl = response['profileImageUrl'];
+        postCount = response['recordCount'] ?? 0;
+        followerCount = response['followerCount'] ?? 0;
+        followingCount = response['followingCount'] ?? 0;
+        isPrivate = response['isPrivate'] ?? false;
+        followStatus = newFollowStatus;
         isLoading = false;
       });
+      print('✅ setState 완료 - 현재 followStatus: $followStatus');
     } catch (e) {
       if (!mounted) return;
-      print('❌ 사용자 정보 불러오기 실패: $e');
+      print('❌ 사용자 정보 로드 실패: $e');
       setState(() {
-        nickname = "정보 로딩 실패";
-        favTeam = "-";
+        nickname = '로딩 실패';
+        favTeam = '-';
         isLoading = false;
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('사용자 정보를 불러오는데 실패했습니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
   Future<void> _loadMyRecords() async {
-    setState(() => isLoadingRecords = true);
+    setState(() {
+      isLoadingRecords = true;
+    });
+
     try {
-      if (selectedTabIndex == 0) {
-        final dayToFetch = _focusedDay;
-        final data = await RecordApi.getMyRecordsCalendar(
-          year: dayToFetch.year,
-          month: dayToFetch.month,
-        );
-        if (!mounted) return;
-        setState(() {
-          calendarData = data;
-          isLoadingRecords = false;
-        });
-      } else if (selectedTabIndex == 1) {
-        // 리스트
-        final records = await RecordApi.getMyRecordsList();
-        if (!mounted) return;
-        setState(() {
-          feedList = records;
-          isLoadingRecords = false;
-        });
-      } else {
-        // 모아보기 (Tab 2)
-        final records = await RecordApi.getMyRecordsFeed();
-        if (!mounted) return;
-        setState(() {
-          feedList = records;
-          isLoadingRecords = false;
-        });
+      if (selectedTabIndex == 0) { // 캘린더
+        await _loadCalendarData();
+      } else if (selectedTabIndex == 1) { // 리스트
+        await _loadListData();
+      } else { // 모아보기 (Tab 2)
+        await _loadGridData();
       }
     } catch (e) {
       if (!mounted) return;
-      print('❌ 기록 불러오기 실패 (탭: $selectedTabIndex): $e');
+      print('❌ 데이터 로드 실패: $e');
       setState(() {
         feedList = [];
-        calendarData = {}; // 캘린더 데이터도 초기화
+        calendarData = {};
         isLoadingRecords = false;
       });
+    }
+  }
+
+  /// 그리드뷰 데이터 로드 (getUserFeed 사용)
+  Future<void> _loadGridData() async {
+    try {
+      final response = await FeedApi.getUserFeed(widget.userId);
+      final items = response['feedItems'] as List? ?? [];
+
+      if (!mounted) return;
+
+      setState(() {
+        feedList = items.map((item) {
+          return {
+            'recordId': item['recordId'],
+            'gameDate': item['gameDate'],
+            'mediaUrls': item['imageUrl'] != null ? [item['imageUrl']] : [],
+            'likeCount': item['likeCount'] ?? 0,
+          };
+        }).toList();
+        isLoadingRecords = false;
+      });
+      print('✅ 그리드뷰 데이터 로드 완료: ${feedList.length}개');
+    } catch (e) {
+      print('❌ 그리드뷰 데이터 로드 실패: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('기록을 불러오는데 실패했습니다 (탭: ${_getTabName(selectedTabIndex)}).'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          feedList = [];
+          isLoadingRecords = false;
+        });
       }
     }
   }
 
-  String _getTabName(int index) {
-    switch (index) {
-      case 0: return '캘린더';
-      case 1: return '리스트';
-      case 2: return '모아보기';
-      default: return '';
+  /// 리스트뷰 데이터 로드 (getUserList 사용)
+  Future<void> _loadListData() async {
+    try {
+      final List<Map<String, dynamic>> items = await FeedApi.getUserList(widget.userId);
+
+      if (!mounted) return;
+
+      setState(() {
+        feedList = items.map((item) {
+          return {
+            'recordId': item['recordId'],
+            'userId': widget.userId,
+            'profileImageUrl': profileImageUrl,
+            'nickname': nickname,
+            'favTeam': favTeam,
+            'createdAt': item['createdAt'] ?? '',
+            'gameDate': item['gameDate'] ?? '',
+            'gameTime': item['gameTime'] ?? '',
+            'homeTeam': item['homeTeam'] ?? '',
+            'awayTeam': item['awayTeam'] ?? '',
+            'homeScore': item['homeScore'],
+            'awayScore': item['awayScore'],
+            'stadium': item['stadium'] ?? '',
+            'emotionCode': item['emotionCode'],
+            'emotionLabel': item['emotionLabel'] ?? '',
+            'longContent': item['longContent'] ?? '',
+            'mediaUrls': item['mediaUrls'] ?? [],
+            'likeCount': item['likeCount'] ?? 0,
+            'isLiked': item['isLiked'] ?? false,
+            'commentCount': item['commentCount'] ?? 0,
+          };
+        }).toList();
+        isLoadingRecords = false;
+      });
+      print('✅ 리스트뷰 데이터 로드 완료: ${feedList.length}개');
+    } catch (e) {
+      print('❌ 리스트뷰 데이터 로드 실패: $e');
+      if (mounted) {
+        setState(() {
+          feedList = [];
+          isLoadingRecords = false;
+        });
+      }
     }
   }
+
+  /// 캘린더뷰 데이터 로드 (getUserCalendar 사용)
+  Future<void> _loadCalendarData() async {
+    try {
+      final int year = _focusedDay.year;
+      final int month = _focusedDay.month;
+
+      final Map<String, dynamic> response = await FeedApi.getUserCalendar(
+        userId: widget.userId,
+        year: year,
+        month: month,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        calendarData = response;
+        isLoadingRecords = false;
+      });
+      print('✅ 캘린더 데이터 로드 완료: $year-$month');
+    } catch (e) {
+      print('❌ 캘린더 데이터 로드 실패: $e');
+      if (mounted) {
+        setState(() {
+          calendarData = {};
+          isLoadingRecords = false;
+        });
+      }
+    }
+  }
+
+  /// 캘린더 월 변경 시 데이터 재로드
+  void _onCalendarPageChanged(DateTime focusedDay) {
+    setState(() {
+      _focusedDay = focusedDay;
+    });
+    if (selectedTabIndex == 0) {
+      _loadCalendarData();
+    }
+  }
+
 
   Future<void> _refreshData() async {
     await Future.wait([_loadUserInfo(), _loadMyRecords()]);
   }
 
+  Future<void> _handleFollow() async {
+    try {
+
+      if (followStatus == 'FOLLOWING') {
+        await UserApi.unfollowUser(widget.userId);
+        setState(() {
+          followStatus = 'NOT_FOLLOWING';
+          followerCount = followerCount > 0 ? followerCount - 1 : 0;
+        });
+      } else if (followStatus == 'NOT_FOLLOWING') {
+        final response = await UserApi.followUser(widget.userId);
+        final responseData = response['data'];
+        setState(() {
+          if (responseData['pending'] == true) {
+            followStatus = 'REQUESTED';
+          } else {
+            followStatus = 'FOLLOWING';
+            followerCount++;
+          }
+        });
+      } else if (followStatus == 'REQUESTED') {
+        await UserApi.unfollowUser(widget.userId);
+        setState(() {
+          followStatus = 'NOT_FOLLOWING';
+        });
+      }
+
+    } catch (e) {
+      print('❌ 팔로우 처리 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('팔로우 처리에 실패했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   Widget _buildMediaImage(dynamic mediaData, double width, double height) {
     try {
@@ -261,11 +404,12 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               );
             },
             errorBuilder: (context, error, stackTrace) {
-              print('❌ Image.network 에러: $error');
+              print('🖼️ Image.network 로드 실패: $error');
               return _buildImageErrorWidget(width, height);
             },
           );
         }
+
         try {
           final Uint8List imageBytes = base64Decode(mediaData);
           return Image.memory(
@@ -275,13 +419,14 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             fit: BoxFit.cover,
           );
         } catch (e) {
-          print('❌ Base64 디코딩 실패: $e');
+          print('🖼️ Base64 디코딩 실패: $e');
           return _buildImageErrorWidget(width, height);
         }
       }
+
       return _buildImageErrorWidget(width, height);
     } catch (e) {
-      print('❌ 이미지 처리 실패: $e');
+      print('🖼️ 미디어 이미지 처리 실패: $e');
       return _buildImageErrorWidget(width, height);
     }
   }
@@ -294,7 +439,11 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.image_not_supported_outlined, size: scaleWidth(32), color: AppColors.gray300),
+          Icon(
+            Icons.image_not_supported_outlined,
+            size: scaleWidth(32),
+            color: AppColors.gray300,
+          ),
           SizedBox(height: scaleHeight(8)),
           Text(
             '이미지 로드 실패',
@@ -310,7 +459,16 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     final int likeCount = record['likeCount'] ?? 0;
 
     return GestureDetector(
-      onTap: () => print('기록 상세보기: ${record['recordId']}'),
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation1, animation2) => DetailFeedScreen(recordId: record['recordId']),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(scaleWidth(10)),
         child: Container(
@@ -327,7 +485,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               else
                 _buildImageErrorWidget(double.infinity, double.infinity),
 
-              // 날짜 배지
               Align(
                 alignment: Alignment.topCenter,
                 child: Padding(
@@ -351,7 +508,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 ),
               ),
 
-              // 좋아요 배지
               Align(
                 alignment: Alignment.bottomRight,
                 child: Padding(
@@ -368,7 +524,11 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SvgPicture.asset(AppImages.heart_white, width: scaleWidth(14), height: scaleHeight(14)),
+                        SvgPicture.asset(
+                          AppImages.heart_white,
+                          width: scaleWidth(14),
+                          height: scaleHeight(14),
+                        ),
                         SizedBox(width: scaleWidth(2)),
                         Text(
                           likeCount.toString(),
@@ -391,34 +551,34 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !widget.fromNavigation,
-      onPopInvoked: (didPop) {
-        if (!didPop && widget.fromNavigation) {
-          // 바텀바에서 온 경우: ReportScreen(홈 화면)으로 이동
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => const ReportScreen(),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
-        }
-        // fromNavigation이 false면 일반 뒤로가기 허용
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
           child: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-              return <Widget>[
+              return [
+                // 상단 액션바를 고정 헤더로 변경
+                SliverPersistentHeader(
+                  pinned: true,
+                  floating: false,
+                  delegate: _FriendProfileHeaderDelegate(
+                    height: scaleHeight(60),
+                    nickname: nickname,
+                    isScrolled: innerBoxIsScrolled,
+                    followStatus: followStatus,
+                    onBackPressed: () => Navigator.pop(context),
+                    onFollowPressed: _handleFollow,
+                  ),
+                ),
                 // 프로필 영역
                 SliverList(
                   delegate: SliverChildListDelegate([
-                    _buildTopActionsBar(),
                     _buildProfileSection(),
                     SizedBox(height: scaleHeight(20)),
-                    _buildEditProfileButton(),
+                    _buildFollowButton(),
                     SizedBox(height: scaleHeight(30)),
                   ]),
                 ),
@@ -426,7 +586,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 SliverPersistentHeader(
                   pinned: true,
                   floating: false,
-                  delegate: _MyPageTabBarDelegate(
+                  delegate: _FriendProfileTabBarDelegate(
                     height: scaleHeight(36) + 1.0,
                     child: _buildTabBar(),
                   ),
@@ -453,75 +613,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildTopActionsBar() {
-    return Container(
-      height: scaleHeight(60),
-      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          SizedBox(
-            width: scaleHeight(24),
-            height: scaleHeight(24),
-            child: widget.showBackButton
-                ? GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-              },
-              child: SvgPicture.asset(
-                AppImages.backBlack,
-                width: scaleHeight(24),
-                height: scaleHeight(24),
-                fit: BoxFit.contain,
-              ),
-            )
-                : Container(),
-          ),
 
-          if (widget.showBackButton) // showBackButton이 true면 빈 공간
-            SizedBox(width: scaleWidth(68))
-          else // showBackButton이 false면 share + settings
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    print("Share 버튼 클릭");
-                  },
-                  child: SvgPicture.asset(
-                    AppImages.Share,
-                    width: scaleWidth(24),
-                    height: scaleHeight(24),
-                    color: AppColors.gray600,
-                  ),
-                ),
-                SizedBox(width: scaleWidth(20)),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                        const SettingsScreen(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
-                  },
-                  child: SvgPicture.asset(
-                    AppImages.Setting,
-                    width: scaleWidth(24),
-                    height: scaleHeight(24),
-                    color: AppColors.gray600,
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-
-  // 프로필 세션
+  // 프로필 섹션
   Widget _buildProfileSection() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: scaleWidth(30)),
@@ -543,32 +636,29 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                   return Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
                           : null,
                       strokeWidth: 2,
                       color: AppColors.pri400,
                     ),
                   );
                 },
-                errorBuilder: (_, __, ___) =>
-                    SvgPicture.asset(
-                      AppImages.profile,
-                      fit: BoxFit.cover,
-                    ),)
+                errorBuilder: (_, __, ___) => SvgPicture.asset(
+                  AppImages.profile,
+                  fit: BoxFit.cover,
+                ),
+              )
                   : SvgPicture.asset(AppImages.profile, fit: BoxFit.cover),
             ),
           ),
           SizedBox(width: scaleWidth(16)),
-          // 팀 정보 + 닉네임 + 통계
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: scaleHeight(2)),
-                // 팀 정보 (조건부 표시)
                 if (!isLoading && favTeam.isNotEmpty && favTeam != "응원팀 없음") ...[
-                  IntrinsicWidth( // 텍스트 크기에 맞게 가로 크기 조정
+                  IntrinsicWidth(
                     child: Container(
                       height: scaleHeight(22),
                       padding: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
@@ -576,7 +666,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                         color: AppColors.gray30,
                         borderRadius: BorderRadius.circular(scaleWidth(20)),
                       ),
-                      alignment: Alignment.center, // 세로 기준 센터 정렬
+                      alignment: Alignment.center,
                       child: Text(
                         "$favTeam 팬",
                         style: AppFonts.suite.caption_md_500(context).copyWith(
@@ -587,7 +677,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                   ),
                   SizedBox(height: scaleHeight(8)),
                 ],
-                // 닉네임
                 isLoading
                     ? Text("...", style: AppFonts.pretendard.head_sm_600(context))
                     : Text(
@@ -598,7 +687,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                   ),
                 ),
                 SizedBox(height: scaleHeight(12)),
-                // 통계 정보 (게시글, 팔로잉, 팔로워)
                 Row(
                   children: [
                     _buildStatItem("게시글", postCount),
@@ -607,7 +695,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => const FollowingScreen(targetUserId: null),
+                          pageBuilder: (context, animation, secondaryAnimation) => FollowingScreen(targetUserId: widget.userId),
                           transitionDuration: Duration.zero,
                           reverseTransitionDuration: Duration.zero,
                         ),
@@ -618,7 +706,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => const FollowerScreen(targetUserId: null),
+                          pageBuilder: (context, animation, secondaryAnimation) => FollowerScreen(targetUserId: widget.userId),
                           transitionDuration: Duration.zero,
                           reverseTransitionDuration: Duration.zero,
                         ),
@@ -654,40 +742,28 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         ),
       ],
     );
+
     if (onTap != null) {
       return GestureDetector(
         onTap: onTap,
         child: content,
       );
     }
+
     return content;
   }
 
-  //프로필 수정
-  Widget _buildEditProfileButton() {
+  // 팔로우 버튼 (프로필 수정 버튼 위치)
+  Widget _buildFollowButton() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
       child: SizedBox(
         width: double.infinity,
         height: scaleHeight(42),
         child: ElevatedButton(
-          onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const EditProfileScreen(
-                  previousRoute: 'mypage',
-                ),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-              ),
-            );
-            if (result == true) {
-              _loadUserInfo();
-            }
-          },
+          onPressed: followStatus == null ? null : _handleFollow,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.gray600,
+            backgroundColor: _getButtonBackgroundColor(),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(scaleHeight(8)),
@@ -695,15 +771,48 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             elevation: 0,
           ),
           child: Text(
-            '프로필 수정',
-            style: AppFonts.suite.caption_md_500(context).copyWith(color: Colors.white),
+            _getButtonText(),
+            style: AppFonts.suite.caption_md_500(context).copyWith(color: _getButtonTextColor()),
           ),
         ),
       ),
     );
   }
 
-  ///탭 바
+  Color _getButtonBackgroundColor() {
+    switch (followStatus) {
+      case 'FOLLOWING':
+        return AppColors.gray50;
+      case 'REQUESTED':
+        return AppColors.gray50;
+      default:
+        return AppColors.gray600;
+    }
+  }
+
+  String _getButtonText() {
+    switch (followStatus) {
+      case 'FOLLOWING':
+        return '팔로잉';
+      case 'REQUESTED':
+        return '요청됨';
+      default:
+        return '팔로우';
+    }
+  }
+
+  Color _getButtonTextColor() {
+    switch (followStatus) {
+      case 'FOLLOWING':
+        return AppColors.gray600;
+      case 'REQUESTED':
+        return AppColors.gray600;
+      default:
+        return AppColors.gray20;
+    }
+  }
+
+  // 탭바
   Widget _buildTabBar() {
     final double tabAreaHeight = scaleHeight(36);
     final double dividerHeight = 1.0;
@@ -719,13 +828,11 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             padding: EdgeInsets.symmetric(horizontal: scaleWidth(43.5)),
             child: Stack(
               children: [
-                // 탭 아이콘들
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(3, (index) {
                     final images = [AppImages.calendar, AppImages.list, AppImages.gallery];
                     final isSelected = selectedTabIndex == index;
-
                     return GestureDetector(
                       onTap: () => _onTabTapped(index),
                       child: Container(
@@ -738,7 +845,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                               images[index],
                               width: scaleWidth(28),
                               height: scaleHeight(28),
-                              color: isSelected ? AppColors.gray600: AppColors.trans200,
+                              color: isSelected ? AppColors.gray600 : AppColors.trans200,
                             ),
                             Spacer(),
                           ],
@@ -764,16 +871,15 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   Widget _buildRealtimeTabIndicator() {
     final screenWidth = MediaQuery.of(context).size.width - scaleWidth(43.5 * 2);
     final tabWidth = scaleWidth(51);
-
     final scrollProgress = _currentTabPageValue.clamp(0.0, 2.0);
-    double indicatorOffset;
 
+    double indicatorOffset;
     if (scrollProgress <= 1.0) {
-      // 0 -> 1 (왼쪽에서 중앙으로)
+      // 0 -> 1 (캘린더 -> 리스트)
       final centerPosition = (screenWidth - tabWidth) / 2;
       indicatorOffset = scrollProgress * centerPosition;
     } else {
-      // 1 -> 2 (중앙에서 오른쪽으로)
+      // 1 -> 2 (리스트 -> 모아보기)
       final centerPosition = (screenWidth - tabWidth) / 2;
       final rightPosition = screenWidth - tabWidth;
       indicatorOffset = centerPosition + (scrollProgress - 1.0) * (rightPosition - centerPosition);
@@ -783,7 +889,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       bottom: 0,
       left: indicatorOffset,
       child: AnimatedContainer(
-        duration: _isTabPageScrolling ? Duration.zero: Duration(milliseconds: 250),
+        duration: _isTabPageScrolling ? Duration.zero : Duration(milliseconds: 250),
         width: tabWidth,
         height: 2.0,
         color: AppColors.gray600,
@@ -791,8 +897,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     );
   }
 
-
-  ///캘린더
+  // 캘린더 탭
   Widget _buildCalendarTab() {
     if (isLoadingRecords) {
       return Center(child: CircularProgressIndicator(color: AppColors.pri500));
@@ -811,111 +916,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     );
   }
 
-  ///리스트
-  Widget _buildListTab() {
-    if (isLoadingRecords) {
-      return Center(child: CircularProgressIndicator(color: AppColors.pri500));
-    }
-    if (feedList.isEmpty) {
-      return Center(
-        child: Text(
-          '업로드한 기록이 아직 없어요',
-          style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray300),
-        ),
-      );
-    }
-
-    // FeedItemWidget 사용
-    return Container(
-      color: AppColors.white,
-      child: ListView.builder(
-        padding: EdgeInsets.only(top: scaleHeight(19)),
-        itemCount: feedList.length,
-        itemBuilder: (context, index) {
-          final record = feedList[index];
-
-          final isLiked = _likeManager.getLikedStatus(record['recordId']) ?? record['isLiked'] ?? false;
-          final likeCount = _likeManager.getLikeCount(record['recordId']) ?? record['likeCount'] ?? 0;
-          final commentCount = _likeManager.getCommentCount(record['recordId']) ?? record['commentCount'] ?? 0;
-
-          final feedData = {
-            'recordId': record['recordId'],
-            'profileImageUrl': record['profileImageUrl'],
-            'nickname': record['nickname'],
-            'favTeam': record['favTeam'],
-            'mediaUrls': record['mediaUrls'] ?? [],
-            'longContent': record['longContent'] ?? '',
-            'emotionCode': record['emotionCode'],
-            'emotionLabel': record['emotionLabel'] ?? '',
-            'homeTeam': record['homeTeam'] ?? '',
-            'awayTeam': record['awayTeam'] ?? '',
-            'stadium': record['stadium'] ?? '',
-            'gameDate': record['gameDate'] ?? '',
-            'isLiked': isLiked,
-            'likeCount': likeCount,
-            'commentCount': commentCount,
-          };
-
-          return FeedItemWidget(
-            feedData: feedData,
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) => DetailFeedScreen(recordId: record['recordId']),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-
-              // 삭제되었으면 리스트 업데이트
-              if (result != null && result is Map && result['deleted'] == true) {
-                final deletedRecordId = result['recordId'];
-                setState(() {
-                  feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
-                });
-              }
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  ///모아보기
-  Widget _buildGridTab() {
-    if (isLoadingRecords) {
-      return Center(child: CircularProgressIndicator(color: AppColors.pri500));
-    }
-    if (feedList.isEmpty) {
-      return Center(
-        child: Text(
-          '업로드한 기록이 아직 없어요',
-          style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray300),
-        ),
-      );
-    }
-    return GridView.builder(
-      padding: EdgeInsets.only(
-        left: scaleWidth(20),
-        right: scaleWidth(20),
-        top: scaleHeight(24),
-      ),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: scaleWidth(6),
-        mainAxisSpacing: scaleHeight(9),
-        childAspectRatio: 102 / 142,
-      ),
-      itemCount: feedList.length,
-      itemBuilder: (context, index) {
-        final record = feedList[index];
-        return _buildGridItem(record);
-      },
-    );
-  }
-
-  //달력 헤더
+  /// 캘린더 헤더
   Widget _buildCalendarHeader() {
     return Padding(
       padding: EdgeInsets.only(top: scaleHeight(20), bottom: scaleHeight(8)),
@@ -943,7 +944,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 ),
               ),
               Text(
-                DateFormat('yyyy년  M월', 'ko_KR').format(_focusedDay),
+                DateFormat('yyyy년 M월', 'ko_KR').format(_focusedDay),
                 style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray900),
               ),
               GestureDetector(
@@ -995,7 +996,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     );
   }
 
-  // TableCalendar 위젯
+  /// 캘린더
   Widget _buildTableCalendar() {
     return TableCalendar(
       locale: 'ko_KR',
@@ -1003,51 +1004,44 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       firstDay: DateTime.utc(2024),
       lastDay: DateTime.utc(2026),
       calendarFormat: _calendarFormat,
-      availableGestures: AvailableGestures.horizontalSwipe, // 좌우 스와이프만 가능하게
-      headerVisible: false, // 커스텀 헤더를 사용하므로 기본 헤더 숨김
-      sixWeekMonthsEnforced: true, // 항상 6주 표시
-      rowHeight: scaleHeight(60), // 셀 높이
+      availableGestures: AvailableGestures.horizontalSwipe,
+      headerVisible: false,
+      sixWeekMonthsEnforced: true, // 6주 달력 고정
+      rowHeight: scaleHeight(60),
       daysOfWeekHeight: scaleHeight(45),
-
       calendarStyle: CalendarStyle(
-        cellMargin: EdgeInsets.all(scaleWidth(4)), // 셀 간격
-        // 기록 없는 날 배경 gray30
+        cellMargin: EdgeInsets.all(scaleWidth(4)),
+        // 기본 날짜 셀 스타일 (gray30)
         defaultDecoration: BoxDecoration(
           color: AppColors.gray30,
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
         weekendDecoration: BoxDecoration(
-          color: AppColors.gray30, // 주말도 동일
+          color: AppColors.gray30,
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
-
         outsideDecoration: BoxDecoration(
-          color: Colors.white, // 이번 달 아닌 날짜 배경 흰색
+          color: Colors.white,
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
-
-        // '오늘' 날짜 스타일
         todayDecoration: BoxDecoration(
-          color: AppColors.pri100, // 오늘 배경 pri300
+          color: AppColors.pri100, // pri300 -> pri100로 변경
           borderRadius: BorderRadius.circular(scaleWidth(6)),
           border: Border.all(color: AppColors.pri300, width: 1),
         ),
         todayTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri700),
-
-        // 기본/주말/다른달 Text 스타일 (기록 있는 날은 defaultBuilder에서 덮어씀)
-        defaultTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 기록 없는 날짜숫자 gray200 (기본값)
-        weekendTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 기록 없는 주말 날짜숫자 gray200
-        outsideTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 이번 달 아닌 날 Text (gray200)
+        // 텍스트 스타일
+        defaultTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // gray200
+        weekendTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // gray200
+        outsideTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 텍스트도 gray200
       ),
-
-      // '일, 월, 화...' 요일 스타일 gray700
+      // 요일 헤더 스타일 - gray700
       daysOfWeekStyle: DaysOfWeekStyle(
-        weekdayStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // 월화수목금 gray700
-        weekendStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // 토, 일 gray700
+        weekdayStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // gray700
+        weekendStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // gray700
       ),
-
       calendarBuilders: CalendarBuilders(
-        // '오늘' 날짜 UI 커스텀
+        // 오늘 날짜 커스텀 UI
         todayBuilder: (context, day, focusedDay) {
           final events = _getEventsForDay(day);
           return Container(
@@ -1059,21 +1053,18 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               border: Border.all(color: AppColors.pri300, width: 1),
             ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween, // 위아래 끝에 배치
-              crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 상단에 날짜 + 이벤트
                 Column(
                   children: [
                     Text(
                       '${day.day}',
                       style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri700),
                     ),
-                    if (events.isNotEmpty)
-                      _buildMarkerContent(events.first['result'], context),
+                    if (events.isNotEmpty) _buildMarkerContent(events.first['result'], context),
                   ],
                 ),
-
                 Container(
                   margin: EdgeInsets.only(bottom: scaleHeight(8)),
                   child: Text(
@@ -1088,8 +1079,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             ),
           );
         },
-
-        // 기본 날짜 UI 커스텀
+        // 기본 날짜 커스텀 UI
         defaultBuilder: (context, day, focusedDay) {
           final events = _getEventsForDay(day);
           if (events.isNotEmpty) {
@@ -1114,6 +1104,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               ),
             );
           }
+
           return Container(
             constraints: BoxConstraints.expand(),
             margin: EdgeInsets.all(scaleWidth(2)),
@@ -1122,9 +1113,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               borderRadius: BorderRadius.circular(scaleWidth(6)),
             ),
             child: Align(
-              alignment: Alignment.topCenter, // 상단 정렬
+              alignment: Alignment.topCenter,
               child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(4)), // 상단 여백
+                padding: EdgeInsets.only(top: scaleHeight(4)),
                 child: Text(
                   '${day.day}',
                   style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200),
@@ -1133,8 +1124,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             ),
           );
         },
-
-        // 다른 달 날짜 UI 커스텀
+        // 외부 날짜 커스텀 UI
         outsideBuilder: (context, day, focusedDay) {
           return Container(
             constraints: BoxConstraints.expand(),
@@ -1144,9 +1134,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               borderRadius: BorderRadius.circular(scaleWidth(6)),
             ),
             child: Align(
-              alignment: Alignment.topCenter, // 상단 정렬
+              alignment: Alignment.topCenter,
               child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(4)), // 상단 여백
+                padding: EdgeInsets.only(top: scaleHeight(4)),
                 child: Text(
                   '${day.day}',
                   style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200),
@@ -1156,30 +1146,19 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           );
         },
       ),
-
       onDaySelected: (selectedDay, focusedDay) {
-        // 날짜 선택 시 호출되는 콜백
         setState(() {
           _selectedDay = selectedDay;
-          _focusedDay = focusedDay; // focusedDay도 함께 업데이트해야 선택 표시 유지됨
+          _focusedDay = focusedDay;
         });
-        //TODO:선택된 날짜의 기록 상세 뷰 표시 또는 다른 액션
+        // TODO: 선택한 날짜 처리
         print('Selected day: $selectedDay, Events: ${_getEventsForDay(selectedDay)}');
       },
-      onPageChanged: (focusedDay) {
-        // 달력 페이지 변경 시 호출되는 콜백
-        // isSameMonth 대신 연/월 직접 비교
-        if (_focusedDay.year != focusedDay.year || _focusedDay.month != focusedDay.month) {
-          setState(() {
-            _focusedDay = focusedDay; // 현재 포커스된 날짜 업데이트
-          });
-          _loadMyRecords(); // 변경된 달의 데이터 로드
-        }
-      },
+      onPageChanged: _onCalendarPageChanged,
     );
   }
 
-  // '승/패/무/ETC' 마커 위젯 (SVG 아이콘 사용)
+  // 경기 결과 마커 - SVG 아이콘 사용
   Widget _buildMarkerContent(String? gameResult, BuildContext context) {
     String text;
     String imagePath;
@@ -1207,26 +1186,27 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         textColor = const Color(0xFF5E9EFF);
         break;
       default:
-        text = '기록';
+        text = '관람';
         imagePath = AppImages.calendar;
         textColor = AppColors.gray700;
     }
 
+    // SVG 확장자 확인
     if (!imagePath.endsWith('.svg')) {
       imagePath += '.svg';
     }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙 정렬
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 22x22 크기 에셋
+        // 22x22 크기 SVG
         SvgPicture.asset(
           imagePath,
           width: scaleWidth(22),
           height: scaleHeight(22),
         ),
-        SizedBox(height: scaleHeight(1)), // 아이콘과 텍스트 간격
+        SizedBox(height: scaleHeight(1)),
         Text(
           text,
           style: AppFonts.suite.c3_sb(context).copyWith(
@@ -1240,7 +1220,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     );
   }
 
-  // 하단 통계 패널
+  /// 통계 패널
   Widget _buildStatsPanel() {
     final stats = calendarData['monthlyStats'];
     bool hasData = stats != null && (stats['recordCount'] ?? 0) > 0;
@@ -1368,25 +1348,134 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     );
   }
 
-
-  // 승률 포맷팅 함수 (0과 100만 정수, 나머지는 백엔드 값 그대로)
+  // 승률 포맷팅 (0~100% 범위)
   String _formatWinRate(double winRate) {
-
-    // 0 또는 100인 경우만 정수로 표시
-    if (winRate == 0.0 || winRate == 100.0 || (winRate*10)%10==0) {
+    // 0~100% 범위
+    if (winRate <= 0.0) {
+      winRate = 0.0;
+    } else if (winRate >= 100.0) {
+      winRate = 100.0;
+    } else if (winRate < 1.0) {
+      // 1% 미만일 경우 소수점 표시
+      winRate = winRate * 100; // 0.x => x.x%
       return winRate.toInt().toString();
     }
-
-    // 나머지는 백엔드에서 온 값 그대로 toString()
     return winRate.toString();
+  }
+
+  ///리스트 탭
+  Widget _buildListTab() {
+    if (isLoadingRecords) {
+      return Center(child: CircularProgressIndicator(color: AppColors.pri500));
+    }
+
+    if (feedList.isEmpty) {
+      return Center(
+        child: Text(
+          '업로드한 기록이 아직 없어요',
+          style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray300),
+        ),
+      );
+    }
+
+    // FeedItemWidget 사용
+    return Container(
+      color: AppColors.white,
+      child: ListView.builder(
+        padding: EdgeInsets.only(top: scaleHeight(19)),
+        itemCount: feedList.length,
+        itemBuilder: (context, index) {
+          final record = feedList[index];
+          final isLiked = _likeManager.getLikedStatus(record['recordId']) ?? record['isLiked'] ?? false;
+          final likeCount = _likeManager.getLikeCount(record['recordId']) ?? record['likeCount'] ?? 0;
+          final commentCount = _likeManager.getCommentCount(record['recordId']) ?? record['commentCount'] ?? 0;
+
+          final feedData = {
+            'recordId': record['recordId'],
+            'profileImageUrl': record['profileImageUrl'],
+            'nickname': record['nickname'],
+            'favTeam': record['favTeam'],
+            'mediaUrls': record['mediaUrls'] ?? [],
+            'longContent': record['longContent'] ?? '',
+            'emotionCode': record['emotionCode'],
+            'emotionLabel': record['emotionLabel'] ?? '',
+            'homeTeam': record['homeTeam'] ?? '',
+            'awayTeam': record['awayTeam'] ?? '',
+            'stadium': record['stadium'] ?? '',
+            'gameDate': record['gameDate'] ?? '',
+            'isLiked': isLiked,
+            'likeCount': likeCount,
+            'commentCount': commentCount,
+          };
+
+          return FeedItemWidget(
+            feedData: feedData,
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) => DetailFeedScreen(recordId: record['recordId']),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+              if (result != null && result is Map && result['deleted'] == true) {
+                final deletedRecordId = result['recordId'];
+                setState(() {
+                  feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
+                });
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  ///모아보기 탭
+  Widget _buildGridTab() {
+    if (isLoadingRecords) {
+      return Center(child: CircularProgressIndicator(color: AppColors.pri500));
+    }
+
+    if (feedList.isEmpty) {
+      return Center(
+        child: Text(
+          '업로드한 기록이 아직 없어요',
+          style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray300),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: EdgeInsets.only(
+        left: scaleWidth(20),
+        right: scaleWidth(20),
+        top: scaleHeight(24),
+      ),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: scaleWidth(6),
+        mainAxisSpacing: scaleHeight(9),
+        childAspectRatio: 102 / 142,
+      ),
+      itemCount: feedList.length,
+      itemBuilder: (context, index) {
+        final record = feedList[index];
+        return _buildGridItem(record);
+      },
+    );
   }
 }
 
-class _MyPageTabBarDelegate extends SliverPersistentHeaderDelegate {
+class _FriendProfileTabBarDelegate extends SliverPersistentHeaderDelegate {
   final double height;
   final Widget child;
 
-  _MyPageTabBarDelegate({required this.height, required this.child});
+  _FriendProfileTabBarDelegate({
+    required this.height,
+    required this.child,
+  });
 
   @override
   double get minExtent => height;
@@ -1406,7 +1495,154 @@ class _MyPageTabBarDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(_MyPageTabBarDelegate oldDelegate) {
+  bool shouldRebuild(covariant _FriendProfileTabBarDelegate oldDelegate) {
     return height != oldDelegate.height || child != oldDelegate.child;
+  }
+}
+
+// 고정 헤더 Delegate
+class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double height;
+  final String nickname;
+  final bool isScrolled;
+  final String? followStatus;
+  final VoidCallback onBackPressed;
+  final VoidCallback onFollowPressed;
+
+  _FriendProfileHeaderDelegate({
+    required this.height,
+    required this.nickname,
+    required this.isScrolled,
+    required this.followStatus,
+    required this.onBackPressed,
+    required this.onFollowPressed,
+  });
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    // overlapsContent가 true이면 탭바가 헤더 아래로 들어왔다는 의미
+    // 이 시점에 닉네임과 팔로우 버튼을 표시하도록 변경
+    final bool showHeaderContent = shrinkOffset > 0;
+
+    return Container(
+      color: Colors.white,
+      height: height,
+      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+      child: Row(
+        children: [
+          // 뒤로가기 버튼
+          GestureDetector(
+            onTap: onBackPressed,
+            child: Container(
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                AppImages.backBlack,
+                width: scaleHeight(24),
+                height: scaleHeight(24),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+
+          // 상단에 붙었을 때 (showHeaderContent == true) 닉네임과 팔로우 버튼 표시
+          if (showHeaderContent) ...[
+            SizedBox(width: scaleWidth(20)),
+            Expanded(
+              child: Text(
+                nickname,
+                style: AppFonts.suite.head_sm_700(context).copyWith(color: Colors.black), // Suite체, head_sm_700 굵기, black 색상
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // 팔로우/팔로잉 버튼
+            Container(
+              width: scaleWidth(88),
+              height: scaleHeight(32),
+              child: ElevatedButton(
+                onPressed: onFollowPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _getButtonBackgroundColor(followStatus ?? "NOTFOLLOWING"),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                  ),
+                  elevation: 0,
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size(scaleWidth(88), scaleHeight(32)),
+                ),
+                child: Center(
+                  child: Text(
+                    _getButtonText(followStatus!),
+                    style: AppFonts.pretendard.caption_md_500(context).copyWith(
+                      color: _getButtonTextColor(followStatus!),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ] else ...[
+            // 평상시에는 dots_horizontal
+            Spacer(),
+            GestureDetector(
+              onTap: () {
+                print("더보기 메뉴");
+              },
+              child: SvgPicture.asset(
+                AppImages.dots_horizontal,
+                width: scaleHeight(24),
+                height: scaleHeight(24),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+
+  Color _getButtonBackgroundColor(String status) {
+    switch (status) {
+      case 'FOLLOWING':
+        return AppColors.gray50;
+      case 'REQUESTED':
+        return AppColors.gray50;
+      default:
+        return AppColors.gray600;
+    }
+  }
+
+  String _getButtonText(String status) {
+    switch (status) {
+      case 'FOLLOWING':
+        return '팔로잉';
+      case 'REQUESTED':
+        return '요청됨';
+      default:
+        return '팔로우';
+    }
+  }
+
+  Color _getButtonTextColor(String status) {
+    switch (status) {
+      case 'FOLLOWING':
+        return AppColors.gray600;
+      case 'REQUESTED':
+        return AppColors.gray600;
+      default:
+        return AppColors.gray20;
+    }
+  }
+
+  @override
+  bool shouldRebuild(_FriendProfileHeaderDelegate oldDelegate) {
+    return nickname != oldDelegate.nickname ||
+        isScrolled != oldDelegate.isScrolled ||
+        followStatus != oldDelegate.followStatus;
   }
 }

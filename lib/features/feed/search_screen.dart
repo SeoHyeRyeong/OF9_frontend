@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:frontend/api/search_api.dart';
 import 'package:frontend/api/user_api.dart';
+import 'package:frontend/api/feed_api.dart';
+import 'package:frontend/features/mypage/friend_profile_screen.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
@@ -824,6 +826,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
 
           final feedData = {
             'recordId': record.recordId,
+            'userId': record.authorId,
             'authorProfileImage': record.authorProfileImage,
             'authorNickname': record.authorNickname,
             'authorFavTeam': record.authorFavTeam,
@@ -1006,112 +1009,142 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
     }
   }
 
+  Future<void> _refreshFollowStatus() async {
+    try {
+      final response = await FeedApi.getUserFeed(widget.user.userId);
+      if (mounted) {
+        setState(() {
+          _currentFollowStatus = response['followStatus'] ?? "NOTFOLLOWING";
+        });
+      }
+    } catch (e) {
+      print('팔로우 상태 새로고침 실패: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: scaleHeight(80),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(scaleHeight(16)),
-      ),
-      child: Row(
-        children: [
-          Padding(
-            padding: EdgeInsets.only(left: scaleWidth(20)),
-            child: Container(
-              width: scaleWidth(40),
-              height: scaleHeight(40),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.gray50, width: 1),
-                borderRadius: BorderRadius.circular(scaleWidth(20)),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(scaleWidth(20)),
-                child: widget.user.profileImageUrl != null && widget.user.profileImageUrl!.isNotEmpty
-                    ? Image.network(
-                  widget.user.profileImageUrl!,
-                  width: scaleWidth(40),
-                  height: scaleHeight(40),
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      width: scaleWidth(40),
-                      height: scaleHeight(40),
-                      color: AppColors.gray100,
-                      child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return SvgPicture.asset(
-                      AppImages.profile,
-                      width: scaleWidth(40),
-                      height: scaleHeight(40),
-                      fit: BoxFit.cover,
-                    );
-                  },
-                )
-                    : SvgPicture.asset(
-                  AppImages.profile,
-                  width: scaleWidth(40),
-                  height: scaleHeight(40),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(userId: widget.user.userId),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
           ),
-          SizedBox(width: scaleWidth(12)),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FixedText(
-                  widget.user.nickname,
-                  style: AppFonts.pretendard.b2_m(context).copyWith(color: Colors.black),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: scaleHeight(8)),
-                FixedText(
-                  widget.user.favTeam,
-                  style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray400),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(right: scaleWidth(20)),
-            child: GestureDetector(
-              onTap: _handleFollowButton,
+        ).then((_) async {
+          await _refreshFollowStatus();
+        });
+      },
+      child: Container(
+        height: scaleHeight(80),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(scaleHeight(16)),
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: EdgeInsets.only(left: scaleWidth(20)),
               child: Container(
-                width: scaleWidth(70),
-                height: scaleHeight(36),
+                width: scaleWidth(40),
+                height: scaleHeight(40),
                 decoration: BoxDecoration(
-                  color: _getButtonBackgroundColor(),
-                  borderRadius: BorderRadius.circular(scaleHeight(8)),
+                  border: Border.all(color: AppColors.gray50, width: 1),
+                  borderRadius: BorderRadius.circular(scaleWidth(20)),
                 ),
-                child: Center(
-                  child: _isLoading
-                      ? SizedBox(
-                    width: scaleWidth(16),
-                    height: scaleHeight(16),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(_getButtonTextColor()),
-                    ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(scaleWidth(20)),
+                  child: widget.user.profileImageUrl != null && widget.user.profileImageUrl!.isNotEmpty
+                      ? Image.network(
+                    widget.user.profileImageUrl!,
+                    width: scaleWidth(40),
+                    height: scaleHeight(40),
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: scaleWidth(40),
+                        height: scaleHeight(40),
+                        color: AppColors.gray100,
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return SvgPicture.asset(
+                        AppImages.profile,
+                        width: scaleWidth(40),
+                        height: scaleHeight(40),
+                        fit: BoxFit.cover,
+                      );
+                    },
                   )
-                      : FixedText(
-                    _getButtonText(),
-                    style: AppFonts.suite.c1_b(context).copyWith(color: _getButtonTextColor()),
+                      : SvgPicture.asset(
+                    AppImages.profile,
+                    width: scaleWidth(40),
+                    height: scaleHeight(40),
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+            SizedBox(width: scaleWidth(12)),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FixedText(
+                    widget.user.nickname,
+                    style: AppFonts.pretendard.b2_m(context).copyWith(color: Colors.black),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: scaleHeight(8)),
+                  FixedText(
+                    widget.user.favTeam,
+                    style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray400),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(right: scaleWidth(20)),
+              child: GestureDetector(
+                onTap: () {
+                  _handleFollowButton();
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: scaleWidth(70),
+                  height: scaleHeight(36),
+                  decoration: BoxDecoration(
+                    color: _getButtonBackgroundColor(),
+                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                  ),
+                  child: Center(
+                    child: _isLoading
+                        ? SizedBox(
+                      width: scaleWidth(16),
+                      height: scaleHeight(16),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(_getButtonTextColor()),
+                      ),
+                    )
+                        : FixedText(
+                      _getButtonText(),
+                      style: AppFonts.suite.c1_b(context).copyWith(color: _getButtonTextColor()),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -89,7 +89,8 @@ class AppImages {
   static const plus = 'assets/imgs/ic_detail_record/btn_plus.svg';
   static const foodplus = 'assets/imgs/ic_detail_record/btn_food_plus.svg';
   static const textfield_delete = 'assets/imgs/ic_detail_record/ic_textfield_delete.png';
-
+  static const complete = 'assets/imgs/ic_complete.svg';
+  static const party = 'assets/imgs/ic_party.svg';
 
   static const calendar = 'assets/imgs/ic_normal_calendar.svg';
   static const gallery = 'assets/imgs/ic_normal_gallery.svg';

@@ -14,13 +14,21 @@ import 'dart:math' as math;
 import 'package:frontend/components/custom_action_sheet.dart';
 import 'package:frontend/api/user_api.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
+import 'package:frontend/features/feed/feed_screen.dart';
+import 'package:frontend/components/custom_toast.dart';
 
 class DetailFeedScreen extends StatefulWidget {
   final int recordId;
+  final bool showUploadToast;
+  final String? uploaderNickname;
+  final bool isFirstRecord;
 
   const DetailFeedScreen({
     Key? key,
     required this.recordId,
+    this.showUploadToast = false,
+    this.uploaderNickname,
+    this.isFirstRecord = false,
   }) : super(key: key);
 
   @override
@@ -65,6 +73,16 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     _loadCurrentUserId();
     _loadRecordDetail();
     _loadComments();
+
+    if (widget.showUploadToast && widget.uploaderNickname != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (widget.isFirstRecord) {
+          _showFirstRecordOverlay(widget.uploaderNickname!);
+        } else {
+          _showUploadToast(widget.uploaderNickname!);
+        }
+      });
+    }
   }
 
   @override
@@ -378,6 +396,66 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     return fullTeamName;
   }
 
+  //토스트
+  void _showUploadToast(String nickname) {
+    CustomToast.show(
+      context: context,
+      iconAsset: AppImages.complete,
+      boldText: nickname,
+      regularText: '직관 기록이 업로드 되었어요!',
+    );
+  }
+
+  //첫 기록 완료했을 때
+  void _showFirstRecordOverlay(String nickname) {
+    final overlay = Overlay.of(context);
+    // 오버레이 생성
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Material(
+        color: Colors.transparent,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          color: AppColors.trans700,
+          child: Column(
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+              SvgPicture.asset(
+                AppImages.party,
+                width: scaleWidth(104),
+                height: scaleHeight(104),
+              ),
+              SizedBox(height: scaleHeight(23)),
+              FixedText(
+                '첫 직관 기록 완료',
+                style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray20),
+              ),
+              SizedBox(height: scaleHeight(6)),
+              FixedText(
+                '마이페이지에서도 확인 가능해요!',
+                style: AppFonts.suite.body_md_400(context).copyWith(color: AppColors.gray100),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    overlay.insert(overlayEntry);
+
+    // 토스트도 동시에 표시
+    CustomToast.show(
+      context: context,
+      iconAsset: AppImages.complete,
+      boldText: nickname,
+      regularText: '직관 기록이 업로드 되었어요!',
+    );
+
+    // 3초 후 오버레이 제거
+    Future.delayed(Duration(seconds: 3), () {
+      overlayEntry.remove();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -385,8 +463,18 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         FocusScope.of(context).unfocus();
       },
       child: PopScope(
-        canPop: true,
+        canPop: false,
         onPopInvoked: (didPop) {
+          if (!didPop) {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) => FeedScreen(),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          }
         },
         child: Scaffold(
           backgroundColor: Colors.white,
@@ -447,7 +535,16 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) => FeedScreen(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            },
             child: SvgPicture.asset(
               AppImages.backBlack,
               width: scaleWidth(24),

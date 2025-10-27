@@ -114,39 +114,39 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
             FocusScope.of(context).unfocus();
           },
           child: SafeArea(
-          child: Column(
-            children: [
-              _buildBackButtonArea(),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Column(
-                    children: [
-                      _buildTicketCard(),
-                      Container(
-                        width: double.infinity,
-                        color: AppColors.gray30,
-                        child: Column(
-                          children: [
-                            _buildGallerySection(),
-                            _buildDiarySection(),
-                            _buildBestPlayerSection(),
-                            _buildCheerFriendSection(),
-                            if (_isKeyboardVisible) SizedBox(height: scaleHeight(300)),
-                            // _buildFoodTagSection(),
-                          ],
+            child: Column(
+              children: [
+                _buildBackButtonArea(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Column(
+                      children: [
+                        _buildTicketCard(),
+                        Container(
+                          width: double.infinity,
+                          color: AppColors.gray30,
+                          child: Column(
+                            children: [
+                              _buildGallerySection(),
+                              _buildDiarySection(),
+                              _buildBestPlayerSection(),
+                              _buildCheerFriendSection(),
+                              if (_isKeyboardVisible) SizedBox(height: scaleHeight(300)),
+                              // _buildFoodTagSection(),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              _buildCompleteButtonArea(),
-            ],
+                _buildCompleteButtonArea(),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -822,6 +822,9 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
       final recordId = result['recordId'] as int;
       print('📋 생성된 recordId: $recordId');
 
+      final nickname = userInfo['data']['nickname'] as String;
+      final isFirstRecord = result['firstRecord'] as bool? ?? false;
+
       recordState.reset();
 
       if (mounted) {
@@ -829,7 +832,12 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation1, animation2) =>
-            const FeedScreen(),
+                DetailFeedScreen(
+                  recordId: recordId,
+                  showUploadToast: true,
+                  uploaderNickname: nickname,
+                  isFirstRecord: isFirstRecord,
+                ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),

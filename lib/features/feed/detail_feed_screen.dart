@@ -463,9 +463,9 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         FocusScope.of(context).unfocus();
       },
       child: PopScope(
-        canPop: false,
+        canPop: widget.showUploadToast ? false : true,
         onPopInvoked: (didPop) {
-          if (!didPop) {
+          if (!didPop && widget.showUploadToast) {
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
@@ -536,14 +536,18 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         children: [
           GestureDetector(
             onTap: () {
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) => FeedScreen(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
+              if (widget.showUploadToast) {
+                Navigator.pushReplacement(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation1, animation2) => FeedScreen(),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              } else {
+                Navigator.pop(context);
+              }
             },
             child: SvgPicture.asset(
               AppImages.backBlack,

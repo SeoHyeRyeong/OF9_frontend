@@ -199,43 +199,39 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(
-        left: scaleWidth(20),
-        right: scaleWidth(20),
-        bottom: scaleHeight(12),
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.gray50, width: 1),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildProfileSection(),
-          GestureDetector(
-            onTap: widget.onTap,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildContentSection(),
-                _buildGameInfo(),
-                Container(
-                  margin: EdgeInsets.only(
-                    top: scaleHeight(10),
-                    left: scaleWidth(16),
-                    right: scaleWidth(16),
-                  ),
-                  height: 1,
-                  color: AppColors.gray50,
-                  width: double.infinity,
-                ),
-                _buildBottomInfo(),
-              ],
+    return GestureDetector(
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        margin: EdgeInsets.only(
+          left: scaleWidth(20),
+          right: scaleWidth(20),
+          bottom: scaleHeight(12),
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.gray50, width: 1),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProfileSection(),
+            _buildContentSection(),
+            _buildGameInfo(),
+            Container(
+              margin: EdgeInsets.only(
+                top: scaleHeight(10),
+                left: scaleWidth(16),
+                right: scaleWidth(16),
+              ),
+              height: 1,
+              color: AppColors.gray50,
+              width: double.infinity,
             ),
-          ),
-        ],
+            _buildBottomInfo(),
+          ],
+        ),
       ),
     );
   }
@@ -254,113 +250,109 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
         left: scaleWidth(16),
         right: scaleWidth(16),
       ),
-      child: SizedBox(
-        width: double.infinity,
-        child: Stack(
-          children: [
-            // 전체 배경 탭 영역 (상세 기록으로 이동)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: widget.onTap,
-                behavior: HitTestBehavior.opaque,
-              ),
-            ),
-            // 프로필 영역 (프로필 화면으로 이동)
-            Row(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () async {
+              try {
+                final myProfile = await UserApi.getMyProfile();
+                final myUserId = myProfile['data']['id'];
+
+                if (userId == myUserId) {
+                  // 이미 MyPageScreen에 있는지 확인
+                  final currentRoute = ModalRoute.of(context);
+                  final isOnMyPage = currentRoute?.settings.name == null &&
+                      context.findAncestorWidgetOfExactType<MyPageScreen>() != null;
+
+                  // 이미 마이페이지에 있으면 클릭 무시
+                  if (isOnMyPage) {
+                    return;
+                  }
+
+                  await Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                      const MyPageScreen(
+                        fromNavigation: false,
+                        showBackButton: true,
+                      ),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                  widget.onProfileNavigated?.call();
+                } else {
+                  final result = await Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          FriendProfileScreen(userId: userId),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                  if (result != null && result is String) {
+                    setState(() {
+                      widget.feedData['followStatus'] = result;
+                    });
+                    widget.onProfileNavigated?.call();
+                  }
+                }
+              } catch (e) {
+                print('프로필 이동 실패: $e');
+              }
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () async {
-                    try {
-                      final myProfile = await UserApi.getMyProfile();
-                      final myUserId = myProfile['data']['id'];
-
-                      if (userId == myUserId) {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) =>
-                            const MyPageScreen(
-                              fromNavigation: false,
-                              showBackButton: true,
-                            ),
-                            transitionDuration: Duration.zero,
-                            reverseTransitionDuration: Duration.zero,
-                          ),
-                        );
-                      } else {
-                        final result = await Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) =>
-                                FriendProfileScreen(userId: userId),
-                            transitionDuration: Duration.zero,
-                            reverseTransitionDuration: Duration.zero,
-                          ),
-                        );
-                        if (result != null && result is String) {
-                          setState(() {
-                            widget.feedData['followStatus'] = result;
-                          });
-                          widget.onProfileNavigated?.call();
-                        }
-                      }
-                    } catch (e) {
-                      print('프로필 이동 실패: $e');
-                    }
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(scaleWidth(18)),
-                        child: (profileImageUrl.isNotEmpty)
-                            ? Image.network(
-                          profileImageUrl,
-                          width: scaleWidth(36),
-                          height: scaleHeight(36),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => SvgPicture.asset(
-                            AppImages.profile,
-                            width: scaleWidth(36),
-                            height: scaleHeight(36),
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                            : SvgPicture.asset(
-                          AppImages.profile,
-                          width: scaleWidth(36),
-                          height: scaleHeight(36),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      SizedBox(width: scaleWidth(12)),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          FixedText(
-                            nickname,
-                            style: AppFonts.pretendard.body_sm_500(context).copyWith(
-                              color: AppColors.gray950,
-                            ),
-                          ),
-                          SizedBox(height: scaleHeight(2)),
-                          FixedText(
-                            favTeamWithFan,
-                            style: AppFonts.pretendard.caption_md_400(context).copyWith(
-                              color: AppColors.gray400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(scaleWidth(18)),
+                  child: (profileImageUrl.isNotEmpty)
+                      ? Image.network(
+                    profileImageUrl,
+                    width: scaleWidth(36),
+                    height: scaleHeight(36),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => SvgPicture.asset(
+                      AppImages.profile,
+                      width: scaleWidth(36),
+                      height: scaleHeight(36),
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                      : SvgPicture.asset(
+                    AppImages.profile,
+                    width: scaleWidth(36),
+                    height: scaleHeight(36),
+                    fit: BoxFit.cover,
                   ),
+                ),
+                SizedBox(width: scaleWidth(12)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FixedText(
+                      nickname,
+                      style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                        color: AppColors.gray950,
+                      ),
+                    ),
+                    SizedBox(height: scaleHeight(2)),
+                    FixedText(
+                      favTeamWithFan,
+                      style: AppFonts.pretendard.caption_md_400(context).copyWith(
+                        color: AppColors.gray400,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

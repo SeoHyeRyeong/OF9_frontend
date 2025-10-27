@@ -846,6 +846,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
 
           final feedData = {
             'recordId': record['recordId'],
+            'userId': record['userId'],
             'profileImageUrl': record['profileImageUrl'],
             'nickname': record['nickname'],
             'favTeam': record['favTeam'],
@@ -880,7 +881,24 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 setState(() {
                   feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
                 });
+                // 프로필 정보 다시 로드하여 게시글 수 업데이트
+                _loadUserInfo();
               }
+            },
+            onProfileNavigated: () async {
+              final result = await Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                  const MyPageScreen(
+                    fromNavigation: false,
+                    showBackButton: true,
+                  ),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+              // 마이페이지에서 돌아온 경우 현재 상태 유지 (리프레시 안함)
             },
           );
         },

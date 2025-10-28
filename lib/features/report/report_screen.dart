@@ -11,6 +11,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
+import 'package:frontend/features/report/badge_screen.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({Key? key}) : super(key: key);
@@ -510,8 +511,8 @@ class _ReportScreenState extends State<ReportScreen> {
                             ),
                             SizedBox(height: scaleHeight(5)),
 
-                            Padding(
-                              padding: EdgeInsets.only(left: scaleWidth(33)),
+                            Align(
+                              alignment: Alignment((0.35 * 2) - 1, 0),
                               child: Text(
                                 "${totalWinRate % 1 == 0 ? totalWinRate.toInt() : totalWinRate.toStringAsFixed(1)}%",
                                 style: TextStyle(
@@ -522,24 +523,25 @@ class _ReportScreenState extends State<ReportScreen> {
                                   height: 1.6,
                                   letterSpacing: -0.84,
                                 ),
-                                textAlign: TextAlign.start,
+                                textAlign: TextAlign.center,
                               ),
                             ),
 
-                            Padding(
-                              padding: EdgeInsets.only(left: scaleWidth(43)),
+                            Align(
+                              alignment: Alignment((0.36 * 2) - 1, 0),
                               child: Text(
                                 "총 ${totalGames}회의 경기를 관람했어요",
                                 style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray600, fontSize: 10.sp),
-                                textAlign: TextAlign.start,
+                                textAlign: TextAlign.center,
                               ),
                             ),
 
                             SizedBox(height: scaleHeight(14)),
 
-                            Padding(
-                              padding: EdgeInsets.only(left: scaleWidth(16)),
+                            Align(
+                              alignment: Alignment((0.28 * 2) - 1, 0),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   _buildWinLossDrawBadge(AppImages.win, totalWin),
                                   SizedBox(width: scaleWidth(10)),
@@ -824,6 +826,14 @@ class _ReportScreenState extends State<ReportScreen> {
     return Column(
       children: [
         _buildSectionHeader("나의 뱃지", onTap: hasRecords ? () {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1, animation2) => const BadgeScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
         } : null),
         SizedBox(height: scaleHeight(14)),
         Container(
@@ -1201,6 +1211,30 @@ class TicketShapeClipper extends CustomClipper<Path> {
         radius: notchRadius,
       )),
     );
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+// 육각형 모양 CustomClipper
+class HexagonClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final w = size.width;
+    final h = size.height;
+
+    // 육각형 좌표 계산
+    path.moveTo(w * 0.5, 0);
+    path.lineTo(w, h * 0.25);
+    path.lineTo(w, h * 0.75);
+    path.lineTo(w * 0.5, h);
+    path.lineTo(0, h * 0.75);
+    path.lineTo(0, h * 0.25);
+    path.close();
 
     return path;
   }

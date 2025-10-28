@@ -407,11 +407,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ),
 
-                                SizedBox(width: scaleWidth(20)),
+                                SizedBox(width: scaleWidth(17)),
 
                                 // 사용자 정보
                                 Padding(
-                                  padding: EdgeInsets.only(top: scaleHeight(33)),
+                                  padding: EdgeInsets.only(top: scaleHeight(35)),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.start,
@@ -423,13 +423,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         nickname,
                                         style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.black),
                                       ),
-                                      SizedBox(height: scaleHeight(4)),
+                                      SizedBox(height: scaleHeight(5)),
                                       // 최애구단
                                       isLoading
                                           ? Container()
                                           : FixedText(
                                         "$favTeam 팬",
-                                        style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400),
+                                        style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400, fontSize: scaleFont(10)),
                                       ),
                                       SizedBox(height: scaleHeight(7)),
                                       // 팔로잉/팔로워
@@ -464,7 +464,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                                 // 수정 버튼
                                 Padding(
-                                  padding: EdgeInsets.only(top: scaleHeight(32)),
+                                  padding: EdgeInsets.only(top: scaleHeight(35)),
                                   child: GestureDetector(
                                     onTap: () {
                                       Navigator.push(

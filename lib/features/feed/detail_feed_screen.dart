@@ -944,86 +944,113 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     return GestureDetector(
       onTap: () => setState(() => _isGameCardExpanded = !_isGameCardExpanded),
       child: AnimatedSize(
-        duration: Duration(milliseconds: 250),
-        curve: Curves.fastOutSlowIn,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
         alignment: Alignment.topCenter,
         child: Container(
+          width: MediaQuery.of(context).size.width - scaleWidth(40),
           margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-          padding: EdgeInsets.all(scaleHeight(12)),
+          padding: EdgeInsets.only(
+            top: scaleHeight(12),
+            bottom: scaleHeight(12),
+            left: scaleWidth(20),
+            right: scaleWidth(16),
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(scaleHeight(12)),
             border: Border.all(color: AppColors.gray50, width: 1),
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
+            children: [
+              // 메인 콘텐츠 (BackBlack 영향 없음)
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _getEmotionImage(emotionCode),
-                    FixedText(emotionLabel, style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                    // emotion 이미지와 라벨 - 세로 중앙 정렬
+                    Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _getEmotionImage(emotionCode),
+                          FixedText(
+                            emotionLabel,
+                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: scaleWidth(15)),
+                    // 구분선
+                    Container(
+                      width: 1,
+                      color: AppColors.gray50,
+                    ),
+                    SizedBox(width: scaleWidth(17)),
+                    // 게임 정보 영역 - 패딩 제거 (전체 공간 사용)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 날짜, 시간, 경기장 정보
+                          Row(
+                            children: [
+                              FixedText(
+                                _formatGameDateTime(gameDate, gameTime),
+                                style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400, fontSize: scaleFont(10), height: 14 / 10),
+                              ),
+                              SizedBox(width: scaleWidth(4)),
+                              SvgPicture.asset(AppImages.ellipse, width: scaleWidth(2), height: scaleHeight(2)),
+                              SizedBox(width: scaleWidth(3)),
+                              FixedText(
+                                stadium,
+                                style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400, fontSize: scaleFont(10), height: 14 / 10),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: scaleHeight(5)),
+                          // 팀 로고와 스코어
+                          Row(
+                            children: [
+                              _getTeamLogo(homeTeamShort, size: 40),
+                              SizedBox(width: scaleWidth(12)),
+                              FixedText(homeScore?.toString() ?? '0', style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray500)),
+                              SizedBox(width: scaleWidth(10)),
+                              FixedText(':', style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray500)),
+                              SizedBox(width: scaleWidth(12)),
+                              FixedText(awayScore?.toString() ?? '0', style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray500)),
+                              SizedBox(width: scaleWidth(11)),
+                              _getTeamLogo(awayTeamShort, size: 40),
+                            ],
+                          ),
+                          // 확장 정보
+                          if (_isGameCardExpanded) ...[
+                            SizedBox(height: scaleHeight(10)),
+                            _buildExpandedInfo(recordDetail),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-                SizedBox(width: scaleWidth(17)),
-                Container(width: 1, height: double.infinity, color: AppColors.gray50, margin: EdgeInsets.symmetric(vertical: scaleHeight(4))),
-                SizedBox(width: scaleWidth(20)),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          FixedText(
-                            _formatGameDateTime(gameDate, gameTime),
-                            style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300, fontSize: scaleFont(10), height: 14 / 10),
-                          ),
-                          SizedBox(width: scaleWidth(4)),
-                          SvgPicture.asset(AppImages.ellipse, width: scaleWidth(2), height: scaleHeight(2)),
-                          SizedBox(width: scaleWidth(3)),
-                          FixedText(
-                            stadium,
-                            style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300, fontSize: scaleFont(10), height: 14 / 10),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: scaleHeight(7)),
-                      Row(
-                        children: [
-                          _getTeamLogo(homeTeamShort, size: 40),
-                          SizedBox(width: scaleWidth(13)),
-                          FixedText(homeScore?.toString() ?? '0', style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray500)),
-                          SizedBox(width: scaleWidth(10)),
-                          FixedText(':', style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray500)),
-                          SizedBox(width: scaleWidth(13)),
-                          FixedText(awayScore?.toString() ?? '0', style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray500)),
-                          SizedBox(width: scaleWidth(11)),
-                          _getTeamLogo(awayTeamShort, size: 40),
-                        ],
-                      ),
-                      if (_isGameCardExpanded) ...[
-                        SizedBox(height: scaleHeight(10)),
-                        _buildExpandedInfo(recordDetail),
-                      ],
-                    ],
+              ),
+              // backBlack 아이콘 - 오버레이로 배치 (공간을 차지하지 않음)
+              Positioned(
+                right: 0, // 내부 패딩 기준 right: 0
+                top: scaleHeight(20), // 20px 아래
+                child: AnimatedRotation(
+                  duration: Duration(milliseconds: 300),
+                  turns: _isGameCardExpanded ? -0.25 : 0.25,
+                  child: SvgPicture.asset(
+                    AppImages.backBlack,
+                    width: scaleWidth(20),
+                    height: scaleHeight(20),
+                    fit: BoxFit.contain,
+                    color: AppColors.gray200,
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.only(top: scaleHeight(20)),
-                  child: AnimatedRotation(
-                    duration: Duration(milliseconds: 300),
-                    turns: _isGameCardExpanded ? -0.25 : 0.25,
-                    child: SvgPicture.asset(
-                      AppImages.backBlack,
-                      width: scaleWidth(20),
-                      height: scaleHeight(20),
-                      fit: BoxFit.contain,
-                      color: AppColors.gray200,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

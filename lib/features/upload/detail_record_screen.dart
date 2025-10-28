@@ -1761,13 +1761,36 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
 
         if (searchText.isNotEmpty) {
           try {
-            final result = await UserApi.getFollowing(_myUserId!);
-            final followingList = result['data'] as List<dynamic>;
+            final followingResult  = await UserApi.getFollowing(_myUserId!);
+            final followerResult = await UserApi.getFollowers(_myUserId!);
+            final followingList = followingResult['data'] as List;
+            final followerList = followerResult['data'] as List;
 
-            final filtered = followingList.where((user) {
+            final allUsers = <Map<String, dynamic>>[];
+            final userIds = <int>{};
+
+            // 팔로잉 목록 추가
+            for (final user in followingList) {
+              final userId = user['id'] as int;
+              if (!userIds.contains(userId)) {
+                allUsers.add(user as Map<String, dynamic>);
+                userIds.add(userId);
+              }
+            }
+
+            // 팔로워 목록 추가 (중복 제거)
+            for (final user in followerList) {
+              final userId = user['id'] as int;
+              if (!userIds.contains(userId)) {
+                allUsers.add(user as Map<String, dynamic>);
+                userIds.add(userId);
+              }
+            }
+
+            final filtered = allUsers.where((user) {
               final nickname = user['nickname'] as String;
               return nickname.toLowerCase().contains(searchText.toLowerCase());
-            }).map((e) => e as Map<String, dynamic>).toList();
+            }).toList();
 
             setState(() {
               _searchResults = filtered;

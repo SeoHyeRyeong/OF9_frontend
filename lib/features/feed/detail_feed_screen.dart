@@ -305,10 +305,24 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       print('✅ 게시글 삭제 성공');
 
       if (mounted) {
-        Navigator.pop(context, {
-          'deleted': true,
-          'recordId': widget.recordId,
-        });
+        if (widget.showUploadToast) {
+          // 업로드 직후 삭제한 경우 FeedScreen으로 이동
+          Navigator.pushAndRemoveUntil(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => FeedScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+                (route) => false,
+          );
+        } else {
+          // 일반적인 경우 pop (애니메이션 제거)
+          Navigator.pop(context, {
+            'deleted': true,
+            'recordId': widget.recordId,
+          });
+        }
       }
     } catch (e) {
       print('❌ 게시글 삭제 실패: $e');

@@ -284,6 +284,14 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
                   );
                   widget.onProfileNavigated?.call();
                 } else {
+                  // 이미 FriendProfileScreen에 있는지 확인
+                  final isOnFriendProfile = context.findAncestorWidgetOfExactType<FriendProfileScreen>() != null;
+
+                  // 이미 친구 프로필 화면에 있으면 클릭 무시
+                  if (isOnFriendProfile) {
+                    return;
+                  }
+
                   final result = await Navigator.push(
                     context,
                     PageRouteBuilder(

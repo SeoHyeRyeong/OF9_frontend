@@ -411,7 +411,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                                 // 사용자 정보
                                 Padding(
-                                  padding: EdgeInsets.only(top: scaleHeight(32)),
+                                  padding: EdgeInsets.only(top: scaleHeight(33)),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.start,

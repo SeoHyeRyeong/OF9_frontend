@@ -4,7 +4,7 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/utils/fixed_text.dart';
-import 'package:frontend/features/feed/feed_screen.dart';
+import 'package:frontend/features/report/report_screen.dart';
 
 class SignupCompleteScreen extends StatefulWidget {
   final String? selectedTeam;
@@ -148,7 +148,7 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
                   Navigator.pushReplacement(
                     context,
                     PageRouteBuilder(
-                      pageBuilder: (context, animation1, animation2) => const FeedScreen(),
+                      pageBuilder: (context, animation1, animation2) => const ReportScreen(),
                       transitionDuration: Duration.zero,
                       reverseTransitionDuration: Duration.zero,
                     ),

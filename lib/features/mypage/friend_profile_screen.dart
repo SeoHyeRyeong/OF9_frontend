@@ -1206,13 +1206,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 22x22 크기 SVG
         SvgPicture.asset(
           imagePath,
           width: scaleWidth(22),
           height: scaleHeight(22),
         ),
-        SizedBox(height: scaleHeight(1)),
         Text(
           text,
           style: AppFonts.suite.c3_sb(context).copyWith(
@@ -1431,6 +1429,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                   feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
                 });
               }
+            },
+            onProfileNavigated: () {
+              // 친구 프로필 화면에서는 프로필 클릭 시 아무 동작 하지 않음
             },
           );
         },

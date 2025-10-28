@@ -235,6 +235,17 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     }
   }
 
+
+  /// 캘린더 월 변경 시 데이터 재로드
+  void _onCalendarPageChanged(DateTime focusedDay) {
+    setState(() {
+      _focusedDay = focusedDay;
+    });
+    if (selectedTabIndex == 0) {
+      _loadMyRecords();
+    }
+  }
+
   Future<void> _refreshData() async {
     await Future.wait([_loadUserInfo(), _loadMyRecords()]);
   }
@@ -1025,126 +1036,84 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       locale: 'ko_KR',
       focusedDay: _focusedDay,
       firstDay: DateTime.utc(2024),
-      lastDay: DateTime.utc(2100),
+      lastDay: DateTime.utc(2026),
       calendarFormat: _calendarFormat,
-      availableGestures: AvailableGestures.horizontalSwipe, // 좌우 스와이프만 가능하게
-      headerVisible: false, // 커스텀 헤더를 사용하므로 기본 헤더 숨김
-      sixWeekMonthsEnforced: true, // 항상 6주 표시
-      rowHeight: scaleHeight(60), // 셀 높이
+      availableGestures: AvailableGestures.horizontalSwipe,
+      headerVisible: false,
+      sixWeekMonthsEnforced: true, // 6주 달력 고정
+      rowHeight: scaleHeight(60),
       daysOfWeekHeight: scaleHeight(45),
-      eventLoader: _getEventsForDay, // eventLoader 추가
-
       calendarStyle: CalendarStyle(
-        cellMargin: EdgeInsets.all(scaleWidth(4)), // 셀 간격
-        // 기록 없는 날 배경 gray30
+        cellMargin: EdgeInsets.all(scaleWidth(4)),
+        // 기본 날짜 셀 스타일 (gray30)
         defaultDecoration: BoxDecoration(
           color: AppColors.gray30,
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
         weekendDecoration: BoxDecoration(
-          color: AppColors.gray30, // 주말도 동일
+          color: AppColors.gray30,
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
-
         outsideDecoration: BoxDecoration(
-          color: Colors.white, // 이번 달 아닌 날짜 배경 흰색
+          color: Colors.white,
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
-
-        // '오늘' 날짜 스타일
         todayDecoration: BoxDecoration(
-          color: AppColors.pri100, // 오늘 배경 pri100 (pri300 대신)
+          color: AppColors.pri100, // pri300 -> pri100로 변경
           borderRadius: BorderRadius.circular(scaleWidth(6)),
-          border: Border.all(color: AppColors.pri300, width: 1), // 오늘 윤곽선 pri300
+          border: Border.all(color: AppColors.pri300, width: 1),
         ),
-        todayTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri700), // 오늘 날짜숫자 pri700
-
-        // 기본/주말/다른달 Text 스타일 (기록 있는 날은 defaultBuilder에서 덮어씀)
-        defaultTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 기록 없는 날짜숫자 gray200 (기본값)
-        weekendTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 기록 없는 주말 날짜숫자 gray200
-        outsideTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 이번 달 아닌 날 Text (gray200)
+        todayTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri700),
+        // 텍스트 스타일
+        defaultTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // gray200
+        weekendTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // gray200
+        outsideTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 텍스트도 gray200
       ),
-
-      // '일, 월, 화...' 요일 스타일 gray700
+      // 요일 헤더 스타일 - gray700
       daysOfWeekStyle: DaysOfWeekStyle(
-        weekdayStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // 월화수목금 gray700
-        weekendStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // 토, 일 gray700
+        weekdayStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // gray700
+        weekendStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // gray700
       ),
-
-      // 캘린더 셀 커스텀 빌더
       calendarBuilders: CalendarBuilders(
-        // ▼▼▼ [수정] '오늘' 날짜 UI 커스텀
+        // 오늘 날짜 커스텀 UI
         todayBuilder: (context, day, focusedDay) {
           final events = _getEventsForDay(day);
-
-          // '오늘' 날짜가 현재 '포커스된 달'과 같은 달일 때만 특별하게 표시
-          if (day.year == focusedDay.year && day.month == focusedDay.month) {
-            return Container(
-              constraints: BoxConstraints.expand(),
-              margin: EdgeInsets.all(scaleWidth(2)),
-              decoration: BoxDecoration(
-                color: AppColors.pri100,
-                borderRadius: BorderRadius.circular(scaleWidth(6)),
-                border: Border.all(color: AppColors.pri300, width: 1),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween, // 위아래 끝에 배치
-                crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙
-                children: [
-                  // 상단에 날짜 + 이벤트
-                  Column(
-                    children: [
-                      Padding( // 날짜 상단 패딩
-                        padding: EdgeInsets.only(top: scaleHeight(4)),
-                        child: Text(
-                          '${day.day}',
-                          style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri700),
-                        ),
-                      ),
-                      if (events.isNotEmpty)
-                        _buildMarkerContent(events.first['result'], context),
-                    ],
-                  ),
-
-                  Container(
-                    margin: EdgeInsets.only(bottom: scaleHeight(8)),
-                    child: Text(
-                      '오늘',
-                      style: AppFonts.suite.caption_md_500(context).copyWith(
-                        color: AppColors.pri600,
-                        fontSize: 10.sp,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // ▼▼▼ [추가] '오늘'이지만 '포커스된 달'이 아닌 경우 (outsideBuilder와 동일하게 처리)
           return Container(
             constraints: BoxConstraints.expand(),
             margin: EdgeInsets.all(scaleWidth(2)),
             decoration: BoxDecoration(
-              color: Colors.white, // 흰색 배경
+              color: AppColors.pri100,
               borderRadius: BorderRadius.circular(scaleWidth(6)),
+              border: Border.all(color: AppColors.pri300, width: 1),
             ),
-            child: Align(
-              alignment: Alignment.topCenter, // 상단 정렬
-              child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(4)), // 상단 여백
-                child: Text(
-                  '${day.day}',
-                  style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 회색 글씨
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Column(
+                  children: [
+                    Text(
+                      '${day.day}',
+                      style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri700),
+                    ),
+                    if (events.isNotEmpty) _buildMarkerContent(events.first['result'], context),
+                  ],
                 ),
-              ),
+                Container(
+                  margin: EdgeInsets.only(bottom: scaleHeight(8)),
+                  child: Text(
+                    '오늘',
+                    style: AppFonts.suite.caption_md_500(context).copyWith(
+                      color: AppColors.pri600,
+                      fontSize: 10.sp,
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
-          // ▲▲▲ [추가]
         },
-        // ▲▲▲ [수정]
-
-        // 기본 날짜 UI 커스텀
+        // 기본 날짜 커스텀 UI
         defaultBuilder: (context, day, focusedDay) {
           final events = _getEventsForDay(day);
           if (events.isNotEmpty) {
@@ -1160,18 +1129,16 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Padding( // 날짜 상단 패딩
-                    padding: EdgeInsets.only(top: scaleHeight(4)),
-                    child: Text(
-                      '${day.day}',
-                      style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700),
-                    ),
+                  Text(
+                    '${day.day}',
+                    style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700),
                   ),
                   _buildMarkerContent(gameResult, context),
                 ],
               ),
             );
           }
+
           return Container(
             constraints: BoxConstraints.expand(),
             margin: EdgeInsets.all(scaleWidth(2)),
@@ -1180,21 +1147,19 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               borderRadius: BorderRadius.circular(scaleWidth(6)),
             ),
             child: Align(
-              alignment: Alignment.topCenter, // 상단 정렬
+              alignment: Alignment.topCenter,
               child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(4)), // 상단 여백
+                padding: EdgeInsets.only(top: scaleHeight(4)),
                 child: Text(
                   '${day.day}',
-                  style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200),
+                  style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200),
                 ),
               ),
             ),
           );
         },
-
-        // 다른 달 날짜 UI 커스텀
+        // 외부 날짜 커스텀 UI
         outsideBuilder: (context, day, focusedDay) {
-          // '오늘'인 경우는 todayBuilder가 처리하므로 여기선 신경 쓸 필요 없음
           return Container(
             constraints: BoxConstraints.expand(),
             margin: EdgeInsets.all(scaleWidth(2)),
@@ -1203,40 +1168,27 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               borderRadius: BorderRadius.circular(scaleWidth(6)),
             ),
             child: Align(
-              alignment: Alignment.topCenter, // 상단 정렬
+              alignment: Alignment.topCenter,
               child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(4)), // 상단 여백
+                padding: EdgeInsets.only(top: scaleHeight(4)),
                 child: Text(
                   '${day.day}',
-                  style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200),
+                  style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200),
                 ),
               ),
             ),
           );
         },
-        // 기본 마커(점) 사용 안 함
-        markerBuilder: (context, day, events) => SizedBox.shrink(),
       ),
-
       onDaySelected: (selectedDay, focusedDay) {
-        // 날짜 선택 시 호출되는 콜백
         setState(() {
           _selectedDay = selectedDay;
-          _focusedDay = focusedDay; // focusedDay도 함께 업데이트해야 선택 표시 유지됨
+          _focusedDay = focusedDay;
         });
-        //TODO:선택된 날짜의 기록 상세 뷰 표시 또는 다른 액션
+        // TODO: 선택한 날짜 처리
         print('Selected day: $selectedDay, Events: ${_getEventsForDay(selectedDay)}');
       },
-      onPageChanged: (focusedDay) {
-        // 달력 페이지(월) 변경 시 호출되는 콜백
-        // isSameMonth 대신 연/월 직접 비교
-        if (_focusedDay.year != focusedDay.year || _focusedDay.month != focusedDay.month) {
-          setState(() {
-            _focusedDay = focusedDay; // 현재 포커스된 날짜 업데이트
-          });
-          _loadMyRecords(showLoadingIndicator: false); // 로딩 인디케이터 없이 데이터 로드
-        }
-      },
+      onPageChanged: _onCalendarPageChanged,
     );
   }
 
@@ -1281,13 +1233,11 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙 정렬
       children: [
-        // 21x21 크기 에셋
         SvgPicture.asset(
           imagePath,
-          width: scaleWidth(21),
-          height: scaleHeight(21),
+          width: scaleWidth(22),
+          height: scaleHeight(22),
         ),
-        SizedBox(height: scaleHeight(1)), // 아이콘과 텍스트 간격
         Text(
           text,
           style: AppFonts.suite.c3_sb(context).copyWith(
@@ -1315,8 +1265,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         border: Border.all(color: AppColors.gray50, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Color(0x1A9397A1),
-            offset: Offset(0, 0),
+            color: const Color(0x1A9397A1),
+            offset: const Offset(0, 0),
             blurRadius: scaleWidth(10),
             spreadRadius: 0,
           ),
@@ -1325,23 +1275,20 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       padding: EdgeInsets.only(
         top: scaleHeight(18),
         left: scaleWidth(32),
-        right: scaleWidth(30),
+        right: scaleWidth(32),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 월 직관 분석 + 리포트 태그
           Row(
             children: [
               Text(
                 '${_focusedDay.month}월 직관 분석',
-                style: AppFonts.suite.body_sm_500(context).copyWith(
-                  color: AppColors.gray900,
-                ),
+                style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900,),
               ),
               SizedBox(width: scaleWidth(6)),
               Container(
-                height: scaleHeight(20), // 20px height
+                height: scaleHeight(20),
                 padding: EdgeInsets.symmetric(horizontal: scaleWidth(8)),
                 decoration: BoxDecoration(
                   color: AppColors.pri100,
@@ -1358,17 +1305,12 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               ),
             ],
           ),
-
-          // 조건부 SizedBox - 데이터 없을 때 25px, 있을 때 13px
           SizedBox(height: hasData ? scaleHeight(13) : scaleHeight(25)),
-
-          // 데이터가 없을 때 메시지 표시
           if (!hasData)
             Center(
               child: Text(
                 '업로드한 기록이 아직 없어요',
-                style: AppFonts.suite.body_md_500(context).copyWith(
-                  color: AppColors.gray300,
+                style: AppFonts.suite.body_md_500(context).copyWith(color: AppColors.gray300,
                 ),
               ),
             )
@@ -1378,49 +1320,41 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 직관 승률 (왼쪽)
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '직관 승률',
-                          style: AppFonts.suite.caption_md_500(context).copyWith(
-                            color: AppColors.gray500,
-                            fontSize: 10.sp,
-                          ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '직관 승률',
+                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                          color: AppColors.gray500,
+                          fontSize: 10.sp,
                         ),
-                        Text(
-                          '${_formatWinRate(stats!['winRate'] ?? 0.0)} %',
-                          style: AppFonts.pretendard.title_sm_600(context).copyWith(
-                            color: AppColors.gray900,
-                          ),
+                      ),
+                      Text(
+                        '${_formatWinRate(stats!['winRate'] ?? 0.0)} %',
+                        style: AppFonts.pretendard.title_sm_600(context).copyWith(color: AppColors.gray900,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  // 기록 횟수 (센터)
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '기록 횟수',
-                          style: AppFonts.suite.caption_md_500(context).copyWith(
-                            color: AppColors.gray500,
-                            fontSize: 10.sp,
-                          ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '기록 횟수',
+                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                          color: AppColors.gray500,
+                          fontSize: 10.sp,
                         ),
-                        Text(
-                          '${stats!['recordCount'] ?? 0} 회',
-                          style: AppFonts.pretendard.title_sm_600(context).copyWith(
-                            color: AppColors.gray900,
-                          ),
+                      ),
+                      Text(
+                        '${stats!['recordCount'] ?? 0} 회',
+                        style: AppFonts.pretendard.title_sm_600(context).copyWith(
+                          color: AppColors.gray900,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  // 공감 받은 횟수 (오른쪽)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

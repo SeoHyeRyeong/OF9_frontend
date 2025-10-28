@@ -6,7 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/favorite_team_screen.dart';
-import 'package:frontend/features/feed/feed_screen.dart';
+import 'package:frontend/features/report/report_screen.dart';
 import 'package:frontend/utils/fixed_text.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => const FeedScreen(),
+              pageBuilder: (context, animation1, animation2) => const ReportScreen(),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
 import 'package:frontend/features/onboarding_login/login_screen.dart';
-import 'package:frontend/features/feed/feed_screen.dart';
+import 'package:frontend/features/report/report_screen.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/theme/app_imgs.dart';
 
@@ -57,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen>
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
-          widget.isLoggedIn ? const FeedScreen() : const LoginScreen(),
+          widget.isLoggedIn ? const ReportScreen() : const LoginScreen(),
           transitionDuration: const Duration(milliseconds: 300),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);

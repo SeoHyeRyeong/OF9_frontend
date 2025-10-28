@@ -91,6 +91,7 @@ flutter:
     - assets/imgs/ic_feed/
     - assets/imgs/img_team/
     - assets/imgs/ic_report/
+    - assets/imgs/badge/
     - assets/fonts/
     - assets/tessdata/
     - assets/animations/

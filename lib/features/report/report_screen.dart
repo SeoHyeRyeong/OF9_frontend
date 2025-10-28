@@ -38,6 +38,82 @@ class _ReportScreenState extends State<ReportScreen> {
     9: AppImages.emotion_9_transparent,
   };
 
+  // 카테고리별 에셋 매핑
+  String? _getBadgeAssetPath(String? category, String? name) {
+    if (category == null || name == null) return null;
+
+    // 구단 도장깨기
+    if (category == "구단 도장깨기") {
+      if (name == "잠실 정복") return 'assets/imgs/badge/1_Jamsil.png';
+      // if (name == "고척 정복") return 'assets/imgs/badge/1_Gocheok.png';
+      // if (name == "부산 정복") return 'assets/imgs/badge/1_Busan.png';
+      // if (name == "대구 정복") return 'assets/imgs/badge/1_Daegu.png';
+      // if (name == "광주 정복") return 'assets/imgs/badge/1_Gwangju.png';
+      // if (name == "대전 정복") return 'assets/imgs/badge/1_Daejeon.png';
+      // if (name == "창원 정복") return 'assets/imgs/badge/1_Changwon.png';
+      // if (name == "인천 정복") return 'assets/imgs/badge/1_Incheon.png';
+      // if (name == "수원 정복") return 'assets/imgs/badge/1_Suwon.png';
+    }
+
+    // 직관 기록 수
+    // if (category == "직관 기록수") {
+    //   if (name == "직관 5회") return 'assets/imgs/badge/2_5.png';
+    //   if (name == "직관 10회") return 'assets/imgs/badge/2_10.png';
+    //   if (name == "직관 25회") return 'assets/imgs/badge/2_25.png';
+    //   if (name == "직관 50회") return 'assets/imgs/badge/2_50.png';
+    //   if (name == "직관 75회") return 'assets/imgs/badge/2_75.png';
+    //   if (name == "직관 100회") return 'assets/imgs/badge/2_100.png';
+    // }
+
+    // 좋아하는 구단 직관 기록 수 (동적 처리 필요)
+    // final favTeam = _userData?['favTeam'] as String? ?? 'NC 다이노스';
+    // final shortTeam = _convertFavTeam(favTeam);
+    // if (category == "$shortTeam 직관 기록수") {
+    //   if (name == "$shortTeam 직관 5회") return 'assets/imgs/badge/3_${shortTeam}_5.png';
+    //   if (name == "$shortTeam 직관 10회") return 'assets/imgs/badge/3_${shortTeam}_10.png';
+    //   if (name == "$shortTeam 직관 25회") return 'assets/imgs/badge/3_${shortTeam}_25.png';
+    //   if (name == "$shortTeam 직관 50회") return 'assets/imgs/badge/3_${shortTeam}_50.png';
+    //   if (name == "$shortTeam 직관 75회") return 'assets/imgs/badge/3_${shortTeam}_75.png';
+    //   if (name == "$shortTeam 직관 100회") return 'assets/imgs/badge/3_${shortTeam}_100.png';
+    // }
+
+    // 승리요정
+    // if (category == "승리요정") {
+    //   if (name == "승리요정 입문") return 'assets/imgs/badge/4_Win_1.png';
+    //   if (name == "승리요정 초급") return 'assets/imgs/badge/4_Win_5.png';
+    //   if (name == "승리요정 중급") return 'assets/imgs/badge/4_Win_15.png';
+    //   if (name == "승리요정 고급") return 'assets/imgs/badge/4_Win_30.png';
+    //   if (name == "승리는 나의 것") return 'assets/imgs/badge/4_Win_50.png';
+    //   if (name == "KBO는 내 손에") return 'assets/imgs/badge/4_Win_100.png';
+    // }
+
+    // 패배요정
+    // if (category == "패배요정") {
+    //   if (name == "패배요정 입문") return 'assets/imgs/badge/5_Lose_1.png';
+    //   if (name == "패배요정 초급") return 'assets/imgs/badge/5_Lose_5.png';
+    //   if (name == "패배요정 중급") return 'assets/imgs/badge/5_Lose_15.png';
+    //   if (name == "패배요정 고급") return 'assets/imgs/badge/5_Lose_30.png';
+    //   if (name == "지면 또 와요...") return 'assets/imgs/badge/5_Lose_50.png';
+    //   if (name == "패배의 저주") return 'assets/imgs/badge/5_Lose_100.png';
+    // }
+
+    // 감정 수집
+    // if (category == "감정 수집") {
+    //   if (name == "짜릿함 중독") return 'assets/imgs/badge/6_Emotion_1.png';
+    //   if (name == "만족의 미학") return 'assets/imgs/badge/6_Emotion_2.png';
+    //   if (name == "감동주의보") return 'assets/imgs/badge/6_Emotion_3.png';
+    //   if (name == "예측불가!") return 'assets/imgs/badge/6_Emotion_4.png';
+    //   if (name == "행복전도사") return 'assets/imgs/badge/6_Emotion_5.png';
+    //   if (name == "고구마 먹방") return 'assets/imgs/badge/6_Emotion_6.png';
+    //   if (name == "조금만 더...") return 'assets/imgs/badge/6_Emotion_7.png';
+    //   if (name == "분노의질주") return 'assets/imgs/badge/6_Emotion_8.png';
+    //   if (name == "피로회복제") return 'assets/imgs/badge/6_Emotion_9.png';
+    //   if (name == "감정수집가") return 'assets/imgs/badge/6_Emotion_All.png';
+    // }
+
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +136,10 @@ class _ReportScreenState extends State<ReportScreen> {
 
       setState(() {
         _reportData = results[0] as Map<String, dynamic>;
+
+        print("=== 전체 reportData ===");
+        print(_reportData);
+
         final userApiResponse = results[1] as Map<String, dynamic>;
         _userData = userApiResponse['data'] as Map<String, dynamic>?;
         _isLoading = false;
@@ -121,7 +201,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
                   : Stack(
                 children: [
-                  // 카운트다운 섹션
+                  // 카운트다운, 티켓 요약 카드
                   Container(
                     width: double.infinity,
                     height: double.infinity,
@@ -182,7 +262,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  /// 카운트다운, 요약 카드
+  /// 카운트다운, 티켓 요약 카드
   Widget _buildCountdownSection({required bool hasRecords}) {
     final seasonInfo = _reportData?['seasonInfo'];
     final message = seasonInfo?['message'] ?? '시즌 정보 없음';
@@ -205,7 +285,7 @@ class _ReportScreenState extends State<ReportScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // D 박스 (기존과 동일)
+              // D 박스
               Container(
                 width: scaleWidth(38),
                 height: scaleHeight(40),
@@ -228,7 +308,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                 ),
               ),
-              // 하이픈 (기존과 동일)
+              // 하이픈
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: scaleWidth(4)),
                 child: Container(
@@ -240,15 +320,11 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                 ),
               ),
-              // 숫자 박스들 (기존과 동일)
-              ...List.generate(daysRemainingStr.length, (index) {
-                final bool isNumeric = int.tryParse(daysRemainingStr[index]) != null;
-                final Color textColor = (isDDay && isNumeric) ? AppColors.error : AppColors.gray900;
-
-                return Padding(
-                  padding: EdgeInsets.only(
-                    right: index < daysRemainingStr.length - 1 ? scaleWidth(4) : 0,
-                  ),
+              // 숫자 박스들
+              if (daysRemaining == 0) ...[
+                // 0일일 때 "DAY" 표시
+                ...['D', 'A', 'Y'].map((char) => Padding(
+                  padding: EdgeInsets.only(right: char != 'Y' ? scaleWidth(4) : 0),
                   child: Container(
                     width: scaleWidth(38),
                     height: scaleHeight(40),
@@ -260,19 +336,53 @@ class _ReportScreenState extends State<ReportScreen> {
                     child: Transform.translate(
                       offset: Offset(0, scaleHeight(3)),
                       child: Text(
-                        daysRemainingStr[index],
+                        char,
                         style: TextStyle(
                           fontFamily: 'Jalnan',
                           fontSize: 30.sp,
-                          color: textColor,
+                          color: AppColors.error,
                           height: 1.0,
                           letterSpacing: -1,
                         ),
                       ),
                     ),
                   ),
-                );
-              }),
+                )),
+              ] else ...[
+                // 1~10일 때 숫자 표시
+                ...List.generate(daysRemainingStr.length, (index) {
+                  final bool isNumeric = int.tryParse(daysRemainingStr[index]) != null;
+                  final Color textColor = (isDDay && isNumeric) ? AppColors.error : AppColors.gray900;
+
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: index < daysRemainingStr.length - 1 ? scaleWidth(4) : 0,
+                    ),
+                    child: Container(
+                      width: scaleWidth(38),
+                      height: scaleHeight(40),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(scaleWidth(5)),
+                      ),
+                      alignment: Alignment.center,
+                      child: Transform.translate(
+                        offset: Offset(0, scaleHeight(3)),
+                        child: Text(
+                          daysRemainingStr[index],
+                          style: TextStyle(
+                            fontFamily: 'Jalnan',
+                            fontSize: 30.sp,
+                            color: textColor,
+                            height: 1.0,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
             ],
           ),
           SizedBox(height: scaleHeight(33)),
@@ -284,6 +394,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
+  // 경기 티켓 카드 영역
   Widget _buildSummaryCard({bool hasRecords = true}) {
     final winRateInfo = _reportData?['winRateInfo'];
     final totalWinRate = winRateInfo?['totalWinRate'] ?? 0.0;
@@ -402,7 +513,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             Padding(
                               padding: EdgeInsets.only(left: scaleWidth(33)),
                               child: Text(
-                                "${totalWinRate.toStringAsFixed(1)}%",
+                                "${totalWinRate % 1 == 0 ? totalWinRate.toInt() : totalWinRate.toStringAsFixed(1)}%",
                                 style: TextStyle(
                                   fontFamily: AppFonts.suiteFontFamily,
                                   fontSize: 42.sp,
@@ -500,10 +611,12 @@ class _ReportScreenState extends State<ReportScreen> {
                             height: scaleHeight(45),
                             child: ElevatedButton(
                               onPressed: () {
-                                Navigator.push(
+                                Navigator.pushReplacement(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TicketOcrScreen(),
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation1, animation2) => const TicketOcrScreen(),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
                                   ),
                                 );
                               },
@@ -523,6 +636,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                     "직관 기록하러 가기",
                                     style: AppFonts.suite.b2_b(context).copyWith(
                                       color: Colors.white,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   SvgPicture.asset(
@@ -595,7 +709,7 @@ class _ReportScreenState extends State<ReportScreen> {
           Expanded(
             child: Center(
               child: Text(
-                "${rate.toStringAsFixed(1)}%",
+                "${rate % 1 == 0 ? rate.toInt() : rate.toStringAsFixed(1)}%",
                 style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray600),
               ),
             ),
@@ -638,52 +752,13 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  // 나의 뱃지 섹션
-  Widget _buildBadgeSection({required bool hasRecords}) { // hasRecords 파라미터 추가
-    final badgeSummary = _reportData?['badgeSummary'];
-    final recentBadges = badgeSummary?['recentBadges'] as List<dynamic>? ?? [];
-    // 기록이 없을 때 보여줄 플레이스홀더 뱃지 정보 (3개)
-    final placeholderBadges = [
-      {'imageUrl': null, 'name': '직관 1회'},
-      {'imageUrl': null, 'name': '창원 정복'},
-      {'imageUrl': null, 'name': '승리요정 입문'},
-    ];
-    // 표시할 뱃지 리스트 결정
-    final badgesToShow = hasRecords ? recentBadges : placeholderBadges;
-
-    return Column(
-      children: [
-        _buildSectionHeader("나의 뱃지", onTap: hasRecords ? () { // 기록이 있을 때만 자세히 보기 활성화
-          // TODO: 뱃지 전체보기 화면으로 이동 (BadgeReportScreen?)
-          print("뱃지 자세히 보기 클릭");
-        } : null), // 기록 없으면 onTap 비활성화
-        SizedBox(height: scaleHeight(16)),
-        Container( // 높이 고정 (플레이스홀더도 동일 높이 차지)
-          height: scaleHeight(110),
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            // itemCount를 badgesToShow 길이로 설정
-            itemCount: badgesToShow.length > 3 ? 3: badgesToShow.length, // 최대 3개까지만 보여주도록 제한 (또는 스크롤 유지)
-            separatorBuilder: (context, index) => SizedBox(width: scaleWidth(16)),
-            itemBuilder: (context, index) {
-              final badge = badgesToShow[index] as Map<String, dynamic>;
-              // 기록 없을 때는 플레이스홀더 스타일 적용
-              return _buildBadgeItem(badge['imageUrl'], badge['name'], isPlaceholder: !hasRecords);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 섹션 헤더 (제목 + 자세히 보기)
+  // 뱃지, 나의 직관 기록 분석 헤더 (제목 + 자세히 보기)
   Widget _buildSectionHeader(String title, {VoidCallback? onTap}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(title, style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray800)),
-        // onTap이 null이면 비활성화된 것처럼 보이게 처리 (색상 변경 등)
+        Text(title, style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray700)),
         GestureDetector(
           onTap: onTap, // null이면 클릭 안 됨
           child: Row(
@@ -691,14 +766,12 @@ class _ReportScreenState extends State<ReportScreen> {
               children: [
                 Text(
                   "자세히 보기",
-                  // onTap이 null이면 회색으로 비활성화 표시
-                  style: AppFonts.suite.caption_md_500(context).copyWith(color: onTap != null ? AppColors.gray400 : AppColors.gray200),
+                  style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400),
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
                   size: scaleWidth(10),
-                  // onTap이 null이면 회색으로 비활성화 표시
-                  color: onTap != null ? AppColors.gray400 : AppColors.gray200,
+                  color: AppColors.gray400,
                 ),
               ]
           ),
@@ -707,36 +780,170 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
+  /// 나의 뱃지 섹션
+  Widget _buildBadgeSection({required bool hasRecords}) {
+    final badgeSummary = _reportData?['badgeSummary'];
+    final recentBadges = badgeSummary?['recentBadges'] as List<dynamic>? ?? [];
+
+    // 사용자 최애구단 기반 초기 뱃지 이름 생성
+    final favTeam = _userData?['favTeam'] as String? ?? 'NC 다이노스';
+    final initialBadgeNames = _getInitialBadgeNames(favTeam);
+
+    // 최대 5개 뱃지 리스트 구성
+    List<Map<String, dynamic>> displayBadges = [];
+    Set<String> addedBadgeNames = {};
+
+    // 1. recentBadges를 정순으로 돌면서 최신 것부터 추가 (recentBadges가 최신순으로 정렬되어 있다고 가정)
+    for (var badge in recentBadges) {
+      final badgeMap = badge as Map<String, dynamic>;
+      final name = badgeMap['name'] as String;
+      if (!addedBadgeNames.contains(name) && displayBadges.length < 5) {
+        displayBadges.add({
+          'name': name,
+          'imageUrl': badgeMap['imageUrl'],
+          'category': badgeMap['category'],
+          'isAchieved': true,
+        });
+        addedBadgeNames.add(name);
+      }
+    }
+
+    // 2. 빈 자리가 있으면 디폴트 뱃지로 채우기 (5개까지)
+    for (var badgeName in initialBadgeNames) {
+      if (!addedBadgeNames.contains(badgeName) && displayBadges.length < 5) {
+        displayBadges.add({
+          'name': badgeName,
+          'imageUrl': null,
+          'category': null,
+          'isAchieved': false,
+        });
+        addedBadgeNames.add(badgeName);
+      }
+    }
+
+    return Column(
+      children: [
+        _buildSectionHeader("나의 뱃지", onTap: hasRecords ? () {
+        } : null),
+        SizedBox(height: scaleHeight(14)),
+        Container(
+          height: scaleHeight(110),
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: displayBadges.length,
+            separatorBuilder: (context, index) => SizedBox(width: scaleWidth(27)),
+            itemBuilder: (context, index) {
+              final badge = displayBadges[index];
+              return _buildBadgeItem(
+                  badge['imageUrl'],
+                  badge['name'],
+                  category: badge['category'],
+                  isAchieved: badge['isAchieved'] ?? false
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 최애구단 기반 초기 뱃지 이름 생성
+  List<String> _getInitialBadgeNames(String favTeam) {
+    final shortTeam = _convertFavTeam(favTeam);
+    final homeStadium = _getHomeStadiumByTeam(shortTeam);
+
+    return [
+      '직관 5회',
+      '$homeStadium 정복',
+      '승리요정 입문',
+      '$shortTeam 직관 5회',
+      '패배요정 입문',
+    ];
+  }
+
+  // 팀 이름을 짧은 코드로 변환
+  String _convertFavTeam(String favTeam) {
+    switch (favTeam) {
+      case 'KIA 타이거즈': return 'KIA';
+      case '두산 베어스': return '두산';
+      case '롯데 자이언츠': return '롯데';
+      case '삼성 라이온즈': return '삼성';
+      case '키움 히어로즈': return '키움';
+      case '한화 이글스': return '한화';
+      case 'KT WIZ': return 'KT';
+      case 'LG 트윈스': return 'LG';
+      case 'NC 다이노스': return 'NC';
+      case 'SSG 랜더스': return 'SSG';
+      default: return favTeam;
+    }
+  }
+
+  // 팀 코드 기반 홈구장 반환
+  String _getHomeStadiumByTeam(String teamCode) {
+    switch (teamCode) {
+      case '두산':
+      case 'LG':
+        return '잠실';
+      case '롯데': return '부산';
+      case '삼성': return '대구';
+      case '키움': return '고척';
+      case '한화': return '대전';
+      case 'KIA': return '광주';
+      case 'KT': return '수원';
+      case 'NC': return '창원';
+      case 'SSG': return '인천';
+      default: return '잠실';
+    }
+  }
+
   // 뱃지 아이템 위젯
-  Widget _buildBadgeItem(String? imageUrl, String? name, {bool isPlaceholder = false}) { // isPlaceholder 파라미터 추가
+  Widget _buildBadgeItem(String? imageUrl, String? name, {String? category, bool isAchieved = false}) {
+    // 카테고리별 에셋 경로 가져오기
+    final assetPath = _getBadgeAssetPath(category, name);
+
     return SizedBox(
       width: scaleWidth(80),
+      height: scaleHeight(108),
       child: Column(
         children: [
-          Container(
+          SizedBox(
             width: scaleWidth(80),
             height: scaleHeight(80),
-            decoration: BoxDecoration(
-              // 플레이스홀더일 경우 회색 배경, 아니면 gray50
-              color: isPlaceholder ? AppColors.gray100 : AppColors.gray50,
-              // TODO: 플레이스홀더는 육각형 모양 필요 - ClipPath 또는 외부 패키지 사용
-              shape: isPlaceholder ? BoxShape.circle : BoxShape.rectangle, // 임시로 원형 처리
-              borderRadius: isPlaceholder ? null : BorderRadius.circular(scaleWidth(12)),
+            child: Stack(
+              children: [
+                // 에셋이 있으면 에셋 표시, 없으면 polygon.svg
+                if (assetPath != null)
+                  Image.asset(
+                    assetPath,
+                    width: scaleWidth(80),
+                    height: scaleHeight(80),
+                    fit: BoxFit.cover,
+                  )
+                else
+                  SvgPicture.asset(
+                    'assets/imgs/badge/polygon.svg',
+                    width: scaleWidth(80),
+                    height: scaleHeight(80),
+                    fit: BoxFit.cover,
+                  ),
+                // 획득한 뱃지 이미지 (imageUrl이 있는 경우, 에셋이 없을 때만)
+                if (isAchieved && imageUrl != null && imageUrl.isNotEmpty && assetPath == null)
+                  Positioned.fill(
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_,__,___) => SizedBox(),
+                    ),
+                  ),
+              ],
             ),
-            child: isPlaceholder
-                ? null // 플레이스홀더는 내부 비움
-                : imageUrl != null && imageUrl.isNotEmpty
-                ? ClipRRect(
-                borderRadius: BorderRadius.circular(scaleWidth(12)),
-                child: Image.network(imageUrl, fit: BoxFit.contain, errorBuilder: (_,__,___) => _defaultBadgeIcon())
-            )
-                : _defaultBadgeIcon(),
           ),
           SizedBox(height: scaleHeight(8)),
           Text(
             name ?? '뱃지 이름',
-            // 플레이스홀더일 경우 회색 글씨
-            style: AppFonts.suite.body_sm_400(context).copyWith(color: isPlaceholder ? AppColors.gray400 : AppColors.gray900),
+            style: AppFonts.suite.body_sm_400(context).copyWith(
+              color: isAchieved ? AppColors.gray900 : AppColors.gray300,
+            ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -751,8 +958,8 @@ class _ReportScreenState extends State<ReportScreen> {
     return Center(child: Icon(Icons.shield_outlined, color: AppColors.gray300, size: scaleWidth(40)));
   }
 
-  // 나의 직관 기록 분석 섹션
-  Widget _buildAnalysisSection({required bool hasRecords}) { // hasRecords 파라미터 추가
+  /// 나의 직관 기록 분석 섹션
+  Widget _buildAnalysisSection({required bool hasRecords}) {
     final bestMonth = _reportData?['bestAttendanceMonth']?['month'];
     final topStadium = _reportData?['topStadium']?['stadiumName'];
     final topEmotionCode = _reportData?['topEmotion']?['emotionCode'];
@@ -760,34 +967,40 @@ class _ReportScreenState extends State<ReportScreen> {
 
     return Column(
       children: [
-        _buildSectionHeader("나의 직관 기록 분석", onTap: hasRecords ? () { // 기록 있을 때만 활성화
-          // TODO: 분석 상세보기 화면 이동 구현
-          print("분석 자세히 보기 클릭");
-        } : null), // 기록 없으면 비활성화
+        //잠시 자세히 보기 주석처리하고 수지 처리
+        //_buildSectionHeader("나의 직관 기록 분석", onTap: hasRecords ? () { // 기록 있을 때만 활성화
+        //} : null), // 기록 없으면 비활성화
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text("나의 직관 기록 분석",
+              style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray700)),
+        ),
+        // 나중에 위에 align 코드 삭제하고 _buildSectionHeader 주석 해제하기
+
         SizedBox(height: scaleHeight(16)),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // hasRecords 값에 따라 카드 내용 다르게 표시
-            _buildAnalysisCard(
+            Expanded(child: _buildAnalysisCard(
               iconPath: AppImages.telescope,
-              title: "최다 직관의 달",
-              value: hasRecords ? (bestMonth != null ? "${bestMonth}월" : "-") : "????", // 기록 없으면 ????
-              isPlaceholder: !hasRecords, // 플레이스홀더 여부 전달
-            ),
-            _buildAnalysisCard(
+              title: "최대 직관의 달",
+              value: hasRecords ? (bestMonth != null ? "${bestMonth}월" : "-") : "????",
+              isPlaceholder: !hasRecords,
+            ),),
+            SizedBox(width: scaleWidth(9)),
+            Expanded(child: _buildAnalysisCard(
               iconPath: AppImages.location_marker,
               title: "최다 방문 지역",
-              value: hasRecords ? (topStadium ?? "-") : "????", // 기록 없으면 ????
+              value: hasRecords ? (topStadium ?? "-") : "????",
               isPlaceholder: !hasRecords,
-            ),
-            _buildAnalysisCard(
-              iconPath: _emotionImageMap[topEmotionCode] ?? AppImages.etc, // 아이콘은 그대로 두거나 기본 아이콘 표시
+            ),),
+            SizedBox(width: scaleWidth(9)),
+            Expanded(child: _buildAnalysisCard(
+              iconPath: _emotionImageMap[topEmotionCode] ?? AppImages.emotion_5_transparent,
               title: "최다 기록 감정",
-              value: hasRecords ? (topEmotionName ?? "-") : "????", // 기록 없으면 ????
+              value: hasRecords ? (topEmotionName ?? "-") : "????",
               isPlaceholder: !hasRecords,
               emotionCodeForPlaceholder: hasRecords ? null : topEmotionCode, // 플레이스홀더 감정 아이콘 위해 전달
-            ),
+            ),),
           ],
         ),
       ],
@@ -799,14 +1012,13 @@ class _ReportScreenState extends State<ReportScreen> {
     required String iconPath,
     required String title,
     required String value,
-    bool isPlaceholder = false, // 플레이스홀더 여부 파라미터
-    int? emotionCodeForPlaceholder, // 플레이스홀더 감정 아이콘 위한 코드
+    bool isPlaceholder = false,
+    int? emotionCodeForPlaceholder,
   }) {
     // 플레이스홀더일 경우 아이콘 경로 처리
     String displayIconPath = iconPath;
     if (isPlaceholder && title == "최다 기록 감정") {
-      // TODO: 플레이스홀더 감정 아이콘 디자인 정의 필요 (임시로 ? 아이콘)
-      displayIconPath = AppImages.etc; // 감정 플레이스홀더 아이콘 경로로 변경
+      displayIconPath = AppImages.emotion_5_transparent; // 감정 플레이스홀더 아이콘 경로로 변경
     }
     // SVG 확장자 확인 및 추가
     if (!displayIconPath.endsWith('.svg') && !displayIconPath.contains('/ic_emotion/')) {
@@ -817,7 +1029,6 @@ class _ReportScreenState extends State<ReportScreen> {
     final double opacity = isPlaceholder ? 0.2 : 1.0;
 
     return Container(
-      width: scaleWidth(101),
       padding: EdgeInsets.symmetric(vertical: scaleHeight(14)),
       decoration: BoxDecoration(
         color: AppColors.gray50, // 배경색은 동일
@@ -831,13 +1042,13 @@ class _ReportScreenState extends State<ReportScreen> {
             SvgPicture.asset(displayIconPath, width: scaleWidth(40), height: scaleHeight(40)),
             SizedBox(height: scaleHeight(8)),
             // 제목
-            Text(title, style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray800)),
+            Text(title, style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray700)),
             SizedBox(height: scaleHeight(8)),
             // 값 (태그)
             Container(
               padding: EdgeInsets.symmetric(horizontal: scaleWidth(14), vertical: scaleHeight(3)),
               decoration: BoxDecoration(
-                color: const Color(0xFF354E66), // 태그 배경색은 동일
+                color: AppColors.pri800,
                 borderRadius: BorderRadius.circular(scaleWidth(6)),
               ),
               child: Text(

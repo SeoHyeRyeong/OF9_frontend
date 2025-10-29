@@ -992,7 +992,7 @@ class _ReportScreenState extends State<ReportScreen> {
           children: [
             Expanded(child: _buildAnalysisCard(
               iconPath: AppImages.telescope,
-              title: "최대 직관의 달",
+              title: "최다 직관의 달",
               value: hasRecords ? (bestMonth != null ? "${bestMonth}월" : "-") : "????",
               isPlaceholder: !hasRecords,
             ),),

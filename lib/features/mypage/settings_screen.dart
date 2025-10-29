@@ -368,7 +368,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       // 프로필 카드
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                        padding: EdgeInsets.only(left: scaleWidth(20), right:scaleWidth(18),),
                         child: Container(
                           height: scaleHeight(130),
                           decoration: BoxDecoration(
@@ -407,7 +407,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ),
 
-                                SizedBox(width: scaleWidth(17)),
+                                SizedBox(width: scaleWidth(15)),
 
                                 // 사용자 정보
                                 Padding(

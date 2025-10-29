@@ -79,14 +79,14 @@ class _ReportScreenState extends State<ReportScreen> {
     // }
 
     // 승리요정
-    // if (category == "승리요정") {
-    //   if (name == "승리요정 입문") return 'assets/imgs/badge/4_Win_1.png';
-    //   if (name == "승리요정 초급") return 'assets/imgs/badge/4_Win_5.png';
-    //   if (name == "승리요정 중급") return 'assets/imgs/badge/4_Win_15.png';
-    //   if (name == "승리요정 고급") return 'assets/imgs/badge/4_Win_30.png';
-    //   if (name == "승리는 나의 것") return 'assets/imgs/badge/4_Win_50.png';
-    //   if (name == "KBO는 내 손에") return 'assets/imgs/badge/4_Win_100.png';
-    // }
+    if (category == "승리요정") {
+      if (name == "승리요정 입문") return 'assets/imgs/badge/4_Win_1.png';
+      //   if (name == "승리요정 초급") return 'assets/imgs/badge/4_Win_5.png';
+      //   if (name == "승리요정 중급") return 'assets/imgs/badge/4_Win_15.png';
+      //   if (name == "승리요정 고급") return 'assets/imgs/badge/4_Win_30.png';
+      //   if (name == "승리는 나의 것") return 'assets/imgs/badge/4_Win_50.png';
+      //   if (name == "KBO는 내 손에") return 'assets/imgs/badge/4_Win_100.png';
+    }
 
     // 패배요정
     // if (category == "패배요정") {
@@ -813,10 +813,16 @@ class _ReportScreenState extends State<ReportScreen> {
     // 2. 빈 자리가 있으면 디폴트 뱃지로 채우기 (5개까지)
     for (var badgeName in initialBadgeNames) {
       if (!addedBadgeNames.contains(badgeName) && displayBadges.length < 5) {
+        // 뱃지 이름으로 카테고리 판단
+        String? category;
+        if (badgeName.contains('승리요정')) {
+          category = '승리요정';
+        }
+
         displayBadges.add({
           'name': badgeName,
           'imageUrl': null,
-          'category': null,
+          'category': category,
           'isAchieved': false,
         });
         addedBadgeNames.add(badgeName);
@@ -908,8 +914,8 @@ class _ReportScreenState extends State<ReportScreen> {
 
   // 뱃지 아이템 위젯
   Widget _buildBadgeItem(String? imageUrl, String? name, {String? category, bool isAchieved = false}) {
-    // 카테고리별 에셋 경로 가져오기
-    final assetPath = _getBadgeAssetPath(category, name);
+    // 획득한 경우에만 카테고리별 에셋 경로 가져오기
+    final assetPath = isAchieved ? _getBadgeAssetPath(category, name) : null;
 
     return SizedBox(
       width: scaleWidth(80),
@@ -921,20 +927,20 @@ class _ReportScreenState extends State<ReportScreen> {
             height: scaleHeight(80),
             child: Stack(
               children: [
-                // 에셋이 있으면 에셋 표시, 없으면 polygon.svg
+                // 에셋이 있으면 에셋 표시, 없으면 polygon.svg 또는 circle.svg (승리요정 카테고리인 경우)
                 if (assetPath != null)
                   Image.asset(
                     assetPath,
-                    width: scaleWidth(80),
-                    height: scaleHeight(80),
-                    fit: BoxFit.cover,
+                    width: scaleWidth(79),
+                    height: scaleHeight(79),
+                    fit: BoxFit.contain,
                   )
                 else
                   SvgPicture.asset(
-                    'assets/imgs/badge/polygon.svg',
-                    width: scaleWidth(80),
-                    height: scaleHeight(80),
-                    fit: BoxFit.cover,
+                    category == "승리요정" ? 'assets/imgs/badge/circle.svg' : 'assets/imgs/badge/polygon.svg',
+                    width: scaleWidth(79),
+                    height: scaleHeight(79),
+                    fit: BoxFit.contain,
                   ),
                 // 획득한 뱃지 이미지 (imageUrl이 있는 경우, 에셋이 없을 때만)
                 if (isAchieved && imageUrl != null && imageUrl.isNotEmpty && assetPath == null)
@@ -992,7 +998,7 @@ class _ReportScreenState extends State<ReportScreen> {
           children: [
             Expanded(child: _buildAnalysisCard(
               iconPath: AppImages.telescope,
-              title: "최다 직관의 달",
+              title: "최대 직관의 달",
               value: hasRecords ? (bestMonth != null ? "${bestMonth}월" : "-") : "????",
               isPlaceholder: !hasRecords,
             ),),

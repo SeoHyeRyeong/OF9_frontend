@@ -7,6 +7,7 @@ import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/report/report_screen.dart';
+import 'package:frontend/components/custom_bottom_navbar.dart';
 
 class BadgeScreen extends StatefulWidget {
   const BadgeScreen({Key? key}) : super(key: key);
@@ -296,6 +297,7 @@ class _BadgeScreenState extends State<BadgeScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
     );
   }
 
@@ -404,15 +406,15 @@ class _BadgeScreenState extends State<BadgeScreen> {
             child: isAchieved
                 ? Image.asset(
               assetPath,
-              width: scaleWidth(80),
-              height: scaleHeight(80),
-              fit: BoxFit.cover,
+              width: scaleWidth(79),
+              height: scaleHeight(79),
+              fit: BoxFit.contain,
             )
                 : SvgPicture.asset(
-              'assets/imgs/badge/polygon.svg',
-              width: scaleWidth(80),
-              height: scaleHeight(80),
-              fit: BoxFit.cover,
+              categoryName == "승리요정" ? 'assets/imgs/badge/circle.svg' : 'assets/imgs/badge/polygon.svg',
+              width: scaleWidth(79),
+              height: scaleHeight(79),
+              fit: BoxFit.contain,
             ),
           ),
           SizedBox(height: scaleHeight(8)),

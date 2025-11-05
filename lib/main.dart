@@ -9,6 +9,7 @@ import 'package:frontend/features/onboarding_login/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:clarity_flutter/clarity_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,11 +20,11 @@ Future<void> main() async {
     SystemUiMode.edgeToEdge,
   );
 
-  // 중복 제거된 SystemUiOverlayStyle 설정
+  // SystemUiOverlayStyle 설정
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark, // 한 번만 지정
+      statusBarIconBrightness: Brightness.dark,
       statusBarBrightness: Brightness.light,
       systemNavigationBarColor: Colors.transparent,
       systemNavigationBarIconBrightness: Brightness.dark,
@@ -42,12 +43,21 @@ Future<void> main() async {
 
   print('🚀 앱 시작 - 로그인 상태: $isLoggedIn');
 
+  // Clarity 설정 추가
+  final clarityConfig = ClarityConfig(
+    projectId: dotenv.env['CLARITY_PROJECT_ID']!,
+    logLevel: LogLevel.None,
+  );
+
   runApp(
-    ScreenUtilInit(
-      designSize: Size(360, 800),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) => MyApp(isLoggedIn: isLoggedIn),
+    ClarityWidget(
+      clarityConfig: clarityConfig,
+      app: ScreenUtilInit(
+        designSize: Size(360, 800),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) => MyApp(isLoggedIn: isLoggedIn),
+      ),
     ),
   );
 }

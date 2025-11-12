@@ -216,8 +216,19 @@ class SearchApi {
   }
 
   /// 1. 통합 검색 (게시글 + 사용자)
-  static Future<SearchResult> search(String query) async {
-    final uri = Uri.parse('$baseUrl/search').replace(queryParameters: {'query': query});
+  static Future<SearchResult> search(
+      String query, {
+        int page = 0,
+        int recordSize = 15,
+        int userSize = 10,
+      }) async {
+    final uri = Uri.parse('$baseUrl/search').replace(queryParameters: {
+      'query': query,
+      'recordPage': page.toString(),
+      'userPage': '0',
+      'recordSize': recordSize.toString(),
+      'userSize': userSize.toString(),
+    });
     final response = await _makeRequestWithRetry(uri: uri, method: 'GET');
     return _processResponse(response, (data) => SearchResult.fromJson(data));
   }

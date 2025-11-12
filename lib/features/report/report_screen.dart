@@ -441,7 +441,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   notchRadius: scaleWidth(12),
                   dividerDashWidth: scaleHeight(7),
                   dividerDashSpace: scaleHeight(7),
-                  dividerXPosition: (MediaQuery.of(context).size.width - scaleWidth(32)) * 0.685,
+                  dividerXPosition: (MediaQuery.of(context).size.width - scaleWidth(32)) * 0.7,
                   dividerStrokeWidth: 1.47,
                 ),
                 child: Padding(
@@ -492,7 +492,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: scaleWidth(8)),
+                                SizedBox(width: scaleWidth(9)),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -509,10 +509,10 @@ class _ReportScreenState extends State<ReportScreen> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: scaleHeight(5)),
+                            SizedBox(height: scaleHeight(3)),
 
                             Align(
-                              alignment: Alignment((0.35 * 2) - 1, 0),
+                              alignment: Alignment((0.36 * 2) - 1, 0),
                               child: Text(
                                 "${totalWinRate % 1 == 0 ? totalWinRate.toInt() : totalWinRate.toStringAsFixed(1)}%",
                                 style: TextStyle(
@@ -528,7 +528,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             ),
 
                             Align(
-                              alignment: Alignment((0.36 * 2) - 1, 0),
+                              alignment: Alignment((0.37 * 2) - 1, 0),
                               child: Text(
                                 "총 ${totalGames}회의 경기를 관람했어요",
                                 style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray600, fontSize: 10.sp),
@@ -539,7 +539,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             SizedBox(height: scaleHeight(14)),
 
                             Align(
-                              alignment: Alignment((0.28 * 2) - 1, 0),
+                              alignment: Alignment((0.29 * 2) - 1, 0),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [

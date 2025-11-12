@@ -23,28 +23,31 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _searchController = TextEditingController();
   final _focusNode = FocusNode();
-
   bool _isLoading = false;
   bool _hasSearched = false;
   bool _isSearchFocused = false;
   bool _hasText = false;
   int _selectedTabIndex = 0;
-
   List<String> _popularSearches = [];
   List<String> _recentSearches = [];
   SearchResult? _searchResult;
+
+  // 페이지네이션 관련 추가
+  List<Record> _allRecords = [];
+  int _currentRecordPage = 0;
+  bool _isLoadingMoreRecords = false;
+  bool _hasMoreRecords = true;
+  String _currentQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadInitialData();
-
     _searchController.addListener(() {
       setState(() {
         _hasText = _searchController.text.isNotEmpty;
       });
     });
-
     _focusNode.addListener(() {
       setState(() {
         _isSearchFocused = _focusNode.hasFocus;
@@ -157,6 +160,10 @@ class _SearchScreenState extends State<SearchScreen> {
                   });
                 },
                 onRefreshRequired: _refreshSearchResults,
+                allRecords: _allRecords,
+                hasMoreRecords: _hasMoreRecords,
+                isLoadingMoreRecords: _isLoadingMoreRecords,
+                onLoadMoreRecords: _loadMoreRecords,
               )
                   : InitialSearchWidget(
                 popularSearches: _popularSearches,
@@ -235,18 +242,24 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _performSearch(String query) async {
     if (query.isEmpty) return;
-
     FocusScope.of(context).unfocus();
+
     setState(() {
       _isLoading = true;
       _hasSearched = true;
       _selectedTabIndex = 0;
+      _allRecords = [];
+      _currentRecordPage = 0;
+      _currentQuery = query;
+      _hasMoreRecords = true;
     });
 
     try {
-      final result = await SearchApi.search(query);
+      final result = await SearchApi.search(query, page: 0);
       setState(() {
         _searchResult = result;
+        _allRecords = List.from(result.records.records);
+        _hasMoreRecords = result.records.hasNext;
       });
       _loadInitialData();
     } catch (e) {
@@ -261,6 +274,35 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> _loadMoreRecords() async {
+    if (_isLoadingMoreRecords || !_hasMoreRecords) return;
+
+    setState(() {
+      _isLoadingMoreRecords = true;
+    });
+
+    try {
+      final nextPage = _currentRecordPage + 1;
+      final result = await SearchApi.search(_currentQuery, page: nextPage);
+
+      setState(() {
+        if (result.records.records.isEmpty) {
+          _hasMoreRecords = false;
+        } else {
+          _allRecords.addAll(result.records.records);
+          _currentRecordPage = nextPage;
+          _hasMoreRecords = result.records.hasNext;
+        }
+      });
+    } catch (e) {
+      print("추가 검색 실패: $e");
+    } finally {
+      setState(() {
+        _isLoadingMoreRecords = false;
+      });
+    }
+  }
+
   Future<void> _refreshSearchResults() async {
     final query = _searchController.text;
     if (query.isEmpty) return;
@@ -270,9 +312,12 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final result = await SearchApi.search(query);
+      final result = await SearchApi.search(query, page: 0);
       setState(() {
         _searchResult = result;
+        _allRecords = List.from(result.records.records);
+        _currentRecordPage = 0;
+        _hasMoreRecords = result.records.hasNext;
       });
     } catch (e) {
       print("검색 새로고침 실패: $e");
@@ -300,6 +345,10 @@ class SearchResultsWidget extends StatefulWidget {
   final int selectedTabIndex;
   final Function(int) onTabChanged;
   final VoidCallback onRefreshRequired;
+  final List<Record> allRecords;
+  final bool hasMoreRecords;
+  final bool isLoadingMoreRecords;
+  final VoidCallback? onLoadMoreRecords;
 
   const SearchResultsWidget({
     Key? key,
@@ -307,6 +356,10 @@ class SearchResultsWidget extends StatefulWidget {
     required this.selectedTabIndex,
     required this.onTabChanged,
     required this.onRefreshRequired,
+    required this.allRecords,
+    required this.hasMoreRecords,
+    required this.isLoadingMoreRecords,
+    this.onLoadMoreRecords,
   }) : super(key: key);
 
   @override
@@ -318,13 +371,13 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
   late AnimationController _animationController;
   late Animation<double> _indicatorAnimation;
   late PageController _pageController;
-
   double _currentPageValue = 0.0;
   bool _isPageViewScrolling = false;
 
   @override
   void initState() {
     super.initState();
+
     _animationController = AnimationController(
       duration: Duration(milliseconds: 250),
       vsync: this,
@@ -360,7 +413,6 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
         duration: Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-
       if (widget.selectedTabIndex == 1) {
         _animationController.forward();
       } else {
@@ -380,9 +432,7 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
     setState(() {
       _isPageViewScrolling = false;
     });
-
     widget.onTabChanged(index);
-
     if (index == 1) {
       _animationController.forward();
     } else {
@@ -395,6 +445,7 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
     if (widget.searchResult == null) {
       return Center(child: FixedText('검색 결과가 없습니다.'));
     }
+
     return Column(
       children: [
         Container(
@@ -473,8 +524,11 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
             onPageChanged: _onPageChanged,
             children: [
               RecordsListWidget(
-                records: widget.searchResult!.records.records,
+                records: widget.allRecords,
                 onRefreshRequired: widget.onRefreshRequired,
+                hasMore: widget.hasMoreRecords,
+                isLoadingMore: widget.isLoadingMoreRecords,
+                onLoadMore: widget.onLoadMoreRecords,
               ),
               UsersListWidget(users: widget.searchResult!.users.users),
             ],
@@ -487,7 +541,6 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
   Color _getTabColor(int tabIndex) {
     final progress = (_currentPageValue - tabIndex).abs();
     final opacity = (1.0 - progress).clamp(0.0, 1.0);
-
     if (tabIndex == 0) {
       return Color.lerp(Color(0x330E1117), AppColors.gray600, opacity) ?? AppColors.gray600;
     } else {
@@ -498,7 +551,6 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
   Widget _buildRealtimeIndicator() {
     final tab0Width = _getTabWidth(context, '게시글', widget.searchResult!.records.totalElements);
     final tab1Width = _getTabWidth(context, '사용자', widget.searchResult!.users.totalElements);
-
     final scrollProgress = _currentPageValue.clamp(0.0, 1.0);
     final indicatorOffset = scrollProgress * (tab0Width + scaleWidth(20));
     final indicatorWidth = tab0Width + (tab1Width - tab0Width) * scrollProgress;
@@ -639,8 +691,7 @@ class InitialSearchWidget extends StatelessWidget {
             ),
           ),
         ],
-        if (recentSearches.isEmpty)
-          Expanded(child: SizedBox()),
+        if (recentSearches.isEmpty) Expanded(child: SizedBox()),
       ],
     );
   }
@@ -763,17 +814,22 @@ class RecentSearchItemWidget extends StatelessWidget {
   }
 }
 
-/// 게시글 검색 결과 - FeedItemWidget 사용
+/// 게시글 검색 결과 - FeedItemWidget 사용 (피드 방식으로 페이지네이션)
 class RecordsListWidget extends StatefulWidget {
   final List<Record> records;
   final VoidCallback? onRefreshRequired;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback? onLoadMore;
 
   const RecordsListWidget({
     Key? key,
     required this.records,
     this.onRefreshRequired,
+    this.hasMore = false,
+    this.isLoadingMore = false,
+    this.onLoadMore,
   }) : super(key: key);
-
 
   @override
   State<RecordsListWidget> createState() => _RecordsListWidgetState();
@@ -785,7 +841,6 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
   @override
   void initState() {
     super.initState();
-
     // 전역 상태에 초기값 등록
     for (var record in widget.records) {
       _likeManager.setInitialState(
@@ -845,72 +900,90 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
 
     return Container(
       color: AppColors.gray30,
-      child: ListView.builder(
-        padding: EdgeInsets.only(top: scaleHeight(19)),
-        itemCount: widget.records.length,
-        itemBuilder: (context, index) {
-          final record = widget.records[index];
-
-          final isLiked = _likeManager.getLikedStatus(record.recordId) ??
-              record.isLiked;
-          final likeCount = _likeManager.getLikeCount(record.recordId) ??
-              record.likeCount;
-          final commentCount = _likeManager.getCommentCount(record.recordId) ??
-              record.commentCount;
-
-          final feedData = {
-            'recordId': record.recordId,
-            'userId': record.authorId,
-            'authorProfileImage': record.authorProfileImage,
-            'authorNickname': record.authorNickname,
-            'authorFavTeam': record.authorFavTeam,
-            'mediaUrls': record.mediaUrls,
-            'longContent': record.longContent,
-            'emotionCode': record.emotionCode,
-            'homeTeam': record.homeTeam,
-            'awayTeam': record.awayTeam,
-            'stadium': record.stadium,
-            'gameDate': record.gameDate,
-            'isLiked': isLiked,
-            'likeCount': likeCount,
-            'commentCount': record.commentCount,
-            'commentCount': commentCount,
-          };
-
-          return FeedItemWidget(
-            feedData: feedData,
-            onProfileNavigated: widget.onRefreshRequired,
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) =>
-                      DetailFeedScreen(recordId: record.recordId),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-
-              // 삭제되었으면 리스트 업데이트
-              if (result != null && result is Map &&
-                  result['deleted'] == true) {
-                final deletedRecordId = result['recordId'];
-                setState(() {
-                  widget.records.removeWhere((r) =>
-                  r.recordId == deletedRecordId);
-                });
-                print('[Search] 게시글 ${deletedRecordId}번 삭제됨');
-              } else {
-                print('[Search] Detail에서 돌아옴 (전역 상태로 동기화됨)');
-              }
-            },
-          );
+      // 피드와 동일한 NotificationListener 방식
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          // 스크롤이 끝에서 200픽셀 전에 도달하면 추가 로드
+          if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+            if (!widget.isLoadingMore && widget.hasMore) {
+              widget.onLoadMore?.call();
+            }
+          }
+          return false;
         },
+        child: ListView.builder(
+          padding: EdgeInsets.only(top: scaleHeight(19)),
+          itemCount: widget.records.length + (widget.hasMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            // 로딩 인디케이터
+            if (index == widget.records.length) {
+              return Container(
+                padding: EdgeInsets.symmetric(vertical: scaleHeight(20)),
+                alignment: Alignment.center,
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            final record = widget.records[index];
+            final isLiked = _likeManager.getLikedStatus(record.recordId) ??
+                record.isLiked;
+            final likeCount = _likeManager.getLikeCount(record.recordId) ??
+                record.likeCount;
+            final commentCount = _likeManager.getCommentCount(record.recordId) ??
+                record.commentCount;
+
+            final feedData = {
+              'recordId': record.recordId,
+              'userId': record.authorId,
+              'authorProfileImage': record.authorProfileImage,
+              'authorNickname': record.authorNickname,
+              'authorFavTeam': record.authorFavTeam,
+              'mediaUrls': record.mediaUrls,
+              'longContent': record.longContent,
+              'emotionCode': record.emotionCode,
+              'homeTeam': record.homeTeam,
+              'awayTeam': record.awayTeam,
+              'stadium': record.stadium,
+              'gameDate': record.gameDate,
+              'isLiked': isLiked,
+              'likeCount': likeCount,
+              'commentCount': commentCount,
+            };
+
+            return FeedItemWidget(
+              feedData: feedData,
+              onProfileNavigated: widget.onRefreshRequired,
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation1, animation2) =>
+                        DetailFeedScreen(recordId: record.recordId),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+
+                // 삭제되었으면 리스트 업데이트
+                if (result != null && result is Map &&
+                    result['deleted'] == true) {
+                  final deletedRecordId = result['recordId'];
+                  setState(() {
+                    widget.records.removeWhere((r) =>
+                    r.recordId == deletedRecordId);
+                  });
+                  print('[Search] 게시글 ${deletedRecordId}번 삭제됨');
+                } else {
+                  print('[Search] Detail에서 돌아옴 (전역 상태로 동기화됨)');
+                }
+              },
+            );
+          },
+        ),
       ),
     );
   }
 }
-
 
 /// 사용자 검색 결과
 class UsersListWidget extends StatelessWidget {
@@ -1018,7 +1091,6 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
       } else if (_currentFollowStatus == 'NOT_FOLLOWING') {
         final response = await UserApi.followUser(userId);
         final responseData = response['data'];
-
         setState(() {
           if (responseData['pending'] == true) {
             _currentFollowStatus = 'REQUESTED';
@@ -1049,7 +1121,7 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
       final response = await FeedApi.getUserFeed(widget.user.userId);
       if (mounted) {
         setState(() {
-          _currentFollowStatus = response['followStatus'] ?? "NOTFOLLOWING";
+          _currentFollowStatus = response['followStatus'] ?? "NOT_FOLLOWING";
         });
       }
     } catch (e) {
@@ -1076,7 +1148,6 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
           if (returnedFollowStatus != null && mounted) {
             _currentFollowStatus = returnedFollowStatus;
             setState(() {});
-
             final searchScreenState = context.findAncestorStateOfType<_SearchScreenState>();
             if (searchScreenState != null && searchScreenState._hasSearched) {
               searchScreenState._refreshSearchResults();
@@ -1181,7 +1252,7 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
                       height: scaleHeight(16),
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(_getButtonTextColor()),
+                        valueColor: AlwaysStoppedAnimation(_getButtonTextColor()),
                       ),
                     )
                         : FixedText(

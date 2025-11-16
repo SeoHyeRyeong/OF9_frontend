@@ -13,11 +13,15 @@ import 'package:frontend/utils/comment_state_manager.dart';
 import 'dart:math' as math;
 import 'package:frontend/components/custom_action_sheet.dart';
 import 'package:frontend/api/user_api.dart';
+import 'package:frontend/features/upload/ticket_info_screen.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:frontend/features/feed/feed_screen.dart';
 import 'package:frontend/components/custom_toast.dart';
+import 'package:provider/provider.dart';
+import 'package:frontend/features/upload/providers/record_state.dart';
 
 class DetailFeedScreen extends StatefulWidget {
+  final String? imagePath;
   final int recordId;
   final bool showUploadToast;
   final String? uploaderNickname;
@@ -25,6 +29,7 @@ class DetailFeedScreen extends StatefulWidget {
 
   const DetailFeedScreen({
     Key? key,
+    this.imagePath,
     required this.recordId,
     this.showUploadToast = false,
     this.uploaderNickname,
@@ -305,24 +310,16 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       print('✅ 게시글 삭제 성공');
 
       if (mounted) {
-        if (widget.showUploadToast) {
-          // 업로드 직후 삭제한 경우 FeedScreen으로 이동
-          Navigator.pushAndRemoveUntil(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => FeedScreen(),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-                (route) => false,
-          );
-        } else {
-          // 일반적인 경우 pop (애니메이션 제거)
-          Navigator.pop(context, {
-            'deleted': true,
-            'recordId': widget.recordId,
-          });
-        }
+        // FeedScreen으로 이동
+        Navigator.pushAndRemoveUntil(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => FeedScreen(),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+              (route) => false,
+        );
       }
     } catch (e) {
       print('❌ 게시글 삭제 실패: $e');
@@ -336,9 +333,131 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         ActionSheetOption(
           text: '게시글 수정',
           textColor: AppColors.gray950,
-          onTap: () {
+          onTap: () async {
             Navigator.pop(context);
-            print('게시글 수정');
+
+            // RecordState에 현재 게시글 데이터 로드
+            final recordState = Provider.of<RecordState>(context, listen: false);
+
+            // 백업 저장 (취소 시 복원용)
+            recordState.saveBackup();
+
+            // 기존 게시글 데이터를 RecordState에 설정
+            final mediaUrls = _recordDetail?['mediaUrls'] as List<dynamic>?;
+
+            // 티켓 이미지는 ticketImageUrl 필드에서 가져옴 (없으면 null)
+            final ticketImageUrl = _recordDetail?['ticketImageUrl'] as String?;
+
+            // 게임 정보 직접 추출 (gameInfo가 아닌 최상위 필드)
+            final homeTeam = _recordDetail?['homeTeam'] as String?;
+            final awayTeam = _recordDetail?['awayTeam'] as String?;
+            final gameDate = _recordDetail?['gameDate'] as String?;
+            final gameTime = _recordDetail?['gameTime'] as String?;
+            final gameId = _recordDetail?['gameId']?.toString();
+
+            print('📋 추출된 데이터:');
+            print('  ticketImageUrl: $ticketImageUrl');
+            print('  mediaUrls: $mediaUrls');
+            print('  homeTeam: $homeTeam');
+            print('  awayTeam: $awayTeam');
+            print('  gameDate: $gameDate');
+            print('  gameTime: $gameTime');
+            print('  gameId: $gameId');
+
+            // gameDate 파싱: "2025년 04월 24일 (목)요일" -> "2025-04-24"
+            String? parsedDate;
+            if (gameDate != null) {
+              final dateMatch = RegExp(r'(\d{4})년\s*(\d{2})월\s*(\d{2})일').firstMatch(gameDate);
+              if (dateMatch != null) {
+                parsedDate = '${dateMatch.group(1)}-${dateMatch.group(2)}-${dateMatch.group(3)}';
+              }
+            }
+
+            // gameTime 파싱: "18:30" -> "18:30:00"
+            String? parsedTime;
+            if (gameTime != null) {
+              parsedTime = gameTime.contains(':') ? gameTime : null;
+              if (parsedTime != null && !parsedTime.contains(':00')) {
+                parsedTime = '$parsedTime:00';
+              }
+            }
+
+            print('📋 파싱된 데이터:');
+            print('  parsedDate: $parsedDate');
+            print('  parsedTime: $parsedTime');
+
+            // 티켓 이미지 경로 설정 (없으면 빈 문자열)
+            final ticketPath = ticketImageUrl ?? '';
+
+            recordState.setTicketInfo(
+              ticketImagePath: ticketPath,
+              selectedHome: homeTeam,
+              selectedAway: awayTeam,
+              selectedDateTime: parsedDate != null && parsedTime != null ? '$parsedDate $parsedTime' : null,
+              selectedStadium: _recordDetail?['stadium'] as String?,
+              selectedSeat: _recordDetail?['seatInfo'] as String?,
+              extractedHomeTeam: homeTeam,
+              extractedAwayTeam: awayTeam,
+              extractedDate: parsedDate,
+              extractedTime: parsedTime,
+              extractedStadium: _recordDetail?['stadium'] as String?,
+              extractedSeat: _recordDetail?['seatInfo'] as String?,
+              gameId: gameId,
+            );
+
+            // RecordState 저장 후 확인
+            recordState.printCurrentState();
+
+            // 감정 코드
+            recordState.updateEmotionCode(_recordDetail?['emotionCode'] as int? ?? 1);
+
+            // 상세 기록
+            recordState.updateLongContent(_recordDetail?['longContent'] as String? ?? '');
+            recordState.updateBestPlayer(_recordDetail?['bestPlayer'] as String? ?? '');
+
+            // 동행 친구
+            final companions = _recordDetail?['companions'] as List<dynamic>?;
+            if (companions != null && companions.isNotEmpty) {
+              recordState.updateCompanions(
+                  companions.map((c) => c['id'] as int).toList()
+              );
+            }
+
+            // 먹거리 태그
+            final foodTags = _recordDetail?['foodTags'] as List<dynamic>?;
+            if (foodTags != null && foodTags.isNotEmpty) {
+              recordState.updateFoodTags(
+                  foodTags.map((f) => f.toString()).toList()
+              );
+            }
+
+            // 상세 이미지 (mediaUrls는 detailImages로 저장)
+            if (mediaUrls != null && mediaUrls.isNotEmpty) {
+              recordState.updateDetailImages(
+                  mediaUrls.map((url) => url.toString()).toList()
+              );
+            }
+
+            // TicketInfoScreen으로 이동
+            final result = await Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    TicketInfoScreen(
+                      imagePath: ticketPath,
+                      recordId: widget.recordId,
+                      isEditMode: true,
+                    ),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+
+            // 수정 완료 후 데이터 새로고침
+            if (result == true) {
+              await _loadRecordDetail();
+              setState(() {});
+            }
           },
         ),
         ActionSheetOption(
@@ -477,9 +596,9 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         FocusScope.of(context).unfocus();
       },
       child: PopScope(
-        canPop: widget.showUploadToast ? false : true,
+        canPop: false,
         onPopInvoked: (didPop) {
-          if (!didPop && widget.showUploadToast) {
+          if (!didPop) {
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
@@ -550,18 +669,15 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         children: [
           GestureDetector(
             onTap: () {
-              if (widget.showUploadToast) {
-                Navigator.pushReplacement(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation1, animation2) => FeedScreen(),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
-                  ),
-                );
-              } else {
-                Navigator.pop(context);
-              }
+              Navigator.pushAndRemoveUntil(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) => FeedScreen(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+                    (route) => false,
+              );
             },
             child: SvgPicture.asset(
               AppImages.backBlack,

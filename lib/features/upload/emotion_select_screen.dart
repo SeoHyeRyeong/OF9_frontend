@@ -11,7 +11,14 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/features/upload/ticket_info_screen.dart';
 
 class EmotionSelectScreen extends StatefulWidget {
-  const EmotionSelectScreen({Key? key}) : super(key: key);
+  final bool isEditMode;
+  final int? recordId;
+
+  const EmotionSelectScreen({
+    Key? key,
+    this.isEditMode = false,
+    this.recordId,
+  }) : super(key: key);
 
   @override
   State<EmotionSelectScreen> createState() => _EmotionSelectScreenState();
@@ -38,21 +45,13 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
     selectedEmotionCode ??= recordState.emotionCode;
 
     return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop) {
-          // 뒤로가기
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => TicketInfoScreen(
-                imagePath: recordState.ticketImagePath ?? '',
-                skipOcrFailPopup: true,
-              ),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          // 감정 코드 저장
+          if (selectedEmotionCode != null) {
+            recordState.updateEmotionCode(selectedEmotionCode!);
+          }
         }
       },
       child: Scaffold(
@@ -68,17 +67,13 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                 padding: EdgeInsets.only(left: scaleWidth(20)),
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation1, animation2) => TicketInfoScreen(
-                          imagePath: recordState.ticketImagePath ?? '',
-                          skipOcrFailPopup: true,
-                        ),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
+                    // 감정 코드 저장
+                    if (selectedEmotionCode != null) {
+                      recordState.updateEmotionCode(selectedEmotionCode!);
+                    }
+
+                    // info로 돌아가기 (pop 사용)
+                    Navigator.pop(context);
                   },
                   child: SvgPicture.asset(
                     AppImages.backBlack,
@@ -209,7 +204,10 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (context, animation1, animation2) => DetailRecordScreen(),
+                        pageBuilder: (context, animation1, animation2) => DetailRecordScreen(
+                          isEditMode: widget.isEditMode,
+                          recordId: widget.recordId,
+                        ),
                         transitionDuration: Duration.zero,
                         reverseTransitionDuration: Duration.zero,
                       ),

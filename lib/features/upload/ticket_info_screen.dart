@@ -26,11 +26,15 @@ import 'package:frontend/features/upload/providers/record_state.dart';
 class TicketInfoScreen extends StatefulWidget {
   final String imagePath;
   final bool skipOcrFailPopup;
+  final bool isEditMode;
+  final int? recordId;
 
   const TicketInfoScreen({
     Key? key,
     required this.imagePath,
     this.skipOcrFailPopup = false,
+    this.isEditMode = false,
+    this.recordId,
   }) : super(key: key);
 
   @override
@@ -95,6 +99,23 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
       return formattedTime;
     }
     return null;
+  }
+
+  // "2025-09-11 18:30:00" → "2025 - 09 - 11 (목) 18시 30분" 형식
+  String? formatSelectedDateTime(String? dateTimeStr) {
+    if (dateTimeStr == null || dateTimeStr.isEmpty) return null;
+    try {
+      // "2025-09-11 18:30:00" 형식을 파싱
+      final parts = dateTimeStr.split(' ');
+      if (parts.length >= 2) {
+        final datePart = parts[0]; // "2025-09-11"
+        final timePart = parts[1]; // "18:30:00"
+        return formatKoreanDateTime(datePart, timePart);
+      }
+      return dateTimeStr;
+    } catch (e) {
+      return dateTimeStr;
+    }
   }
 
   List<GameResponse> matchedGames = [];
@@ -190,25 +211,20 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Provider에서 이전 정보 복원
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final recordState = Provider.of<RecordState>(context, listen: false);
 
-      // 티켓 이미지가 변경된 경우
-      if (recordState.ticketImagePath != null && recordState.ticketImagePath != widget.imagePath) {
-        // 이전 정보 초기화
-        recordState.reset();
-        _processImage(widget.imagePath);
-      } else if (recordState.isTicketInfoComplete) {
-        // 같은 티켓이고 이전 정보가 있으면 복원
+      if (widget.isEditMode && widget.recordId != null) {
+        // 수정 모드: RecordState에서 데이터 복원
         setState(() {
           selectedHome = recordState.selectedHome;
           selectedAway = recordState.selectedAway;
           selectedDateTime = recordState.selectedDateTime;
           selectedStadium = recordState.selectedStadium;
           selectedSeat = recordState.selectedSeat;
+          selectedGameId = recordState.gameId;
 
+          // extracted 값 복원
           extractedHomeTeam = recordState.extractedHomeTeam;
           extractedAwayTeam = recordState.extractedAwayTeam;
           extractedDate = recordState.extractedDate;
@@ -216,10 +232,13 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
           extractedStadium = recordState.extractedStadium;
           extractedSeat = recordState.extractedSeat;
 
-          _selectedImage = XFile(widget.imagePath);
+          // 이미지 설정
+          if (widget.imagePath.isNotEmpty) {
+            _selectedImage = XFile(widget.imagePath);
+          }
         });
-      } else {
-        // 새로 시작하면 OCR 실행
+      } else if (widget.imagePath.isNotEmpty) {
+        // 일반 모드: OCR 실행
         _processImage(widget.imagePath);
       }
     });
@@ -372,14 +391,22 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
       canPop: false,
       onPopInvoked: (didPop) {
         if (!didPop) {
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => const TicketOcrScreen(),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
+          if (widget.isEditMode) {
+            // 수정 모드: RecordState 복원하고 detail_feed로
+            final recordState = Provider.of<RecordState>(context, listen: false);
+            recordState.restoreFromBackup();
+            Navigator.of(context).pop();
+          } else {
+            // 일반 모드: TicketOcrScreen으로
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) => TicketOcrScreen(),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          }
         }
       },
       child: Scaffold(
@@ -397,14 +424,22 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                     padding: EdgeInsets.only(left: scaleWidth(20)),
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation1, animation2) => const TicketOcrScreen(),
-                            transitionDuration: Duration.zero,
-                            reverseTransitionDuration: Duration.zero,
-                          ),
-                        );
+                        if (widget.isEditMode) {
+                          // 수정 모드: RecordState 복원하고 detail_feed로
+                          final recordState = Provider.of<RecordState>(context, listen: false);
+                          recordState.restoreFromBackup();
+                          Navigator.of(context).pop();
+                        } else {
+                          // 일반 모드: TicketOcrScreen으로
+                          Navigator.pushReplacement(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation1, animation2) => TicketOcrScreen(),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
+                            ),
+                          );
+                        }
                       },
                       child: SvgPicture.asset(
                         AppImages.backBlack,
@@ -450,7 +485,16 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     GestureDetector(
-                                      onTap: _pickImage,
+                                      onTap: widget.isEditMode
+                                          ? () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('바텀시트를 통해 수정해 주세요'),
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
+                                          : _pickImage,
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(8),
                                         child: Container(
@@ -458,10 +502,26 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                           height: scaleHeight(156),
                                           color: Colors.grey[200],
                                           child: _selectedImage != null
-                                              ? Image.file(File(_selectedImage!.path), fit: BoxFit.cover)
-                                              : widget.imagePath.isNotEmpty
-                                              ? Image.file(File(widget.imagePath), fit: BoxFit.cover)
-                                              : const Center(child: FixedText('이미지 없음')),
+                                              ? (_selectedImage!.path.startsWith('http')
+                                              ? Image.network(
+                                            _selectedImage!.path,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Center(
+                                                child: Icon(Icons.image, color: Colors.grey),
+                                              );
+                                            },
+                                          )
+                                              : Image.file(
+                                            File(_selectedImage!.path),
+                                            fit: BoxFit.cover,
+                                          ))
+                                              : Center(
+                                            child: Icon(
+                                              widget.isEditMode ? Icons.image : Icons.add_photo_alternate,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -624,7 +684,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                           children: [
                                             Expanded(
                                               child: FixedText(
-                                                selectedDateTime ?? formatKoreanDateTime(extractedDate, extractedTime) ?? '경기 날짜를 선택해 주세요',
+                                                formatSelectedDateTime(selectedDateTime) ?? formatKoreanDateTime(extractedDate, extractedTime) ?? '경기 날짜를 선택해 주세요',
                                                 style: AppFonts.pretendard.body_sm_400(context).copyWith(
                                                   color: (selectedDateTime == null && extractedDate == null && extractedTime == null)
                                                       ? AppColors.gray300 : AppColors.gray900,
@@ -775,21 +835,11 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                             left: scaleWidth(20),
                           ),
                           child: ElevatedButton(
-                            onPressed: isComplete
-                                ? () {
+                            onPressed: isComplete ? () {
                               final recordState = Provider.of<RecordState>(context, listen: false);
 
-                              final finalGameId = selectedGameId ?? (matchedGames.isNotEmpty ? matchedGames[0].gameId : null);
-                              final currentImagePath = _selectedImage?.path ?? widget.imagePath;
-
-                              print('🎮 최종 gameId 결정:');
-                              print('  - selectedGameId (바텀시트): $selectedGameId');
-                              print('  - matchedGames (OCR): ${matchedGames.isNotEmpty ? matchedGames[0].gameId : 'null'}');
-                              print('  - 최종 선택: $finalGameId');
-
-                              // 티켓 정보 저장
                               recordState.setTicketInfo(
-                                ticketImagePath: currentImagePath,
+                                ticketImagePath: _selectedImage?.path ?? widget.imagePath,
                                 selectedHome: selectedHome,
                                 selectedAway: selectedAway,
                                 selectedDateTime: selectedDateTime,
@@ -801,17 +851,33 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                 extractedTime: extractedTime,
                                 extractedStadium: extractedStadium,
                                 extractedSeat: extractedSeat,
-                                gameId: finalGameId,
+                                gameId: selectedGameId,
                               );
 
-                              Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (_, __, ___) => EmotionSelectScreen(),
-                                  transitionDuration: Duration.zero,
-                                  reverseTransitionDuration: Duration.zero,
-                                ),
-                              );
+                              if (widget.isEditMode) {
+                                // 수정 모드: EmotionSelectScreen으로
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation1, animation2) => EmotionSelectScreen(
+                                      isEditMode: true,
+                                      recordId: widget.recordId,
+                                    ),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
+                                  ),
+                                );
+                              } else {
+                                // 일반 모드: EmotionSelectScreen으로
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation1, animation2) => EmotionSelectScreen(),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
+                                  ),
+                                );
+                              }
                             }
                                 : null,
                             style: ElevatedButton.styleFrom(

@@ -26,6 +26,9 @@ class RecordState extends ChangeNotifier {
   List<String> _foodTags = [];
   List<String> _detailImages = [];
 
+  // 백업 데이터 (수정 모드용)
+  Map<String, dynamic>? _backupData;
+
   // Getters - 기본 정보
   String? get gameId => _gameId;
   int? get emotionCode => _emotionCode;
@@ -50,6 +53,66 @@ class RecordState extends ChangeNotifier {
   List<int> get companions => _companions;
   List<String> get foodTags => _foodTags;
   List<String> get detailImages => _detailImages;
+
+  // 백업 저장 (수정 모드 시작 시)
+  void saveBackup() {
+    _backupData = {
+      'gameId': _gameId,
+      'emotionCode': _emotionCode,
+      'ticketImagePath': _ticketImagePath,
+      'selectedHome': _selectedHome,
+      'selectedAway': _selectedAway,
+      'selectedDateTime': _selectedDateTime,
+      'selectedStadium': _selectedStadium,
+      'selectedSeat': _selectedSeat,
+      'extractedHomeTeam': _extractedHomeTeam,
+      'extractedAwayTeam': _extractedAwayTeam,
+      'extractedDate': _extractedDate,
+      'extractedTime': _extractedTime,
+      'extractedStadium': _extractedStadium,
+      'extractedSeat': _extractedSeat,
+      'longContent': _longContent,
+      'bestPlayer': _bestPlayer,
+      'companions': List<int>.from(_companions),
+      'foodTags': List<String>.from(_foodTags),
+      'detailImages': List<String>.from(_detailImages),
+    };
+    print('✅ RecordState 백업 저장 완료');
+  }
+
+  // 백업에서 복원 (수정 취소 시)
+  void restoreFromBackup() {
+    if (_backupData != null) {
+      _gameId = _backupData!['gameId'];
+      _emotionCode = _backupData!['emotionCode'];
+      _ticketImagePath = _backupData!['ticketImagePath'];
+      _selectedHome = _backupData!['selectedHome'];
+      _selectedAway = _backupData!['selectedAway'];
+      _selectedDateTime = _backupData!['selectedDateTime'];
+      _selectedStadium = _backupData!['selectedStadium'];
+      _selectedSeat = _backupData!['selectedSeat'];
+      _extractedHomeTeam = _backupData!['extractedHomeTeam'];
+      _extractedAwayTeam = _backupData!['extractedAwayTeam'];
+      _extractedDate = _backupData!['extractedDate'];
+      _extractedTime = _backupData!['extractedTime'];
+      _extractedStadium = _backupData!['extractedStadium'];
+      _extractedSeat = _backupData!['extractedSeat'];
+      _longContent = _backupData!['longContent'];
+      _bestPlayer = _backupData!['bestPlayer'];
+      _companions = List<int>.from(_backupData!['companions']);
+      _foodTags = List<String>.from(_backupData!['foodTags']);
+      _detailImages = List<String>.from(_backupData!['detailImages']);
+      _backupData = null;
+      notifyListeners();
+      print('✅ RecordState 백업에서 복원 완료');
+    }
+  }
+
+  // 백업 삭제 (수정 완료 시)
+  void clearBackup() {
+    _backupData = null;
+    print('✅ RecordState 백업 삭제 완료');
+  }
 
   // 티켓 정보 저장
   void setTicketInfo({
@@ -163,6 +226,7 @@ class RecordState extends ChangeNotifier {
     _companions = [];
     _foodTags = [];
     _detailImages = [];
+    _backupData = null;
     notifyListeners();
   }
 

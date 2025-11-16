@@ -21,7 +21,14 @@ import 'dart:async';
 import 'package:frontend/api/player_api.dart';
 
 class DetailRecordScreen extends StatefulWidget {
-  const DetailRecordScreen({Key? key}) : super(key: key);
+  final bool isEditMode;
+  final int? recordId;
+
+  const DetailRecordScreen({
+    Key? key,
+    this.isEditMode = false,
+    this.recordId,
+  }) : super(key: key);
 
   @override
   State<DetailRecordScreen> createState() => _DetailRecordScreenState();
@@ -91,18 +98,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
     final recordState = Provider.of<RecordState>(context);
 
     return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop) {
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
           recordState.updateDetailImages(selectedImages);
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => EmotionSelectScreen(),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
         }
       },
       child: Scaffold(
@@ -161,18 +160,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
           children: [
             GestureDetector(
               onTap: () {
-                final recordState = Provider.of<RecordState>(
-                    context, listen: false);
+                final recordState = Provider.of<RecordState>(context, listen: false);
                 recordState.updateDetailImages(selectedImages);
 
-                Navigator.pushReplacement(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (_, __, ___) => EmotionSelectScreen(),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
-                  ),
-                );
+                Navigator.pop(context);
               },
               child: Container(
                 alignment: Alignment.center,
@@ -324,7 +315,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                 color: Colors.grey[200],
                 image: recordState.ticketImagePath != null
                     ? DecorationImage(
-                  image: FileImage(File(recordState.ticketImagePath!)),
+                  image: NetworkImage(recordState.ticketImagePath!),
                   fit: BoxFit.cover,
                 )
                     : null,
@@ -485,7 +476,20 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(
                                   scaleWidth(8)),
-                              child: Image.file(
+                              child: imagePath.startsWith('http')
+                                  ? Image.network(
+                                imagePath,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[300],
+                                    child: Icon(Icons.error, color: Colors.red),
+                                  );
+                                },
+                              )
+                                  : Image.file(
                                 File(imagePath),
                                 fit: BoxFit.cover,
                                 width: double.infinity,
@@ -686,7 +690,29 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
           Expanded(
             flex: 10,
             child: ElevatedButton(
-              onPressed: _isSubmitting ? null : _showSkipConfirmationSheet,
+              onPressed: _isSubmitting
+                  ? null
+                  : () {
+                if (widget.isEditMode) {
+                  // 수정 모드에서 건너뛰기: RecordState 복원하고 detail_feed로
+                  final recordState = Provider.of<RecordState>(context, listen: false);
+                  recordState.restoreFromBackup();
+
+                  Navigator.pushReplacement(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation1, animation2) => DetailFeedScreen(
+                        recordId: widget.recordId!,
+                      ),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                } else {
+                  // 일반 모드: 기존 건너뛰기 로직
+                  _showSkipConfirmationSheet();
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.gray50,
                 disabledBackgroundColor: AppColors.gray50,
@@ -864,7 +890,67 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
 
   // 완료 버튼 (전체 데이터 전송)
   Future<void> _handleSubmit() async {
-    await _submitRecord(includeDetailData: true);
+    if (_isSubmitting) return;
+
+    // 수정 모드
+    if (widget.isEditMode) {
+      setState(() {
+        _isSubmitting = true;
+      });
+
+      try {
+        final recordState = Provider.of<RecordState>(context, listen: false);
+
+        // API 호출하여 실제 수정 (티켓 이미지는 수정 안함)
+        await RecordApi.updateRecord(
+          recordId: widget.recordId!.toString(),
+          gameId: recordState.gameId,
+          emotionCode: recordState.emotionCode,
+          stadium: recordState.finalStadium,
+          seatInfo: recordState.finalSeat,
+          longContent: recordState.longContent,
+          bestPlayer: recordState.bestPlayer,
+          companionIds: recordState.companions.isNotEmpty ? recordState.companions : null,
+          foodTags: recordState.foodTags.isNotEmpty ? recordState.foodTags : null,
+          imagePaths: selectedImages.isNotEmpty ? selectedImages : null,
+        );
+
+        print('✅ 게시글 수정 완료');
+
+        // 백업 삭제
+        recordState.clearBackup();
+
+        // DetailFeedScreen으로 복귀 (애니메이션 제거)
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1, animation2) => DetailFeedScreen(
+                recordId: widget.recordId!,
+              ),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+      } catch (e) {
+        print('❌ 수정 실패: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('수정에 실패했습니다. 다시 시도해주세요.')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
+      }
+    } else {
+      // 일반 모드 (기존 로직 그대로)
+      await _submitRecord(includeDetailData: true);
+    }
   }
 
   // 건너뛰기 버튼 (필수 데이터만 전송)

@@ -289,6 +289,10 @@ class RecordApi {
   /// 직관 기록 수정
   static Future<Map<String, dynamic>> updateRecord({
     required String recordId,
+    String? gameId,
+    int? emotionCode,
+    String? stadium,
+    String? seatInfo,
     String? comment,
     String? longContent,
     String? bestPlayer,
@@ -296,16 +300,37 @@ class RecordApi {
     List<String>? foodTags,
     List<String>? imagePaths,
   }) async {
-    // 이미지가 있다면 S3에 업로드하고 URL 받기
+    // 상세 이미지 처리: URL과 로컬 파일 구분
     List<String> mediaUrls = [];
     if (imagePaths != null && imagePaths.isNotEmpty) {
-      mediaUrls = await uploadMultipleImages(
-        imagePaths: imagePaths,
-        domain: 'records',
-      );
+      // URL은 그대로 유지, 로컬 파일만 S3 업로드
+      List<String> localFiles = [];
+
+      for (String path in imagePaths) {
+        if (path.startsWith('http')) {
+          // 이미 URL이면 그대로 추가
+          mediaUrls.add(path);
+        } else {
+          // 로컬 파일이면 업로드 대기 리스트에 추가
+          localFiles.add(path);
+        }
+      }
+
+      // 로컬 파일들만 S3에 업로드
+      if (localFiles.isNotEmpty) {
+        final uploadedUrls = await uploadMultipleImages(
+          imagePaths: localFiles,
+          domain: 'records',
+        );
+        mediaUrls.addAll(uploadedUrls);
+      }
     }
 
     final requestBody = {
+      if (gameId != null) 'gameId': gameId,
+      if (emotionCode != null) 'emotionCode': emotionCode,
+      if (stadium != null) 'stadium': stadium,
+      if (seatInfo != null) 'seatInfo': seatInfo,
       if (comment != null) 'comment': comment,
       if (longContent != null) 'longContent': longContent,
       if (bestPlayer != null) 'bestPlayer': bestPlayer,

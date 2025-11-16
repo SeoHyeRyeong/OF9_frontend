@@ -272,31 +272,35 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
   }
 
   Future<void> _deleteComment(int commentId) async {
-    if (_commentFocusNode.hasFocus) {
-      _commentFocusNode.unfocus();
-    }
+    // 포커스 해제
+    _commentFocusNode.unfocus();
     FocusScope.of(context).unfocus();
+
+    // 편집 모드 초기화
+    setState(() {
+      _editingCommentId = null;
+      _commentController.clear();
+    });
 
     try {
       final response = await FeedApi.deleteComment(
-          widget.recordId.toString(),
-          commentId.toString()
+        widget.recordId.toString(),
+        commentId.toString(),
       );
 
       if (response != null && response['totalCommentCount'] != null) {
         final totalCount = response['totalCommentCount'] is int
             ? response['totalCommentCount']
             : (response['totalCommentCount'] as num).toInt();
-
         _commentListManager.removeComment(
-            widget.recordId,
-            commentId,
-            totalCommentCount: totalCount
+          widget.recordId,
+          commentId,
+          totalCommentCount: totalCount,
         );
-        print('✅ 댓글 삭제 성공 - totalCommentCount: $totalCount');
+        print('✅ 댓글 삭제 완료 - totalCommentCount: $totalCount');
       } else {
         _commentListManager.removeComment(widget.recordId, commentId);
-        print('⚠️ 댓글 삭제 성공 (백엔드 응답 없음, 로컬 카운트 사용)');
+        print('✅ 댓글 삭제 완료, totalCommentCount 정보 없음');
       }
     } catch (e) {
       print('❌ 댓글 삭제 실패: $e');

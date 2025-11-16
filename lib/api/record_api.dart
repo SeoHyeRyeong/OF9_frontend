@@ -261,13 +261,13 @@ class RecordApi {
     }
   }
 
-  /// 맞팔 친구 검색
-  static Future<List<Map<String, dynamic>>> getMutualFriends({String? query}) async {
+  /// 전체 사용자 검색
+  static Future<List<Map<String, dynamic>>> searchUsers({String? query}) async {
     Uri uri;
     if (query != null && query.isNotEmpty) {
-      uri = Uri.parse('$baseUrl/records/me/mutual-friends?query=${Uri.encodeComponent(query)}');
+      uri = Uri.parse('$baseUrl/records/users/search?query=${Uri.encodeComponent(query)}');
     } else {
-      uri = Uri.parse('$baseUrl/records/me/mutual-friends');
+      uri = Uri.parse('$baseUrl/records/users/search');
     }
 
     final res = await _makeRequestWithRetry(
@@ -275,14 +275,14 @@ class RecordApi {
       method: 'GET',
     );
 
-    print('👥 맞팔 친구 응답: ${res.statusCode} - ${res.body}');
+    print('👥 사용자 검색 응답: ${res.statusCode} - ${res.body}');
 
     if (res.statusCode == 200) {
       final responseData = jsonDecode(utf8.decode(res.bodyBytes));
-      final List<dynamic> friends = responseData['data'];
-      return friends.cast<Map<String, dynamic>>();
+      final List users = responseData['data'];
+      return users.cast<Map<String, dynamic>>();
     } else {
-      throw Exception('맞팔 친구 조회 실패: ${res.statusCode}');
+      throw Exception('사용자 검색 실패: ${res.statusCode}');
     }
   }
 

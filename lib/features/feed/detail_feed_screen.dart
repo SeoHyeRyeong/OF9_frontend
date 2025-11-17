@@ -309,15 +309,29 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     }
   }
 
-  Future _deleteRecord() async {
+  Future<void> _deleteRecord() async {
     try {
       await RecordApi.deleteRecord(widget.recordId.toString());
       print('✅ 게시글 삭제 성공');
+
       if (mounted) {
-        Navigator.pop(context, {
-          'deleted': true,
-          'recordId': widget.recordId,
-        });
+        // 업로드 직후 삭제한 경우: FeedScreen으로 이동
+        if (widget.fromUpload) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1, animation2) => const FeedScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        } else {
+          // 일반 조회 후 삭제: 이전 화면으로 + 삭제 result 전달
+          Navigator.pop(context, {
+            'deleted': true,
+            'recordId': widget.recordId,
+          });
+        }
       }
     } catch (e) {
       print('❌ 게시글 삭제 실패: $e');

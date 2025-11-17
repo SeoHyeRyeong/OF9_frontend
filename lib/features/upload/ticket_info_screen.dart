@@ -485,16 +485,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     GestureDetector(
-                                      onTap: widget.isEditMode
-                                          ? () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('바텀시트를 통해 수정해 주세요'),
-                                            duration: Duration(seconds: 2),
-                                          ),
-                                        );
-                                      }
-                                          : _pickImage,
+                                      onTap: _pickImage,
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(8),
                                         child: Container(
@@ -518,7 +509,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                           ))
                                               : Center(
                                             child: Icon(
-                                              widget.isEditMode ? Icons.image : Icons.add_photo_alternate,
+                                              Icons.add_photo_alternate,  // ← 이 부분도 바꿉니다 (조건문 삭제)
                                               color: Colors.grey,
                                             ),
                                           ),
@@ -684,7 +675,11 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                           children: [
                                             Expanded(
                                               child: FixedText(
-                                                formatSelectedDateTime(selectedDateTime) ?? formatKoreanDateTime(extractedDate, extractedTime) ?? '경기 날짜를 선택해 주세요',
+                                                selectedDateTime != null
+                                                    ? (selectedDateTime!.contains(' - ')
+                                                    ? selectedDateTime!
+                                                    : (formatSelectedDateTime(selectedDateTime) ?? selectedDateTime!))
+                                                    : formatKoreanDateTime(extractedDate, extractedTime) ?? '경기 날짜를 선택해 주세요',
                                                 style: AppFonts.pretendard.body_sm_400(context).copyWith(
                                                   color: (selectedDateTime == null && extractedDate == null && extractedTime == null)
                                                       ? AppColors.gray300 : AppColors.gray900,
@@ -840,18 +835,18 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
 
                               recordState.setTicketInfo(
                                 ticketImagePath: _selectedImage?.path ?? widget.imagePath,
-                                selectedHome: selectedHome,
-                                selectedAway: selectedAway,
-                                selectedDateTime: selectedDateTime,
-                                selectedStadium: selectedStadium,
-                                selectedSeat: selectedSeat,
+                                selectedHome: selectedHome ?? extractedHomeTeam,
+                                selectedAway: selectedAway ?? extractedAwayTeam,
+                                selectedDateTime: selectedDateTime ?? formatKoreanDateTime(extractedDate, extractedTime),
+                                selectedStadium: selectedStadium ?? extractedStadium,
+                                selectedSeat: selectedSeat ?? extractedSeat,
                                 extractedHomeTeam: extractedHomeTeam,
                                 extractedAwayTeam: extractedAwayTeam,
                                 extractedDate: extractedDate,
                                 extractedTime: extractedTime,
                                 extractedStadium: extractedStadium,
                                 extractedSeat: extractedSeat,
-                                gameId: selectedGameId,
+                                gameId: selectedGameId ?? recordState.gameId,
                               );
 
                               if (widget.isEditMode) {

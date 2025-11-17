@@ -42,6 +42,18 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
   bool _isSubmitting = false;
   bool _isKeyboardVisible = false;
 
+  final Map<String, String> _stadiumMapping = {
+    '잠실': '잠실 야구장',
+    '문학': '인천 SSG 랜더스필드',
+    '대구': '대구삼성라이온즈파크',
+    '수원': '수원 케이티 위즈 파크',
+    '광주': '기아 챔피언스 필드',
+    '창원': '창원 NC 파크',
+    '고척': '고척 SKYDOME',
+    '대전(신)': '한화생명 볼파크',
+    '사직': '사직 야구장',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -315,7 +327,9 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                 color: Colors.grey[200],
                 image: recordState.ticketImagePath != null
                     ? DecorationImage(
-                  image: NetworkImage(recordState.ticketImagePath!),
+                  image: recordState.ticketImagePath!.startsWith('http')
+                      ? NetworkImage(recordState.ticketImagePath!) as ImageProvider
+                      : FileImage(File(recordState.ticketImagePath!)) as ImageProvider,
                   fit: BoxFit.cover,
                 )
                     : null,
@@ -343,9 +357,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                     ),
                     SizedBox(height: scaleHeight(4)),
 
+
                     // 2-2. 팀 매치업
                     FixedText(
-                      '$homeTeamFullName VS $awayTeamFullName',
+                      '$homeTeamFullName  VS  $awayTeamFullName',
                       style: AppFonts.pretendard.head_sm_600(context).copyWith(
                           color: AppColors.gray900),
                     ),
@@ -353,9 +368,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
 
                     // 2-3. 경기장 정보
                     FixedText(
-                      recordState.finalStadium ?? '',
+                      _stadiumMapping[recordState.finalStadium] ?? recordState.finalStadium ?? '',
                       style: AppFonts.suite.body_sm_500(context).copyWith(
-                          color: AppColors.gray700),
+                        color: AppColors.gray700,
+                      ),
                     ),
                   ],
                 ),

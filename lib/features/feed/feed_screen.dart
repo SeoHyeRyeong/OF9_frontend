@@ -791,13 +791,43 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
         );
 
         // 삭제되었으면 해당 게시글 제거
-        if (result != null && result is Map && result['deleted'] == true) {
-          final deletedRecordId = result['recordId'];
-          setState(() {
-            _recommendFeedItems.removeWhere((item) => item['recordId'] == deletedRecordId);
-            _followingFeedItems.removeWhere((item) => item['recordId'] == deletedRecordId);
-          });
-          print('게시글 ${deletedRecordId}번 삭제됨 - 스크롤 위치 유지');
+        if (result != null && result is Map) {
+          if (result['deleted'] == true) {
+            final deletedRecordId = result['recordId'];
+            setState(() {
+              _recommendFeedItems.removeWhere((item) => item['recordId'] == deletedRecordId);
+              _followingFeedItems.removeWhere((item) => item['recordId'] == deletedRecordId);
+            });
+            print('게시글 ${deletedRecordId}번 삭제됨 - 스크롤 위치 유지');
+          } else if (result['updated'] == true) {
+            final updatedRecordId = result['recordId'];
+            final updatedData = result['updatedData'] as Map<String, dynamic>;
+
+            setState(() {
+              // 추천 피드 업데이트
+              final recommendIndex = _recommendFeedItems.indexWhere(
+                      (item) => item['recordId'] == updatedRecordId
+              );
+              if (recommendIndex != -1) {
+                _recommendFeedItems[recommendIndex] = {
+                  ..._recommendFeedItems[recommendIndex],
+                  ...updatedData,
+                };
+              }
+
+              // 팔로잉 피드 업데이트
+              final followingIndex = _followingFeedItems.indexWhere(
+                      (item) => item['recordId'] == updatedRecordId
+              );
+              if (followingIndex != -1) {
+                _followingFeedItems[followingIndex] = {
+                  ..._followingFeedItems[followingIndex],
+                  ...updatedData,
+                };
+              }
+            });
+            print('게시글 ${updatedRecordId}번 업데이트됨 - 스크롤 위치 유지');
+          }
         } else {
           print('[Feed] Detail에서 돌아옴 (전역 상태로 동기화됨)');
         }

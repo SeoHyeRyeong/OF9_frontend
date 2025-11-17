@@ -907,14 +907,32 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 ),
               );
 
-              // 삭제되었으면 리스트 업데이트
-              if (result != null && result is Map && result['deleted'] == true) {
-                final deletedRecordId = result['recordId'];
-                setState(() {
-                  feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
-                });
-                // 프로필 정보 다시 로드하여 게시글 수 업데이트
-                _loadUserInfo();
+              if (result != null && result is Map) {
+                if (result['deleted'] == true) {
+                  // 삭제된 경우
+                  final deletedRecordId = result['recordId'];
+                  setState(() {
+                    feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
+                  });
+                  _loadUserInfo();
+                } else if (result['updated'] == true) {
+                  // 수정된 경우 - 해당 아이템만 업데이트
+                  final updatedRecordId = result['recordId'];
+                  final updatedData = result['updatedData'] as Map<String, dynamic>;
+
+                  setState(() {
+                    final index = feedList.indexWhere(
+                            (r) => r['recordId'] == updatedRecordId
+                    );
+                    if (index != -1) {
+                      feedList[index] = {
+                        ...feedList[index],
+                        ...updatedData,
+                      };
+                    }
+                  });
+                  print('[MyPage] 게시글 ${updatedRecordId}번 업데이트됨 - 스크롤 유지');
+                }
               }
             },
             onProfileNavigated: () async {

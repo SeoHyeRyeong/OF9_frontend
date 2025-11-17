@@ -714,16 +714,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                   final recordState = Provider.of<RecordState>(context, listen: false);
                   recordState.restoreFromBackup();
 
-                  Navigator.pushReplacement(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation1, animation2) => DetailFeedScreen(
-                        recordId: widget.recordId!,
-                      ),
-                      transitionDuration: Duration.zero,
-                      reverseTransitionDuration: Duration.zero,
-                    ),
-                  );
+                  // 건너뛰기 → DetailFeedScreen으로 복귀
+                  Navigator.of(context).pop(); // DetailRecordScreen
+                  Navigator.of(context).pop(); // EmotionSelectScreen
+                  Navigator.of(context).pop(); // TicketInfoScreen
                 } else {
                   // 일반 모드: 기존 건너뛰기 로직
                   _showSkipConfirmationSheet();
@@ -870,7 +864,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
       recordState.reset();
 
       if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation1, animation2) =>
@@ -879,10 +873,12 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                   showUploadToast: true,
                   uploaderNickname: nickname,
                   isFirstRecord: isFirstRecord,
+                  fromUpload: true,
                 ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),
+              (route) => false,
         );
       }
     } catch (e) {
@@ -917,6 +913,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
       try {
         final recordState = Provider.of<RecordState>(context, listen: false);
 
+
         // API 호출하여 실제 수정 (티켓 이미지는 수정 안함)
         await RecordApi.updateRecord(
           recordId: widget.recordId!.toString(),
@@ -928,7 +925,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
           bestPlayer: recordState.bestPlayer,
           companionIds: recordState.companions.isNotEmpty ? recordState.companions : null,
           foodTags: recordState.foodTags.isNotEmpty ? recordState.foodTags : null,
-          imagePaths: selectedImages.isNotEmpty ? selectedImages : null,
+          imagePaths: selectedImages,
         );
 
         print('✅ 게시글 수정 완료');
@@ -938,18 +935,11 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
 
         // DetailFeedScreen으로 복귀 (애니메이션 제거)
         if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) =>
-                  DetailFeedScreen(
-                    recordId: widget.recordId!,
-                  ),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-                (route) => route.isFirst,
-          );
+          // 수정 플로우: DetailFeedScreen → TicketInfo → Emotion → DetailRecord
+          // 역순으로 3개 화면 닫기
+          Navigator.of(context).pop(); // 1. DetailRecordScreen 닫기
+          Navigator.of(context).pop(); // 2. EmotionSelectScreen 닫기
+          Navigator.of(context).pop(true); // 3. TicketInfoScreen 닫고 result 반환
         }
       } catch (e) {
         print('❌ 수정 실패: $e');

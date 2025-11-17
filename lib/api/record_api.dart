@@ -302,27 +302,27 @@ class RecordApi {
   }) async {
     // 상세 이미지 처리: URL과 로컬 파일 구분
     List<String> mediaUrls = [];
-    if (imagePaths != null && imagePaths.isNotEmpty) {
-      // URL은 그대로 유지, 로컬 파일만 S3 업로드
-      List<String> localFiles = [];
 
-      for (String path in imagePaths) {
-        if (path.startsWith('http')) {
-          // 이미 URL이면 그대로 추가
-          mediaUrls.add(path);
-        } else {
-          // 로컬 파일이면 업로드 대기 리스트에 추가
-          localFiles.add(path);
+    if (imagePaths != null) {
+      if (imagePaths.isNotEmpty) {
+        // URL은 그대로 유지, 로컬 파일만 S3 업로드
+        List<String> localFiles = [];
+        for (String path in imagePaths) {
+          if (path.startsWith('http')) {
+            mediaUrls.add(path);
+          } else {
+            localFiles.add(path);
+          }
         }
-      }
 
-      // 로컬 파일들만 S3에 업로드
-      if (localFiles.isNotEmpty) {
-        final uploadedUrls = await uploadMultipleImages(
-          imagePaths: localFiles,
-          domain: 'records',
-        );
-        mediaUrls.addAll(uploadedUrls);
+        // 로컬 파일들만 S3에 업로드
+        if (localFiles.isNotEmpty) {
+          final uploadedUrls = await uploadMultipleImages(
+            imagePaths: localFiles,
+            domain: 'records',
+          );
+          mediaUrls.addAll(uploadedUrls);
+        }
       }
     }
 
@@ -336,7 +336,7 @@ class RecordApi {
       if (bestPlayer != null) 'bestPlayer': bestPlayer,
       if (companionIds != null) 'companions': companionIds,
       if (foodTags != null) 'foodTags': foodTags,
-      if (mediaUrls.isNotEmpty) 'mediaUrls': mediaUrls,
+      if (imagePaths != null) 'mediaUrls': mediaUrls,
     };
 
     print('📤 기록 수정 요청 본문: ${jsonEncode(requestBody)}');

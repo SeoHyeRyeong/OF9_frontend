@@ -26,6 +26,7 @@ class DetailFeedScreen extends StatefulWidget {
   final bool showUploadToast;
   final String? uploaderNickname;
   final bool isFirstRecord;
+  final bool fromUpload;
 
   const DetailFeedScreen({
     Key? key,
@@ -34,6 +35,7 @@ class DetailFeedScreen extends StatefulWidget {
     this.showUploadToast = false,
     this.uploaderNickname,
     this.isFirstRecord = false,
+    this.fromUpload = false,
   }) : super(key: key);
 
   @override
@@ -592,7 +594,30 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         FocusScope.of(context).unfocus();
       },
       child: PopScope(
-        canPop: true,
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (!didPop) {
+            if (widget.fromUpload) {
+              // 업로드/수정 완료 후 -> FeedScreen으로 이동
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1,
+                      animation2) => const FeedScreen(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            } else {
+              // 일반 조회 -> 이전 화면으로 (업데이트된 데이터 전달)
+              Navigator.pop(context, {
+                'updated': true,
+                'recordId': widget.recordId,
+                'updatedData': _recordDetail,
+              });
+            }
+          }
+        },
         child: Scaffold(
           backgroundColor: Colors.white,
           body: SafeArea(
@@ -653,7 +678,25 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         children: [
           GestureDetector(
             onTap: () {
-              Navigator.pop(context);
+              // ✅ fromUpload 분기 처리 추가
+              if (widget.fromUpload) {
+                // 업로드 완료 후 -> FeedScreen으로 이동
+                Navigator.pushReplacement(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation1, animation2) => const FeedScreen(),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              } else {
+                // 일반 조회 -> 이전 화면으로 (업데이트된 데이터 전달)
+                Navigator.pop(context, {
+                  'updated': true,
+                  'recordId': widget.recordId,
+                  'updatedData': _recordDetail,
+                });
+              }
             },
             child: SvgPicture.asset(
               AppImages.backBlack,

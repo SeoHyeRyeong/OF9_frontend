@@ -307,23 +307,15 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     }
   }
 
-  Future<void> _deleteRecord() async {
+  Future _deleteRecord() async {
     try {
       await RecordApi.deleteRecord(widget.recordId.toString());
-
       print('✅ 게시글 삭제 성공');
-
       if (mounted) {
-        // FeedScreen으로 이동
-        Navigator.pushAndRemoveUntil(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => FeedScreen(),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-          ),
-              (route) => false,
-        );
+        Navigator.pop(context, {
+          'deleted': true,
+          'recordId': widget.recordId,
+        });
       }
     } catch (e) {
       print('❌ 게시글 삭제 실패: $e');
@@ -600,19 +592,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         FocusScope.of(context).unfocus();
       },
       child: PopScope(
-        canPop: false,
-        onPopInvoked: (didPop) {
-          if (!didPop) {
-            Navigator.pushReplacement(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation1, animation2) => FeedScreen(),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-              ),
-            );
-          }
-        },
+        canPop: true,
         child: Scaffold(
           backgroundColor: Colors.white,
           body: SafeArea(
@@ -673,15 +653,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         children: [
           GestureDetector(
             onTap: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) => FeedScreen(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-                    (route) => false,
-              );
+              Navigator.pop(context);
             },
             child: SvgPicture.asset(
               AppImages.backBlack,

@@ -938,15 +938,17 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
 
         // DetailFeedScreen으로 복귀 (애니메이션 제거)
         if (mounted) {
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => DetailFeedScreen(
-                recordId: widget.recordId!,
-              ),
+              pageBuilder: (context, animation1, animation2) =>
+                  DetailFeedScreen(
+                    recordId: widget.recordId!,
+                  ),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
+                (route) => route.isFirst,
           );
         }
       } catch (e) {

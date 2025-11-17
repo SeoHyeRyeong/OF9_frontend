@@ -327,7 +327,28 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     final int likeCount = record['likeCount'] ?? 0;
 
     return GestureDetector(
-      onTap: () => print('기록 상세보기: ${record['recordId']}'),
+      onTap: () async {
+        final result = await Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation1, animation2) => DetailFeedScreen(
+              recordId: record['recordId'],
+            ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+
+        // 삭제되었으면 리스트 업데이트
+        if (result != null && result is Map && result['deleted'] == true) {
+          final deletedRecordId = result['recordId'];
+          setState(() {
+            feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
+          });
+          // 프로필 정보 다시 로드하여 게시글 수 업데이트
+          _loadUserInfo();
+        }
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(scaleWidth(10)),
         child: Container(

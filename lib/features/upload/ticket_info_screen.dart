@@ -340,6 +340,10 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
         extractedHomeTeam = game.homeTeam;
         extractedStadium = game.stadium;
 
+        setState(() {
+          selectedGameId = game.gameId; // 성공 시 설정
+        });
+
         final mappedStadiumForSeat = mapStadiumName(game.stadium) ?? game.stadium;
         final parsedSeat = parseSeatStringWithMapping(cleanedText, stadium: mappedStadiumForSeat);
 
@@ -380,6 +384,9 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
         );
       } catch (e) {
         print('DB 매칭 실패 오류: $e');
+        setState(() {
+          selectedGameId = null;  // ← 실패 시 null로 초기화
+        });
         debugMatchResult(isMatched: false);
       }
     }

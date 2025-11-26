@@ -314,6 +314,44 @@ class UserApi {
     }
   }
 
+
+  /// 8. 사용자 차단
+  static Future<Map<String, dynamic>> blockUser(int targetId) async {
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/users/$targetId/block'),
+      method: 'POST',
+    );
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    } else {
+      throw Exception('Failed to block user: ${res.statusCode}');
+    }
+  }
+
+  /// 9. 사용자 차단 해제
+  static Future<void> unblockUser(int targetId) async {
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/users/$targetId/block'),
+      method: 'DELETE',
+    );
+    if (res.statusCode != 200 && res.statusCode != 204) {
+      throw Exception('Failed to unblock user: ${res.statusCode}');
+    }
+  }
+
+  /// 10. 차단된 사용자 목록 조회
+  static Future<Map<String, dynamic>> getBlockedUsers() async {
+    final res = await _makeRequestWithRetry(
+      uri: Uri.parse('$baseUrl/users/me/blocked'),
+      method: 'GET',
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    } else {
+      throw Exception('Failed to get blocked users: ${res.statusCode}');
+    }
+  }
+
   //=====================================================================================
   // 피드
   //=====================================================================================

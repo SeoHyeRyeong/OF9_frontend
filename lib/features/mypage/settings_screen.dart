@@ -12,6 +12,7 @@ import 'package:frontend/features/onboarding_login/login_screen.dart';
 import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:frontend/components/custom_popup_dialog.dart';
+import 'package:frontend/features/mypage/block_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -564,7 +565,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   // 차단된 계정
                                   GestureDetector(
                                     onTap: () {
-                                      print('차단된 계정 버튼 클릭');
+                                      Navigator.push(
+                                        context,
+                                        PageRouteBuilder(
+                                          pageBuilder: (context, animation1, animation2) => const BlockScreen(),
+                                          transitionDuration: Duration.zero,
+                                          reverseTransitionDuration: Duration.zero,
+                                        ),
+                                      );
                                     },
                                     child: Container(
                                       color: Colors.transparent,

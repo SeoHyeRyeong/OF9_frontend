@@ -19,6 +19,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
+import 'package:frontend/components/custom_action_sheet.dart';
 
 class FriendProfileScreen extends StatefulWidget {
   final int userId;
@@ -45,6 +46,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   int followerCount = 0;
   bool isPrivate = false;
   String? followStatus;
+  bool isBlocked = false;
   final _likeManager = FeedCountManager();
 
   late AnimationController _tabAnimationController;
@@ -173,6 +175,15 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       if (!mounted) return;
       final newFollowStatus = response['followStatus'] ?? 'NOT_FOLLOWING';
 
+      bool blocked = false;
+      try {
+        final blockedResponse = await UserApi.getBlockedUsers();
+        final blockedData = blockedResponse['data'] as List? ?? [];
+        blocked = blockedData.any((user) => user['userId'] == widget.userId);
+      } catch (e) {
+        print('❌ 차단 상태 확인 실패: $e');
+      }
+
       setState(() {
         nickname = response['nickname'] ?? '알 수 없음';
         favTeam = response['favTeam'] ?? '응원팀 없음';
@@ -182,9 +193,10 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         followingCount = response['followingCount'] ?? 0;
         isPrivate = response['isPrivate'] ?? false;
         followStatus = newFollowStatus;
+        isBlocked = blocked;
         isLoading = false;
       });
-      print('✅ setState 완료 - 현재 followStatus: $followStatus');
+      print('✅ setState 완료 - 현재 followStatus: $followStatus, isBlocked: $isBlocked');
     } catch (e) {
       if (!mounted) return;
       print('❌ 사용자 정보 로드 실패: $e');
@@ -380,6 +392,47 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     }
   }
 
+  Future<void> _handleBlock() async {
+    try {
+      if (isBlocked) {
+        // 차단 해제
+        await UserApi.unblockUser(widget.userId);
+        setState(() {
+          isBlocked = false;
+        });
+        print('차단 해제 완료: userId=${widget.userId}, isBlocked=$isBlocked');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$nickname님이 차단 해제되었습니다'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        // 차단하기
+        await UserApi.blockUser(widget.userId);
+        setState(() {
+          isBlocked = true;
+          followStatus = 'NOT_FOLLOWING';
+        });
+        print('차단 완료: userId=${widget.userId}, isBlocked=$isBlocked');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$nickname님이 차단되었습니다'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ 차단 처리 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('차단 처리에 실패했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Widget _buildMediaImage(dynamic mediaData, double width, double height) {
     try {
       if (mediaData is String) {
@@ -568,6 +621,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverPersistentHeader(
+                  key: ValueKey('header_$isBlocked'),
                   pinned: true,
                   floating: false,
                   delegate: _FriendProfileHeaderDelegate(
@@ -577,6 +631,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     followStatus: followStatus,
                     onBackPressed: () => Navigator.pop(context, followStatus),
                     onFollowPressed: _handleFollow,
+                    isBlocked: isBlocked,
+                    onBlockTap: _handleBlock,
                   ),
                 ),
                 // 프로필 영역
@@ -767,7 +823,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         width: double.infinity,
         height: scaleHeight(42),
         child: ElevatedButton(
-          onPressed: followStatus == null ? null : _handleFollow,
+          onPressed: isBlocked ? _handleBlock : _handleFollow,
           style: ElevatedButton.styleFrom(
             backgroundColor: _getButtonBackgroundColor(),
             foregroundColor: Colors.white,
@@ -786,6 +842,10 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   }
 
   Color _getButtonBackgroundColor() {
+    if (isBlocked) {
+      return AppColors.gray600;
+    }
+
     switch (followStatus) {
       case 'FOLLOWING':
         return AppColors.gray50;
@@ -797,6 +857,10 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   }
 
   String _getButtonText() {
+    if (isBlocked) {
+      return '차단 해제';
+    }
+
     switch (followStatus) {
       case 'FOLLOWING':
         return '팔로잉';
@@ -808,6 +872,10 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   }
 
   Color _getButtonTextColor() {
+    if (isBlocked) {
+      return AppColors.gray20;
+    }
+
     switch (followStatus) {
       case 'FOLLOWING':
         return AppColors.gray600;
@@ -1515,6 +1583,8 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   final String? followStatus;
   final VoidCallback onBackPressed;
   final VoidCallback onFollowPressed;
+  final bool isBlocked;
+  final VoidCallback onBlockTap;
 
   _FriendProfileHeaderDelegate({
     required this.height,
@@ -1523,6 +1593,8 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.followStatus,
     required this.onBackPressed,
     required this.onFollowPressed,
+    required this.isBlocked,
+    required this.onBlockTap,
   });
 
   @override
@@ -1572,9 +1644,9 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
               width: scaleWidth(88),
               height: scaleHeight(32),
               child: ElevatedButton(
-                onPressed: onFollowPressed,
+                onPressed: isBlocked ? onBlockTap : onFollowPressed,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _getButtonBackgroundColor(followStatus ?? "NOTFOLLOWING"),
+                  backgroundColor: isBlocked ? AppColors.gray600 : _getButtonBackgroundColor(followStatus ?? "NOTFOLLOWING"),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(scaleHeight(8)),
                   ),
@@ -1584,9 +1656,9 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                 ),
                 child: Center(
                   child: Text(
-                    _getButtonText(followStatus!),
+                    isBlocked ? '차단 해제' : _getButtonText(followStatus!),
                     style: AppFonts.pretendard.caption_md_500(context).copyWith(
-                      color: _getButtonTextColor(followStatus!),
+                      color: isBlocked ? AppColors.gray20 : _getButtonTextColor(followStatus!),
                     ),
                   ),
                 ),
@@ -1597,7 +1669,26 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
             Spacer(),
             GestureDetector(
               onTap: () {
-                print("더보기 메뉴");
+                showCustomActionSheet(
+                  context: context,
+                  options: [
+                    ActionSheetOption(
+                      text: isBlocked ? '차단 해제' : '차단하기',
+                      textColor: AppColors.gray900,
+                      onTap: () {
+                        Navigator.pop(context);
+                        onBlockTap();
+                      },
+                    ),
+                    ActionSheetOption(
+                      text: '신고하기',
+                      textColor: AppColors.error,
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                );
               },
               child: SvgPicture.asset(
                 AppImages.dots_horizontal,

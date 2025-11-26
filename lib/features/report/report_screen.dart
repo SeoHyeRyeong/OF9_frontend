@@ -583,7 +583,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 child: ClipPath(
                   clipper: TicketShapeClipper(
                     notchRadius: scaleWidth(12),
-                    dividerXPosition: (MediaQuery.of(context).size.width - scaleWidth(32)) * 0.685,
+                    dividerXPosition: (MediaQuery.of(context).size.width - scaleWidth(32)) * 0.7,
                   ),
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),

@@ -63,6 +63,24 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
     super.dispose();
   }
 
+  final Map<String, String> stadiumToFullName = {
+    '잠실': '잠실야구장',
+    '광주': '기아 챔피언스 필드',
+    '수원': '수원케이티위즈파크',
+    '고척': '고척스카이돔',
+    '대구': '대구삼성라이온즈파크',
+    '대전': '한화생명이글스파크',
+    '대전(신)': '한화생명이글스파크',
+    '사직': '사직야구장',
+    '문학': '인천SSG랜더스필드',
+    '창원': '창원NC파크',
+  };
+
+  String convertStadiumName(String? stadium) {
+    if (stadium == null) return '';
+    return stadiumToFullName[stadium] ?? stadium;
+  }
+
   // 키보드 상태 감지
   @override
   void didChangeMetrics() {
@@ -356,7 +374,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
 
                     // 2-3. 경기장 정보
                     FixedText(
-                      recordState.finalStadium ?? '',
+                      convertStadiumName(recordState.finalStadium),
                       style: AppFonts.suite.body_sm_500(context).copyWith(
                         color: AppColors.gray700,
                       ),

@@ -20,6 +20,8 @@ import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
 import 'package:frontend/components/custom_action_sheet.dart';
+import 'dart:async';
+import 'package:frontend/components/custom_toast.dart';
 
 class FriendProfileScreen extends StatefulWidget {
   final int userId;
@@ -48,6 +50,10 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   String? followStatus;
   bool isBlocked = false;
   final _likeManager = FeedCountManager();
+  bool _showStickyHeader = false;
+  bool _unfollowPending = false;
+  bool _unfollowCancelled = false;
+  Timer? _unfollowTimer;
 
   late AnimationController _tabAnimationController;
   late PageController _tabPageController;
@@ -136,6 +142,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     _likeManager.removeListener(_onGlobalStateChanged);
     _tabAnimationController.dispose();
     _tabPageController.dispose();
+    _unfollowTimer?.cancel();
     super.dispose();
   }
 
@@ -356,14 +363,83 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   Future<void> _handleFollow() async {
     try {
-
       if (followStatus == 'FOLLOWING') {
-        await UserApi.unfollowUser(widget.userId);
+        // 언팔로우 로직 (토스트 포함)
+        if (_unfollowPending) {
+          print('$nickname - 이미 언팔로우 대기 중');
+          return;
+        }
+        _unfollowPending = true;
+        _unfollowCancelled = false;
+
+        // UI 즉시 업데이트 (NOT_FOLLOWING으로)
         setState(() {
           followStatus = 'NOT_FOLLOWING';
           followerCount = followerCount > 0 ? followerCount - 1 : 0;
         });
+
+        // 토스트 표시
+        CustomToast.showWithProfile(
+          context: context,
+          profileImageUrl: profileImageUrl,
+          defaultIconAsset: AppImages.profile,
+          nickname: nickname,
+          message: '팔로우를 취소하시겠어요?',
+          duration: Duration(seconds: 3),
+          onCancel: () {
+            print('$nickname - 언팔로우 취소');
+            _unfollowTimer?.cancel();
+            _unfollowTimer = null;
+            _unfollowCancelled = true;
+
+            // 다시 팔로잉으로 복구
+            setState(() {
+              followStatus = 'FOLLOWING';
+              followerCount = followerCount + 1;
+            });
+            _unfollowPending = false;
+          },
+        );
+
+        // 3초 타이머
+        _unfollowTimer = Timer(Duration(seconds: 3), () async {
+          if (_unfollowCancelled) {
+            print('$nickname - 언팔로우 취소됨');
+            return;
+          }
+          if (!_unfollowPending) {
+            print('언팔로우 대기 상태 아님');
+            return;
+          }
+
+          // 실제 API 호출
+          try {
+            await UserApi.unfollowUser(widget.userId);
+            print('$nickname - 언팔로우 완료');
+          } catch (e) {
+            print('언팔로우 API 에러: $e');
+            // 에러 시 다시 팔로잉으로 복구
+            if (mounted) {
+              setState(() {
+                followStatus = 'FOLLOWING';
+                followerCount = followerCount + 1;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('팔로우 취소에 실패했습니다.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          } finally {
+            _unfollowPending = false;
+            _unfollowCancelled = false;
+            _unfollowTimer = null;
+          }
+        });
+
       } else if (followStatus == 'NOT_FOLLOWING') {
+        // 팔로우 요청
         final response = await UserApi.followUser(widget.userId);
         final responseData = response['data'];
         setState(() {
@@ -375,17 +451,17 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           }
         });
       } else if (followStatus == 'REQUESTED') {
+        // 팔로우 요청 취소
         await UserApi.unfollowUser(widget.userId);
         setState(() {
           followStatus = 'NOT_FOLLOWING';
         });
       }
-
     } catch (e) {
-      print('❌ 팔로우 처리 실패: $e');
+      print('팔로우 처리 에러: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('팔로우 처리에 실패했습니다.'),
+          content: Text('오류가 발생했습니다.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -618,24 +694,26 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         backgroundColor: Colors.white,
         body: SafeArea(
           child: NestedScrollView(
+            physics: const ClampingScrollPhysics(),
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverPersistentHeader(
-                  key: ValueKey('header_$isBlocked'),
+                  key: ValueKey('header-$isBlocked'),
                   pinned: true,
                   floating: false,
                   delegate: _FriendProfileHeaderDelegate(
                     height: scaleHeight(60),
                     nickname: nickname,
-                    isScrolled: innerBoxIsScrolled,
+                    isScrolled: _showStickyHeader,
                     followStatus: followStatus,
-                    onBackPressed: () => Navigator.pop(context, followStatus),
+                    onBackPressed: () {
+                      Navigator.pop(context, followStatus);
+                    },
                     onFollowPressed: _handleFollow,
                     isBlocked: isBlocked,
                     onBlockTap: _handleBlock,
                   ),
                 ),
-                // 프로필 영역
                 SliverList(
                   delegate: SliverChildListDelegate([
                     _buildProfileSection(),
@@ -644,7 +722,24 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     SizedBox(height: scaleHeight(30)),
                   ]),
                 ),
-                // 탭바
+                SliverPersistentHeader(
+                  pinned: false,
+                  floating: false,
+                  delegate: _StickyDetectorDelegate(
+                    height: 1,
+                    onSticky: (isSticky) {
+                      if (_showStickyHeader != isSticky && mounted) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            setState(() {
+                              _showStickyHeader = isSticky;
+                            });
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
                 SliverPersistentHeader(
                   pinned: true,
                   floating: false,
@@ -674,7 +769,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       ),
     );
   }
-
 
   // 프로필 섹션
   Widget _buildProfileSection() {
@@ -973,19 +1067,19 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   // 캘린더 탭
   Widget _buildCalendarTab() {
-    if (isLoadingRecords) {
-      return Center(child: CircularProgressIndicator(color: AppColors.pri500));
-    }
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-      child: Column(
-        children: [
-          _buildCalendarHeader(),
-          _buildTableCalendar(),
-          SizedBox(height: scaleHeight(24)),
-          _buildStatsPanel(),
-        ],
+    return _KeepAliveWrapper(
+      child: isLoadingRecords
+          ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
+          : SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+        child: Column(
+          children: [
+            _buildCalendarHeader(),
+            _buildTableCalendar(),
+            SizedBox(height: scaleHeight(24)),
+            _buildStatsPanel(),
+          ],
+        ),
       ),
     );
   }
@@ -1422,123 +1516,116 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   // 승률 포맷팅 (0~100% 범위)
   String _formatWinRate(double winRate) {
-    // 0~100% 범위
-    if (winRate <= 0.0) {
-      winRate = 0.0;
-    } else if (winRate >= 100.0) {
-      winRate = 100.0;
-    } else if (winRate < 1.0) {
-      // 1% 미만일 경우 소수점 표시
-      winRate = winRate * 100; // 0.x => x.x%
+    // 소수점 이하가 0이면 정수로 표시
+    if (winRate % 1 == 0) {
       return winRate.toInt().toString();
     }
-    return winRate.toString();
+    // 아니면 소수점 한 자리까지
+    return winRate.toStringAsFixed(1);
   }
 
   ///리스트 탭
   Widget _buildListTab() {
-    if (isLoadingRecords) {
-      return Center(child: CircularProgressIndicator(color: AppColors.pri500));
-    }
-
-    if (feedList.isEmpty) {
-      return Center(
+    return _KeepAliveWrapper(
+      child: isLoadingRecords
+          ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
+          : feedList.isEmpty
+          ? Center(
         child: Text(
           '업로드한 기록이 아직 없어요',
-          style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray300),
+          style: AppFonts.suite.head_sm_700(context).copyWith(
+              color: AppColors.gray300),
         ),
-      );
-    }
+      )
+          : Container(
+        color: AppColors.white,
+        child: ListView.builder(
+          padding: EdgeInsets.only(top: scaleHeight(19)),
+          itemCount: feedList.length,
+          itemBuilder: (context, index) {
+            final record = feedList[index];
+            final isLiked = _likeManager.getLikedStatus(record['recordId']) ?? record['isLiked'] ?? false;
+            final likeCount = _likeManager.getLikeCount(record['recordId']) ?? record['likeCount'] ?? 0;
+            final commentCount = _likeManager.getCommentCount(record['recordId']) ?? record['commentCount'] ?? 0;
 
-    // FeedItemWidget 사용
-    return Container(
-      color: AppColors.white,
-      child: ListView.builder(
-        padding: EdgeInsets.only(top: scaleHeight(19)),
-        itemCount: feedList.length,
-        itemBuilder: (context, index) {
-          final record = feedList[index];
-          final isLiked = _likeManager.getLikedStatus(record['recordId']) ?? record['isLiked'] ?? false;
-          final likeCount = _likeManager.getLikeCount(record['recordId']) ?? record['likeCount'] ?? 0;
-          final commentCount = _likeManager.getCommentCount(record['recordId']) ?? record['commentCount'] ?? 0;
+            final feedData = {
+              'recordId': record['recordId'],
+              'profileImageUrl': record['profileImageUrl'],
+              'nickname': record['nickname'],
+              'favTeam': record['favTeam'],
+              'mediaUrls': record['mediaUrls'] ?? [],
+              'longContent': record['longContent'] ?? '',
+              'emotionCode': record['emotionCode'],
+              'emotionLabel': record['emotionLabel'] ?? '',
+              'homeTeam': record['homeTeam'] ?? '',
+              'awayTeam': record['awayTeam'] ?? '',
+              'stadium': record['stadium'] ?? '',
+              'gameDate': record['gameDate'] ?? '',
+              'isLiked': isLiked,
+              'likeCount': likeCount,
+              'commentCount': commentCount,
+            };
 
-          final feedData = {
-            'recordId': record['recordId'],
-            'profileImageUrl': record['profileImageUrl'],
-            'nickname': record['nickname'],
-            'favTeam': record['favTeam'],
-            'mediaUrls': record['mediaUrls'] ?? [],
-            'longContent': record['longContent'] ?? '',
-            'emotionCode': record['emotionCode'],
-            'emotionLabel': record['emotionLabel'] ?? '',
-            'homeTeam': record['homeTeam'] ?? '',
-            'awayTeam': record['awayTeam'] ?? '',
-            'stadium': record['stadium'] ?? '',
-            'gameDate': record['gameDate'] ?? '',
-            'isLiked': isLiked,
-            'likeCount': likeCount,
-            'commentCount': commentCount,
-          };
-
-          return FeedItemWidget(
-            feedData: feedData,
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) => DetailFeedScreen(recordId: record['recordId']),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-              if (result != null && result is Map && result['deleted'] == true) {
-                final deletedRecordId = result['recordId'];
-                setState(() {
-                  feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
-                });
-              }
-            },
-            onProfileNavigated: () {
-              // 친구 프로필 화면에서는 프로필 클릭 시 아무 동작 하지 않음
-            },
-          );
-        },
+            return FeedItemWidget(
+              feedData: feedData,
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation1, animation2) =>
+                        DetailFeedScreen(recordId: record['recordId']),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+                if (result != null && result is Map &&
+                    result['deleted'] == true) {
+                  final deletedRecordId = result['recordId'];
+                  setState(() {
+                    feedList.removeWhere((r) =>
+                    r['recordId'] == deletedRecordId);
+                  });
+                }
+              },
+              onProfileNavigated: () {
+              },
+            );
+          },
+        ),
       ),
     );
   }
 
   ///모아보기 탭
   Widget _buildGridTab() {
-    if (isLoadingRecords) {
-      return Center(child: CircularProgressIndicator(color: AppColors.pri500));
-    }
-
-    if (feedList.isEmpty) {
-      return Center(
+    return _KeepAliveWrapper(
+      child: isLoadingRecords
+          ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
+          : feedList.isEmpty
+          ? Center(
         child: Text(
           '업로드한 기록이 아직 없어요',
           style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray300),
         ),
-      );
-    }
-
-    return GridView.builder(
-      padding: EdgeInsets.only(
-        left: scaleWidth(20),
-        right: scaleWidth(20),
-        top: scaleHeight(24),
+      )
+          : GridView.builder(
+        padding: EdgeInsets.only(
+          left: scaleWidth(20),
+          right: scaleWidth(20),
+          top: scaleHeight(24),
+        ),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: scaleWidth(6),
+          mainAxisSpacing: scaleHeight(9),
+          childAspectRatio: 102 / 142,
+        ),
+        itemCount: feedList.length,
+        itemBuilder: (context, index) {
+          final record = feedList[index];
+          return _buildGridItem(record);
+        },
       ),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: scaleWidth(6),
-        mainAxisSpacing: scaleHeight(9),
-        childAspectRatio: 102 / 142,
-      ),
-      itemCount: feedList.length,
-      itemBuilder: (context, index) {
-        final record = feedList[index];
-        return _buildGridItem(record);
-      },
     );
   }
 }
@@ -1561,7 +1648,7 @@ class _FriendProfileTabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Material(
-      elevation: shrinkOffset > 0 ? 1.0 : 0.0,
+      elevation: 0,
       child: Container(
         color: Colors.white,
         child: child,
@@ -1605,9 +1692,8 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    // overlapsContent가 true이면 탭바가 헤더 아래로 들어왔다는 의미
-    // 이 시점에 닉네임과 팔로우 버튼을 표시하도록 변경
-    final bool showHeaderContent = shrinkOffset > 0;
+    final bool showHeaderContent = isScrolled;
+    final bool isFollowing = followStatus == 'FOLLOWING';
 
     return Container(
       color: Colors.white,
@@ -1629,43 +1715,78 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
             ),
           ),
 
-          // 상단에 붙었을 때 (showHeaderContent == true) 닉네임과 팔로우 버튼 표시
           if (showHeaderContent) ...[
             SizedBox(width: scaleWidth(20)),
             Expanded(
               child: Text(
                 nickname,
-                style: AppFonts.suite.head_sm_700(context).copyWith(color: Colors.black), // Suite체, head_sm_700 굵기, black 색상
+                style: AppFonts.suite.head_sm_700(context).copyWith(color: Colors.black),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // 팔로우/팔로잉 버튼
-            Container(
-              width: scaleWidth(88),
-              height: scaleHeight(32),
-              child: ElevatedButton(
-                onPressed: isBlocked ? onBlockTap : onFollowPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isBlocked ? AppColors.gray600 : _getButtonBackgroundColor(followStatus ?? "NOTFOLLOWING"),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(scaleHeight(8)),
-                  ),
-                  elevation: 0,
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size(scaleWidth(88), scaleHeight(32)),
+            // 팔로잉 중이면 dots, 아니면 버튼
+            if (isFollowing)
+              GestureDetector(
+                onTap: () {
+                  showCustomActionSheet(
+                    context: context,
+                    options: [
+                      ActionSheetOption(
+                        text: isBlocked ? '차단 해제' : '차단하기',
+                        textColor: AppColors.gray900,
+                        onTap: () {
+                          Navigator.pop(context);
+                          onBlockTap();
+                        },
+                      ),
+                      ActionSheetOption(
+                        text: '신고하기',
+                        textColor: AppColors.error,
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
+                  );
+                },
+                child: SvgPicture.asset(
+                  AppImages.dots_horizontal,
+                  width: scaleHeight(24),
+                  height: scaleHeight(24),
+                  fit: BoxFit.contain,
                 ),
-                child: Center(
-                  child: Text(
-                    isBlocked ? '차단 해제' : _getButtonText(followStatus!),
-                    style: AppFonts.pretendard.caption_md_500(context).copyWith(
-                      color: isBlocked ? AppColors.gray20 : _getButtonTextColor(followStatus!),
+              )
+            else
+              Container(
+                width: scaleWidth(88),
+                height: scaleHeight(32),
+                child: ElevatedButton(
+                  onPressed: isBlocked ? onBlockTap : onFollowPressed,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isBlocked
+                        ? AppColors.gray600
+                        : _getButtonBackgroundColor(followStatus ?? "NOT_FOLLOWING"),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(scaleHeight(8)),
+                    ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size(scaleWidth(88), scaleHeight(32)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      isBlocked ? '차단 해제' : _getButtonText(followStatus!),
+                      style: AppFonts.pretendard.caption_md_500(context).copyWith(
+                        color: isBlocked
+                            ? AppColors.gray20
+                            : _getButtonTextColor(followStatus!),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
           ] else ...[
-            // 평상시에는 dots_horizontal
+            // 평상시: dots만
             Spacer(),
             GestureDetector(
               onTap: () {
@@ -1743,4 +1864,51 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
         isScrolled != oldDelegate.isScrolled ||
         followStatus != oldDelegate.followStatus;
   }
+}
+
+class _KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAliveWrapper({required this.child});
+
+  @override
+  State<_KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<_KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
+
+class _StickyDetectorDelegate extends SliverPersistentHeaderDelegate {
+  final double height;
+  final Function(bool) onSticky;
+
+  _StickyDetectorDelegate({
+    required this.height,
+    required this.onSticky,
+  });
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final isSticky = shrinkOffset >= maxExtent;
+    onSticky(isSticky);
+    return SizedBox(height: height);
+  }
+
+  @override
+  bool shouldRebuild(_StickyDetectorDelegate oldDelegate) => false;
 }

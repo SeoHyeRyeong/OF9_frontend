@@ -104,13 +104,16 @@ class CustomToast {
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
 
+    // 닉네임 길이 체크
+    final bool isShortNickname = nickname.length <= 3;
+
     overlayEntry = OverlayEntry(
       builder: (context) => SafeArea(
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
             padding: EdgeInsets.only(
-              bottom: scaleHeight(70+8),
+              bottom: scaleHeight(70 + 8),
               left: scaleWidth(28),
               right: scaleWidth(28),
             ),
@@ -147,9 +150,36 @@ class CustomToast {
                         fit: BoxFit.cover,
                       ),
                     ),
-                    SizedBox(width: scaleWidth(12)),
+                    SizedBox(width: scaleWidth(isShortNickname ? 8 : 12)),
                     Expanded(
-                      child: Column(
+                      child: isShortNickname
+                          ? // 3글자 이하: 한 줄로 표시
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: nickname,
+                                style: AppFonts.pretendard.b3_sb(context)
+                                    .copyWith(color: AppColors.gray20),
+                              ),
+                              TextSpan(
+                                text: '님 ',
+                                style: AppFonts.suite.body_sm_400(context)
+                                    .copyWith(color: AppColors.gray100),
+                              ),
+                              TextSpan(
+                                text: message,
+                                style: AppFonts.suite.body_sm_400(context)
+                                    .copyWith(color: AppColors.gray100),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                          : // 4글자 이상: 두 줄로 표시 (기존)
+                      Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -163,7 +193,8 @@ class CustomToast {
                                 ),
                                 TextSpan(
                                   text: '님',
-                                  style: AppFonts.suite.body_sm_400(context)
+                                  style: AppFonts.suite
+                                      .body_sm_400(context)
                                       .copyWith(color: AppColors.gray100),
                                 ),
                               ],

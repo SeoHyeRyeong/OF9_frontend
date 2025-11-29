@@ -37,7 +37,7 @@ class MyPageScreen extends StatefulWidget {
   State<MyPageScreen> createState() => _MyPageScreenState();
 }
 
-class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderStateMixin{
+class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderStateMixin {
   int selectedTabIndex = 2; // 0: 캘린더, 1: 리스트, 2: 모아보기(그리드)
 
   String nickname = "로딩중...";
@@ -80,7 +80,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     _selectedDay = _focusedDay; //캘린더 선택된 날짜 초기화
     _likeManager.addListener(_onGlobalStateChanged);
 
-    _tabAnimationController = AnimationController(     // 탭 애니메이션 초기화
+    _tabAnimationController = AnimationController( // 탭 애니메이션 초기화
       duration: Duration(milliseconds: 250),
       vsync: this,
     );
@@ -110,9 +110,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   }
 
   void _onGlobalStateChanged() {
-    setState(() {
-    });
-
+    setState(() {});
   }
 
   //탭 관련 함수 추가
@@ -127,6 +125,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       curve: Curves.easeInOut,
     );
   }
+
   void _onTabPageChanged(int index) {
     setState(() {
       _isTabPageScrolling = false;
@@ -218,7 +217,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('기록을 불러오는데 실패했습니다 (탭: ${_getTabName(selectedTabIndex)}).'),
+            content: Text(
+                '기록을 불러오는데 실패했습니다 (탭: ${_getTabName(selectedTabIndex)}).'),
             backgroundColor: Colors.red,
           ),
         );
@@ -228,10 +228,14 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
 
   String _getTabName(int index) {
     switch (index) {
-      case 0: return '캘린더';
-      case 1: return '리스트';
-      case 2: return '모아보기';
-      default: return '';
+      case 0:
+        return '캘린더';
+      case 1:
+        return '리스트';
+      case 2:
+        return '모아보기';
+      default:
+        return '';
     }
   }
 
@@ -242,7 +246,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       _focusedDay = focusedDay;
     });
     if (selectedTabIndex == 0) {
-      _loadMyRecords();
+      _loadMyRecords(showLoadingIndicator: false);
     }
   }
 
@@ -254,7 +258,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   Widget _buildMediaImage(dynamic mediaData, double width, double height) {
     try {
       if (mediaData is String) {
-        if (mediaData.startsWith('http://') || mediaData.startsWith('https://')) {
+        if (mediaData.startsWith('http://') ||
+            mediaData.startsWith('https://')) {
           return Image.network(
             mediaData,
             width: width,
@@ -269,7 +274,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 child: Center(
                   child: CircularProgressIndicator(
                     value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
                         : null,
                     strokeWidth: 2,
                     color: AppColors.pri400,
@@ -311,11 +317,13 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.image_not_supported_outlined, size: scaleWidth(32), color: AppColors.gray300),
+          Icon(Icons.image_not_supported_outlined, size: scaleWidth(32),
+              color: AppColors.gray300),
           SizedBox(height: scaleHeight(8)),
           Text(
             '이미지 로드 실패',
-            style: AppFonts.suite.c2_m(context).copyWith(color: AppColors.gray400),
+            style: AppFonts.suite.c2_m(context).copyWith(
+                color: AppColors.gray400),
           ),
         ],
       ),
@@ -331,9 +339,10 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         final result = await Navigator.push(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation1, animation2) => DetailFeedScreen(
-              recordId: record['recordId'],
-            ),
+            pageBuilder: (context, animation1, animation2) =>
+                DetailFeedScreen(
+                  recordId: record['recordId'],
+                ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),
@@ -393,7 +402,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 child: Padding(
                   padding: EdgeInsets.only(top: scaleHeight(9)),
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(6), vertical: scaleHeight(3)),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: scaleWidth(6), vertical: scaleHeight(3)),
                     decoration: BoxDecoration(
                       color: AppColors.trans500,
                       borderRadius: BorderRadius.circular(100),
@@ -420,7 +430,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                     right: scaleWidth(6),
                   ),
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(6), vertical: scaleHeight(2)),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: scaleWidth(6), vertical: scaleHeight(2)),
                     decoration: BoxDecoration(
                       color: AppColors.trans300,
                       borderRadius: BorderRadius.circular(scaleWidth(12)),
@@ -428,7 +439,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SvgPicture.asset(AppImages.heart_white, width: scaleWidth(14), height: scaleHeight(14)),
+                        SvgPicture.asset(
+                            AppImages.heart_white, width: scaleWidth(14),
+                            height: scaleHeight(14)),
                         SizedBox(width: scaleWidth(2)),
                         Text(
                           likeCount.toString(),
@@ -458,7 +471,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => const ReportScreen(),
+              pageBuilder: (context, animation1,
+                  animation2) => const ReportScreen(),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
@@ -470,7 +484,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         backgroundColor: Colors.white,
         body: SafeArea(
           child: NestedScrollView(
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder: (BuildContext context,
+                bool innerBoxIsScrolled) {
               return <Widget>[
                 // 프로필 영역
                 SliverList(
@@ -627,7 +642,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               children: [
                 SizedBox(height: scaleHeight(2)),
                 // 팀 정보 (조건부 표시)
-                if (!isLoading && favTeam.isNotEmpty && favTeam != "응원팀 없음") ...[
+                if (!isLoading && favTeam.isNotEmpty &&
+                    favTeam != "응원팀 없음") ...[
                   IntrinsicWidth( // 텍스트 크기에 맞게 가로 크기 조정
                     child: Container(
                       height: scaleHeight(22),
@@ -636,7 +652,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                         color: AppColors.gray30,
                         borderRadius: BorderRadius.circular(scaleWidth(20)),
                       ),
-                      alignment: Alignment.center, // 세로 기준 센터 정렬
+                      alignment: Alignment.center,
+                      // 세로 기준 센터 정렬
                       child: Text(
                         "$favTeam 팬",
                         style: AppFonts.suite.caption_md_500(context).copyWith(
@@ -649,7 +666,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 ],
                 // 닉네임
                 isLoading
-                    ? Text("...", style: AppFonts.pretendard.head_sm_600(context))
+                    ? Text(
+                    "...", style: AppFonts.pretendard.head_sm_600(context))
                     : Text(
                   nickname,
                   style: AppFonts.pretendard.head_sm_600(context).copyWith(
@@ -667,7 +685,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => const FollowingScreen(targetUserId: null),
+                          pageBuilder: (context, animation,
+                              secondaryAnimation) =>
+                          const FollowingScreen(targetUserId: null),
                           transitionDuration: Duration.zero,
                           reverseTransitionDuration: Duration.zero,
                         ),
@@ -678,7 +698,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => const FollowerScreen(targetUserId: null),
+                          pageBuilder: (context, animation,
+                              secondaryAnimation) =>
+                          const FollowerScreen(targetUserId: null),
                           transitionDuration: Duration.zero,
                           reverseTransitionDuration: Duration.zero,
                         ),
@@ -735,7 +757,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             final result = await Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const EditProfileScreen(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                const EditProfileScreen(
                   previousRoute: 'mypage',
                 ),
                 transitionDuration: Duration.zero,
@@ -756,7 +779,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           ),
           child: Text(
             '프로필 수정',
-            style: AppFonts.suite.caption_md_500(context).copyWith(color: Colors.white),
+            style: AppFonts.suite.caption_md_500(context).copyWith(
+                color: Colors.white),
           ),
         ),
       ),
@@ -783,7 +807,11 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(3, (index) {
-                    final images = [AppImages.calendar, AppImages.list, AppImages.gallery];
+                    final images = [
+                      AppImages.calendar,
+                      AppImages.list,
+                      AppImages.gallery
+                    ];
                     final isSelected = selectedTabIndex == index;
 
                     return GestureDetector(
@@ -798,7 +826,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                               images[index],
                               width: scaleWidth(28),
                               height: scaleHeight(28),
-                              color: isSelected ? AppColors.gray600: AppColors.trans200,
+                              color: isSelected ? AppColors.gray600 : AppColors
+                                  .trans200,
                             ),
                             Spacer(),
                           ],
@@ -822,7 +851,10 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   }
 
   Widget _buildRealtimeTabIndicator() {
-    final screenWidth = MediaQuery.of(context).size.width - scaleWidth(43.5 * 2);
+    final screenWidth = MediaQuery
+        .of(context)
+        .size
+        .width - scaleWidth(43.5 * 2);
     final tabWidth = scaleWidth(51);
 
     final scrollProgress = _currentTabPageValue.clamp(0.0, 2.0);
@@ -836,14 +868,16 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       // 1 -> 2 (중앙에서 오른쪽으로)
       final centerPosition = (screenWidth - tabWidth) / 2;
       final rightPosition = screenWidth - tabWidth;
-      indicatorOffset = centerPosition + (scrollProgress - 1.0) * (rightPosition - centerPosition);
+      indicatorOffset = centerPosition +
+          (scrollProgress - 1.0) * (rightPosition - centerPosition);
     }
 
     return Positioned(
       bottom: 0,
       left: indicatorOffset,
       child: AnimatedContainer(
-        duration: _isTabPageScrolling ? Duration.zero: Duration(milliseconds: 250),
+        duration: _isTabPageScrolling ? Duration.zero : Duration(
+            milliseconds: 250),
         width: tabWidth,
         height: 2.0,
         color: AppColors.gray600,
@@ -880,7 +914,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       return Center(
         child: Text(
           '업로드한 기록이 아직 없어요',
-          style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray300),
+          style: AppFonts.suite.head_sm_700(context).copyWith(
+              color: AppColors.gray300),
         ),
       );
     }
@@ -894,9 +929,12 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         itemBuilder: (context, index) {
           final record = feedList[index];
 
-          final isLiked = _likeManager.getLikedStatus(record['recordId']) ?? record['isLiked'] ?? false;
-          final likeCount = _likeManager.getLikeCount(record['recordId']) ?? record['likeCount'] ?? 0;
-          final commentCount = _likeManager.getCommentCount(record['recordId']) ?? record['commentCount'] ?? 0;
+          final isLiked = _likeManager.getLikedStatus(record['recordId']) ??
+              record['isLiked'] ?? false;
+          final likeCount = _likeManager.getLikeCount(record['recordId']) ??
+              record['likeCount'] ?? 0;
+          final commentCount = _likeManager.getCommentCount(
+              record['recordId']) ?? record['commentCount'] ?? 0;
 
           final feedData = {
             'recordId': record['recordId'],
@@ -923,7 +961,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               final result = await Navigator.push(
                 context,
                 PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) => DetailFeedScreen(recordId: record['recordId']),
+                  pageBuilder: (context, animation1, animation2) =>
+                      DetailFeedScreen(recordId: record['recordId']),
                   transitionDuration: Duration.zero,
                   reverseTransitionDuration: Duration.zero,
                 ),
@@ -934,13 +973,16 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                   // 삭제된 경우
                   final deletedRecordId = result['recordId'];
                   setState(() {
-                    feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
+                    feedList.removeWhere((r) =>
+                    r['recordId'] == deletedRecordId);
                   });
                   _loadUserInfo();
                 } else if (result['updated'] == true) {
                   // 수정된 경우 - 해당 아이템만 업데이트
                   final updatedRecordId = result['recordId'];
-                  final updatedData = result['updatedData'] as Map<String, dynamic>;
+                  final updatedData = result['updatedData'] as Map<
+                      String,
+                      dynamic>;
 
                   setState(() {
                     final index = feedList.indexWhere(
@@ -987,7 +1029,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       return Center(
         child: Text(
           '업로드한 기록이 아직 없어요',
-          style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray300),
+          style: AppFonts.suite.head_sm_700(context).copyWith(
+              color: AppColors.gray300),
         ),
       );
     }
@@ -1029,7 +1072,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               GestureDetector(
                 onTap: () {
                   setState(() {
-                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
+                    _focusedDay =
+                        DateTime(_focusedDay.year, _focusedDay.month - 1);
                   });
                   _loadMyRecords();
                 },
@@ -1044,12 +1088,14 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               ),
               Text(
                 DateFormat('yyyy년  M월', 'ko_KR').format(_focusedDay),
-                style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray900),
+                style: AppFonts.suite.head_sm_700(context).copyWith(
+                    color: AppColors.gray900),
               ),
               GestureDetector(
                 onTap: () {
                   setState(() {
-                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
+                    _focusedDay =
+                        DateTime(_focusedDay.year, _focusedDay.month + 1);
                   });
                   _loadMyRecords();
                 },
@@ -1067,7 +1113,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           GestureDetector(
             onTap: () {
               final now = DateTime.now();
-              if (_focusedDay.year == now.year && _focusedDay.month == now.month) {
+              if (_focusedDay.year == now.year &&
+                  _focusedDay.month == now.month) {
                 return;
               }
               setState(() {
@@ -1086,7 +1133,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               alignment: Alignment.center,
               child: Text(
                 '오늘',
-                style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri800),
+                style: AppFonts.suite.caption_md_500(context).copyWith(
+                    color: AppColors.pri800),
               ),
             ),
           ),
@@ -1105,7 +1153,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       calendarFormat: _calendarFormat,
       availableGestures: AvailableGestures.horizontalSwipe,
       headerVisible: false,
-      sixWeekMonthsEnforced: true, // 6주 달력 고정
+      sixWeekMonthsEnforced: true,
+      // 6주 달력 고정
       rowHeight: scaleHeight(60),
       daysOfWeekHeight: scaleHeight(45),
       calendarStyle: CalendarStyle(
@@ -1128,16 +1177,24 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           borderRadius: BorderRadius.circular(scaleWidth(6)),
           border: Border.all(color: AppColors.pri300, width: 1),
         ),
-        todayTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri700),
+        todayTextStyle: AppFonts.suite.caption_md_500(context).copyWith(
+            color: AppColors.pri700),
         // 텍스트 스타일
-        defaultTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // gray200
-        weekendTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // gray200
-        outsideTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200), // 텍스트도 gray200
+        defaultTextStyle: AppFonts.suite.caption_md_500(context).copyWith(
+            color: AppColors.gray200),
+        // gray200
+        weekendTextStyle: AppFonts.suite.caption_md_500(context).copyWith(
+            color: AppColors.gray200),
+        // gray200
+        outsideTextStyle: AppFonts.suite.caption_md_500(context).copyWith(
+            color: AppColors.gray200), // 텍스트도 gray200
       ),
       // 요일 헤더 스타일 - gray700
       daysOfWeekStyle: DaysOfWeekStyle(
-        weekdayStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // gray700
-        weekendStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700), // gray700
+        weekdayStyle: AppFonts.suite.caption_md_500(context).copyWith(
+            color: AppColors.gray700), // gray700
+        weekendStyle: AppFonts.suite.caption_md_500(context).copyWith(
+            color: AppColors.gray700), // gray700
       ),
       calendarBuilders: CalendarBuilders(
         // 오늘 날짜 커스텀 UI
@@ -1159,9 +1216,11 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                   children: [
                     Text(
                       '${day.day}',
-                      style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri700),
+                      style: AppFonts.suite.caption_md_500(context).copyWith(
+                          color: AppColors.pri700),
                     ),
-                    if (events.isNotEmpty) _buildMarkerContent(events.first['result'], context),
+                    if (events.isNotEmpty) _buildMarkerContent(
+                        events.first['result'], context),
                   ],
                 ),
                 Container(
@@ -1196,7 +1255,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 children: [
                   Text(
                     '${day.day}',
-                    style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray700),
+                    style: AppFonts.suite.caption_md_500(context).copyWith(
+                        color: AppColors.gray700),
                   ),
                   _buildMarkerContent(gameResult, context),
                 ],
@@ -1217,7 +1277,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 padding: EdgeInsets.only(top: scaleHeight(4)),
                 child: Text(
                   '${day.day}',
-                  style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200),
+                  style: AppFonts.suite.c1_m(context).copyWith(
+                      color: AppColors.gray200),
                 ),
               ),
             ),
@@ -1238,7 +1299,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 padding: EdgeInsets.only(top: scaleHeight(4)),
                 child: Text(
                   '${day.day}',
-                  style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray200),
+                  style: AppFonts.suite.c1_m(context).copyWith(
+                      color: AppColors.gray200),
                 ),
               ),
             ),
@@ -1251,7 +1313,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           _focusedDay = focusedDay;
         });
         // TODO: 선택한 날짜 처리
-        print('Selected day: $selectedDay, Events: ${_getEventsForDay(selectedDay)}');
+        print('Selected day: $selectedDay, Events: ${_getEventsForDay(
+            selectedDay)}');
       },
       onPageChanged: _onCalendarPageChanged,
     );
@@ -1349,7 +1412,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             children: [
               Text(
                 '${_focusedDay.month}월 직관 분석',
-                style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900,),
+                style: AppFonts.suite.body_sm_500(context).copyWith(
+                  color: AppColors.gray900,),
               ),
               SizedBox(width: scaleWidth(6)),
               Container(
@@ -1375,7 +1439,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             Center(
               child: Text(
                 '업로드한 기록이 아직 없어요',
-                style: AppFonts.suite.body_md_500(context).copyWith(color: AppColors.gray300,
+                style: AppFonts.suite.body_md_500(context).copyWith(
+                  color: AppColors.gray300,
                 ),
               ),
             )
@@ -1397,7 +1462,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                       ),
                       Text(
                         '${_formatWinRate(stats!['winRate'] ?? 0.0)} %',
-                        style: AppFonts.pretendard.title_sm_600(context).copyWith(color: AppColors.gray900,
+                        style: AppFonts.pretendard.title_sm_600(context)
+                            .copyWith(color: AppColors.gray900,
                         ),
                       ),
                     ],
@@ -1414,7 +1480,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                       ),
                       Text(
                         '${stats!['recordCount'] ?? 0} 회',
-                        style: AppFonts.pretendard.title_sm_600(context).copyWith(
+                        style: AppFonts.pretendard.title_sm_600(context)
+                            .copyWith(
                           color: AppColors.gray900,
                         ),
                       ),
@@ -1432,7 +1499,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                       ),
                       Text(
                         '${stats!['totalLikes'] ?? 0} 회',
-                        style: AppFonts.pretendard.title_sm_600(context).copyWith(
+                        style: AppFonts.pretendard.title_sm_600(context)
+                            .copyWith(
                           color: AppColors.gray900,
                         ),
                       ),
@@ -1449,14 +1517,12 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
 
   // 승률 포맷팅 함수 (0과 100만 정수, 나머지는 백엔드 값 그대로)
   String _formatWinRate(double winRate) {
-
-    // 0 또는 100인 경우만 정수로 표시
-    if (winRate == 0.0 || winRate == 100.0 || (winRate*10)%10==0) {
+    // 소수점 이하가 0이면 정수로 표시
+    if (winRate % 1 == 0) {
       return winRate.toInt().toString();
     }
-
-    // 나머지는 백엔드에서 온 값 그대로 toString()
-    return winRate.toString();
+    // 아니면 소수점 한 자리까지
+    return winRate.toStringAsFixed(1);
   }
 }
 

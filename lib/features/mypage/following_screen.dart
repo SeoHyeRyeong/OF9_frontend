@@ -148,7 +148,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: widget.targetUserId != null,
+      canPop: true,
       onPopInvoked: (didPop) {
         // 내 팔로잉 목록(targetUserId == null)에서만 MyPage로 이동
         if (!didPop && widget.targetUserId == null) {

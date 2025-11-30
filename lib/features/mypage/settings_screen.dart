@@ -13,6 +13,9 @@ import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:frontend/components/custom_popup_dialog.dart';
 import 'package:frontend/features/mypage/block_screen.dart';
+import 'dart:math' as math;
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter/foundation.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -37,11 +40,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool isAccountPublic = false;
 
   final kakaoAuthService = KakaoAuthService();
+  List<dynamic> blockedUsers = [];
+  String appVersion = "beta"; // 초기값
 
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+    _loadBlockedUsers();
+    _loadAppVersion();
   }
 
   /// 사용자 정보 불러오기
@@ -97,41 +104,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // 👈 [수정] 1. 로그아웃 확인 팝업 (CustomConfirmDialog 사용)
+  /// 차단된 계정 목록
+  Future<void> _loadBlockedUsers() async {
+    try {
+      final response = await UserApi.getBlockedUsers();
+      if (response['success'] == true) {
+        setState(() {
+          blockedUsers = response['data'] ?? [];
+        });
+      }
+    } catch (e) {
+      print('❌ 차단된 계정 목록 불러오기 실패: $e');
+    }
+  }
+
+  // 로그아웃 확인 팝업
   Future<void> _handleLogout() async {
     showDialog(
       context: context,
-      builder: (context) => CustomConfirmDialog( // 👈 새 컴포넌트 사용
+      builder: (context) => CustomConfirmDialog(
         title: "로그아웃 하시겠어요?",
         subtitle: "재접속 시, 다시 로그인 하셔야 해요.",
-        leftButtonText: "취소", // 👈 파라미터 이름 변경됨
+        leftButtonText: "취소",
         leftButtonAction: () => Navigator.of(context).pop(),
-        rightButtonText: "로그아웃", // 👈 파라미터 이름 변경됨
+        rightButtonText: "로그아웃",
         rightButtonAction: () async {
-          Navigator.of(context).pop(); // 팝업 닫기
-          await _performLogout(); // 실제 로그아웃 로직 실행
+          Navigator.of(context).pop();
+          await _performLogout();
         },
       ),
     );
   }
 
-  /// 👈 [수정] 2. 실제 로그아웃 "처리" 로직 (기존 코드를 분리)
+  // 로그아웃 처리 로직
   Future<void> _performLogout() async {
     try {
       print('🚪 로그아웃 시작');
-
       await UserApi.logout();
       print('1. 백엔드 로그아웃 성공');
-
       await kakaoAuthService.clearTokens();
       print('2. 로컬 토큰 삭제 완료');
-
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
             (route) => false,
       );
-
       print('3. 로그아웃 완료');
     } catch (e) {
       print('❌ 로그아웃 실패: $e');
@@ -144,49 +161,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // 👈 [수정] 3. 회원 탈퇴 확인 팝업 (CustomConfirmDialog 사용)
+  //  회원 탈퇴 확인 팝업
   Future<void> _handleAccountDeletion() async {
-    // 👈 [수정] 기존 AlertDialog 코드를 CustomConfirmDialog로 대체
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
-        return CustomConfirmDialog( // 👈 새 컴포넌트 사용
+        return CustomConfirmDialog(
           title: "정말로 탈퇴 하시겠어요?",
           subtitle: "탈퇴 시, 기록한 정보는 모두 삭제돼요.",
-          leftButtonText: "취소", // 👈 파라미터 이름 변경됨
-          leftButtonAction: () => Navigator.of(context).pop(false), // 👈 false 반환
-          rightButtonText: "탈퇴", // 👈 파라미터 이름 변경됨
-          rightButtonAction: () => Navigator.of(context).pop(true), // 👈 true 반환
+          leftButtonText: "취소",
+          leftButtonAction: () => Navigator.of(context).pop(false),
+          rightButtonText: "탈퇴",
+          rightButtonAction: () => Navigator.of(context).pop(true),
         );
       },
     );
 
     if (confirmed != true) return;
-
-    // 👈 [수정] 4. 실제 탈퇴 로직을 별도 메서드로 분리
     await _performAccountDeletion();
   }
 
-  /// 👈 [수정] 4. 실제 회원 탈퇴 "처리" 로직 (기존 코드를 분리)
+  // 회원 탈퇴 처리 로직
   Future<void> _performAccountDeletion() async {
     try {
       print('🗑️ 회원탈퇴 시작');
-
       await UserApi.deleteAccount();
       print('1. 백엔드 회원탈퇴 성공');
-
       await kakaoAuthService.unlinkKakaoAccount();
       print('2. 카카오 연결 해제 완료');
-
       await kakaoAuthService.clearTokens();
       print('3. 로컬 토큰 삭제 완료');
-
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
             (route) => false,
       );
-
       print('4. 회원탈퇴 완료');
     } catch (e) {
       print('❌ 회원탈퇴 실패: $e');
@@ -241,6 +250,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  ///버전 관리
+  Future<void> _loadAppVersion() async {
+    PackageInfo info = await PackageInfo.fromPlatform();
+    String nowVersion = info.version; // "1.0.0"
+
+    setState(() {
+      // 디버깅 모드 = beta, 릴리스 = 실제 버전
+      appVersion = kDebugMode ? "beta" : nowVersion;
+    });
+  }
+  Widget _buildVersionContainer() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: scaleWidth(16),
+          vertical: scaleHeight(16),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            FixedText(
+              "버전 정보",
+              style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+            ),
+            FixedText(
+              appVersion,  // "beta" 또는 "1.0.0"
+              style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray700),
+            ),
+          ],
         ),
       ),
     );
@@ -330,7 +377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              // 뒤로가기 영역 (고정)
+              // 뒤로가기 영역
               Container(
                 height: scaleHeight(60),
                 color: AppColors.gray30,
@@ -487,7 +534,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       child: Center(
                                         child: FixedText(
                                           "수정",
-                                          style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri800),
+                                          style: AppFonts.suite.caption_md_400(context).copyWith(color: AppColors.pri800),
                                         ),
                                       ),
                                     ),
@@ -577,15 +624,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: Container(
                                       color: Colors.transparent,
                                       height: scaleHeight(52),
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Padding(
-                                          padding: EdgeInsets.only(left: scaleWidth(16)),
-                                          child: FixedText(
-                                            "차단된 계정",
-                                            style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+                                      padding: EdgeInsets.only(right: scaleWidth(16)),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          // 왼쪽 텍스트
+                                          Padding(
+                                            padding: EdgeInsets.only(left: scaleWidth(16)),
+                                            child: FixedText(
+                                              "차단된 계정",
+                                              style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+                                            ),
                                           ),
-                                        ),
+                                          Row(
+                                            children: [
+                                              FixedText(
+                                                '${blockedUsers.length}',
+                                                style: AppFonts.pretendard.caption_md_400(context).copyWith(
+                                                  color: AppColors.gray700,
+                                                ),
+                                              ),
+                                              SizedBox(width: scaleWidth(8)),
+                                              Transform.rotate(
+                                                angle: -math.pi / 2,
+                                                child: SvgPicture.asset(
+                                                  AppImages.dropdown,
+                                                  color: AppColors.gray700,
+                                                  width: scaleWidth(16),
+                                                  height: scaleHeight(16),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -603,17 +674,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  _buildMenuButton("버전 정보", () {
-                                    print('버전 정보 버튼 클릭');
-                                  }),
+                                  _buildVersionContainer(),
                                   _buildMenuButton("이용 약관", () {
                                     _launchUrl('https://www.notion.so/24bf22b2f4cd8027bf3ada45e3970e9e?source=copy_link');
                                   }),
                                   _buildMenuButton("개인정보 처리방침", () {
                                     _launchUrl('https://www.notion.so/24bf22b2f4cd80f0a0efeab79c6861ae?source=copy_link');
                                   }),
-                                  _buildMenuButton("로그아웃", _handleLogout), // 👈 수정됨
-                                  _buildMenuButton("회원 탈퇴", _handleAccountDeletion), // 👈 수정됨
+                                  _buildMenuButton("로그아웃", _handleLogout),
+                                  _buildMenuButton("회원 탈퇴", _handleAccountDeletion),
                                 ],
                               ),
                             ),

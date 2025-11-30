@@ -146,7 +146,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: widget.targetUserId != null,
+      canPop: true,
       onPopInvoked: (didPop) {
         if (!didPop && widget.targetUserId == null) {
           Navigator.pushReplacement(

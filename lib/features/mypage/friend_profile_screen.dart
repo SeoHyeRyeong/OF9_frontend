@@ -215,11 +215,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     }
   }
 
-  Future<void> _loadMyRecords() async {
-    setState(() {
-      isLoadingRecords = true;
-    });
-
+  Future<void> _loadMyRecords({bool showLoadingIndicator = true}) async {
+    if (showLoadingIndicator) {
+      setState(() {
+        isLoadingRecords = true;
+      });
+    }
     try {
       if (selectedTabIndex == 0) { // 캘린더
         await _loadCalendarData();
@@ -234,6 +235,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       setState(() {
         feedList = [];
         calendarData = {};
+        isLoadingRecords = false;
+      });
+    }
+
+    if (showLoadingIndicator && mounted) {
+      setState(() {
         isLoadingRecords = false;
       });
     }
@@ -1086,6 +1093,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   /// 캘린더 헤더
   Widget _buildCalendarHeader() {
+    final isFirstMonth = _focusedDay.year == 2025 && _focusedDay.month == 1;
+    final isLastMonth = _focusedDay.year == 2025 && _focusedDay.month == 12;
+
     return Padding(
       padding: EdgeInsets.only(top: scaleHeight(20), bottom: scaleHeight(8)),
       child: Row(
@@ -1096,11 +1106,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               GestureDetector(
-                onTap: () {
+                onTap: isFirstMonth ? null : () {
                   setState(() {
                     _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
                   });
-                  _loadMyRecords();
+                  _loadMyRecords(showLoadingIndicator: false);
                 },
                 child: Padding(
                   padding: EdgeInsets.only(right: scaleWidth(10)),
@@ -1116,11 +1126,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray900),
               ),
               GestureDetector(
-                onTap: () {
+                onTap: isLastMonth ? null : ()  {
                   setState(() {
                     _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
                   });
-                  _loadMyRecords();
+                  _loadMyRecords(showLoadingIndicator: false);
                 },
                 child: Padding(
                   padding: EdgeInsets.only(left: scaleWidth(10)),
@@ -1143,7 +1153,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 _focusedDay = now;
                 _selectedDay = now;
               });
-              _loadMyRecords();
+              _loadMyRecords(showLoadingIndicator: false);
             },
             child: Container(
               width: scaleWidth(44),
@@ -1169,12 +1179,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     return TableCalendar(
       locale: 'ko_KR',
       focusedDay: _focusedDay,
-      firstDay: DateTime.utc(2024),
-      lastDay: DateTime.utc(2026),
+      firstDay: DateTime(2025, 1, 1),
+      lastDay: DateTime(2025, 12, 31),
       calendarFormat: _calendarFormat,
       availableGestures: AvailableGestures.horizontalSwipe,
       headerVisible: false,
-      sixWeekMonthsEnforced: true, // 6주 달력 고정
+      sixWeekMonthsEnforced: false,
       rowHeight: scaleHeight(60),
       daysOfWeekHeight: scaleHeight(45),
       calendarStyle: CalendarStyle(

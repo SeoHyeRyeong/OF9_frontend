@@ -169,13 +169,12 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     }
   }
 
-  // ▼▼▼ [수정] showLoadingIndicator 파라미터 추가
+  // showLoadingIndicator 파라미터 추가
   Future<void> _loadMyRecords({bool showLoadingIndicator = true}) async {
-    // ▼▼▼ [수정] showLoadingIndicator가 true일 때만 로딩 상태 변경
+    //  showLoadingIndicator가 true일 때만 로딩 상태 변경
     if (showLoadingIndicator) {
       setState(() => isLoadingRecords = true);
     }
-    // ▲▲▲
 
     try {
       if (selectedTabIndex == 0) {
@@ -1060,6 +1059,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
 
   //달력 헤더
   Widget _buildCalendarHeader() {
+    final isFirstMonth = _focusedDay.year == 2025 && _focusedDay.month == 1;
+    final isLastMonth = _focusedDay.year == 2025 && _focusedDay.month == 12;
+
     return Padding(
       padding: EdgeInsets.only(top: scaleHeight(20), bottom: scaleHeight(8)),
       child: Row(
@@ -1070,12 +1072,11 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             mainAxisSize: MainAxisSize.min,
             children: [
               GestureDetector(
-                onTap: () {
+                onTap: isFirstMonth ? null : () {
                   setState(() {
-                    _focusedDay =
-                        DateTime(_focusedDay.year, _focusedDay.month - 1);
+                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
                   });
-                  _loadMyRecords();
+                  _loadMyRecords(showLoadingIndicator: false);
                 },
                 child: Padding(
                   padding: EdgeInsets.only(right: scaleWidth(10)),
@@ -1092,12 +1093,11 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                     color: AppColors.gray900),
               ),
               GestureDetector(
-                onTap: () {
+                onTap: isLastMonth ? null : () {
                   setState(() {
-                    _focusedDay =
-                        DateTime(_focusedDay.year, _focusedDay.month + 1);
+                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
                   });
-                  _loadMyRecords();
+                  _loadMyRecords(showLoadingIndicator: false);
                 },
                 child: Padding(
                   padding: EdgeInsets.only(left: scaleWidth(10)),
@@ -1121,7 +1121,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 _focusedDay = now;
                 _selectedDay = now;
               });
-              _loadMyRecords();
+              _loadMyRecords(showLoadingIndicator: false);
             },
             child: Container(
               width: scaleWidth(44),
@@ -1148,12 +1148,12 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     return TableCalendar(
       locale: 'ko_KR',
       focusedDay: _focusedDay,
-      firstDay: DateTime.utc(2024),
-      lastDay: DateTime.utc(2026),
+      firstDay: DateTime(2025, 1, 1),
+      lastDay: DateTime(2025, 12, 31),
       calendarFormat: _calendarFormat,
       availableGestures: AvailableGestures.horizontalSwipe,
       headerVisible: false,
-      sixWeekMonthsEnforced: true,
+      sixWeekMonthsEnforced: false,
       // 6주 달력 고정
       rowHeight: scaleHeight(60),
       daysOfWeekHeight: scaleHeight(45),
@@ -1540,12 +1540,9 @@ class _MyPageTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Material(
-      elevation: shrinkOffset > 0 ? 1.0 : 0.0,
-      child: Container(
-        color: Colors.white,
-        child: child,
-      ),
+   return Container(
+      color: Colors.white,
+      child: child,
     );
   }
 

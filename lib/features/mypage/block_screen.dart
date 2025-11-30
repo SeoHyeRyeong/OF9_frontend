@@ -88,91 +88,62 @@ class _BlockScreenState extends State<BlockScreen> {
     }
   }
 
-  Future<void> _handleUnblock(int index) async {
+  Future _handleUnblock(int index) async {
     final user = blockedUsers[index];
     final userId = user['userId'];
     final nickname = user['nickname'];
     final profileImageUrl = user['profileImageUrl'];
 
-    // 이미 대기 중이면 중복 실행 방지
     if (unblockPendingMap[userId] == true) {
-      print('⚠️ 이미 차단 해제 대기 중: $nickname');
+      print('⚠️ 이미 진행 중: $nickname');
       return;
     }
 
     unblockPendingMap[userId] = true;
-    cancelledMap[userId] = false;
 
-    // UI를 먼저 변경 (차단됨 → 팔로우)
     setState(() {
       blockedUsers[index]['isBlocked'] = false;
       blockedUsers[index]['followStatus'] = 'NOT_FOLLOWING';
     });
 
-    // 토스트 표시
+    try {
+      await UserApi.unblockUser(userId);
+      print('✅ 차단 해제 성공: $nickname');
+    } catch (e) {
+      print('❌ 차단 해제 실패: $e');
+      setState(() {
+        blockedUsers[index]['isBlocked'] = true;
+        blockedUsers[index]['followStatus'] = 'NOT_FOLLOWING';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('차단 해제 실패'), backgroundColor: Colors.red),
+      );
+      unblockPendingMap[userId] = false;
+      return;
+    }
+
     CustomToast.showWithProfile(
       context: context,
       profileImageUrl: profileImageUrl,
       defaultIconAsset: AppImages.profile,
       nickname: nickname,
-      message: '차단을 해제하시겠어요?',
+      message: '차단이 해제되었습니다',
       duration: Duration(seconds: 3),
-      onCancel: () {
-        print('❌ 차단 해제 취소 버튼 클릭: $nickname');
-
-        // 타이머 취소
-        unblockTimerMap[userId]?.cancel();
-        unblockTimerMap[userId] = null;
-
-        cancelledMap[userId] = true;
-        setState(() {
-          blockedUsers[index]['isBlocked'] = true;
-          blockedUsers[index]['followStatus'] = 'NOT_FOLLOWING';
-        });
-        unblockPendingMap[userId] = false;
-      },
-    );
-
-    // 🔑 Timer로 3초 후 실행 (취소 가능)
-    unblockTimerMap[userId] = Timer(Duration(seconds: 3), () async {
-      // 취소되었는지 체크
-      if (cancelledMap[userId] == true) {
-        print('⏹️ 차단 해제가 취소되었습니다: $nickname');
-        return;
-      }
-
-      // 이미 _handleFollow에서 처리되었으면 스킵
-      if (unblockPendingMap[userId] == false) {
-        print('⏩ 이미 차단 해제 처리됨 (팔로우 버튼 클릭으로)');
-        return;
-      }
-
-      // 실제 API 호출
-      try {
-        await UserApi.unblockUser(userId);
-        print('✅ 차단 해제 성공: $nickname');
-      } catch (e) {
-        print('❌ 차단 해제 실패: $e');
-        // API 실패 시 UI 복구
-        if (mounted) {
+      onCancel: () async {
+        try {
+          await UserApi.blockUser(userId);
+          // UI 복구
           setState(() {
             blockedUsers[index]['isBlocked'] = true;
             blockedUsers[index]['followStatus'] = 'NOT_FOLLOWING';
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('차단 해제에 실패했습니다.'),
-              backgroundColor: Colors.red,
-            ),
-          );
+        } catch (e) {
         }
-      } finally {
-        // 상태 정리
         unblockPendingMap[userId] = false;
-        cancelledMap[userId] = false;
-        unblockTimerMap[userId] = null;
-      }
-    });
+      },
+    );
+
+    unblockPendingMap[userId] = false;
   }
 
   Future<void> _handleFollow(int index) async {

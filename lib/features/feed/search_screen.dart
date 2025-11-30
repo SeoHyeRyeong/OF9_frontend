@@ -1224,7 +1224,7 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
                   ),
                   SizedBox(height: scaleHeight(8)),
                   FixedText(
-                    widget.user.favTeam,
+                    "${widget.user.favTeam} 팬",
                     style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray400),
                     overflow: TextOverflow.ellipsis,
                   ),

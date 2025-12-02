@@ -25,7 +25,6 @@ class KakaoAuthService {
   /// 1) 카카오 로그인 → 액세스 토큰 획득 (기존 로직 유지)
   Future<String?> kakaoLogin() async {
     try {
-      print('🚀 카카오 로그인 시작...');
       OAuthToken token;
 
       if (await isKakaoTalkInstalled()) {

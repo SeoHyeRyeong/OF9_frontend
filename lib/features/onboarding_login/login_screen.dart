@@ -72,9 +72,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (kakaoAccessToken == null) {
         setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('카카오 로그인 실패')),
-        );
         return;
       }
 

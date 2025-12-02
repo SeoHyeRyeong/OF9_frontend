@@ -47,7 +47,7 @@ android {
         // .env에서 값들 읽어오기
         val envProps = loadEnvFile()
         val backendUrl = envProps.getProperty("BACKEND_URL") ?: "http://localhost:8080"
-        val nativeAppKey = keyProperties["NATIVE_APP_KEY"]?.toString() ?: ""
+        val nativeAppKey = envProps.getProperty("NATIVE_APP_KEY") ?: "URL"
 
         // URL에서 호스트만 추출
         val backendHost = backendUrl.replace(Regex("^https?://"), "").replace(Regex(":.*$"), "")

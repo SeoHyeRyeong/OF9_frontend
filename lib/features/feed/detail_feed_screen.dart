@@ -427,7 +427,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
             recordState.updateLongContent(_recordDetail?['longContent'] as String? ?? '');
             recordState.updateBestPlayer(_recordDetail?['bestPlayer'] as String? ?? '');
 
-            // 동행 친구
+            // 친구 태그
             final companions = _recordDetail?['companions'] as List<dynamic>?;
             if (companions != null && companions.isNotEmpty) {
               recordState.updateCompanions(

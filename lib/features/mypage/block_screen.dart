@@ -137,8 +137,7 @@ class _BlockScreenState extends State<BlockScreen> {
             blockedUsers[index]['isBlocked'] = true;
             blockedUsers[index]['followStatus'] = 'NOT_FOLLOWING';
           });
-        } catch (e) {
-        }
+        } catch (e) {}
         unblockPendingMap[userId] = false;
       },
     );

@@ -802,12 +802,25 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                           color: AppColors.gray50,
                                           borderRadius: BorderRadius.circular(8),
                                         ),
-                                        child: FixedText(
-                                          selectedSeat ?? extractedSeat ?? '좌석 정보를 작성해 주세요',
-                                          style: AppFonts.pretendard.body_sm_400(context).copyWith(
-                                            color: ((selectedSeat ?? extractedSeat) == null || (selectedSeat ?? extractedSeat)!.isEmpty)
-                                                ? AppColors.gray300 : AppColors.gray900,
-                                          ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: FixedText(
+                                                selectedSeat ?? extractedSeat ?? '좌석 정보를 작성해 주세요',
+                                                style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                                                  color: (selectedSeat ?? extractedSeat) == null || (selectedSeat ?? extractedSeat)!.isEmpty
+                                                      ? AppColors.gray300 : AppColors.gray900,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: scaleWidth(14)),
+                                            SvgPicture.asset(
+                                              AppImages.dropdown,
+                                              width: scaleWidth(20),
+                                              height: scaleHeight(20),
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),

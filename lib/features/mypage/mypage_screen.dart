@@ -850,10 +850,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   }
 
   Widget _buildRealtimeTabIndicator() {
-    final screenWidth = MediaQuery
-        .of(context)
-        .size
-        .width - scaleWidth(43.5 * 2);
+    final screenWidth = MediaQuery.of(context).size.width - scaleWidth(43.5 * 2);
     final tabWidth = scaleWidth(51);
 
     final scrollProgress = _currentTabPageValue.clamp(0.0, 2.0);
@@ -897,8 +894,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         children: [
           _buildCalendarHeader(),
           _buildTableCalendar(),
-          SizedBox(height: scaleHeight(24)),
+          SizedBox(height: scaleHeight(25)),
           _buildStatsPanel(),
+          SizedBox(height: scaleHeight(15)),
         ],
       ),
     );
@@ -1063,7 +1061,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     final isLastMonth = _focusedDay.year == 2025 && _focusedDay.month == 12;
 
     return Padding(
-      padding: EdgeInsets.only(top: scaleHeight(20), bottom: scaleHeight(8)),
+      padding: EdgeInsets.only(top: scaleHeight(20), bottom: scaleHeight(20)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -1071,50 +1069,58 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              GestureDetector(
-                onTap: isFirstMonth ? null : () {
-                  setState(() {
-                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
-                  });
-                  _loadMyRecords(showLoadingIndicator: false);
-                },
-                child: Padding(
-                  padding: EdgeInsets.only(right: scaleWidth(10)),
-                  child: SvgPicture.asset(
-                    AppImages.polygon_left,
-                    width: scaleWidth(14),
-                    height: scaleHeight(12),
+              if (!isFirstMonth)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
+                    });
+                    _loadMyRecords(showLoadingIndicator: false);
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.only(right: scaleWidth(10)),
+                    child: SvgPicture.asset(
+                      AppImages.polygon_left,
+                      width: scaleWidth(14),
+                      height: scaleHeight(12),
+                    ),
                   ),
-                ),
-              ),
+                )
+              else
+                SizedBox(width: scaleWidth(24)),
               Text(
                 DateFormat('yyyy년  M월', 'ko_KR').format(_focusedDay),
-                style: AppFonts.suite.head_sm_700(context).copyWith(
-                    color: AppColors.gray900),
-              ),
-              GestureDetector(
-                onTap: isLastMonth ? null : () {
-                  setState(() {
-                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
-                  });
-                  _loadMyRecords(showLoadingIndicator: false);
-                },
-                child: Padding(
-                  padding: EdgeInsets.only(left: scaleWidth(10)),
-                  child: SvgPicture.asset(
-                    AppImages.polygon_right,
-                    width: scaleWidth(14),
-                    height: scaleHeight(12),
-                  ),
+                style: AppFonts.pretendard.head_sm_600(context).copyWith(
+                  color: AppColors.gray900,
+                  fontWeight: FontWeight.w500,
+                  fontSize: scaleFont(16.8),
                 ),
               ),
+              if (!isLastMonth)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
+                    });
+                    _loadMyRecords(showLoadingIndicator: false);
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.only(left: scaleWidth(10)),
+                    child: SvgPicture.asset(
+                      AppImages.polygon_right,
+                      width: scaleWidth(14),
+                      height: scaleHeight(12),
+                    ),
+                  ),
+                )
+              else
+                SizedBox(width: scaleWidth(24)),
             ],
           ),
           GestureDetector(
             onTap: () {
               final now = DateTime.now();
-              if (_focusedDay.year == now.year &&
-                  _focusedDay.month == now.month) {
+              if (_focusedDay.year == now.year && _focusedDay.month == now.month) {
                 return;
               }
               setState(() {
@@ -1133,8 +1139,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               alignment: Alignment.center,
               child: Text(
                 '오늘',
-                style: AppFonts.suite.caption_md_500(context).copyWith(
-                    color: AppColors.pri800),
+                style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.pri800),
               ),
             ),
           ),
@@ -1154,11 +1159,10 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       availableGestures: AvailableGestures.horizontalSwipe,
       headerVisible: false,
       sixWeekMonthsEnforced: false,
-      // 6주 달력 고정
-      rowHeight: scaleHeight(60),
-      daysOfWeekHeight: scaleHeight(45),
+      rowHeight: scaleHeight(75),
+      daysOfWeekHeight: scaleHeight(33),
       calendarStyle: CalendarStyle(
-        cellMargin: EdgeInsets.all(scaleWidth(4)),
+        cellMargin: EdgeInsets.zero,
         // 기본 날짜 셀 스타일 (gray30)
         defaultDecoration: BoxDecoration(
           color: AppColors.gray30,
@@ -1173,78 +1177,114 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           borderRadius: BorderRadius.circular(scaleWidth(6)),
         ),
         todayDecoration: BoxDecoration(
-          color: AppColors.pri100, // pri300 -> pri100로 변경
+          color: AppColors.pri100,
           borderRadius: BorderRadius.circular(scaleWidth(6)),
           border: Border.all(color: AppColors.pri300, width: 1),
         ),
-        todayTextStyle: AppFonts.suite.caption_md_500(context).copyWith(
-            color: AppColors.pri700),
+        todayTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.pri700),
         // 텍스트 스타일
-        defaultTextStyle: AppFonts.suite.caption_md_500(context).copyWith(
-            color: AppColors.gray200),
-        // gray200
-        weekendTextStyle: AppFonts.suite.caption_md_500(context).copyWith(
-            color: AppColors.gray200),
-        // gray200
-        outsideTextStyle: AppFonts.suite.caption_md_500(context).copyWith(
-            color: AppColors.gray200), // 텍스트도 gray200
+        defaultTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200),
+        weekendTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200),
+        outsideTextStyle: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray200),
       ),
-      // 요일 헤더 스타일 - gray700
+      // 요일 헤더 스타일
       daysOfWeekStyle: DaysOfWeekStyle(
-        weekdayStyle: AppFonts.suite.caption_md_500(context).copyWith(
-            color: AppColors.gray700), // gray700
-        weekendStyle: AppFonts.suite.caption_md_500(context).copyWith(
-            color: AppColors.gray700), // gray700
+        weekdayStyle: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray700),
+        weekendStyle: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray700),
       ),
       calendarBuilders: CalendarBuilders(
-        // 오늘 날짜 커스텀 UI
-        todayBuilder: (context, day, focusedDay) {
-          final events = _getEventsForDay(day);
+        // 비활성화된 날짜 (2025년 범위 밖)
+        disabledBuilder: (context, day, focusedDay) {
           return Container(
-            constraints: BoxConstraints.expand(),
-            margin: EdgeInsets.all(scaleWidth(2)),
+            constraints: const BoxConstraints.expand(),
+            margin: EdgeInsets.symmetric(
+              horizontal: scaleWidth(2.145),
+              vertical: scaleHeight(7),
+            ),
+            color: Colors.transparent,
+          );
+        },
+
+        // 오늘 날짜 UI
+        todayBuilder: (context, day, focusedDay) {
+          final now = DateTime.now();
+          final events = _getEventsForDay(day);
+          if (focusedDay.year != now.year || focusedDay.month != now.month) {
+            return Container(
+              constraints: const BoxConstraints.expand(),
+              margin: EdgeInsets.symmetric(
+                horizontal: scaleWidth(2.145),
+                vertical: scaleHeight(7),
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(scaleWidth(6)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(height: scaleHeight(4)),
+                  Text(
+                    '${day.day}',
+                    style: AppFonts.suite.caption_md_500(context).copyWith(
+                        color: AppColors.gray200),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // 오늘 달력에서는 오늘 스타일
+          return Container(
+            constraints: const BoxConstraints.expand(),
+            margin: EdgeInsets.symmetric(
+              horizontal: scaleWidth(2.145),
+              vertical: scaleHeight(7),
+            ),
             decoration: BoxDecoration(
               color: AppColors.pri100,
               borderRadius: BorderRadius.circular(scaleWidth(6)),
               border: Border.all(color: AppColors.pri300, width: 1),
             ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Column(
-                  children: [
-                    Text(
-                      '${day.day}',
-                      style: AppFonts.suite.caption_md_500(context).copyWith(
-                          color: AppColors.pri700),
-                    ),
-                    if (events.isNotEmpty) _buildMarkerContent(
-                        events.first['result'], context),
-                  ],
+                SizedBox(height: scaleHeight(4)),
+                Text(
+                  '${day.day}',
+                  style: AppFonts.suite.caption_md_500(context).copyWith(
+                      color: AppColors.pri700),
                 ),
-                Container(
-                  margin: EdgeInsets.only(bottom: scaleHeight(8)),
-                  child: Text(
-                    '오늘',
-                    style: AppFonts.suite.caption_md_500(context).copyWith(
-                      color: AppColors.pri600,
-                      fontSize: 10.sp,
-                    ),
+                SizedBox(height: scaleHeight(10)),
+                Text(
+                  '오늘',
+                  style: AppFonts.suite.caption_md_500(context).copyWith(
+                    color: AppColors.pri600,
+                    fontSize: 10.sp,
                   ),
                 ),
+                if (events.isNotEmpty) ...[
+                  const Spacer(),
+                  _buildMarkerContent(events.first['result'], context),
+                  SizedBox(height: scaleHeight(4)),
+                ],
               ],
             ),
           );
         },
+
         // 기본 날짜 커스텀 UI
         defaultBuilder: (context, day, focusedDay) {
           final events = _getEventsForDay(day);
           if (events.isNotEmpty) {
             final gameResult = events.first['result'];
             return Container(
-              constraints: BoxConstraints.expand(),
-              margin: EdgeInsets.all(scaleWidth(2)),
+              constraints: const BoxConstraints.expand(),
+              margin: EdgeInsets.symmetric(
+                horizontal: scaleWidth(2.145),
+                vertical: scaleHeight(7),
+              ),
               decoration: BoxDecoration(
                 color: AppColors.gray20,
                 borderRadius: BorderRadius.circular(scaleWidth(6)),
@@ -1253,6 +1293,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  SizedBox(height: scaleHeight(4)),
                   Text(
                     '${day.day}',
                     style: AppFonts.suite.caption_md_500(context).copyWith(
@@ -1263,46 +1304,52 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
               ),
             );
           }
-
+          // 마커 없는 날
           return Container(
-            constraints: BoxConstraints.expand(),
-            margin: EdgeInsets.all(scaleWidth(2)),
+            constraints: const BoxConstraints.expand(),
+            margin: EdgeInsets.symmetric(
+              horizontal: scaleWidth(2.145),
+              vertical: scaleHeight(7),
+            ),
             decoration: BoxDecoration(
               color: AppColors.gray30,
               borderRadius: BorderRadius.circular(scaleWidth(6)),
             ),
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(4)),
-                child: Text(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: scaleHeight(4)),
+                Text(
                   '${day.day}',
-                  style: AppFonts.suite.c1_m(context).copyWith(
+                  style: AppFonts.suite.caption_md_500(context).copyWith(
                       color: AppColors.gray200),
                 ),
-              ),
+              ],
             ),
           );
         },
         // 외부 날짜 커스텀 UI
         outsideBuilder: (context, day, focusedDay) {
           return Container(
-            constraints: BoxConstraints.expand(),
-            margin: EdgeInsets.all(scaleWidth(2)),
+            constraints: const BoxConstraints.expand(),
+            margin: EdgeInsets.symmetric(
+              horizontal: scaleWidth(2.145),
+              vertical: scaleHeight(7),
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(scaleWidth(6)),
             ),
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: EdgeInsets.only(top: scaleHeight(4)),
-                child: Text(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: scaleHeight(4)),
+                Text(
                   '${day.day}',
-                  style: AppFonts.suite.c1_m(context).copyWith(
+                  style: AppFonts.suite.caption_md_500(context).copyWith(
                       color: AppColors.gray200),
                 ),
-              ),
+              ],
             ),
           );
         },
@@ -1312,13 +1359,12 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           _selectedDay = selectedDay;
           _focusedDay = focusedDay;
         });
-        // TODO: 선택한 날짜 처리
-        print('Selected day: $selectedDay, Events: ${_getEventsForDay(
-            selectedDay)}');
+        print('Selected day: $selectedDay, Events: ${_getEventsForDay(selectedDay)}');
       },
       onPageChanged: _onCalendarPageChanged,
     );
   }
+
 
   // '승/패/무/ETC' 마커 위젯 (SVG 아이콘 사용)
   Widget _buildMarkerContent(String? gameResult, BuildContext context) {
@@ -1359,20 +1405,22 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙 정렬
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // 마커 아이콘
         SvgPicture.asset(
           imagePath,
           width: scaleWidth(22),
           height: scaleHeight(22),
         ),
+        SizedBox(height: scaleHeight(1)),
+
+        // 승/패/무/ETC 텍스트
         Text(
           text,
           style: AppFonts.suite.c3_sb(context).copyWith(
             color: textColor,
-            fontSize: 8.sp,
-            height: 1.25,
-            letterSpacing: 0,
+            fontSize: 8.sp
           ),
         ),
       ],

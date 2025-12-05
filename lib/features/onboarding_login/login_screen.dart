@@ -159,9 +159,8 @@ class _LoginScreenState extends State<LoginScreen> {
               // 3. Title
               FixedText(
                 onboardingData[_currentIndex]['title']!,
-                style: AppFonts.suite.title_md_700(context).copyWith(
+                style: AppFonts.pretendard.title_md_600(context).copyWith(
                   color: AppColors.gray800,
-                  fontWeight: FontWeight.w700,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -170,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // 4. Subtitle
               FixedText(
                 onboardingData[_currentIndex]['subtitle']!,
-                style: AppFonts.suite.body_md_500(context).copyWith(
+                style: AppFonts.pretendard.body_md_400(context).copyWith(
                   color: AppColors.gray500,
                 ),
                 textAlign: TextAlign.center,
@@ -205,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(width: scaleWidth(8)),
                       FixedText(
                         '카카오로 로그인',
-                        style: AppFonts.suite.head_sm_700(context).copyWith(
+                        style: AppFonts.pretendard.head_sm_600(context).copyWith(
                           color: AppColors.kakao02,
                         ),
                       ),
@@ -218,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // 6. 로그인 문제 텍스트
               FixedText(
                 '로그인에 문제가 있나요?',
-                style: AppFonts.suite.body_sm_500(context).copyWith(
+                style: AppFonts.pretendard.body_sm_400(context).copyWith(
                   color: AppColors.gray300,
                 ),
               ),

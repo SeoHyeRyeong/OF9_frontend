@@ -64,16 +64,16 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
   }
 
   final Map<String, String> stadiumToFullName = {
-    '잠실': '잠실야구장',
+    '잠실': '잠실 야구장',
     '광주': '기아 챔피언스 필드',
-    '수원': '수원케이티위즈파크',
-    '고척': '고척스카이돔',
+    '수원': '수원 케이티 위즈 파크',
+    '고척': '고척 SKYDOME',
     '대구': '대구삼성라이온즈파크',
-    '대전': '한화생명이글스파크',
-    '대전(신)': '한화생명이글스파크',
-    '사직': '사직야구장',
-    '문학': '인천SSG랜더스필드',
-    '창원': '창원NC파크',
+    '대전': '한화생명 볼파크',
+    '대전(신)': '한화생명 볼파크',
+    '사직': '사직 야구장',
+    '문학': '인천 SSG 랜더스 필드',
+    '창원': '창원 NC 파크',
   };
 
   String convertStadiumName(String? stadium) {
@@ -1357,8 +1357,8 @@ Widget _buildSimpleInput({
                                       ),
                                       FixedText(
                                         type == 'player'
-                                            ? (item['team'] ?? '')
-                                            : (item['favTeam'] ?? ''),
+                                            ? (item['team'] ?? item['favTeam'] ?? '') :
+                                        '${item['favTeam'] ?? ''} 팬',
                                         style: AppFonts.suite.caption_re_400(context).copyWith(
                                           color: AppColors.gray300,
                                         ),

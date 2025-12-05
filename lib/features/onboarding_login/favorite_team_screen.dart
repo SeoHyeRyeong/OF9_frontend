@@ -128,12 +128,12 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                     children: [
                       FixedText(
                         '최애 구단 선택',
-                        style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray800),
+                        style: AppFonts.pretendard.title_lg_600(context).copyWith(color: AppColors.gray800),
                       ),
                       SizedBox(height: scaleHeight(4)),
                       FixedText(
                         '나중에 마이페이지에서 변경 가능해요',
-                        style: AppFonts.suite.body_md_400(context).copyWith(color: AppColors.gray300),
+                        style: AppFonts.pretendard.body_md_400(context).copyWith(color: AppColors.gray300),
                       ),
                     ],
                   ),
@@ -194,8 +194,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                     SizedBox(height: scaleHeight(2)),
                                     FixedText(
                                       team['name']!,
-                                      style: AppFonts.suite.body_md_500(context).copyWith(
-                                          color: AppColors.gray900),
+                                      style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray900),
                                     ),
                                   ],
                                 ),
@@ -230,7 +229,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                                 Container(
                                   decoration: BoxDecoration(
                                     color: AppColors.gray50.withOpacity(0.5),
-                                    borderRadius: BorderRadius.circular(scaleHeight(12)),
+                                    borderRadius: BorderRadius.circular(scaleHeight(20)),
                                   ),
                                 ),
                             ],
@@ -275,7 +274,7 @@ class _FavoriteTeamScreenState extends State<FavoriteTeamScreen> {
                   child: Center(
                     child: FixedText(
                       '확인',
-                      style: AppFonts.suite.body_md_500(context).copyWith(color: AppColors.gray20),
+                      style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray20),
                     ),
                   ),
                 ),

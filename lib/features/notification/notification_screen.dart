@@ -238,7 +238,6 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
     try {
       final result = await NotificationApi.acceptFollowRequest(notification.requestId!, notification.userId!);
       if (mounted && result.success) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
         final index = _notifications.indexWhere((n) => n.id == notification.id);
         if (index != -1) {
           setState(() {
@@ -268,7 +267,6 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
         setState(() {
           _notifications.removeWhere((n) => n.id == notification.id);
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('팔로우 요청을 거절했습니다.')));
       }
     } catch (e) {
       if (mounted) {
@@ -288,7 +286,6 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
           : NotificationApi.unfollowUser(notification.userId!));
 
       if (mounted && result.success) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
         if (notification.userNickname != null) {
           setState(() => _followStatusMap[notification.userNickname!] = result.buttonState);
         }
@@ -431,8 +428,23 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
 
     return GestureDetector(
       onTap: () {
-        // COMMENT나 LIKE 알림은 relatedRecordId가 있으면 DetailFeedScreen으로 이동
-        if ((notification.type == 'COMMENT' || notification.type == 'LIKE') &&
+        // 팔로우 알림(FOLLOW, FOLLOWREQUEST)은 무조건 FriendProfileScreen로
+        if (notification.type == 'FOLLOW' || notification.type == 'FOLLOWREQUEST') {
+          if (notification.userId != null) {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(
+                  userId: notification.userId!,
+                ),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          }
+        }
+        // COMMENT나 LIKE알림은 relatedRecordId가 있으면 DetailFeedScreen으로 이동
+        if ((notification.type == 'COMMENT' || notification.type == 'LIKE'|| notification.type == 'NEW_RECORD') &&
             notification.relatedRecordId != null) {
           Navigator.push(
             context,

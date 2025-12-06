@@ -55,6 +55,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   bool _unfollowCancelled = false;
   Timer? _unfollowTimer;
 
+  bool isMutualFollow = false;
+  bool _hasStateChanged = false;
+
   late AnimationController _tabAnimationController;
   late PageController _tabPageController;
   double _currentTabPageValue = 0.0;
@@ -178,22 +181,39 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
     try {
       final response = await FeedApi.getUserFeed(widget.userId);
-
-      if (!mounted) return;
       final newFollowStatus = response['followStatus'] ?? 'NOT_FOLLOWING';
 
+      // 차단 체크
       bool blocked = false;
       try {
         final blockedResponse = await UserApi.getBlockedUsers();
         final blockedData = blockedResponse['data'] as List? ?? [];
         blocked = blockedData.any((user) => user['userId'] == widget.userId);
       } catch (e) {
-        print('❌ 차단 상태 확인 실패: $e');
+        print('차단 확인 에러: $e');
       }
+
+      bool mutual = false;
+      if (newFollowStatus == 'NOT_FOLLOWING' && !blocked) {
+        try {
+          final myProfile = await UserApi.getMyProfile();
+          final myUserId = myProfile['data']['id'];
+
+          final myFollowers = await UserApi.getFollowers(myUserId);
+          final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+
+          // 상대가 나를 팔로우 중이면 맞팔
+          mutual = followerIds.contains(widget.userId);
+        } catch (e) {
+          print('❌ 맞팔 체크 실패: $e');
+        }
+      }
+
+      if (!mounted) return;
 
       setState(() {
         nickname = response['nickname'] ?? '알 수 없음';
-        favTeam = response['favTeam'] ?? '응원팀 없음';
+        favTeam = response['favTeam'] ?? '';
         profileImageUrl = response['profileImageUrl'];
         postCount = response['recordCount'] ?? 0;
         followerCount = response['followerCount'] ?? 0;
@@ -201,9 +221,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         isPrivate = response['isPrivate'] ?? false;
         followStatus = newFollowStatus;
         isBlocked = blocked;
+        isMutualFollow = mutual;
         isLoading = false;
       });
-      print('✅ setState 완료 - 현재 followStatus: $followStatus, isBlocked: $isBlocked');
     } catch (e) {
       if (!mounted) return;
       print('❌ 사용자 정보 로드 실패: $e');
@@ -385,83 +405,83 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           followerCount = followerCount > 0 ? followerCount - 1 : 0;
         });
 
+        _hasStateChanged = true;
+
+        // 🔑 실제 API 먼저 호출
+        try {
+          await UserApi.unfollowUser(widget.userId);
+          print('$nickname - 언팔로우 완료');
+        } catch (e) {
+          print('언팔로우 API 에러: $e');
+          // 에러 시 다시 팔로잉으로 복구
+          if (mounted) {
+            setState(() {
+              followStatus = 'FOLLOWING';
+              followerCount = followerCount + 1;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('팔로우 취소에 실패했습니다.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          _unfollowPending = false;
+          _unfollowCancelled = false;
+          return;
+        }
+
         // 토스트 표시
         CustomToast.showWithProfile(
           context: context,
           profileImageUrl: profileImageUrl,
           defaultIconAsset: AppImages.profile,
           nickname: nickname,
-          message: '팔로우를 취소하시겠어요?',
+          message: '팔로우를 취소하였습니다',
           duration: Duration(seconds: 3),
-          onCancel: () {
-            print('$nickname - 언팔로우 취소');
+          onCancel: () async {
+            print('$nickname - 언팔로우 취소 (다시 팔로우)');
             _unfollowTimer?.cancel();
             _unfollowTimer = null;
-            _unfollowCancelled = true;
 
-            // 다시 팔로잉으로 복구
-            setState(() {
-              followStatus = 'FOLLOWING';
-              followerCount = followerCount + 1;
-            });
-            _unfollowPending = false;
-          },
-        );
-
-        // 3초 타이머
-        _unfollowTimer = Timer(Duration(seconds: 3), () async {
-          if (_unfollowCancelled) {
-            print('$nickname - 언팔로우 취소됨');
-            return;
-          }
-          if (!_unfollowPending) {
-            print('언팔로우 대기 상태 아님');
-            return;
-          }
-
-          // 실제 API 호출
-          try {
-            await UserApi.unfollowUser(widget.userId);
-            print('$nickname - 언팔로우 완료');
-          } catch (e) {
-            print('언팔로우 API 에러: $e');
-            // 에러 시 다시 팔로잉으로 복구
-            if (mounted) {
+            // 다시 팔로우 API 호출
+            try {
+              await UserApi.followUser(widget.userId);
+              // 다시 팔로잉으로 복구
               setState(() {
                 followStatus = 'FOLLOWING';
                 followerCount = followerCount + 1;
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('팔로우 취소에 실패했습니다.'),
-                  backgroundColor: Colors.red,
-                ),
-              );
+            } catch (e) {
+              print('재팔로우 API 에러: $e');
             }
-          } finally {
-            _unfollowPending = false;
-            _unfollowCancelled = false;
-            _unfollowTimer = null;
-          }
-        });
+          },
+        );
 
-      } else if (followStatus == 'NOT_FOLLOWING') {
-        // 팔로우 요청
+        _unfollowPending = false;
+        _unfollowCancelled = false;
+
+      } else if (followStatus == 'NOT_FOLLOWING' || isMutualFollow) {
         final response = await UserApi.followUser(widget.userId);
         final responseData = response['data'];
+
         setState(() {
           if (responseData['pending'] == true) {
             followStatus = 'REQUESTED';
+            isMutualFollow = false;
           } else {
             followStatus = 'FOLLOWING';
             followerCount++;
+            isMutualFollow = false;
+            _hasStateChanged = true;
           }
         });
       } else if (followStatus == 'REQUESTED') {
-        // 팔로우 요청 취소
+        // 요청 취소 (기존)
         await UserApi.unfollowUser(widget.userId);
         setState(() {
           followStatus = 'NOT_FOLLOWING';
+          isMutualFollow = true;
         });
       }
     } catch (e) {
@@ -480,27 +500,66 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       if (isBlocked) {
         // 차단 해제
         await UserApi.unblockUser(widget.userId);
-        setState(() {
-          isBlocked = false;
-        });
-        print('차단 해제 완료: userId=${widget.userId}, isBlocked=$isBlocked');
+
+        try {
+          final response = await FeedApi.getUserFeed(widget.userId);
+
+          if (mounted) {
+            setState(() {
+              isBlocked = false;
+              followerCount = response['followerCount'] ?? followerCount;
+              followingCount = response['followingCount'] ?? followingCount;
+              postCount = response['recordCount'] ?? postCount;
+            });
+          }
+        } catch (e) {
+          print('❌ 프로필 정보 갱신 실패: $e');
+          if (mounted) {
+            setState(() {
+              isBlocked = false;
+            });
+          }
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$nickname님이 차단 해제되었습니다'),
+            content: Text('$nickname님의 차단을 해제했습니다'),
             duration: Duration(seconds: 2),
           ),
         );
       } else {
-        // 차단하기
+        //차단하기
         await UserApi.blockUser(widget.userId);
-        setState(() {
-          isBlocked = true;
-          followStatus = 'NOT_FOLLOWING';
-        });
-        print('차단 완료: userId=${widget.userId}, isBlocked=$isBlocked');
+
+        try {
+          final response = await FeedApi.getUserFeed(widget.userId);
+
+          if (mounted) {
+            setState(() {
+              isBlocked = true;
+              followStatus = 'NOT_FOLLOWING';
+              followerCount = response['followerCount'] ?? followerCount;
+              followingCount = response['followingCount'] ?? followingCount;
+              postCount = response['recordCount'] ?? postCount;
+              isMutualFollow = false;
+            });
+          }
+        } catch (e) {
+          print('❌ 프로필 정보 갱신 실패: $e');
+          // 실패해도 차단 상태는 유지
+          if (mounted) {
+            setState(() {
+              isBlocked = true;
+              followStatus = 'NOT_FOLLOWING';
+              isMutualFollow = false;
+            });
+          }
+        }
+        _hasStateChanged = true;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$nickname님이 차단되었습니다'),
+            content: Text('$nickname님을 차단했습니다'),
             duration: Duration(seconds: 2),
           ),
         );
@@ -694,7 +753,15 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
           final navigator = Navigator.of(context);
-          navigator.pop(followStatus);
+          navigator.pop({
+            'isMutualFollow': isMutualFollow,
+            'needsRefresh': true,
+            'followStatus': followStatus,
+            'followerCount': followerCount,
+            'followingCount': followingCount,
+            'isBlocked': isBlocked,
+            'needsRefresh': _hasStateChanged,
+          });
         }
       },
       child: Scaffold(
@@ -714,11 +781,19 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     isScrolled: _showStickyHeader,
                     followStatus: followStatus,
                     onBackPressed: () {
-                      Navigator.pop(context, followStatus);
+                      Navigator.pop(context, {
+                        'isMutualFollow': isMutualFollow,
+                        'followStatus': followStatus,
+                        'followerCount': followerCount,
+                        'followingCount': followingCount,
+                        'isBlocked': isBlocked,
+                        'needsRefresh': _hasStateChanged,
+                      });
                     },
                     onFollowPressed: _handleFollow,
                     isBlocked: isBlocked,
                     onBlockTap: _handleBlock,
+                    isMutualFollow: isMutualFollow,
                   ),
                 ),
                 SliverList(
@@ -926,7 +1001,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         child: ElevatedButton(
           onPressed: isBlocked ? _handleBlock : _handleFollow,
           style: ElevatedButton.styleFrom(
-            backgroundColor: _getButtonBackgroundColor(),
+            backgroundColor: getButtonBackgroundColor(),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(scaleHeight(8)),
@@ -942,14 +1017,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     );
   }
 
-  Color _getButtonBackgroundColor() {
-    if (isBlocked) {
-      return AppColors.gray600;
-    }
+  Color getButtonBackgroundColor() {
+    if (isBlocked) return AppColors.gray600;
+    if (isMutualFollow) return AppColors.gray600;
 
     switch (followStatus) {
       case 'FOLLOWING':
-        return AppColors.gray50;
       case 'REQUESTED':
         return AppColors.gray50;
       default:
@@ -958,24 +1031,19 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   }
 
   String _getButtonText() {
-    if (isBlocked) {
-      return '차단 해제';
-    }
+    if (isBlocked) return '차단 해제';
+    if (isMutualFollow) return '맞팔로우';
 
     switch (followStatus) {
-      case 'FOLLOWING':
-        return '팔로잉';
-      case 'REQUESTED':
-        return '요청됨';
-      default:
-        return '팔로우';
+      case 'FOLLOWING': return '팔로잉';
+      case 'REQUESTED': return '요청됨';
+      default: return '팔로우';
     }
   }
 
   Color _getButtonTextColor() {
-    if (isBlocked) {
-      return AppColors.gray20;
-    }
+    if (isBlocked) return AppColors.gray20;
+    if (isMutualFollow) return AppColors.gray20;
 
     switch (followStatus) {
       case 'FOLLOWING':
@@ -1751,6 +1819,7 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   final VoidCallback onFollowPressed;
   final bool isBlocked;
   final VoidCallback onBlockTap;
+  final bool isMutualFollow;
 
   _FriendProfileHeaderDelegate({
     required this.height,
@@ -1761,6 +1830,7 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.onFollowPressed,
     required this.isBlocked,
     required this.onBlockTap,
+    required this.isMutualFollow,
   });
 
   @override
@@ -1843,8 +1913,9 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                   onPressed: isBlocked ? onBlockTap : onFollowPressed,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isBlocked
-                        ? AppColors.gray600
-                        : _getButtonBackgroundColor(followStatus ?? "NOT_FOLLOWING"),
+                        ? AppColors.gray600 : isMutualFollow
+                        ? AppColors.gray600 : (followStatus == 'FOLLOWING' || followStatus == 'REQUESTED')
+                        ? AppColors.gray50 : AppColors.gray600,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(scaleHeight(8)),
                     ),
@@ -1854,11 +1925,12 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                   ),
                   child: Center(
                     child: Text(
-                      isBlocked ? '차단 해제' : _getButtonText(followStatus!),
+                      isBlocked ? '차단 해제' : _getButtonText(followStatus ?? 'NOT_FOLLOWING'),
                       style: AppFonts.pretendard.caption_md_500(context).copyWith(
                         color: isBlocked
-                            ? AppColors.gray20
-                            : _getButtonTextColor(followStatus!),
+                            ? AppColors.gray20 : isMutualFollow
+                            ? AppColors.gray20 : (followStatus == 'FOLLOWING' || followStatus == 'REQUESTED')
+                            ? AppColors.gray600 : AppColors.gray20,
                       ),
                     ),
                   ),
@@ -1904,10 +1976,12 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
 
-  Color _getButtonBackgroundColor(String status) {
-    switch (status) {
+  Color getButtonBackgroundColor() {
+    if (isBlocked) return AppColors.gray600;
+    if (isMutualFollow) return AppColors.gray600;
+
+    switch (followStatus) {
       case 'FOLLOWING':
-        return AppColors.gray50;
       case 'REQUESTED':
         return AppColors.gray50;
       default:
@@ -1916,6 +1990,8 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   String _getButtonText(String status) {
+    if (isMutualFollow) return '맞팔로우';
+
     switch (status) {
       case 'FOLLOWING':
         return '팔로잉';
@@ -1926,10 +2002,12 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
     }
   }
 
-  Color _getButtonTextColor(String status) {
-    switch (status) {
+  Color _getButtonTextColor() {
+    if (isBlocked) return AppColors.gray20;
+    if (isMutualFollow) return AppColors.gray20;
+
+    switch (followStatus) {
       case 'FOLLOWING':
-        return AppColors.gray600;
       case 'REQUESTED':
         return AppColors.gray600;
       default:
@@ -1941,7 +2019,8 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(_FriendProfileHeaderDelegate oldDelegate) {
     return nickname != oldDelegate.nickname ||
         isScrolled != oldDelegate.isScrolled ||
-        followStatus != oldDelegate.followStatus;
+        followStatus != oldDelegate.followStatus ||
+        isMutualFollow != oldDelegate.isMutualFollow;
   }
 }
 

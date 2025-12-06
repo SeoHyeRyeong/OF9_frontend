@@ -56,7 +56,7 @@ Future<String?> showTeamPicker({
                         Center(
                           child: FixedText(
                             title,
-                            style: AppFonts.suite.head_sm_700(context).copyWith(
+                            style: AppFonts.pretendard.head_sm_600(context).copyWith(
                               color: Colors.black,
                             ),
                           ),
@@ -109,11 +109,11 @@ Future<String?> showTeamPicker({
                                       height: scaleHeight(40),
                                       fit: BoxFit.contain,
                                     ),
-                                    SizedBox(width: scaleWidth(11.5)),
+                                    SizedBox(width: scaleWidth(8)),
                                     Expanded(
                                       child: FixedText(
                                         team,
-                                        style: AppFonts.suite.b3_sb(context).copyWith(
+                                        style: AppFonts.pretendard.body_sm_500(context).copyWith(
                                           color: AppColors.gray900,
                                         ),
                                       ),
@@ -188,7 +188,7 @@ Future<String?> showTeamPicker({
                       child: Center(
                         child: FixedText(
                           '완료',
-                          style: AppFonts.suite.head_sm_700(context).copyWith(
+                          style: AppFonts.pretendard.body_md_500(context).copyWith(
                             color: AppColors.gray20,
                           ),
                         ),

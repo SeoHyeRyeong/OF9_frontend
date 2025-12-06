@@ -1027,27 +1027,51 @@ class UserSearchTileWidget extends StatefulWidget {
 class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
   late String _currentFollowStatus;
   bool _isLoading = false;
+  bool isMutualFollow = false;
 
   @override
   void initState() {
     super.initState();
-    _currentFollowStatus = widget.user.followStatus;
+    _currentFollowStatus = widget.user.followStatus ?? 'NOT_FOLLOWING';
+    _checkMutualFollow();
+  }
+
+  Future<void> _checkMutualFollow() async {
+    try {
+      final myProfile = await UserApi.getMyProfile();
+      final myUserId = myProfile['data']['id'];
+
+      final myFollowing = await UserApi.getFollowing(myUserId);
+      final myFollowers = await UserApi.getFollowers(myUserId);
+
+      final iFollowIds = myFollowing['data']?.map((u) => u['id']).toSet() ?? <int>{};
+      final iAmFollowedIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+
+      final isMutual = !iFollowIds.contains(widget.user.userId) && iAmFollowedIds.contains(widget.user.userId);
+
+      if (mounted) {
+        setState(() => isMutualFollow = isMutual);
+      }
+    } catch (e) {
+      print('Mutual follow check error: $e');
+    }
   }
 
   String _getButtonText() {
+    if (isMutualFollow) return '맞팔로우';
     switch (_currentFollowStatus) {
       case 'FOLLOWING':
         return '팔로잉';
-      case 'PENDING':
       case 'REQUESTED':
         return '요청됨';
-      case 'NOT_FOLLOWING':
       default:
         return '팔로우';
     }
   }
 
   Color _getButtonBackgroundColor() {
+    if (isMutualFollow) return AppColors.gray600;
+
     switch (_currentFollowStatus) {
       case 'FOLLOWING':
         return AppColors.gray50;
@@ -1056,52 +1080,57 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
         return AppColors.gray50;
       case 'NOT_FOLLOWING':
       default:
-        return AppColors.gray700;
+        return AppColors.gray600;
     }
   }
 
   Color _getButtonTextColor() {
+    if (isMutualFollow) return AppColors.gray20;
+
     switch (_currentFollowStatus) {
       case 'FOLLOWING':
-        return AppColors.gray600;
-      case 'PENDING':
       case 'REQUESTED':
+      case 'PENDING':
         return AppColors.gray600;
-      case 'NOT_FOLLOWING':
       default:
-        return Colors.white;
+        return AppColors.gray20;
     }
   }
 
   Future<void> _handleFollowButton() async {
     if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final userId = widget.user.userId;
 
       if (_currentFollowStatus == 'FOLLOWING') {
+        // 언팔로우
         await UserApi.unfollowUser(userId);
         setState(() {
           _currentFollowStatus = 'NOT_FOLLOWING';
+          isMutualFollow = true;
         });
-      } else if (_currentFollowStatus == 'NOT_FOLLOWING') {
+      } else if (_currentFollowStatus == 'NOT_FOLLOWING' || isMutualFollow) {
+        // 팔로우 요청
         final response = await UserApi.followUser(userId);
         final responseData = response['data'];
+
         setState(() {
           if (responseData['pending'] == true) {
             _currentFollowStatus = 'REQUESTED';
+            isMutualFollow = false;
           } else {
             _currentFollowStatus = 'FOLLOWING';
+            isMutualFollow = false;
           }
         });
       } else if (_currentFollowStatus == 'REQUESTED' || _currentFollowStatus == 'PENDING') {
+        // 요청 취소
         await UserApi.unfollowUser(userId);
         setState(() {
           _currentFollowStatus = 'NOT_FOLLOWING';
+          isMutualFollow = true;
         });
       }
     } catch (e) {
@@ -1110,9 +1139,7 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
         SnackBar(content: Text('오류가 발생했습니다: $e')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -1132,30 +1159,32 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                FriendProfileScreen(
-                  userId: widget.user.userId,
-                  initialFollowStatus: _currentFollowStatus,
-                ),
+            pageBuilder: (context, animation, secondaryAnimation) => FriendProfileScreen(
+              userId: widget.user.userId,
+              initialFollowStatus: _currentFollowStatus,
+            ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),
-        ).then((returnedFollowStatus) {
-          if (returnedFollowStatus != null && mounted) {
-            _currentFollowStatus = returnedFollowStatus;
-            setState(() {});
-            final searchScreenState = context.findAncestorStateOfType<_SearchScreenState>();
-            if (searchScreenState != null && searchScreenState._hasSearched) {
-              searchScreenState._refreshSearchResults();
-            }
+        );
+
+        if (result != null && result is Map && mounted) {
+          setState(() {
+            _currentFollowStatus = result['followStatus'] ?? _currentFollowStatus;
+            isMutualFollow = result['isMutualFollow'] ?? false;
+          });
+
+          final searchScreenState = context.findAncestorStateOfType<_SearchScreenState>();
+          if (searchScreenState != null && searchScreenState._hasSearched) {
+            searchScreenState._refreshSearchResults();
           } else {
-            _refreshFollowStatus();
+            await _refreshFollowStatus();
           }
-        });
+        }
       },
       child: Container(
         height: scaleHeight(80),
@@ -1240,7 +1269,7 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
                 behavior: HitTestBehavior.opaque,
                 child: Container(
                   width: scaleWidth(70),
-                  height: scaleHeight(36),
+                  height: scaleHeight(34),
                   decoration: BoxDecoration(
                     color: _getButtonBackgroundColor(),
                     borderRadius: BorderRadius.circular(scaleHeight(8)),
@@ -1257,7 +1286,7 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
                     )
                         : FixedText(
                       _getButtonText(),
-                      style: AppFonts.suite.c1_b(context).copyWith(color: _getButtonTextColor()),
+                      style: AppFonts.pretendard.caption_md_500(context).copyWith(color: _getButtonTextColor()),
                     ),
                   ),
                 ),

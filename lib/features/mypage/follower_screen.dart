@@ -12,6 +12,7 @@ import 'package:frontend/api/user_api.dart';
 
 class FollowerScreen extends StatefulWidget {
   final int? targetUserId;
+
   const FollowerScreen({
     Key? key,
     this.targetUserId,
@@ -46,31 +47,37 @@ class _FollowerScreenState extends State<FollowerScreen> {
       final myProfile = await UserApi.getMyProfile();
       myUserId = myProfile['data']['id'];
 
-      int targetUserId;
-      if (widget.targetUserId != null) {
-        targetUserId = widget.targetUserId!;
-      } else {
-        targetUserId = myUserId!;
-      }
+      int targetUserId = widget.targetUserId ?? myUserId!;
 
+      // 1. 팔로워 목록
       final response = await UserApi.getFollowers(targetUserId);
-      final followersData = response['data'] as List<dynamic>? ?? [];
+      final followersData = response['data'] as List? ?? [];
 
+      // 2. 내 팔로잉 목록 (맞팔 확인용)
+      final myFollowingResponse = await UserApi.getFollowing(myUserId!);
+      final myFollowingData = myFollowingResponse['data'] as List? ?? [];
+      final Set<int> iFollowTheseIds = myFollowingData
+          .where((user) => user['id'] != null)
+          .map((user) => user['id'] as int)
+          .toSet();
 
       setState(() {
         followers = followersData.map((follower) {
-          // followStatus를 기반으로 상태 결정
           String followStatus = follower['followStatus'] ?? 'NOT_FOLLOWING';
+          final userId = follower['id'] ?? follower['userId'];
+          final isMutualFollow = followStatus == 'NOT_FOLLOWING' &&
+              !iFollowTheseIds.contains(userId);
 
           return {
-            'userId': follower['id'] ?? follower['userId'],
+            'userId': userId,
             'nickname': follower['nickname'] ?? '알 수 없음',
             'favTeam': follower['favTeam'] ?? '응원팀 없음',
             'profileImageUrl': follower['profileImageUrl'],
             'followStatus': followStatus,
             'isFollowing': followStatus == 'FOLLOWING',
             'isRequested': followStatus == 'REQUESTED',
-            'isMe': (follower['id'] ?? follower['userId']) == myUserId,
+            'isMe': userId == myUserId,
+            'isMutualFollow': isMutualFollow,
           };
         }).toList();
         isLoading = false;
@@ -82,10 +89,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
         isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('팔로워 목록을 불러오는데 실패했습니다.'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('팔로워 목록을 불러오는데 실패했습니다.'), backgroundColor: Colors.red),
       );
     }
   }
@@ -104,6 +108,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
           followers[index]['followStatus'] = 'NOT_FOLLOWING';
           followers[index]['isFollowing'] = false;
           followers[index]['isRequested'] = false;
+          followers[index]['isMutualFollow'] = false;
         });
       } else if (currentStatus == 'NOT_FOLLOWING') {
         // 팔로우 요청
@@ -116,11 +121,13 @@ class _FollowerScreenState extends State<FollowerScreen> {
             followers[index]['followStatus'] = 'REQUESTED';
             followers[index]['isFollowing'] = false;
             followers[index]['isRequested'] = true;
+            followers[index]['isMutualFollow'] = false;
           } else {
             // 공개 계정 - 즉시 팔로우
             followers[index]['followStatus'] = 'FOLLOWING';
             followers[index]['isFollowing'] = true;
             followers[index]['isRequested'] = false;
+            followers[index]['isMutualFollow'] = false;
           }
         });
       } else if (currentStatus == 'REQUESTED') {
@@ -130,6 +137,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
           followers[index]['followStatus'] = 'NOT_FOLLOWING';
           followers[index]['isFollowing'] = false;
           followers[index]['isRequested'] = false;
+          followers[index]['isMutualFollow'] = true;
         });
       }
     } catch (e) {
@@ -146,17 +154,25 @@ class _FollowerScreenState extends State<FollowerScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
-      onPopInvoked: (didPop) {
-        if (!didPop && widget.targetUserId == null) {
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          if (widget.targetUserId == null) {
+            //
+            // 내 팔로워 목록 → 마이페이지로 이동
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1,
+                    animation2) => const MyPageScreen(),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          } else {
+            // 다른 유저 팔로워 리스트 → 그냥 뒤로가기
+            Navigator.pop(context);
+          }
         }
       },
       child: Scaffold(
@@ -179,10 +195,10 @@ class _FollowerScreenState extends State<FollowerScreen> {
                         children: [
                           GestureDetector(
                             onTap: () {
-                              if (widget.targetUserId != null) {
-                                // 친구 프로필에서 온 경우: 일반 뒤로가기
-                                Navigator.pop(context);
-                              } else {
+                              if (Navigator.canPop(context)) {
+                                //친구 프로필에서 온 경우
+                              Navigator.pop(context);
+                            } else if (widget.targetUserId == null) {
                                 // 내 팔로워 목록에서 온 경우: MyPage로 이동
                                 Navigator.pushReplacement(
                                   context,
@@ -208,7 +224,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
                             child: Center(
                               child: FixedText(
                                 "팔로워",
-                                style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray900),
+                                style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray900),
                               ),
                             ),
                           ),
@@ -243,7 +259,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
     return Center(
       child: FixedText(
         "아직 팔로워가 없어요",
-        style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray400),
+        style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
       ),
     );
   }
@@ -264,7 +280,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       // 전체 영역에 탭 제스처 추가
-      onTap: () {
+      onTap: () async {
         if (follower['isMe'] == true) {
           // 내가 맞으면 MyPage로 이동
           Navigator.push(
@@ -280,8 +296,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
             ),
           );
         } else {
-          // 다른 사람이면 FriendProfileScreen으로 이동
-          Navigator.push(
+          final result = await Navigator.push(
             context,
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
@@ -289,7 +304,26 @@ class _FollowerScreenState extends State<FollowerScreen> {
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
-          ).then((_) => _loadFollowers());
+          );
+
+          if (result != null && result is Map) {
+            if (result['needsRefresh'] == true) {
+              final followStatus = result['followStatus'];
+              final isBlocked = result['isBlocked'] ?? false;
+
+              setState(() {
+                if (isBlocked) {
+                  // 차단 시 리스트에서 제거
+                  followers.removeAt(index);
+                } else {
+                  // 팔로우 상태만 업데이트
+                  followers[index]['followStatus'] = followStatus;
+                  followers[index]['isFollowing'] = followStatus == 'FOLLOWING';
+                  followers[index]['isRequested'] = followStatus == 'REQUESTED';
+                }
+              });
+            }
+          }
         }
       },
       child: Container(
@@ -340,7 +374,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
                       // 최애 구단
                       FixedText(
                         "${follower['favTeam'] ?? '응원팀 없음'} 팬",
-                        style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400),
+                        style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray400),
                       ),
                     ],
                   ),
@@ -362,7 +396,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
                     child: Center(
                       child: FixedText(
                         _getButtonText(follower),
-                        style: AppFonts.suite.c1_m(context).copyWith(
+                        style: AppFonts.pretendard.c1_m(context).copyWith(
                           color: _getButtonTextColor(follower),
                         ),
                       ),
@@ -394,15 +428,16 @@ class _FollowerScreenState extends State<FollowerScreen> {
 
   // 버튼 텍스트 결정
   String _getButtonText(Map<String, dynamic> follower) {
-    final followStatus = follower['followStatus'] ?? 'NOT_FOLLOWING';
+    if (follower['isMutualFollow'] == true &&
+        follower['followStatus'] == 'NOT_FOLLOWING') {
+      return '맞팔로우';
+    }
 
+    final followStatus = follower['followStatus'] ?? 'NOT_FOLLOWING';
     switch (followStatus) {
-      case 'FOLLOWING':
-        return '팔로잉';
-      case 'REQUESTED':
-        return '요청됨';
-      default:
-        return '팔로우';
+      case 'FOLLOWING': return '팔로잉';
+      case 'REQUESTED': return '요청됨';
+      default: return '팔로우';
     }
   }
 

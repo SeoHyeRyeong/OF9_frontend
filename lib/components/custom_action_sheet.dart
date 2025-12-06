@@ -94,7 +94,7 @@ void showCustomActionSheet({
                         title: Center(
                           child: FixedText(
                             option.text,
-                            style: AppFonts.suite.b2_m(context).copyWith(
+                            style: AppFonts.pretendard.body_md_400(context).copyWith(
                               color: option.textColor,
                             ),
                           ),
@@ -123,7 +123,7 @@ void showCustomActionSheet({
                   ),
                   child: FixedText(
                     '취소',
-                    style: AppFonts.suite.b2_m(context).copyWith(
+                    style: AppFonts.pretendard.body_md_400(context).copyWith(
                       color: AppColors.gray300,
                     ),
                   ),

@@ -16,6 +16,8 @@ import 'package:frontend/features/mypage/block_screen.dart';
 import 'dart:math' as math;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:frontend/features/mypage/follower_screen.dart';
+import 'package:frontend/features/mypage/following_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -247,7 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: EdgeInsets.only(left: scaleWidth(16)),
             child: FixedText(
               title,
-              style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+              style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray900),
             ),
           ),
         ),
@@ -281,11 +283,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             FixedText(
               "버전 정보",
-              style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+              style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray900),
             ),
             FixedText(
               appVersion,  // "beta" 또는 "1.0.0"
-              style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray700),
+              style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray700),
             ),
           ],
         ),
@@ -359,19 +361,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop) {
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
-        }
-      },
+      canPop: true,
+      onPopInvoked: (didPop) {},
       child: Scaffold(
         backgroundColor: AppColors.gray30,
         body: SafeArea(
@@ -386,16 +377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Padding(
                     padding: EdgeInsets.only(left: scaleWidth(20)),
                     child: GestureDetector(
-                      onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation1, animation2) => const MyPageScreen(),
-                            transitionDuration: Duration.zero,
-                            reverseTransitionDuration: Duration.zero,
-                          ),
-                        );
-                      },
+                      onTap: () => Navigator.pop(context),
                       child: SvgPicture.asset(
                         AppImages.backBlack,
                         width: scaleWidth(24),
@@ -413,7 +395,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     children: [
                       SizedBox(height: scaleHeight(8)),
-
                       // 프로필 카드
                       Padding(
                         padding: EdgeInsets.only(left: scaleWidth(20), right:scaleWidth(18),),
@@ -455,60 +436,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ),
 
-                                SizedBox(width: scaleWidth(15)),
+                                SizedBox(width: scaleWidth(18)),
 
                                 // 사용자 정보
-                                Padding(
-                                  padding: EdgeInsets.only(top: scaleHeight(35)),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      // 닉네임
-                                      isLoading
-                                          ? CircularProgressIndicator()
-                                          : FixedText(
-                                        nickname,
-                                        style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.black),
-                                      ),
-                                      SizedBox(height: scaleHeight(5)),
-                                      // 최애구단
-                                      isLoading
-                                          ? Container()
-                                          : FixedText(
-                                        "$favTeam 팬",
-                                        style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400, fontSize: scaleFont(10)),
-                                      ),
-                                      SizedBox(height: scaleHeight(7)),
-                                      // 팔로잉/팔로워
-                                      Row(
-                                        children: [
-                                          FixedText(
-                                            "팔로잉",
-                                            style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray500),
-                                          ),
-                                          SizedBox(width: scaleWidth(2)),
-                                          FixedText(
-                                            "$followingCount",
-                                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900),
-                                          ),
-                                          SizedBox(width: scaleWidth(10)),
-                                          FixedText(
-                                            "팔로워",
-                                            style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray500),
-                                          ),
-                                          SizedBox(width: scaleWidth(2)),
-                                          FixedText(
-                                            "$followerCount",
-                                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray900),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(top: scaleHeight(35)),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        // 닉네임
+                                        isLoading
+                                            ? CircularProgressIndicator()
+                                            : FixedText(
+                                          nickname,
+                                          style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.black),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: scaleHeight(5)),
+                                        // 최애구단
+                                        isLoading
+                                            ? Container()
+                                            : FixedText(
+                                          "$favTeam 팬",
+                                          style: AppFonts.pretendard.caption_re_400(context).copyWith(
+                                              color: AppColors.gray400,
+                                              fontSize: scaleFont(10)),
+                                        ),
+                                        SizedBox(height: scaleHeight(7)),
+                                        // 팔로잉/팔로워
+                                        Row(
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () async {
+                                                await Navigator.push(
+                                                  context,
+                                                  PageRouteBuilder(
+                                                    pageBuilder: (context, animation, secondaryAnimation) =>
+                                                    const FollowingScreen(targetUserId: null),
+                                                    transitionDuration: Duration.zero,
+                                                    reverseTransitionDuration: Duration.zero,
+                                                  ),
+                                                );
+                                                _loadUserInfo();
+                                                _loadBlockedUsers();
+                                              },
+                                              child: Row(
+                                                children: [
+                                                  FixedText(
+                                                    "팔로잉",
+                                                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray500),
+                                                  ),
+                                                  SizedBox(width: scaleWidth(2)),
+                                                  FixedText(
+                                                    "$followingCount",
+                                                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray900),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(width: scaleWidth(10)),
+                                            GestureDetector(
+                                              onTap: () async {
+                                                await Navigator.push(
+                                                  context,
+                                                  PageRouteBuilder(
+                                                    pageBuilder: (context, animation, secondaryAnimation) =>
+                                                    const FollowerScreen(targetUserId: null),
+                                                    transitionDuration: Duration.zero,
+                                                    reverseTransitionDuration: Duration.zero,
+                                                  ),
+                                                );
+                                                _loadUserInfo();
+                                                _loadBlockedUsers();
+                                              },
+                                              child: Row(
+                                                children: [
+                                                  FixedText(
+                                                    "팔로워",
+                                                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray500),
+                                                  ),
+                                                  SizedBox(width: scaleWidth(2)),
+                                                  FixedText(
+                                                    "$followerCount",
+                                                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray900),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-
-                                Spacer(),
 
                                 // 수정 버튼
                                 Padding(
@@ -534,7 +557,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       child: Center(
                                         child: FixedText(
                                           "수정",
-                                          style: AppFonts.suite.caption_md_400(context).copyWith(color: AppColors.pri800),
+                                          style: AppFonts.pretendard.caption_re_400(context).copyWith(color: AppColors.pri800),
                                         ),
                                       ),
                                     ),
@@ -566,7 +589,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   children: [
                                     FixedText(
                                       "푸시 알림",
-                                      style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+                                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray900),
                                     ),
                                     const Spacer(),
                                     _buildCustomToggle(isPushNotificationOn, () {
@@ -599,7 +622,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         children: [
                                           FixedText(
                                             "계정 공개",
-                                            style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+                                            style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray900),
                                           ),
                                           const Spacer(),
                                           _buildCustomToggle(isAccountPublic, () {
@@ -611,8 +634,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   // 차단된 계정
                                   GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
+                                    onTap: () async {
+                                      await Navigator.push(
                                         context,
                                         PageRouteBuilder(
                                           pageBuilder: (context, animation1, animation2) => const BlockScreen(),
@@ -620,6 +643,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           reverseTransitionDuration: Duration.zero,
                                         ),
                                       );
+                                      _loadBlockedUsers();
                                     },
                                     child: Container(
                                       color: Colors.transparent,
@@ -633,7 +657,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             padding: EdgeInsets.only(left: scaleWidth(16)),
                                             child: FixedText(
                                               "차단된 계정",
-                                              style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+                                              style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray900),
                                             ),
                                           ),
                                           Row(

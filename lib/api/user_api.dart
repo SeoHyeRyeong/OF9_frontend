@@ -245,7 +245,7 @@ class UserApi {
   /// 4. 로그아웃
   static Future<Map<String, dynamic>> logout() async {
     final res = await _makeRequestWithRetry(
-      uri: Uri.parse('$baseUrl/users/me/logout'),
+      uri: Uri.parse('$baseUrl/auth/logout'),
       method: 'POST',
     );
 

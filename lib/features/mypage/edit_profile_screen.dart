@@ -399,7 +399,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               child: Center(
                                 child: FixedText(
                                   "내 정보 수정",
-                                  style: AppFonts.suite.b2_b(context).copyWith(color: AppColors.gray950),
+                                  style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray950),
                                 ),
                               ),
                             ),
@@ -450,7 +450,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         children: [
                           FixedText(
                             "닉네임",
-                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600),
+                            style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600),
                           ),
                           SizedBox(width: scaleWidth(2)),
                           FixedText(
@@ -542,7 +542,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   _isNicknameEmpty()
                                       ? '* 닉네임을 작성해 주세요'
                                       : '* 이미 등록된 닉네임이에요',
-                                  style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.error),
+                                  style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.error),
                                 )
                                     : const SizedBox.shrink(),
                                 _hasNicknameError()
@@ -570,7 +570,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         children: [
                           FixedText(
                             "최애 구단",
-                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600),
+                            style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600),
                           ),
                           SizedBox(width: scaleWidth(2)),
                           FixedText(
@@ -657,7 +657,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         child: Center(
                           child: FixedText(
                             '완료',
-                            style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray20),
+                            style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray20),
                           ),
                         ),
                       ),

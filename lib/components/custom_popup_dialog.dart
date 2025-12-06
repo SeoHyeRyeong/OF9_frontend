@@ -291,8 +291,6 @@ class CustomConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 👇 [수정] Center를 Material 위젯으로 감싸고,
-    // 팝업 배경이 투명하도록 color: Colors.transparent를 추가합니다.
     return Material(
       color: Colors.transparent,
       child: Center(
@@ -316,13 +314,13 @@ class CustomConfirmDialog extends StatelessWidget {
                 children: [
                   FixedText(
                     title,
-                    style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray900),
+                    style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray900),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: scaleHeight(8)),
                   FixedText(
                     subtitle,
-                    style: AppFonts.suite.body_sm_400(context).copyWith(color: AppColors.gray400),
+                    style: AppFonts.pretendard.body_sm_400(context).copyWith(color: AppColors.gray400),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -344,7 +342,7 @@ class CustomConfirmDialog extends StatelessWidget {
                       ),
                       child: FixedText(
                         leftButtonText,
-                        style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray700),
+                        style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray700),
                       ),
                     ),
                   ),
@@ -363,7 +361,7 @@ class CustomConfirmDialog extends StatelessWidget {
                       ),
                       child: FixedText(
                         rightButtonText,
-                        style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray20),
+                        style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray20),
                       ),
                     ),
                   ),

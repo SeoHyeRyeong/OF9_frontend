@@ -65,4 +65,28 @@ class AppColors {
   //다음에 삭제해야 할 컬러 (수정된 디자인 시스템에는 없음)
   static const Color gray950= Color(0xFF0E1117);
   static const Color pri50= Color(0xFF97B5D3);
+
+  //팀 컬러 - 폰트
+  static const Color doosan1 = Color(0xFF121230);
+  static const Color lotte1 = Color(0xFFFF2525);
+  static const Color samsung1 = Color(0xFF064CA1);
+  static const Color kiwoom1 = Color(0xFF830024);
+  static const Color hamwha1 = Color(0xFFFF1A00);
+  static const Color kia1 = Color(0xFFEB0028);
+  static const Color kt1 = Color(0xFF000000);
+  static const Color lg1 = Color(0xFFE60E66);
+  static const Color nc1 = Color(0xFF1E467D);
+  static const Color ssg1 = Color(0xFFCF0A2C);
+
+  //팀 컬러 - 배경
+  static const Color doosan2 = Color(0xFFF7D3D5);
+  static const Color lotte2 = Color(0xFFE6EAEE);
+  static const Color samsung2 = Color(0xFFDAE4F1);
+  static const Color kiwoom2 = Color(0xFFECD9DE);
+  static const Color hamwha2 = Color(0xFFFFE0CC);
+  static const Color kia2 = Color(0xFFFCD9DF);
+  static const Color kt2 = Color(0xFFEEEEEE);
+  static const Color lg2 = Color(0xFFFBDBE8);
+  static const Color nc2 = Color(0xFFF1E7DE);
+  static const Color ssg2 = Color(0xFFFEF3D9);
 }

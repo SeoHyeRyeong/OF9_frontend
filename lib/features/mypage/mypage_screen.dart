@@ -21,6 +21,8 @@ import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
 import 'package:frontend/features/report/report_screen.dart';
+import 'package:frontend/features/upload/ticket_ocr_screen.dart';
+import 'package:frontend/components/custom_toast.dart';
 
 class MyPageScreen extends StatefulWidget {
   final bool fromNavigation;
@@ -224,6 +226,58 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       }
     }
   }
+
+  // 팀 이름을 짧은 이름으로 변환
+  String _getShortTeamName(String fullTeamName) {
+    if (fullTeamName.contains('두산')) return '두산';
+    if (fullTeamName.contains('롯데')) return '롯데';
+    if (fullTeamName.contains('삼성')) return '삼성';
+    if (fullTeamName.contains('키움')) return '키움';
+    if (fullTeamName.contains('한화')) return '한화';
+    if (fullTeamName.contains('KIA')) return 'KIA';
+    if (fullTeamName.contains('KT')) return 'KT';
+    if (fullTeamName.contains('LG')) return 'LG';
+    if (fullTeamName.contains('NC')) return 'NC';
+    if (fullTeamName.contains('SSG')) return 'SSG';
+    return fullTeamName;
+  }
+
+  // 팀별 텍스트 색상
+  Color _getTeamTextColor(String teamName) {
+    final shortName = _getShortTeamName(teamName);
+    switch (shortName) {
+      case '두산': return AppColors.doosan1;
+      case '롯데': return AppColors.lotte1;
+      case '삼성': return AppColors.samsung1;
+      case '키움': return AppColors.kiwoom1;
+      case '한화': return AppColors.hamwha1;
+      case 'KIA': return AppColors.kia1;
+      case 'KT': return AppColors.kt1;
+      case 'LG': return AppColors.lg1;
+      case 'NC': return AppColors.nc1;
+      case 'SSG': return AppColors.ssg1;
+      default: return AppColors.gray800;
+    }
+  }
+
+  // 팀별 배경 색상
+  Color _getTeamBackgroundColor(String teamName) {
+    final shortName = _getShortTeamName(teamName);
+    switch (shortName) {
+      case '두산': return AppColors.doosan2;
+      case '롯데': return AppColors.lotte2;
+      case '삼성': return AppColors.samsung2;
+      case '키움': return AppColors.kiwoom2;
+      case '한화': return AppColors.hamwha2;
+      case 'KIA': return AppColors.kia2;
+      case 'KT': return AppColors.kt2;
+      case 'LG': return AppColors.lg2;
+      case 'NC': return AppColors.nc2;
+      case 'SSG': return AppColors.ssg2;
+      default: return AppColors.gray30;
+    }
+  }
+
 
   String _getTabName(int index) {
     switch (index) {
@@ -639,24 +693,22 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: scaleHeight(2)),
+                SizedBox(height: scaleHeight(6)),
                 // 팀 정보 (조건부 표시)
-                if (!isLoading && favTeam.isNotEmpty &&
-                    favTeam != "응원팀 없음") ...[
+                if (!isLoading && favTeam.isNotEmpty && favTeam != "응원팀 없음") ...[
                   IntrinsicWidth( // 텍스트 크기에 맞게 가로 크기 조정
                     child: Container(
-                      height: scaleHeight(22),
-                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
+                      height: scaleHeight(18),
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
                       decoration: BoxDecoration(
-                        color: AppColors.gray30,
-                        borderRadius: BorderRadius.circular(scaleWidth(20)),
+                        color: _getTeamBackgroundColor(favTeam),
+                        borderRadius: BorderRadius.circular(scaleWidth(4)),
                       ),
                       alignment: Alignment.center,
-                      // 세로 기준 센터 정렬
                       child: Text(
-                        "$favTeam 팬",
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
-                          color: AppColors.pri800,
+                        "${_getShortTeamName(favTeam)} 팬",
+                        style: AppFonts.pretendard.caption_sm_500(context).copyWith(
+                          color: _getTeamTextColor(favTeam),
                         ),
                       ),
                     ),
@@ -722,14 +774,14 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       children: [
         Text(
           label,
-          style: AppFonts.suite.caption_re_400(context).copyWith(
+          style: AppFonts.pretendard.caption_md_400(context).copyWith(
             color: AppColors.gray500,
           ),
         ),
         SizedBox(width: scaleWidth(2)),
         Text(
           count.toString(),
-          style: AppFonts.suite.caption_md_500(context).copyWith(
+          style: AppFonts.pretendard.caption_md_400(context).copyWith(
             color: AppColors.gray900,
           ),
         ),
@@ -737,7 +789,24 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     );
     if (onTap != null) {
       return GestureDetector(
-        onTap: onTap,
+        onTap: () async {
+          final result = await Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) {
+                if (label == '팔로잉') {
+                  return const FollowingScreen(targetUserId: null);
+                } else {
+                  return const FollowerScreen(targetUserId: null);
+                }
+              },
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+
+          _loadUserInfo();
+        },
         child: content,
       );
     }
@@ -778,8 +847,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           ),
           child: Text(
             '프로필 수정',
-            style: AppFonts.suite.caption_md_500(context).copyWith(
-                color: Colors.white),
+            style: AppFonts.pretendard.caption_md_500(context).copyWith(color: Colors.white),
           ),
         ),
       ),
@@ -911,7 +979,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       return Center(
         child: Text(
           '업로드한 기록이 아직 없어요',
-          style: AppFonts.suite.head_sm_700(context).copyWith(
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(
               color: AppColors.gray300),
         ),
       );
@@ -1026,7 +1094,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       return Center(
         child: Text(
           '업로드한 기록이 아직 없어요',
-          style: AppFonts.suite.head_sm_700(context).copyWith(
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(
               color: AppColors.gray300),
         ),
       );
@@ -1360,6 +1428,27 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           _focusedDay = focusedDay;
         });
         print('Selected day: $selectedDay, Events: ${_getEventsForDay(selectedDay)}');
+
+        // 오늘 날짜 또는 마커 없는 날 클릭 시 토스트 표시
+        final today = DateTime.now();
+        final todayDate = DateTime(today.year, today.month, today.day);
+        final selectedDate = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+        final events = _getEventsForDay(selectedDay);
+
+        // 오늘이거나 과거 날짜이고, 마커가 없는 경우에만 토스트 표시
+        if (selectedDate.isBefore(todayDate.add(Duration(days: 1))) && events.isEmpty) {
+          CustomToast.showWithAction(
+            context: context,
+            message: '아직 직관 기록이 안 되어있어요!',
+            actionText: '기록하기',
+            onAction: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TicketOcrScreen()),
+              );
+            },
+          );
+        }
       },
       onPageChanged: _onCalendarPageChanged,
     );
@@ -1460,7 +1549,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             children: [
               Text(
                 '${_focusedDay.month}월 직관 분석',
-                style: AppFonts.suite.body_sm_500(context).copyWith(
+                style: AppFonts.pretendard.body_sm_500(context).copyWith(
                   color: AppColors.gray900,),
               ),
               SizedBox(width: scaleWidth(6)),
@@ -1474,7 +1563,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 alignment: Alignment.center,
                 child: Text(
                   '리포트',
-                  style: AppFonts.suite.caption_md_500(context).copyWith(
+                  style: AppFonts.pretendard.caption_re_400(context).copyWith(
                     color: AppColors.pri700,
                     fontSize: 10.sp,
                   ),
@@ -1487,7 +1576,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             Center(
               child: Text(
                 '업로드한 기록이 아직 없어요',
-                style: AppFonts.suite.body_md_500(context).copyWith(
+                style: AppFonts.pretendard.body_md_500(context).copyWith(
                   color: AppColors.gray300,
                 ),
               ),
@@ -1503,7 +1592,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                     children: [
                       Text(
                         '직관 승률',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                        style: AppFonts.pretendard.caption_re_400(context).copyWith(
                           color: AppColors.gray500,
                           fontSize: 10.sp,
                         ),
@@ -1521,7 +1610,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                     children: [
                       Text(
                         '기록 횟수',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                        style: AppFonts.pretendard.caption_re_400(context).copyWith(
                           color: AppColors.gray500,
                           fontSize: 10.sp,
                         ),
@@ -1540,7 +1629,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                     children: [
                       Text(
                         '공감 받은 횟수',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                        style: AppFonts.pretendard.caption_re_400(context).copyWith(
                           color: AppColors.gray500,
                           fontSize: 10.sp,
                         ),
@@ -1561,7 +1650,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       ),
     );
   }
-
 
   // 승률 포맷팅 함수 (0과 100만 정수, 나머지는 백엔드 값 그대로)
   String _formatWinRate(double winRate) {

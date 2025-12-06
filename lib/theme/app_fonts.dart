@@ -648,6 +648,15 @@ class _PretendardFonts {
     letterSpacing: -0.24,
   );
 
+  TextStyle caption_sm_500(BuildContext context) => TextStyle(
+    fontFamily: _fontFamily,
+    fontWeight: FontWeight.w500,
+    fontSize: scaleFont(10),
+    height: 18 / 10,
+    letterSpacing: -0.4,
+  );
+
+
   TextStyle caption_re_400(BuildContext context) => TextStyle(
     fontFamily: _fontFamily,
     fontWeight: FontWeight.w400,

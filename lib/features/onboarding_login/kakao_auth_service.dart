@@ -406,14 +406,13 @@ class KakaoAuthService {
   Future<bool> performLogout() async {
     print('🚪 performLogout 시작 (로컬/서버 처리)');
 
-    // 1. 서버 로그아웃 요청 (로그에서 POST /users/me/logout 경로 확인됨)
+    // 1. 서버 로그아웃 요청
     try {
       final response = await authenticatedRequest(
-        endpoint: '/users/me/logout',
+        endpoint: '/auth/logout',
         method: 'POST',
       );
 
-      // 서버 로그아웃 응답이 실패(400)하더라도 로컬 클리어는 계속 진행합니다.
       if (response != null) {
         print('✅ 서버 로그아웃 응답: ${response.statusCode}');
       }
@@ -421,7 +420,7 @@ class KakaoAuthService {
       print('❌ 서버 로그아웃 요청 중 오류 발생: $e');
     }
 
-    // 2. 로컬 토큰 무조건 삭제 (가장 중요한 부분)
+    // 2. 로컬 토큰 무조건 삭제
     await clearTokens();
 
     // 3. 카카오 세션도 해제
@@ -432,7 +431,6 @@ class KakaoAuthService {
       print('❌ 카카오 세션 로그아웃 실패: $e');
     }
 
-    // 로컬 토큰을 지웠으므로 클라이언트 관점에서는 로그아웃 성공으로 간주
     return true;
   }
 

@@ -279,7 +279,7 @@ class _BlockScreenState extends State<BlockScreen> {
                         child: Center(
                           child: FixedText(
                             "차단된 계정",
-                            style: AppFonts.suite.b2_b(context)
+                            style: AppFonts.pretendard.body_md_500(context)
                                 .copyWith(color: AppColors.gray950),
                           ),
                         ),
@@ -310,7 +310,7 @@ class _BlockScreenState extends State<BlockScreen> {
     return Center(
       child: FixedText(
         "차단된 계정이 없어요",
-        style: AppFonts.suite.head_sm_700(context)
+        style: AppFonts.pretendard.head_sm_600(context)
             .copyWith(color: AppColors.gray400),
       ),
     );
@@ -384,7 +384,7 @@ class _BlockScreenState extends State<BlockScreen> {
                       SizedBox(height: scaleHeight(6)),
                       FixedText(
                         "${user['favTeam'] ?? '응원팀 없음'} 팬",
-                        style: AppFonts.suite.caption_re_400(context)
+                        style: AppFonts.pretendard.caption_md_400(context)
                             .copyWith(color: AppColors.gray400),
                       ),
                     ],

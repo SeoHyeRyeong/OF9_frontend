@@ -625,7 +625,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                           Center(
                             child: FixedText(
                               '좌석',
-                              style: AppFonts.suite.head_sm_700(context).copyWith(
+                              style: AppFonts.pretendard.head_sm_600(context).copyWith(
                                 color: Colors.black,
                               ),
                             ),
@@ -646,7 +646,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                             padding: EdgeInsets.only(left: scaleWidth(20)),
                             child: Row(
                               children: [
-                                FixedText('구역', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600,),),
+                                FixedText('구역', style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600,),),
                                 SizedBox(width: scaleWidth(2)),
                                 FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700,),
                                 ),
@@ -669,7 +669,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                             padding: EdgeInsets.only(left: scaleWidth(20)),
                             child: Row(
                               children: [
-                                FixedText('블럭', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600,),),
+                                FixedText('블럭', style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600,),),
                                 SizedBox(width: scaleWidth(2)),
                                 if (isDefinedStadium && hasBlocksForSelectedZone)
                                   FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700,),),
@@ -696,7 +696,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      FixedText('열', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600,),),
+                                      FixedText('열', style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600,),),
                                       SizedBox(height: scaleHeight(4)),
                                       _buildRowTextField(),
                                     ],
@@ -709,7 +709,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                                     children: [
                                       Row(
                                         children: [
-                                          FixedText('번호', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600,),),
+                                          FixedText('번호', style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600,),),
                                           SizedBox(width: scaleWidth(2)),
                                           FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700,),),
                                         ],
@@ -762,7 +762,7 @@ class _SeatInputBottomSheetState extends State<_SeatInputBottomSheet> {
                         child: Center(
                           child: FixedText(
                             '완료',
-                            style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray20,
+                            style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray20,
                             ),
                           ),
                         ),

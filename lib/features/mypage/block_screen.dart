@@ -127,8 +127,8 @@ class _BlockScreenState extends State<BlockScreen> {
       profileImageUrl: profileImageUrl,
       defaultIconAsset: AppImages.profile,
       nickname: nickname,
-      message: '차단이 해제되었습니다',
-      duration: Duration(seconds: 3),
+      message: '차단을 해제하시겠어요?',
+      duration: Duration(seconds: 2),
       onCancel: () async {
         try {
           await UserApi.blockUser(userId);
@@ -372,14 +372,15 @@ class _BlockScreenState extends State<BlockScreen> {
               SizedBox(width: scaleWidth(12)),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(top: scaleHeight(19)),
+                  padding: EdgeInsets.only(top: scaleHeight(19), right: scaleWidth(10),),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       FixedText(
                         user['nickname'] ?? '알 수 없음',
-                        style: AppFonts.pretendard.b3_sb(context)
-                            .copyWith(color: Colors.black),
+                        style: AppFonts.pretendard.b3_sb(context).copyWith(color: Colors.black),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: scaleHeight(6)),
                       FixedText(

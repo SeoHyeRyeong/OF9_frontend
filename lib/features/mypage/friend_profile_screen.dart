@@ -437,8 +437,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           profileImageUrl: profileImageUrl,
           defaultIconAsset: AppImages.profile,
           nickname: nickname,
-          message: '팔로우를 취소하였습니다',
-          duration: Duration(seconds: 3),
+          message: '팔로우를 취소하시겠어요?',
+          duration: Duration(seconds: 2),
           onCancel: () async {
             print('$nickname - 언팔로우 취소 (다시 팔로우)');
             _unfollowTimer?.cancel();

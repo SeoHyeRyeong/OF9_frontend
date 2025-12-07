@@ -361,8 +361,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
-      onPopInvoked: (didPop) {},
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1, animation2) =>
+              const MyPageScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        }
+      },
       child: Scaffold(
         backgroundColor: AppColors.gray30,
         body: SafeArea(
@@ -537,15 +549,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 Padding(
                                   padding: EdgeInsets.only(top: scaleHeight(35)),
                                   child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
+                                    onTap: () async {
+                                      final result = await Navigator.push(
                                         context,
                                         PageRouteBuilder(
-                                          pageBuilder: (context, animation1, animation2) => const EditProfileScreen(),
+                                          pageBuilder: (context, animation1, animation2) => const EditProfileScreen(previousRoute: 'settings'),
                                           transitionDuration: Duration.zero,
                                           reverseTransitionDuration: Duration.zero,
                                         ),
                                       );
+                                      if (result == true) {
+                                        _loadUserInfo();
+                                        _loadBlockedUsers();
+                                      }
                                     },
                                     child: Container(
                                       width: scaleWidth(42),

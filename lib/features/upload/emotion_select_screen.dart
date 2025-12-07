@@ -8,7 +8,7 @@ import 'package:frontend/features/upload/detail_record_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
 import 'package:frontend/utils/size_utils.dart';
-import 'package:frontend/features/upload/ticket_info_screen.dart';
+import 'package:frontend/api/record_api.dart';
 
 class EmotionSelectScreen extends StatefulWidget {
   final bool isEditMode;
@@ -25,30 +25,67 @@ class EmotionSelectScreen extends StatefulWidget {
 }
 
 class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
+  String selectedFilter = '전체';
   int? selectedEmotionCode;
+  List<Map<String, dynamic>> displayedEmotions = [];
+  bool isLoading = false;
 
-  final List<Map<String, dynamic>> emotions = [
-    {'code': 1, 'label': '짜릿해요', 'image': AppImages.emotion_1},
-    {'code': 2, 'label': '만족해요', 'image': AppImages.emotion_2},
-    {'code': 3, 'label': '감동이에요', 'image': AppImages.emotion_3},
-    {'code': 4, 'label': '놀랐어요', 'image': AppImages.emotion_4},
-    {'code': 5, 'label': '행복해요', 'image': AppImages.emotion_5},
-    {'code': 6, 'label': '답답해요', 'image': AppImages.emotion_6},
-    {'code': 7, 'label': '아쉬워요', 'image': AppImages.emotion_7},
-    {'code': 8, 'label': '화났어요', 'image': AppImages.emotion_8},
-    {'code': 9, 'label': '지쳤어요', 'image': AppImages.emotion_9},
-  ];
+  // emotion code에 따른 이미지 매핑
+  final Map<int, String> emotionImages = {
+    1: AppImages.emotion_1,
+    2: AppImages.emotion_2,
+    3: AppImages.emotion_3,
+    4: AppImages.emotion_4,
+    5: AppImages.emotion_5,
+    6: AppImages.emotion_6,
+    7: AppImages.emotion_7,
+    8: AppImages.emotion_8,
+    9: AppImages.emotion_9,
+    10: AppImages.emotion_10,
+    11: AppImages.emotion_11,
+    12: AppImages.emotion_12,
+    13: AppImages.emotion_13,
+    14: AppImages.emotion_14,
+    15: AppImages.emotion_15,
+    16: AppImages.emotion_16,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    final recordState = Provider.of<RecordState>(context, listen: false);
+    selectedEmotionCode = recordState.emotionCode;
+    _loadEmotions();
+  }
+
+  Future<void> _loadEmotions() async {
+    try {
+      final emotions = await RecordApi.getEmotionsByCategory(
+        category: selectedFilter,
+      );
+
+      setState(() {
+        displayedEmotions = emotions;
+        isLoading = false;
+      });
+
+      print('✅ 로드된 감정 개수: ${displayedEmotions.length}');
+    } catch (e) {
+      print('❌ 감정 목록 로드 실패: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final recordState = Provider.of<RecordState>(context, listen: false);
-    selectedEmotionCode ??= recordState.emotionCode;
 
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
-          // 감정 코드 저장
           if (selectedEmotionCode != null) {
             recordState.updateEmotionCode(selectedEmotionCode!);
           }
@@ -67,12 +104,9 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                 padding: EdgeInsets.only(left: scaleWidth(20)),
                 child: GestureDetector(
                   onTap: () {
-                    // 감정 코드 저장
                     if (selectedEmotionCode != null) {
                       recordState.updateEmotionCode(selectedEmotionCode!);
                     }
-
-                    // info로 돌아가기 (pop 사용)
                     Navigator.pop(context);
                   },
                   child: SvgPicture.asset(
@@ -95,80 +129,128 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                     children: [
                       FixedText(
                         '직관 감정 선택',
-                        style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray900),
+                        style: AppFonts.pretendard.title_lg_600(context).copyWith(color: AppColors.gray900),
                       ),
                       SizedBox(height: scaleHeight(4)),
                       FixedText(
                         '이번 직관에 대한 내 생생한 감정을 남겨봐요!',
-                        style: AppFonts.suite.body_md_400(context).copyWith(color: AppColors.gray500),
+                        style: AppFonts.pretendard.body_md_400(context).copyWith(color: AppColors.gray300),
                       ),
                     ],
                   ),
                 ),
               ),
 
-              SizedBox(height: scaleHeight(37.5)),
+              SizedBox(height: scaleHeight(23)),
+
+              // 필터 버튼 (왼쪽 정렬)
+              Container(
+                width: double.infinity,
+                alignment: Alignment.centerLeft,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.only(left: scaleWidth(20)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: ['전체', '승리', '무승부', '패배'].map((filter) {
+                      final isSelected = selectedFilter == filter;
+                      return Padding(
+                        padding: EdgeInsets.only(right: scaleWidth(8)),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedFilter = filter;
+                            });
+                            _loadEmotions();
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: scaleWidth(14),
+                              vertical: scaleHeight(4),
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.gray30 : AppColors.gray20,
+                              borderRadius: BorderRadius.circular(scaleHeight(8)),
+                            ),
+                            child: FixedText(
+                              filter,
+                              style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                                fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                                color: isSelected ? AppColors.gray600 : AppColors.gray300,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+
+              SizedBox(height: scaleHeight(20)),
 
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final availableWidth = constraints.maxWidth - scaleWidth(40);
-                    final horizontalSpacing = availableWidth * (28 / 320);
-                    final verticalSpacing = availableWidth * (20 / 320);
+                    final horizontalPadding = scaleWidth(40);
+                    final availableWidth = constraints.maxWidth - horizontalPadding;
+                    final itemWidth = scaleWidth(72);
+                    final totalItemsWidth = itemWidth * 4;
+                    final remainingSpace = availableWidth - totalItemsWidth;
+                    final spacing = remainingSpace / 3;
 
                     return Padding(
                       padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                       child: GridView.builder(
-                        itemCount: emotions.length,
+                        key: ValueKey(selectedFilter),
+                        itemCount: displayedEmotions.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: horizontalSpacing,
-                          mainAxisSpacing: verticalSpacing,
-                          childAspectRatio: 88 / 120,
+                          crossAxisCount: 4,
+                          crossAxisSpacing: spacing > 0 ? spacing : scaleWidth(8),
+                          mainAxisSpacing: scaleHeight(20),
+                          childAspectRatio: 72 / 84,
                         ),
                         itemBuilder: (context, index) {
-                          final emotion = emotions[index];
-                          final isSelected = selectedEmotionCode == null || selectedEmotionCode == emotion['code'];
+                          final emotion = displayedEmotions[index];
+                          final emotionCode = emotion['code'] as int;
+                          final emotionLabel = emotion['label'] as String;
+                          final isSelected = selectedEmotionCode == null || selectedEmotionCode == emotionCode;
 
                           return GestureDetector(
                             onTap: () {
                               setState(() {
-                                selectedEmotionCode = selectedEmotionCode == emotion['code'] ? null : emotion['code'];
+                                selectedEmotionCode = selectedEmotionCode == emotionCode ? null : emotionCode;
                               });
                             },
                             child: Opacity(
-                              opacity: isSelected ? 1.0 : 0.5,
+                              opacity: isSelected ? 1.0 : 0.3,
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(
-                                    width: scaleWidth(88),
-                                    height: scaleHeight(88),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.white,
-                                      boxShadow: isSelected
-                                          ? [
-                                        BoxShadow(
-                                          color: const Color(0x0D000000),
-                                          blurRadius: 7,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ]
-                                          : [],
-                                    ),
-                                    child: SvgPicture.asset(
-                                      emotion['image'],
-                                      width: scaleWidth(88),
-                                      height: scaleHeight(88),
+                                  SizedBox(
+                                    width: scaleWidth(55),
+                                    height: scaleHeight(55),
+                                    child: emotionImages.containsKey(emotionCode)
+                                        ? SvgPicture.asset(
+                                      emotionImages[emotionCode]!,
+                                      width: scaleWidth(55),
+                                      height: scaleHeight(55),
+                                    )
+                                        : Container(
+                                      width: scaleWidth(55),
+                                      height: scaleHeight(55),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.gray100,
+                                        shape: BoxShape.circle,
+                                      ),
                                     ),
                                   ),
                                   SizedBox(height: scaleHeight(8)),
                                   FixedText(
-                                    emotion['label'],
+                                    emotionLabel,
                                     textAlign: TextAlign.center,
-                                    style: AppFonts.suite.body_md_400(context).copyWith(
-                                      color: isSelected ? AppColors.gray900 : AppColors.gray900.withOpacity(0.5),
+                                    style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                                      color: AppColors.gray900,
                                     ),
                                   ),
                                 ],
@@ -197,10 +279,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                 child: ElevatedButton(
                   onPressed: selectedEmotionCode != null
                       ? () {
-                    final recordState = Provider.of<RecordState>(context, listen: false);
-
                     recordState.updateEmotionCode(selectedEmotionCode!);
-
                     Navigator.push(
                       context,
                       PageRouteBuilder(
@@ -225,7 +304,7 @@ class _EmotionSelectScreenState extends State<EmotionSelectScreen> {
                   child: Center(
                     child: FixedText(
                       '다음',
-                      style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray20),
+                      style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray20),
                     ),
                   ),
                 ),

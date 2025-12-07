@@ -801,15 +801,22 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
   String _getEmotionLabel(int emotionCode) {
     switch (emotionCode) {
-      case 1: return '짜릿해요';
-      case 2: return '만족해요';
-      case 3: return '감동이에요';
-      case 4: return '놀라워요';
-      case 5: return '행복해요';
-      case 6: return '답답해요';
-      case 7: return '아쉬워요';
-      case 8: return '화났어요';
-      case 9: return '지쳤어요';
+      case 1: return '행복해요';
+      case 2: return '놀랐어요';
+      case 3: return '짜릿해요';
+      case 4: return '벅차요';
+      case 5: return '통쾌해요';
+      case 6: return '만족해요';
+      case 7: return '지루해요';
+      case 8: return '무난해요';
+      case 9: return '긴장돼요';
+      case 10: return '질투나요';
+      case 11: return '답답해요';
+      case 12: return '아쉬워요';
+      case 13: return '지쳤어요';
+      case 14: return '허탈해요';
+      case 15: return '짜증나요';
+      case 16: return '화나요';
       default: return '';
     }
   }

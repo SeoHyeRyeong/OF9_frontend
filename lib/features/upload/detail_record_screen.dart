@@ -426,14 +426,14 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                         SizedBox(height: scaleHeight(8)),
                         FixedText(
                           '사진과 영상을 추가해 주세요',
-                          style: AppFonts.suite.head_sm_700(context).copyWith(
+                          style: AppFonts.pretendard.head_sm_600(context).copyWith(
                               color: AppColors.gray900),
                           textAlign: TextAlign.center,
                         ),
                         SizedBox(height: scaleHeight(4)),
                         FixedText(
                           '첫 번째 사진이 대표 사진으로 지정됩니다',
-                          style: AppFonts.suite.body_sm_500(context).copyWith(
+                          style: AppFonts.pretendard.body_sm_400(context).copyWith(
                               color: AppColors.gray500),
                           textAlign: TextAlign.center,
                         ),
@@ -741,7 +741,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
               child: Center(
                 child: FixedText(
                   '건너뛰기',
-                  style: AppFonts.suite.head_sm_700(context).copyWith(
+                  style: AppFonts.pretendard.body_md_500(context).copyWith(
                       color: AppColors.gray700),
                 ),
               ),
@@ -775,7 +775,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                   : Center(
                 child: FixedText(
                   '완료',
-                  style: AppFonts.suite.head_sm_700(context).copyWith(
+                  style: AppFonts.pretendard.body_md_500(context).copyWith(
                       color: AppColors.gray20),
                 ),
               ),
@@ -1012,12 +1012,12 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                       SizedBox(height: scaleHeight(20)),
                       FixedText(
                         '상세 기록을 건너뛰기 하시겠어요?',
-                        style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray900),
+                        style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray900),
                       ),
                       SizedBox(height: scaleHeight(8)),
                       FixedText(
                         '직관 기록은 완료 후 수정이 불가능해요',
-                        style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray400),
+                        style: AppFonts.pretendard.body_sm_400(context).copyWith(color: AppColors.gray400),
                       ),
                       SizedBox(height: scaleHeight(24)),
                       Padding(
@@ -1039,7 +1039,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                                 child: Center(
                                   child: FixedText(
                                     '계속 작성하기',
-                                    style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray700),
+                                    style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray700),
                                   ),
                                 ),
                               ),
@@ -1075,7 +1075,7 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
                                     : Center(
                                   child: FixedText(
                                     '건너뛰기',
-                                    style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray20),
+                                    style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray20),
                                   ),
                                 ),
                               ),
@@ -1109,9 +1109,9 @@ Widget _buildSectionHeader(BuildContext context, String iconPath, String title, 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FixedText(title, style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray900)),
+            FixedText(title, style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray900)),
             SizedBox(height: scaleHeight(2)),
-            FixedText(description, style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray500)),
+            FixedText(description, style: AppFonts.pretendard.body_sm_400(context).copyWith(color: AppColors.gray500)),
           ],
         ),
       ),
@@ -1282,7 +1282,7 @@ Widget _buildSimpleInput({
             child: Center(
               child: FixedText(
                 '해당 검색어에 대한 검색결과가 없어요!',
-                style: AppFonts.suite.caption_md_500(context).copyWith(
+                style: AppFonts.pretendard.caption_md_400(context).copyWith(
                   color: AppColors.gray300,
                 ),
               ),
@@ -1359,7 +1359,7 @@ Widget _buildSimpleInput({
                                         type == 'player'
                                             ? (item['team'] ?? item['favTeam'] ?? '') :
                                         '${item['favTeam'] ?? ''} 팬',
-                                        style: AppFonts.suite.caption_re_400(context).copyWith(
+                                        style: AppFonts.pretendard.caption_re_400(context).copyWith(
                                           color: AppColors.gray300,
                                         ),
                                       ),
@@ -1667,6 +1667,23 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
 
     if (_isFocused) {
       _scrollToTextField(); // 초기 스크롤만
+    } else {
+      // 포커스 잃을 때 @ 제거
+      final trimmedText = _controller.text.trim();
+      if (!_isPlayerSelected && (trimmedText.isEmpty || trimmedText == '@')) {
+        _controller.removeListener(_updateState);
+        _focusNode.removeListener(_updateFocusState);
+        _controller.clear();
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (mounted) {
+            _controller.addListener(_updateState);
+            _focusNode.addListener(_updateFocusState);
+            setState(() {
+              _showDropdown = false;
+            });
+          }
+        });
+      }
     }
   }
 
@@ -1902,23 +1919,41 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
 
     if (_isFocused) {
       _controller.removeListener(_updateState);
-
-      // 텍스트가 비어있거나, 친구가 선택되어 있으면 마지막에 @ 추가
       if (_controller.text.isEmpty) {
         _controller.text = '@';
         _controller.selection = TextSelection.fromPosition(
           TextPosition(offset: 1),
         );
       } else if (_selectedFriends.isNotEmpty && !_controller.text.endsWith('@')) {
-        // 이미 선택된 친구가 있고 @로 끝나지 않으면 @ 추가
         _controller.text = '${_controller.text} @';
         _controller.selection = TextSelection.fromPosition(
           TextPosition(offset: _controller.text.length),
         );
       }
-
       _controller.addListener(_updateState);
       _scrollToTextField();
+    } else {
+      // 포커스 잃을 때 @ 제거
+      final trimmedText = _controller.text.trim();
+      if (_selectedFriends.isEmpty && (trimmedText.isEmpty || trimmedText == '@')) {
+        _controller.removeListener(_updateState);
+        _focusNode.removeListener(_updateFocusState);
+        _controller.clear();
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (mounted) {
+            _controller.addListener(_updateState);
+            _focusNode.addListener(_updateFocusState);
+            setState(() {
+              _showDropdown = false;
+            });
+          }
+        });
+      } else if (_selectedFriends.isNotEmpty && trimmedText.endsWith('@')) {
+        final nicknames = _selectedFriends.map((f) => f['nickname']).join(' ');
+        _controller.removeListener(_updateState);
+        _controller.text = nicknames;
+        _controller.addListener(_updateState);
+      }
     }
   }
 

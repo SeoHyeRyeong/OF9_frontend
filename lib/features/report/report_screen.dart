@@ -28,15 +28,22 @@ class _ReportScreenState extends State<ReportScreen> {
 
   // 감정 코드와 이미지 경로 매핑 (AppImages에 정의된 경로 사용)
   final Map<int, String> _emotionImageMap = {
-    1: AppImages.emotion_1_transparent,
-    2: AppImages.emotion_2_transparent,
-    3: AppImages.emotion_3_transparent,
-    4: AppImages.emotion_4_transparent,
-    5: AppImages.emotion_5_transparent,
-    6: AppImages.emotion_6_transparent,
-    7: AppImages.emotion_7_transparent,
-    8: AppImages.emotion_8_transparent,
-    9: AppImages.emotion_9_transparent,
+    1: AppImages.emotion_1,
+    2: AppImages.emotion_2,
+    3: AppImages.emotion_3,
+    4: AppImages.emotion_4,
+    5: AppImages.emotion_5,
+    6: AppImages.emotion_6,
+    7: AppImages.emotion_7,
+    8: AppImages.emotion_8,
+    9: AppImages.emotion_9,
+    10: AppImages.emotion_10,
+    11: AppImages.emotion_11,
+    12: AppImages.emotion_12,
+    13: AppImages.emotion_13,
+    14: AppImages.emotion_14,
+    15: AppImages.emotion_15,
+    16: AppImages.emotion_16,
   };
 
   // 카테고리별 에셋 매핑
@@ -1011,7 +1018,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ),),
             SizedBox(width: scaleWidth(9)),
             Expanded(child: _buildAnalysisCard(
-              iconPath: _emotionImageMap[topEmotionCode] ?? AppImages.emotion_5_transparent,
+              iconPath: _emotionImageMap[topEmotionCode] ?? AppImages.emotion_5,
               title: "최다 기록 감정",
               value: hasRecords ? (topEmotionName ?? "-") : "????",
               isPlaceholder: !hasRecords,
@@ -1034,7 +1041,7 @@ class _ReportScreenState extends State<ReportScreen> {
     // 플레이스홀더일 경우 아이콘 경로 처리
     String displayIconPath = iconPath;
     if (isPlaceholder && title == "최다 기록 감정") {
-      displayIconPath = AppImages.emotion_5_transparent; // 감정 플레이스홀더 아이콘 경로로 변경
+      displayIconPath = AppImages.emotion_5; // 감정 플레이스홀더 아이콘 경로로 변경
     }
     // SVG 확장자 확인 및 추가
     if (!displayIconPath.endsWith('.svg') && !displayIconPath.contains('/ic_emotion/')) {

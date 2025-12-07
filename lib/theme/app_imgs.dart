@@ -68,16 +68,13 @@ class AppImages {
   static const emotion_7 = 'assets/imgs/ic_emotion/emotion_7.svg';
   static const emotion_8 = 'assets/imgs/ic_emotion/emotion_8.svg';
   static const emotion_9 = 'assets/imgs/ic_emotion/emotion_9.svg';
-
-  static const emotion_1_transparent = 'assets/imgs/ic_emotion/emotion_1_transparent.svg';
-  static const emotion_2_transparent = 'assets/imgs/ic_emotion/emotion_2_transparent.svg';
-  static const emotion_3_transparent = 'assets/imgs/ic_emotion/emotion_3_transparent.svg';
-  static const emotion_4_transparent = 'assets/imgs/ic_emotion/emotion_4_transparent.svg';
-  static const emotion_5_transparent = 'assets/imgs/ic_emotion/emotion_5_transparent.svg';
-  static const emotion_6_transparent = 'assets/imgs/ic_emotion/emotion_6_transparent.svg';
-  static const emotion_7_transparent = 'assets/imgs/ic_emotion/emotion_7_transparent.svg';
-  static const emotion_8_transparent = 'assets/imgs/ic_emotion/emotion_8_transparent.svg';
-  static const emotion_9_transparent = 'assets/imgs/ic_emotion/emotion_9_transparent.svg';
+  static const emotion_10 = 'assets/imgs/ic_emotion/emotion_10.svg';
+  static const emotion_11 = 'assets/imgs/ic_emotion/emotion_11.svg';
+  static const emotion_12 = 'assets/imgs/ic_emotion/emotion_12.svg';
+  static const emotion_13 = 'assets/imgs/ic_emotion/emotion_13.svg';
+  static const emotion_14 = 'assets/imgs/ic_emotion/emotion_14.svg';
+  static const emotion_15 = 'assets/imgs/ic_emotion/emotion_15.svg';
+  static const emotion_16 = 'assets/imgs/ic_emotion/emotion_16.svg';
 
   // 상세 기록
   static const maincheck = 'assets/imgs/ic_detail_record/chip_main_check.svg';

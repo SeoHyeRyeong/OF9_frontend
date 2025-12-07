@@ -467,7 +467,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                           padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                           child: FixedText(
                             '티켓 정보 확인',
-                            style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray900),
+                            style: AppFonts.pretendard.title_lg_600(context).copyWith(color: AppColors.gray900),
                           ),
                         ),
                         SizedBox(height: scaleHeight(4)),
@@ -475,7 +475,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                           padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                           child: FixedText(
                             '스캔한 정보와 다른 부분이 있다면 수정해 주세요',
-                            style: AppFonts.suite.body_md_400(context).copyWith(color: AppColors.gray500),
+                            style: AppFonts.pretendard.body_md_400(context).copyWith(color: AppColors.gray300),
                           ),
                         ),
                         SizedBox(height: scaleHeight(24)),
@@ -534,7 +534,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                           Row(
                                             children: [
                                               SizedBox(height: scaleHeight(1)),
-                                              FixedText('홈 구단', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                              FixedText('홈 구단', style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600)),
                                               SizedBox(width: scaleWidth(2)),
                                               FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
                                             ],
@@ -581,7 +581,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                           // 원정 구단
                                           Row(
                                             children: [
-                                              FixedText('원정 구단', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                              FixedText('원정 구단', style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600)),
                                               SizedBox(width: scaleWidth(2)),
                                               FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
                                             ],
@@ -636,7 +636,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                   children: [
                                     Row(
                                       children: [
-                                        FixedText('일시', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                        FixedText('일시', style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600)),
                                         SizedBox(width: scaleWidth(2)),
                                         FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
                                       ],
@@ -709,7 +709,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                   children: [
                                     Row(
                                       children: [
-                                        FixedText('구장', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                        FixedText('구장', style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600)),
                                         SizedBox(width: scaleWidth(2)),
                                         FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
                                       ],
@@ -763,7 +763,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                     SizedBox(height: scaleHeight(4)),
                                     FixedText(
                                       '*홈 구장과 실제 경기 구장이 다를 경우 직접 작성해 주세요',
-                                      style: AppFonts.suite.caption_re_500(context).copyWith(color: AppColors.gray300),
+                                      style: AppFonts.pretendard.caption_re_400(context).copyWith(color: AppColors.gray300),
                                     ),
                                   ],
                                 ),
@@ -775,7 +775,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                   children: [
                                     Row(
                                       children: [
-                                        FixedText('좌석', style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600)),
+                                        FixedText('좌석', style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600)),
                                         SizedBox(width: scaleWidth(2)),
                                         FixedText('*', style: AppFonts.suite.c1_b(context).copyWith(color: AppColors.pri700)),
                                       ],
@@ -827,7 +827,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                     SizedBox(height: scaleHeight(4)),
                                     FixedText(
                                       '*상세 좌석 정보는 나에게만 보여요',
-                                      style: AppFonts.suite.caption_re_500(context).copyWith(color: AppColors.gray300),
+                                      style: AppFonts.pretendard.caption_re_400(context).copyWith(color: AppColors.gray300),
                                     ),
                                   ],
                                 ),
@@ -906,7 +906,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                             child: Center(
                               child: FixedText(
                                 '완료',
-                                style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray20),
+                                style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray20),
                               ),
                             ),
                           ),

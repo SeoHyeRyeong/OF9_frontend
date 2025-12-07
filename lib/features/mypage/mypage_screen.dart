@@ -634,6 +634,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                         reverseTransitionDuration: Duration.zero,
                       ),
                     );
+                    _loadUserInfo();
                   },
                   child: SvgPicture.asset(
                     AppImages.Setting,

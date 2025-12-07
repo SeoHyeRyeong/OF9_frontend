@@ -312,7 +312,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                             Center(
                               child: FixedText(
                                 '일시',
-                                style: AppFonts.suite.head_sm_700(context).copyWith(
+                                style: AppFonts.pretendard.head_sm_600(context).copyWith(
                                   color: Colors.black,
                                 ),
                               ),
@@ -740,7 +740,7 @@ Future<Map<String, dynamic>?> showDateTimePicker({
                             child: Center(
                               child: FixedText(
                                 '완료',
-                                style: AppFonts.suite.head_sm_700(context).copyWith(
+                                style: AppFonts.pretendard.body_md_500(context).copyWith(
                                   color: AppColors.gray20,
                                 ),
                               ),

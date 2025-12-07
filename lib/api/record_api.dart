@@ -130,11 +130,14 @@ class RecordApi {
   }) async {
     try {
       final bytes = await file.readAsBytes();
-      final fileName = file.path.split('/').last;
+      final fileName = file.path
+          .split('/')
+          .last;
 
       // 파일 확장자로 Content-Type 결정
       String contentType = 'application/octet-stream';
-      if (fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) {
+      if (fileName.toLowerCase().endsWith('.jpg') ||
+          fileName.toLowerCase().endsWith('.jpeg')) {
         contentType = 'image/jpeg';
       } else if (fileName.toLowerCase().endsWith('.png')) {
         contentType = 'image/png';
@@ -174,7 +177,9 @@ class RecordApi {
       // 1단계: 모든 파일에 대한 Pre-signed URL 요청 (병렬 처리)
       List<Future<Map<String, String>>> urlRequests = [];
       for (String imagePath in imagePaths) {
-        final fileName = imagePath.split('/').last;
+        final fileName = imagePath
+            .split('/')
+            .last;
         urlRequests.add(getPresignedUrl(domain: domain, fileName: fileName));
       }
 
@@ -193,7 +198,6 @@ class RecordApi {
 
       print('✅ 모든 이미지 업로드 완료: ${finalUrls.length}개');
       return finalUrls;
-
     } catch (e) {
       print('❌ 다중 이미지 업로드 실패: $e');
       rethrow;
@@ -234,9 +238,11 @@ class RecordApi {
       'emotionCode': emotionCode,
       'stadium': stadium,
       if (comment != null && comment.isNotEmpty) 'comment': comment,
-      if (longContent != null && longContent.isNotEmpty) 'longContent': longContent,
+      if (longContent != null &&
+          longContent.isNotEmpty) 'longContent': longContent,
       if (bestPlayer != null && bestPlayer.isNotEmpty) 'bestPlayer': bestPlayer,
-      if (companionIds != null && companionIds.isNotEmpty) 'companions': companionIds,
+      if (companionIds != null &&
+          companionIds.isNotEmpty) 'companions': companionIds,
       if (foodTags != null && foodTags.isNotEmpty) 'foodTags': foodTags,
       if (mediaUrls.isNotEmpty) 'mediaUrls': mediaUrls,
     };
@@ -265,7 +271,8 @@ class RecordApi {
   static Future<List<Map<String, dynamic>>> searchUsers({String? query}) async {
     Uri uri;
     if (query != null && query.isNotEmpty) {
-      uri = Uri.parse('$baseUrl/records/users/search?query=${Uri.encodeComponent(query)}');
+      uri = Uri.parse(
+          '$baseUrl/records/users/search?query=${Uri.encodeComponent(query)}');
     } else {
       uri = Uri.parse('$baseUrl/records/users/search');
     }
@@ -454,7 +461,8 @@ class RecordApi {
     if (res.statusCode == 200) {
       final responseData = jsonDecode(utf8.decode(res.bodyBytes));
       // 2. 응답 구조 변경: List 대신 Map 반환, 'data' 키 아래의 내용 반환
-      if (responseData['success'] == true && responseData['data'] is Map<String, dynamic>) {
+      if (responseData['success'] == true &&
+          responseData['data'] is Map<String, dynamic>) {
         return responseData['data'] as Map<String, dynamic>;
       } else {
         throw Exception('캘린더 데이터 형식이 올바르지 않습니다.');
@@ -467,5 +475,50 @@ class RecordApi {
   @Deprecated('Use getRecordDetail instead')
   static Future<Map<String, dynamic>> getRecordById(String recordId) async {
     return getRecordDetail(recordId);
+  }
+
+  //=====================================================================================
+  // 감정 이모지 관련
+  //=====================================================================================
+  /// 카테고리별 감정 목록 조회
+  /// category: '전체', '승리', '무승부', '패배'
+  static Future<List<Map<String, dynamic>>> getEmotionsByCategory({
+    String category = '전체',
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/emotions').replace(
+      queryParameters: {
+        'category': category,
+      },
+    );
+
+    final res = await _makeRequestWithRetry(
+      uri: uri,
+      method: 'GET',
+    );
+
+    print('😊 감정 목록 응답 ($category): ${res.statusCode}');
+    print('😊 감정 목록 응답 본문: ${res.body}');
+
+    if (res.statusCode == 200) {
+      final responseData = jsonDecode(utf8.decode(res.bodyBytes));
+
+      // 응답 형식 확인 후 처리
+      if (responseData is List) {
+        // 백엔드가 직접 List를 반환하는 경우
+        return responseData.cast<Map<String, dynamic>>();
+      } else if (responseData is Map && responseData.containsKey('data')) {
+        // 백엔드가 {data: [...]} 형식으로 반환하는 경우
+        final List emotions = responseData['data'];
+        return emotions.cast<Map<String, dynamic>>();
+      } else if (responseData is Map) {
+        // 백엔드가 Map으로 반환하는 경우
+        return [responseData as Map<String, dynamic>];
+      } else {
+        print('❌ 예상치 못한 응답 형식: ${responseData.runtimeType}');
+        throw Exception('감정 목록 응답 형식이 올바르지 않습니다.');
+      }
+    } else {
+      throw Exception('감정 목록 조회 실패: ${res.statusCode}');
+    }
   }
 }

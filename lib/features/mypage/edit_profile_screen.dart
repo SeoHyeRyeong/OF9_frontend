@@ -284,20 +284,63 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  // 닉네임 유효성 검사 (한글 완성형 체크)
+  String? _validateNickname(String nickname) {
+    if (nickname.trim().isEmpty) {
+      return '닉네임을 입력해주세요';
+    }
+
+    // 한글 자음/모음 단독 입력 체크
+    final hasIncompleteKorean = nickname.runes.any((rune) {
+      return (rune >= 0x3131 && rune <= 0x314E) || // 자음 (ㄱ~ㅎ)
+          (rune >= 0x314F && rune <= 0x3163);   // 모음 (ㅏ~ㅣ)
+    });
+
+    if (hasIncompleteKorean) {
+      return '닉네임은 자음/모음 단독 사용이 불가능해요';
+    }
+
+    // 특수문자 체크
+    final hasInvalidChars = RegExp(r'''[<>'"\/\\]''').hasMatch(nickname);
+    if (hasInvalidChars) {
+      return '닉네임에 특수문자가 포함되어 있어요 (특수문자 불가)';
+    }
+
+    return null;
+  }
+
   Future<void> _onCompletePressed() async {
     if (!_canComplete()) return;
+
+    // 1. 프론트엔드 검증 (완료 버튼 클릭 시에만)
+    final validationError = _validateNickname(_nicknameController.text);
+    if (validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(validationError),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     setState(() => isLoading = true);
 
     try {
       String? updatedImageUrl;
 
+      // 이미지 업로드 처리
       if (_newProfileImageFile != null) {
         updatedImageUrl = await _uploadProfileImageToS3(_newProfileImageFile!);
-        if (updatedImageUrl == null) throw Exception('이미지 업로드 실패');
+        if (updatedImageUrl == null) {
+          throw Exception('이미지 업로드에 실패했습니다');
+        }
       } else if (_isProfileImageDeleted) {
         updatedImageUrl = null;
       }
 
+      // 2. 백엔드 API 호출
       await UserApi.updateMyProfile(
         nickname: _nicknameController.text.trim(),
         favTeam: favTeam == "정보 불러오기 실패" ? null : favTeam,
@@ -307,29 +350,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (mounted) {
-        // 이전 화면에 따라 분기 처리
-        if (widget.previousRoute == 'mypage') {
-          // 마이페이지에서 온 경우
-          Navigator.pop(context, true); // 단순히 뒤로가기
-        } else {
-          // 설정 화면에서 온 경우 (기본값)
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => const SettingsScreen(),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
-        }
+        Navigator.pop(context, true);
       }
     } catch (e) {
+      // 3. 에러 메시지 상세화
+      String errorMessage = '프로필 수정에 실패했습니다';
+
+      final errorString = e.toString().toLowerCase();
+
+      if (errorString.contains('nickname') || errorString.contains('닉네임')) {
+        errorMessage = '닉네임 형식이 올바르지 않아요\n완성된 글자만 입력 가능해요';
+      } else if (errorString.contains('image') || errorString.contains('이미지')) {
+        errorMessage = '이미지 업로드에 실패했습니다';
+      } else if (errorString.contains('network') || errorString.contains('timeout')) {
+        errorMessage = '네트워크 연결을 확인해주세요';
+      } else if (errorString.contains('400')) {
+        errorMessage = '닉네임 형식이 올바르지 않아요 (특수문자 불가) ';
+      } else if (errorString.contains('500')) {
+        errorMessage = '서버 오류가 발생했습니다\n잠시 후 다시 시도해주세요';
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('프로필 수정에 실패했습니다.'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
         );
       }
+
+      print('❌ 프로필 수정 실패: $e');
     } finally {
       if (mounted) setState(() => isLoading = false);
     }

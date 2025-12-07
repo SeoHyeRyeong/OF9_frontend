@@ -83,11 +83,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
     if (widget.showUploadToast && widget.uploaderNickname != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (widget.isFirstRecord) {
-          _showFirstRecordOverlay(widget.uploaderNickname!);
-        } else {
-          _showUploadToast(widget.uploaderNickname!);
-        }
+        _showUploadToast(widget.uploaderNickname!);
       });
     }
   }
@@ -543,62 +539,11 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   //토스트
   void _showUploadToast(String nickname) {
-    CustomToast.show(
+    CustomToast.showSimpleTop(
       context: context,
       iconAsset: AppImages.complete,
-      boldText: nickname,
-      regularText: '직관 기록이 업로드 되었어요!',
+      message: '직관 기록이 업로드 완료됐어요!',
     );
-  }
-
-  //첫 기록 완료했을 때
-  void _showFirstRecordOverlay(String nickname) {
-    final overlay = Overlay.of(context);
-    // 오버레이 생성
-    final overlayEntry = OverlayEntry(
-      builder: (context) => Material(
-        color: Colors.transparent,
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: AppColors.trans700,
-          child: Column(
-            children: [
-              SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-              SvgPicture.asset(
-                AppImages.party,
-                width: scaleWidth(104),
-                height: scaleHeight(104),
-              ),
-              SizedBox(height: scaleHeight(23)),
-              FixedText(
-                '첫 직관 기록 완료',
-                style: AppFonts.suite.title_lg_700(context).copyWith(color: AppColors.gray20),
-              ),
-              SizedBox(height: scaleHeight(6)),
-              FixedText(
-                '마이페이지에서도 확인 가능해요!',
-                style: AppFonts.suite.body_md_400(context).copyWith(color: AppColors.gray100),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    overlay.insert(overlayEntry);
-
-    // 토스트도 동시에 표시
-    CustomToast.show(
-      context: context,
-      iconAsset: AppImages.complete,
-      boldText: nickname,
-      regularText: '직관 기록이 업로드 되었어요!',
-    );
-
-    // 3초 후 오버레이 제거
-    Future.delayed(Duration(seconds: 3), () {
-      overlayEntry.remove();
-    });
   }
 
   @override
@@ -1302,6 +1247,13 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       7: AppImages.emotion_7,
       8: AppImages.emotion_8,
       9: AppImages.emotion_9,
+      10: AppImages.emotion_10,
+      11: AppImages.emotion_11,
+      12: AppImages.emotion_12,
+      13: AppImages.emotion_13,
+      14: AppImages.emotion_14,
+      15: AppImages.emotion_15,
+      16: AppImages.emotion_16,
     };
 
     final imagePath = emotionImages[emotionCode];

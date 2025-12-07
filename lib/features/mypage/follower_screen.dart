@@ -361,7 +361,7 @@ class _FollowerScreenState extends State<FollowerScreen> {
               // 닉네임과 최애구단 컬럼
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(top: scaleHeight(19)),
+                  padding: EdgeInsets.only(top: scaleHeight(19), right: scaleWidth(10),),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -369,6 +369,8 @@ class _FollowerScreenState extends State<FollowerScreen> {
                       FixedText(
                         follower['nickname'] ?? '알 수 없음',
                         style: AppFonts.pretendard.b3_sb(context).copyWith(color: Colors.black),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: scaleHeight(6)),
                       // 최애 구단

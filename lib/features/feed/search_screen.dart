@@ -12,6 +12,7 @@ import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
+import 'package:frontend/utils/team_utils.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -66,114 +67,122 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              height: scaleHeight(60),
-              padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: _handleBackButton,
-                    child: Container(
-                      alignment: Alignment.center,
-                      child: SvgPicture.asset(
-                        AppImages.backBlack,
-                        width: scaleHeight(24),
-                        height: scaleHeight(24),
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: scaleWidth(8)),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        _focusNode.requestFocus();
-                      },
+      body: PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) {
+          if (!didPop) {
+            _handleBackButton();
+          }
+        },
+        child: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                height: scaleHeight(60),
+                padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _handleBackButton,
                       child: Container(
-                        height: scaleHeight(48),
-                        decoration: BoxDecoration(
-                          color: AppColors.gray30,
-                          borderRadius: BorderRadius.circular(scaleHeight(12)),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                margin: EdgeInsets.only(left: scaleWidth(20)),
-                                child: TextField(
-                                  controller: _searchController,
-                                  focusNode: _focusNode,
-                                  autofocus: false,
-                                  style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.gray700),
-                                  decoration: InputDecoration(
-                                    hintText: '글, 제목, 내용, 해시태그, 유저',
-                                    hintStyle: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.gray300),
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  onSubmitted: _performSearch,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              margin: EdgeInsets.only(right: scaleWidth(8)),
-                              width: scaleWidth(36),
-                              height: scaleHeight(36),
-                              decoration: BoxDecoration(
-                                color: _getButtonColor(),
-                                borderRadius: BorderRadius.circular(scaleHeight(12)),
-                              ),
-                              child: GestureDetector(
-                                onTap: _handleSearchButtonTap,
-                                child: Center(
-                                  child: SvgPicture.asset(
-                                    _getButtonIcon(),
-                                    width: scaleHeight(24),
-                                    height: scaleHeight(24),
-                                    color: AppColors.gray30,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        alignment: Alignment.center,
+                        child: SvgPicture.asset(
+                          AppImages.backBlack,
+                          width: scaleHeight(24),
+                          height: scaleHeight(24),
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(width: scaleWidth(8)),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          _focusNode.requestFocus();
+                        },
+                        child: Container(
+                          height: scaleHeight(48),
+                          decoration: BoxDecoration(
+                            color: AppColors.gray30,
+                            borderRadius: BorderRadius.circular(scaleHeight(12)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  margin: EdgeInsets.only(left: scaleWidth(20)),
+                                  child: TextField(
+                                    controller: _searchController,
+                                    focusNode: _focusNode,
+                                    autofocus: false,
+                                    style: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.gray700),
+                                    decoration: InputDecoration(
+                                      hintText: '글, 제목, 내용, 해시태그, 유저',
+                                      hintStyle: AppFonts.pretendard.b3_sb(context).copyWith(color: AppColors.gray300),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                    onSubmitted: _performSearch,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                margin: EdgeInsets.only(right: scaleWidth(8)),
+                                width: scaleWidth(36),
+                                height: scaleHeight(36),
+                                decoration: BoxDecoration(
+                                  color: _getButtonColor(),
+                                  borderRadius: BorderRadius.circular(scaleHeight(12)),
+                                ),
+                                child: GestureDetector(
+                                  onTap: _handleSearchButtonTap,
+                                  child: Center(
+                                    child: SvgPicture.asset(
+                                      _getButtonIcon(),
+                                      width: scaleHeight(24),
+                                      height: scaleHeight(24),
+                                      color: AppColors.gray30,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: _isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : _hasSearched
-                  ? SearchResultsWidget(
-                searchResult: _searchResult,
-                selectedTabIndex: _selectedTabIndex,
-                onTabChanged: (index) {
-                  setState(() {
-                    _selectedTabIndex = index;
-                  });
-                },
-                onRefreshRequired: _refreshSearchResults,
-                allRecords: _allRecords,
-                hasMoreRecords: _hasMoreRecords,
-                isLoadingMoreRecords: _isLoadingMoreRecords,
-                onLoadMoreRecords: _loadMoreRecords,
-              )
-                  : InitialSearchWidget(
-                popularSearches: _popularSearches,
-                recentSearches: _recentSearches,
-                onSearchTap: _onSearchTap,
-                onClearAllRecent: _clearAllRecentSearches,
-                onDeleteRecent: _deleteRecentSearch,
+              Expanded(
+                child: _isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : _hasSearched
+                    ? SearchResultsWidget(
+                  searchResult: _searchResult,
+                  selectedTabIndex: _selectedTabIndex,
+                  onTabChanged: (index) {
+                    setState(() {
+                      _selectedTabIndex = index;
+                    });
+                  },
+                  onRefreshRequired: _refreshSearchResults,
+                  allRecords: _allRecords,
+                  hasMoreRecords: _hasMoreRecords,
+                  isLoadingMoreRecords: _isLoadingMoreRecords,
+                  onLoadMoreRecords: _loadMoreRecords,
+                )
+                    : InitialSearchWidget(
+                  popularSearches: _popularSearches,
+                  recentSearches: _recentSearches,
+                  onSearchTap: _onSearchTap,
+                  onClearAllRecent: _clearAllRecentSearches,
+                  onDeleteRecent: _deleteRecentSearch,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -186,6 +195,10 @@ class _SearchScreenState extends State<SearchScreen> {
         _searchController.clear();
         _focusNode.unfocus();
         _selectedTabIndex = 0;
+        _searchResult = null;
+        _allRecords.clear();
+        _currentRecordPage = 0;
+        _hasMoreRecords = true;
       });
     } else {
       Navigator.of(context).pop();
@@ -339,7 +352,6 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-/// 탭 설정
 class SearchResultsWidget extends StatefulWidget {
   final SearchResult? searchResult;
   final int selectedTabIndex;
@@ -366,80 +378,7 @@ class SearchResultsWidget extends StatefulWidget {
   State<SearchResultsWidget> createState() => _SearchResultsWidgetState();
 }
 
-class _SearchResultsWidgetState extends State<SearchResultsWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _indicatorAnimation;
-  late PageController _pageController;
-  double _currentPageValue = 0.0;
-  bool _isPageViewScrolling = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _animationController = AnimationController(
-      duration: Duration(milliseconds: 250),
-      vsync: this,
-    );
-
-    _indicatorAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    _pageController = PageController(initialPage: widget.selectedTabIndex);
-    _currentPageValue = widget.selectedTabIndex.toDouble();
-
-    _pageController.addListener(() {
-      if (_pageController.hasClients) {
-        setState(() {
-          _currentPageValue = _pageController.page ?? 0.0;
-          _isPageViewScrolling = true;
-        });
-      }
-    });
-  }
-
-  @override
-  void didUpdateWidget(SearchResultsWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedTabIndex != widget.selectedTabIndex && !_isPageViewScrolling) {
-      _pageController.animateToPage(
-        widget.selectedTabIndex,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-      if (widget.selectedTabIndex == 1) {
-        _animationController.forward();
-      } else {
-        _animationController.reverse();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _onPageChanged(int index) {
-    setState(() {
-      _isPageViewScrolling = false;
-    });
-    widget.onTabChanged(index);
-    if (index == 1) {
-      _animationController.forward();
-    } else {
-      _animationController.reverse();
-    }
-  }
-
+class _SearchResultsWidgetState extends State<SearchResultsWidget> {
   @override
   Widget build(BuildContext context) {
     if (widget.searchResult == null) {
@@ -448,152 +387,78 @@ class _SearchResultsWidgetState extends State<SearchResultsWidget>
 
     return Column(
       children: [
-        Container(
-          margin: EdgeInsets.only(
-            top: scaleHeight(16),
+        // Feed와 동일한 버튼 배치
+        Padding(
+          padding: EdgeInsets.only(
+            top: scaleHeight(15),
             left: scaleWidth(20),
             right: scaleWidth(20),
           ),
-          child: Column(
+          child: Row(
             children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isPageViewScrolling = false;
-                      });
-                      widget.onTabChanged(0);
-                    },
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        FixedText(
-                          '게시글',
-                          style: AppFonts.suite.b3_sb(context).copyWith(
-                            color: _getTabColor(0),
-                          ),
-                        ),
-                        SizedBox(width: scaleWidth(4)),
-                        FixedText(
-                          '${widget.searchResult!.records.totalElements}',
-                          style: AppFonts.suite.c1_m(context).copyWith(
-                            color: _getTabColor(0),
-                          ),
-                        ),
-                      ],
+              GestureDetector(
+                onTap: () => widget.onTabChanged(0),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(14), vertical: scaleHeight(4)),
+                  decoration: BoxDecoration(
+                    color: widget.selectedTabIndex == 0 ? AppColors.gray30 : AppColors.gray20,
+                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                  ),
+                  child: FixedText(
+                    '게시글',
+                    style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                      fontWeight: widget.selectedTabIndex == 0 ? FontWeight.w500 : FontWeight.w400,
+                      color: widget.selectedTabIndex == 0 ? AppColors.gray600 : AppColors.gray300,
                     ),
                   ),
-                  SizedBox(width: scaleWidth(20)),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isPageViewScrolling = false;
-                      });
-                      widget.onTabChanged(1);
-                    },
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        FixedText(
-                          '사용자',
-                          style: AppFonts.suite.b3_sb(context).copyWith(
-                            color: _getTabColor(1),
-                          ),
-                        ),
-                        SizedBox(width: scaleWidth(4)),
-                        FixedText(
-                          '${widget.searchResult!.users.totalElements}',
-                          style: AppFonts.suite.c1_m(context).copyWith(
-                            color: _getTabColor(1),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-              SizedBox(height: scaleHeight(12)),
-              _buildRealtimeIndicator(),
+              SizedBox(width: scaleWidth(8)),
+              GestureDetector(
+                onTap: () => widget.onTabChanged(1),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(14), vertical: scaleHeight(4)),
+                  decoration: BoxDecoration(
+                    color: widget.selectedTabIndex == 1 ? AppColors.gray30 : AppColors.gray20,
+                    borderRadius: BorderRadius.circular(scaleHeight(8)),
+                  ),
+                  child: FixedText(
+                    '사용자',
+                    style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                      fontWeight: widget.selectedTabIndex == 1 ? FontWeight.w500 : FontWeight.w400,
+                      color: widget.selectedTabIndex == 1 ? AppColors.gray600 : AppColors.gray300,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-        Expanded(
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: _onPageChanged,
-            children: [
-              RecordsListWidget(
+
+        // 게시글 탭
+        if (widget.selectedTabIndex == 0)
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(top: scaleHeight(10)),
+              child: RecordsListWidget(
                 records: widget.allRecords,
                 onRefreshRequired: widget.onRefreshRequired,
                 hasMore: widget.hasMoreRecords,
                 isLoadingMore: widget.isLoadingMoreRecords,
                 onLoadMore: widget.onLoadMoreRecords,
               ),
-              UsersListWidget(users: widget.searchResult!.users.users),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Color _getTabColor(int tabIndex) {
-    final progress = (_currentPageValue - tabIndex).abs();
-    final opacity = (1.0 - progress).clamp(0.0, 1.0);
-    if (tabIndex == 0) {
-      return Color.lerp(Color(0x330E1117), AppColors.gray600, opacity) ?? AppColors.gray600;
-    } else {
-      return Color.lerp(Color(0x330E1117), AppColors.gray600, opacity) ?? AppColors.gray600;
-    }
-  }
-
-  Widget _buildRealtimeIndicator() {
-    final tab0Width = _getTabWidth(context, '게시글', widget.searchResult!.records.totalElements);
-    final tab1Width = _getTabWidth(context, '사용자', widget.searchResult!.users.totalElements);
-    final scrollProgress = _currentPageValue.clamp(0.0, 1.0);
-    final indicatorOffset = scrollProgress * (tab0Width + scaleWidth(20));
-    final indicatorWidth = tab0Width + (tab1Width - tab0Width) * scrollProgress;
-
-    return Container(
-      width: double.infinity,
-      height: scaleHeight(2),
-      child: Stack(
-        children: [
-          Positioned(
-            left: indicatorOffset,
-            child: Container(
-              width: indicatorWidth,
-              height: scaleHeight(2),
-              decoration: BoxDecoration(
-                color: AppColors.gray600,
-              ),
+            ),
+          )
+        // 사용자 탭
+        else
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(top: scaleHeight(10)),
+              child: UsersListWidget(users: widget.searchResult!.users.users),
             ),
           ),
-        ],
-      ),
+      ],
     );
-  }
-
-  double _getTabWidth(BuildContext context, String text, int count) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        children: [
-          TextSpan(
-            text: text,
-            style: AppFonts.suite.b3_sb(context),
-          ),
-          TextSpan(text: ' '),
-          TextSpan(
-            text: '$count',
-            style: AppFonts.suite.c1_m(context),
-          ),
-        ],
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    return textPainter.width;
   }
 }
 
@@ -626,12 +491,12 @@ class InitialSearchWidget extends StatelessWidget {
           ),
           child: FixedText(
             '추천 검색어',
-            style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray700),
+            style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray700),
           ),
         ),
         Container(
-          height: scaleHeight(36),
-          margin: EdgeInsets.only(top: scaleHeight(16)),
+          height: scaleHeight(30),
+          margin: EdgeInsets.only(top: scaleHeight(20)),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
@@ -648,7 +513,7 @@ class InitialSearchWidget extends StatelessWidget {
         if (recentSearches.isNotEmpty) ...[
           Container(
             margin: EdgeInsets.only(
-              top: scaleHeight(36),
+              top: scaleHeight(33),
               left: scaleWidth(20),
               right: scaleWidth(20),
             ),
@@ -657,13 +522,13 @@ class InitialSearchWidget extends StatelessWidget {
               children: [
                 FixedText(
                   '최근 검색어',
-                  style: AppFonts.suite.b3_sb(context).copyWith(color: AppColors.gray700),
+                  style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray700),
                 ),
                 GestureDetector(
                   onTap: onClearAllRecent,
                   child: FixedText(
                     '전체삭제',
-                    style: AppFonts.suite.c2_b(context).copyWith(
+                    style: AppFonts.pretendard.caption_re_400(context).copyWith(
                       color: AppColors.gray400,
                       decoration: TextDecoration.underline,
                       decorationColor: AppColors.gray400,
@@ -712,25 +577,18 @@ class SearchChipWidget extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: scaleHeight(36),
-        padding: EdgeInsets.fromLTRB(
-          scaleWidth(13),
-          scaleHeight(11),
-          scaleWidth(13),
-          scaleHeight(11),
-        ),
+        height: scaleHeight(30),
+        padding: EdgeInsets.symmetric(horizontal: scaleWidth(14)),
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(scaleHeight(68)),
-          border: Border.all(
-            color: AppColors.gray100,
-            width: 1,
-          ),
+          border: Border.all(color: AppColors.gray100, width: 1),
         ),
         child: Center(
           child: FixedText(
             term,
-            style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray500),
+            style: AppFonts.pretendard.caption_md_400(context)
+                .copyWith(color: AppColors.gray500),
           ),
         ),
       ),
@@ -899,7 +757,6 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
     }
 
     return Container(
-      color: AppColors.gray30,
       // 피드와 동일한 NotificationListener 방식
       child: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
@@ -912,7 +769,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
           return false;
         },
         child: ListView.builder(
-          padding: EdgeInsets.only(top: scaleHeight(19)),
+          padding: EdgeInsets.only(top: scaleHeight(10)),
           itemCount: widget.records.length + (widget.hasMore ? 1 : 0),
           itemBuilder: (context, index) {
             // 로딩 인디케이터
@@ -925,12 +782,9 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
             }
 
             final record = widget.records[index];
-            final isLiked = _likeManager.getLikedStatus(record.recordId) ??
-                record.isLiked;
-            final likeCount = _likeManager.getLikeCount(record.recordId) ??
-                record.likeCount;
-            final commentCount = _likeManager.getCommentCount(record.recordId) ??
-                record.commentCount;
+            final isLiked = _likeManager.getLikedStatus(record.recordId) ?? record.isLiked;
+            final likeCount = _likeManager.getLikeCount(record.recordId) ?? record.likeCount;
+            final commentCount = _likeManager.getCommentCount(record.recordId) ?? record.commentCount;
 
             final feedData = {
               'recordId': record.recordId,
@@ -945,6 +799,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
               'awayTeam': record.awayTeam,
               'stadium': record.stadium,
               'gameDate': record.gameDate,
+              'createdAt': record.createdAt,
               'isLiked': isLiked,
               'likeCount': likeCount,
               'commentCount': commentCount,
@@ -994,7 +849,6 @@ class UsersListWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.gray30,
       child: users.isEmpty
           ? Center(
         child: FixedText(
@@ -1003,7 +857,7 @@ class UsersListWidget extends StatelessWidget {
         ),
       )
           : ListView.separated(
-        padding: EdgeInsets.all(scaleWidth(20)),
+        padding: EdgeInsets.only(top: scaleHeight(10), left: scaleWidth(20), right: scaleWidth(20), bottom: scaleWidth(20)),
         itemCount: users.length,
         separatorBuilder: (context, index) => SizedBox(height: scaleHeight(8)),
         itemBuilder: (context, index) {
@@ -1028,6 +882,7 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
   late String _currentFollowStatus;
   bool _isLoading = false;
   bool isMutualFollow = false;
+  bool _isMutualCheckComplete = false; // 맞팔 체크 완료 플래그
 
   @override
   void initState() {
@@ -1050,51 +905,53 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
       final isMutual = !iFollowIds.contains(widget.user.userId) && iAmFollowedIds.contains(widget.user.userId);
 
       if (mounted) {
-        setState(() => isMutualFollow = isMutual);
+        setState(() {
+          isMutualFollow = isMutual;
+          _isMutualCheckComplete = true; // 체크 완료
+        });
       }
     } catch (e) {
       print('Mutual follow check error: $e');
+      if (mounted) {
+        setState(() {
+          _isMutualCheckComplete = true; // 에러여도 완료 처리
+        });
+      }
     }
   }
 
   String _getButtonText() {
-    if (isMutualFollow) return '맞팔로우';
-    switch (_currentFollowStatus) {
-      case 'FOLLOWING':
-        return '팔로잉';
-      case 'REQUESTED':
-        return '요청됨';
-      default:
-        return '팔로우';
+    // followStatus를 먼저 체크
+    if (_currentFollowStatus == 'FOLLOWING') {
+      return '팔로잉';
+    } else if (_currentFollowStatus == 'REQUESTED') {
+      return '요청됨';
+    } else if (isMutualFollow) {
+      // 맞팔 체크 완료되고 실제로 맞팔이면
+      return '맞팔로우';
     }
+    // NOT_FOLLOWING - 일단 "팔로우" 표시 (맞팔 체크 완료되면 자동 업데이트됨)
+    return '팔로우';
   }
 
   Color _getButtonBackgroundColor() {
-    if (isMutualFollow) return AppColors.gray600;
-
-    switch (_currentFollowStatus) {
-      case 'FOLLOWING':
-        return AppColors.gray50;
-      case 'PENDING':
-      case 'REQUESTED':
-        return AppColors.gray50;
-      case 'NOT_FOLLOWING':
-      default:
-        return AppColors.gray600;
+    if (_currentFollowStatus == 'FOLLOWING') {
+      return AppColors.gray50;
+    } else if (_currentFollowStatus == 'REQUESTED' || _currentFollowStatus == 'PENDING') {
+      return AppColors.gray50;
+    } else if (isMutualFollow) {
+      return AppColors.gray600;
     }
+    return AppColors.gray600;
   }
 
   Color _getButtonTextColor() {
-    if (isMutualFollow) return AppColors.gray20;
-
-    switch (_currentFollowStatus) {
-      case 'FOLLOWING':
-      case 'REQUESTED':
-      case 'PENDING':
-        return AppColors.gray600;
-      default:
-        return AppColors.gray20;
+    if (_currentFollowStatus == 'FOLLOWING' || _currentFollowStatus == 'REQUESTED' || _currentFollowStatus == 'PENDING') {
+      return AppColors.gray600;
+    } else if (isMutualFollow) {
+      return AppColors.gray20;
     }
+    return AppColors.gray20;
   }
 
   Future<void> _handleFollowButton() async {
@@ -1107,31 +964,102 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
       if (_currentFollowStatus == 'FOLLOWING') {
         // 언팔로우
         await UserApi.unfollowUser(userId);
-        setState(() {
-          _currentFollowStatus = 'NOT_FOLLOWING';
-          isMutualFollow = true;
-        });
+
+        // 📡 백엔드에서 최신 상태 가져오기
+        try {
+          final response = await FeedApi.getUserFeed(userId);
+          if (mounted) {
+            setState(() {
+              _currentFollowStatus = 'NOT_FOLLOWING';
+              // followStatus가 NOT_FOLLOWING이고, 상대방이 나를 팔로우하는지 확인
+              // 여기서는 간단히 API를 다시 호출하여 확인
+            });
+          }
+          // isMutualFollow 업데이트를 위해 팔로워 목록 확인
+          try {
+            final myProfile = await UserApi.getMyProfile();
+            final myUserId = myProfile['data']['id'];
+            final myFollowers = await UserApi.getFollowers(myUserId);
+            final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+            if (mounted) {
+              setState(() {
+                isMutualFollow = followerIds.contains(userId);
+              });
+            }
+          } catch (e) {
+            print('❌ 맞팔 체크 실패: $e');
+          }
+        } catch (e) {
+          print('사용자 정보 업데이트 실패: $e');
+          setState(() {
+            _currentFollowStatus = 'NOT_FOLLOWING';
+          });
+        }
       } else if (_currentFollowStatus == 'NOT_FOLLOWING' || isMutualFollow) {
         // 팔로우 요청
         final response = await UserApi.followUser(userId);
         final responseData = response['data'];
 
+        // 🔍 디버그: API 응답 확인
+        print('📡 followUser API response: $responseData');
+        print('📡 isFollower: ${responseData['isFollower']}');
+        print('📡 isFollowing: ${responseData['isFollowing']}');
+        print('📡 isMutual: ${responseData['isMutual']}');
+
         setState(() {
           if (responseData['pending'] == true) {
             _currentFollowStatus = 'REQUESTED';
-            isMutualFollow = false;
+            // 📡 백엔드 응답에서 isFollower 값 사용
+            isMutualFollow = responseData['isFollower'] ?? false;
           } else {
             _currentFollowStatus = 'FOLLOWING';
-            isMutualFollow = false;
+            // 📡 백엔드 응답에서 isFollower 값 사용
+            isMutualFollow = responseData['isFollower'] ?? false;
           }
+          print('📡 Updated isMutualFollow: $isMutualFollow');
+          print('📡 Updated followStatus: $_currentFollowStatus');
         });
+
+        // 📡 추가: API 응답이 부정확할 수 있으니 팔로워 목록 재확인
+        if (responseData['pending'] != true) {
+          try {
+            final myProfile = await UserApi.getMyProfile();
+            final myUserId = myProfile['data']['id'];
+            final myFollowers = await UserApi.getFollowers(myUserId);
+            final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+
+            if (mounted) {
+              setState(() {
+                bool isActuallyFollower = followerIds.contains(userId);
+                print('📡 Double-check isMutualFollow: $isActuallyFollower (was: $isMutualFollow)');
+                isMutualFollow = isActuallyFollower;
+              });
+            }
+          } catch (e) {
+            print('❌ 맞팔 재확인 실패: $e');
+          }
+        }
       } else if (_currentFollowStatus == 'REQUESTED' || _currentFollowStatus == 'PENDING') {
         // 요청 취소
         await UserApi.unfollowUser(userId);
-        setState(() {
-          _currentFollowStatus = 'NOT_FOLLOWING';
-          isMutualFollow = true;
-        });
+
+        // 📡 백엔드에서 최신 상태 가져오기
+        try {
+          final myProfile = await UserApi.getMyProfile();
+          final myUserId = myProfile['data']['id'];
+          final myFollowers = await UserApi.getFollowers(myUserId);
+          final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+
+          setState(() {
+            _currentFollowStatus = 'NOT_FOLLOWING';
+            isMutualFollow = followerIds.contains(userId);
+          });
+        } catch (e) {
+          print('사용자 정보 업데이트 실패: $e');
+          setState(() {
+            _currentFollowStatus = 'NOT_FOLLOWING';
+          });
+        }
       }
     } catch (e) {
       print("팔로우 상태 변경 실패: $e");
@@ -1187,107 +1115,94 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
         }
       },
       child: Container(
-        height: scaleHeight(80),
+        height: scaleHeight(56),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(scaleHeight(16)),
+          borderRadius: BorderRadius.circular(scaleHeight(12)),
         ),
         child: Row(
           children: [
-            Padding(
-              padding: EdgeInsets.only(left: scaleWidth(20)),
-              child: Container(
-                width: scaleWidth(40),
-                height: scaleHeight(40),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.gray50, width: 1),
-                  borderRadius: BorderRadius.circular(scaleWidth(20)),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(scaleWidth(20)),
-                  child: widget.user.profileImageUrl != null && widget.user.profileImageUrl!.isNotEmpty
-                      ? Image.network(
-                    widget.user.profileImageUrl!,
-                    width: scaleWidth(40),
-                    height: scaleHeight(40),
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        width: scaleWidth(40),
-                        height: scaleHeight(40),
-                        color: AppColors.gray100,
-                        child: Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return SvgPicture.asset(
+            Container(
+              width: scaleWidth(40),
+              height: scaleHeight(40),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.gray50, width: 1),
+                borderRadius: BorderRadius.circular(scaleWidth(20)),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(scaleWidth(20)),
+                child: widget.user.profileImageUrl != null &&
+                    widget.user.profileImageUrl!.isNotEmpty
+                    ? Image.network(
+                  widget.user.profileImageUrl!,
+                  width: scaleWidth(40),
+                  height: scaleHeight(40),
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: AppColors.gray100,
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) =>
+                      SvgPicture.asset(
                         AppImages.profile,
                         width: scaleWidth(40),
                         height: scaleHeight(40),
                         fit: BoxFit.cover,
-                      );
-                    },
-                  )
-                      : SvgPicture.asset(
-                    AppImages.profile,
-                    width: scaleWidth(40),
-                    height: scaleHeight(40),
-                    fit: BoxFit.cover,
-                  ),
+                      ),
+                )
+                    : SvgPicture.asset(
+                  AppImages.profile,
+                  width: scaleWidth(40),
+                  height: scaleHeight(40),
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
             SizedBox(width: scaleWidth(12)),
             Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  FixedText(
-                    widget.user.nickname,
-                    style: AppFonts.pretendard.b2_m(context).copyWith(color: Colors.black),
-                    overflow: TextOverflow.ellipsis,
+                  Flexible(
+                    child: FixedText(
+                      widget.user.nickname,
+                      style: AppFonts.pretendard.b2_m(context).copyWith(color: Colors.black),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  SizedBox(height: scaleHeight(8)),
-                  FixedText(
-                    "${widget.user.favTeam} 팬",
-                    style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray400),
-                    overflow: TextOverflow.ellipsis,
+                  SizedBox(width: scaleWidth(6)),
+                  TeamUtils.buildTeamBadge(
+                    context: context,
+                    teamName: widget.user.favTeam,
+                    textStyle: AppFonts.pretendard.caption_sm_500(context),
+                    height: scaleHeight(18),
+                    padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
+                    borderRadius: scaleWidth(4),
+                    suffix: ' 팬',
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: EdgeInsets.only(right: scaleWidth(20)),
-              child: GestureDetector(
-                onTap: () {
-                  _handleFollowButton();
-                },
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  width: scaleWidth(70),
-                  height: scaleHeight(34),
-                  decoration: BoxDecoration(
-                    color: _getButtonBackgroundColor(),
-                    borderRadius: BorderRadius.circular(scaleHeight(8)),
-                  ),
-                  child: Center(
-                    child: _isLoading
-                        ? SizedBox(
-                      width: scaleWidth(16),
-                      height: scaleHeight(16),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(_getButtonTextColor()),
-                      ),
-                    )
-                        : FixedText(
-                      _getButtonText(),
-                      style: AppFonts.pretendard.caption_md_500(context).copyWith(color: _getButtonTextColor()),
-                    ),
+            SizedBox(width: scaleWidth(8)),
+            GestureDetector(
+              onTap: _handleFollowButton,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: scaleWidth(70),
+                height: scaleHeight(34),
+                decoration: BoxDecoration(
+                  color: _getButtonBackgroundColor(),
+                  borderRadius: BorderRadius.circular(scaleHeight(8)),
+                ),
+                child: Center(
+                  child: FixedText(
+                    _getButtonText(),
+                    style: AppFonts.pretendard.caption_md_500(context)
+                        .copyWith(color: _getButtonTextColor()),
                   ),
                 ),
               ),

@@ -399,18 +399,33 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         _unfollowPending = true;
         _unfollowCancelled = false;
 
-        // UI 즉시 업데이트 (NOT_FOLLOWING으로)
-        setState(() {
-          followStatus = 'NOT_FOLLOWING';
-          followerCount = followerCount > 0 ? followerCount - 1 : 0;
-        });
-
-        _hasStateChanged = true;
-
         // 🔑 실제 API 먼저 호출
         try {
           await UserApi.unfollowUser(widget.userId);
           print('$nickname - 언팔로우 완료');
+
+          // 📡 백엔드에서 최신 상태 가져오기 (isMutualFollow 확인)
+          bool mutual = false;
+          try {
+            final myProfile = await UserApi.getMyProfile();
+            final myUserId = myProfile['data']['id'];
+            final myFollowers = await UserApi.getFollowers(myUserId);
+            final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+            mutual = followerIds.contains(widget.userId);
+          } catch (e) {
+            print('❌ 맞팔 체크 실패: $e');
+          }
+
+          // UI 업데이트 (NOT_FOLLOWING으로 + isMutualFollow도 함께)
+          if (mounted) {
+            setState(() {
+              followStatus = 'NOT_FOLLOWING';
+              followerCount = followerCount > 0 ? followerCount - 1 : 0;
+              isMutualFollow = mutual;
+            });
+          }
+
+          _hasStateChanged = true;
         } catch (e) {
           print('언팔로우 API 에러: $e');
           // 에러 시 다시 팔로잉으로 복구
@@ -446,11 +461,15 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
             // 다시 팔로우 API 호출
             try {
-              await UserApi.followUser(widget.userId);
+              final response = await UserApi.followUser(widget.userId);
+              final responseData = response['data'];
+
               // 다시 팔로잉으로 복구
               setState(() {
                 followStatus = 'FOLLOWING';
                 followerCount = followerCount + 1;
+                // 📡 백엔드 응답에서 isFollower 값 사용
+                isMutualFollow = responseData['isFollower'] ?? false;
               });
             } catch (e) {
               print('재팔로우 API 에러: $e');
@@ -468,21 +487,43 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         setState(() {
           if (responseData['pending'] == true) {
             followStatus = 'REQUESTED';
-            isMutualFollow = false;
+            // 📡 백엔드 응답에서 isFollower 값 사용
+            isMutualFollow = responseData['isFollower'] ?? false;
           } else {
             followStatus = 'FOLLOWING';
             followerCount++;
-            isMutualFollow = false;
+            // 📡 백엔드 응답에서 isFollower 값 사용
+            isMutualFollow = responseData['isFollower'] ?? false;
             _hasStateChanged = true;
           }
         });
       } else if (followStatus == 'REQUESTED') {
-        // 요청 취소 (기존)
+        // 요청 취소
         await UserApi.unfollowUser(widget.userId);
-        setState(() {
-          followStatus = 'NOT_FOLLOWING';
-          isMutualFollow = true;
-        });
+
+        // 📡 백엔드에서 최신 상태 가져오기
+        try {
+          bool mutual = false;
+          try {
+            final myProfile = await UserApi.getMyProfile();
+            final myUserId = myProfile['data']['id'];
+            final myFollowers = await UserApi.getFollowers(myUserId);
+            final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+            mutual = followerIds.contains(widget.userId);
+          } catch (e) {
+            print('❌ 맞팔 체크 실패: $e');
+          }
+
+          setState(() {
+            followStatus = 'NOT_FOLLOWING';
+            isMutualFollow = mutual;
+          });
+        } catch (e) {
+          print('사용자 정보 업데이트 실패: $e');
+          setState(() {
+            followStatus = 'NOT_FOLLOWING';
+          });
+        }
       }
     } catch (e) {
       print('팔로우 처리 에러: $e');
@@ -1019,40 +1060,40 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   Color getButtonBackgroundColor() {
     if (isBlocked) return AppColors.gray600;
-    if (isMutualFollow) return AppColors.gray600;
 
-    switch (followStatus) {
-      case 'FOLLOWING':
-      case 'REQUESTED':
-        return AppColors.gray50;
-      default:
-        return AppColors.gray600;
+    if (followStatus == 'FOLLOWING' || followStatus == 'REQUESTED') {
+      return AppColors.gray50;
+    } else if (isMutualFollow) {
+      return AppColors.gray600;
     }
+    return AppColors.gray600;
   }
 
   String _getButtonText() {
     if (isBlocked) return '차단 해제';
-    if (isMutualFollow) return '맞팔로우';
 
-    switch (followStatus) {
-      case 'FOLLOWING': return '팔로잉';
-      case 'REQUESTED': return '요청됨';
-      default: return '팔로우';
+    // followStatus를 먼저 체크
+    if (followStatus == 'FOLLOWING') {
+      return '팔로잉';
+    } else if (followStatus == 'REQUESTED') {
+      return '요청됨';
+    } else if (isMutualFollow) {
+      // NOT_FOLLOWING이면서 상대방이 나를 팔로우하는 경우
+      return '맞팔로우';
     }
+    // 일단 "팔로우" 표시 (로딩 완료되면 맞팔로우로 자동 업데이트됨)
+    return '팔로우';
   }
 
   Color _getButtonTextColor() {
     if (isBlocked) return AppColors.gray20;
-    if (isMutualFollow) return AppColors.gray20;
 
-    switch (followStatus) {
-      case 'FOLLOWING':
-        return AppColors.gray600;
-      case 'REQUESTED':
-        return AppColors.gray600;
-      default:
-        return AppColors.gray20;
+    if (followStatus == 'FOLLOWING' || followStatus == 'REQUESTED') {
+      return AppColors.gray600;
+    } else if (isMutualFollow) {
+      return AppColors.gray20;
     }
+    return AppColors.gray20;
   }
 
   // 탭바
@@ -1978,41 +2019,26 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   Color getButtonBackgroundColor() {
     if (isBlocked) return AppColors.gray600;
-    if (isMutualFollow) return AppColors.gray600;
 
-    switch (followStatus) {
-      case 'FOLLOWING':
-      case 'REQUESTED':
-        return AppColors.gray50;
-      default:
-        return AppColors.gray600;
+    if (followStatus == 'FOLLOWING' || followStatus == 'REQUESTED') {
+      return AppColors.gray50;
+    } else if (isMutualFollow) {
+      return AppColors.gray600;
     }
+    return AppColors.gray600;
   }
 
   String _getButtonText(String status) {
-    if (isMutualFollow) return '맞팔로우';
-
-    switch (status) {
-      case 'FOLLOWING':
-        return '팔로잉';
-      case 'REQUESTED':
-        return '요청됨';
-      default:
-        return '팔로우';
+    // followStatus를 먼저 체크
+    if (status == 'FOLLOWING') {
+      return '팔로잉';
+    } else if (status == 'REQUESTED') {
+      return '요청됨';
+    } else if (isMutualFollow) {
+      // NOT_FOLLOWING이면서 상대방이 나를 팔로우하는 경우
+      return '맞팔로우';
     }
-  }
-
-  Color _getButtonTextColor() {
-    if (isBlocked) return AppColors.gray20;
-    if (isMutualFollow) return AppColors.gray20;
-
-    switch (followStatus) {
-      case 'FOLLOWING':
-      case 'REQUESTED':
-        return AppColors.gray600;
-      default:
-        return AppColors.gray20;
-    }
+    return '팔로우';
   }
 
   @override

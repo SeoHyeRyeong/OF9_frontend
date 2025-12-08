@@ -11,6 +11,8 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
+import 'package:frontend/utils/team_utils.dart';
+import 'package:frontend/utils/time_utils.dart';
 
 /// 피드/검색 화면에서 공통으로 사용하는 피드 아이템 위젯
 class FeedItemWidget extends StatefulWidget {
@@ -106,7 +108,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     super.dispose();
   }
 
-  // ✅ 전역 상태 변경 감지 (좋아요 + 댓글 개수)
+  // 전역 상태 변경 감지 (좋아요 + 댓글 개수)
   void _onGlobalStateChanged() {
     final recordId = widget.feedData['recordId'] as int?;
     if (recordId != null) {
@@ -210,8 +212,15 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: AppColors.gray50, width: 1),
           borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x1A9397A1),
+              offset: Offset(0, 0),
+              blurRadius: scaleWidth(16),
+              spreadRadius: 0,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,16 +228,6 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
             _buildProfileSection(),
             _buildContentSection(),
             _buildGameInfo(),
-            Container(
-              margin: EdgeInsets.only(
-                top: scaleHeight(10),
-                left: scaleWidth(16),
-                right: scaleWidth(16),
-              ),
-              height: 1,
-              color: AppColors.gray50,
-              width: double.infinity,
-            ),
             _buildBottomInfo(),
           ],
         ),
@@ -241,14 +240,14 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     final profileImageUrl = widget.feedData['profileImageUrl'] ?? widget.feedData['authorProfileImage'] ?? '';
     final nickname = widget.feedData['nickname'] ?? widget.feedData['authorNickname'] ?? '';
     final favTeam = widget.feedData['favTeam'] ?? widget.feedData['authorFavTeam'] ?? '';
-    final favTeamWithFan = favTeam.isNotEmpty ? '$favTeam 팬' : '';
     final userId = widget.feedData['userId'] ?? widget.feedData['authorId'];
+    final createdAt = widget.feedData['createdAt'] ?? widget.feedData['gameDate'] ?? '';
 
     return Padding(
       padding: EdgeInsets.only(
-        top: scaleHeight(16),
-        left: scaleWidth(16),
-        right: scaleWidth(16),
+        top: scaleHeight(20),
+        left: scaleWidth(20),
+        right: scaleWidth(20),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,6 +300,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
                       reverseTransitionDuration: Duration.zero,
                     ),
                   );
+
                   if (result != null && result is String) {
                     setState(() {
                       widget.feedData['followStatus'] = result;
@@ -316,6 +316,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 프로필 이미지
                 ClipRRect(
                   borderRadius: BorderRadius.circular(scaleWidth(18)),
                   child: (profileImageUrl.isNotEmpty)
@@ -338,21 +339,41 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
                     fit: BoxFit.cover,
                   ),
                 ),
-                SizedBox(width: scaleWidth(12)),
+                SizedBox(width: scaleWidth(10)),
+
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FixedText(
-                      nickname,
-                      style: AppFonts.pretendard.body_sm_500(context).copyWith(
-                        color: AppColors.gray950,
-                      ),
+                    // 닉네임 + 팀 배지
+                    Row(
+                      children: [
+                        FixedText(
+                          nickname,
+                          style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                            color: AppColors.gray950,
+                          ),
+                        ),
+                        if (favTeam.isNotEmpty && favTeam != '-' && favTeam != '응원팀 없음') ...[
+                          SizedBox(width: scaleWidth(6)),
+                          TeamUtils.buildTeamBadge(
+                            context: context,
+                            teamName: favTeam,
+                            textStyle: AppFonts.pretendard.caption_sm_500(context),
+                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
+                            borderRadius: scaleWidth(4),
+                            height: scaleHeight(18),
+                            suffix: ' 팬',
+                          ),
+                        ],
+                      ],
                     ),
                     SizedBox(height: scaleHeight(2)),
+
+                    // 작성 시간
                     FixedText(
-                      favTeamWithFan,
-                      style: AppFonts.pretendard.caption_md_400(context).copyWith(
-                        color: AppColors.gray400,
+                      TimeUtils.getTimeAgo(createdAt),
+                      style: AppFonts.pretendard.caption_md_500(context).copyWith(
+                        color: AppColors.gray300,
                       ),
                     ),
                   ],
@@ -367,27 +388,31 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
   // 콘텐츠 섹션
   Widget _buildContentSection() {
-    final photos = widget.feedData['mediaUrls'] as List<dynamic>? ?? [];
+    final photos = widget.feedData['mediaUrls'] as List? ?? [];
     final longContent = widget.feedData['longContent'] ?? '';
     final emotionLabel = widget.feedData['emotionLabel'] ?? _getEmotionLabel(widget.feedData['emotionCode'] ?? 0);
 
     if (photos.isNotEmpty) {
-      final contentWidget = longContent.isNotEmpty
-          ? _buildLongContent(longContent, isPhotoPresent: true)
-          : _buildEmotionContent(emotionLabel, isPhotoPresent: true);
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildPhotoSection(photos.cast<String>()),
-          if (longContent.isNotEmpty || emotionLabel.isNotEmpty)
+      // 사진이 있을 때
+      if (longContent.isNotEmpty) {
+        // 사진 + 야구일기
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPhotoSection(photos.cast<String>()),
             SizedBox(height: scaleHeight(10)),
-          contentWidget,
-        ],
-      );
+            _buildLongContent(longContent, isPhotoPresent: true),
+          ],
+        );
+      } else {
+        // 사진만 (감정 표시 안 함)
+        return _buildPhotoSection(photos.cast<String>());
+      }
     } else if (longContent.isNotEmpty) {
+      // 야구일기만
       return _buildLongContent(longContent);
     } else {
+      // 감정만
       return _buildEmotionContent(emotionLabel);
     }
   }
@@ -400,8 +425,8 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       return Container(
         margin: EdgeInsets.only(
           top: scaleHeight(12),
-          left: scaleWidth(16),
-          right: scaleWidth(16),
+          left: scaleWidth(20),
+          right: scaleWidth(20),
         ),
         height: scaleHeight(153),
         decoration: BoxDecoration(
@@ -416,8 +441,8 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       return Container(
         margin: EdgeInsets.only(
           top: scaleHeight(12),
-          left: scaleWidth(16),
-          right: scaleWidth(16),
+          left: scaleWidth(20),
+          right: scaleWidth(20),
         ),
         height: scaleHeight(153),
         child: Row(
@@ -452,7 +477,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       return Container(
         margin: EdgeInsets.only(
           top: scaleHeight(12),
-          left: scaleWidth(16),
+          left: scaleWidth(20),
         ),
         height: scaleHeight(153),
         child: ListView.builder(
@@ -462,7 +487,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
             return Container(
               width: scaleWidth(118),
               margin: EdgeInsets.only(
-                right: index < photos.length - 1 ? scaleWidth(8) : scaleWidth(16),
+                right: index < photos.length - 1 ? scaleWidth(8) : scaleWidth(20),
               ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
@@ -481,18 +506,68 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
   // 이모지
   Widget _buildEmotionContent(String emotionLabel, {bool isPhotoPresent = false}) {
     if (emotionLabel.isEmpty) return SizedBox.shrink();
-    final topPadding = isPhotoPresent ? scaleHeight(0) : scaleHeight(16);
+
+    final topPadding = isPhotoPresent ? scaleHeight(0) : scaleHeight(12);
+    final emotionCode = widget.feedData['emotionCode'] ?? 0;
 
     return Padding(
       padding: EdgeInsets.only(
         top: topPadding,
-        left: scaleWidth(16),
-        right: scaleWidth(16),
+        left: scaleWidth(20),
+        right: scaleWidth(20),
       ),
-      child: FixedText(
-        emotionLabel,
-        style: AppFonts.pretendard.body_sm_400(context).copyWith(color: Colors.black),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _getEmotionIcon(emotionCode),
+          SizedBox(width: scaleWidth(4)),
+          FixedText(
+            emotionLabel,
+            style: AppFonts.pretendard.body_sm_400(context).copyWith(
+              color: Colors.black,
+              fontSize: scaleFont(14),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+// 감정 아이콘 가져오기
+  Widget _getEmotionIcon(int emotionCode) {
+    final emotionImages = {
+      1: AppImages.emotion_1,
+      2: AppImages.emotion_2,
+      3: AppImages.emotion_3,
+      4: AppImages.emotion_4,
+      5: AppImages.emotion_5,
+      6: AppImages.emotion_6,
+      7: AppImages.emotion_7,
+      8: AppImages.emotion_8,
+      9: AppImages.emotion_9,
+      10: AppImages.emotion_10,
+      11: AppImages.emotion_11,
+      12: AppImages.emotion_12,
+      13: AppImages.emotion_13,
+      14: AppImages.emotion_14,
+      15: AppImages.emotion_15,
+      16: AppImages.emotion_16,
+    };
+
+    final iconPath = emotionImages[emotionCode];
+
+    if (iconPath == null) {
+      return SizedBox(
+        width: scaleWidth(44),
+        height: scaleHeight(44),
+      );
+    }
+
+    return SvgPicture.asset(
+      iconPath,
+      width: scaleWidth(44),
+      height: scaleHeight(44),
+      fit: BoxFit.contain,
     );
   }
 
@@ -500,13 +575,13 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
   Widget _buildLongContent(String longContent, {bool isPhotoPresent = false}) {
     if (longContent.isEmpty) return SizedBox.shrink();
 
-    final topPadding = isPhotoPresent ? scaleHeight(0) : scaleHeight(16);
+    final topPadding = isPhotoPresent ? scaleHeight(0) : scaleHeight(12);
 
     return Container(
       padding: EdgeInsets.only(
         top: topPadding,
-        left: scaleWidth(16),
-        right: scaleWidth(16),
+        left: scaleWidth(20),
+        right: scaleWidth(20),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -531,7 +606,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
           firstLineWidthPainter.layout(maxWidth: double.infinity);
 
           // 첫 줄이 실제로 길어서 넘치는 경우만 1줄 처리
-          if (firstLineWidthPainter.width > constraints.maxWidth) {
+          if (firstLineWidthPainter.width > constraints.maxWidth - scaleWidth(20)) {
             final TextPainter ellipsisPainter = TextPainter(
               text: TextSpan(text: ellipsis, style: textStyle),
               textDirection: textDirection,
@@ -545,7 +620,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
             firstLinePainter.layout(maxWidth: constraints.maxWidth);
 
             final int endIndex = firstLinePainter.getPositionForOffset(
-              Offset(constraints.maxWidth - ellipsisPainter.width, 0),
+              Offset(constraints.maxWidth - ellipsisPainter.width - scaleWidth(20), 0),
             ).offset;
 
             final String truncatedText = firstLineText.substring(0, endIndex).trimRight();
@@ -640,20 +715,49 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     final homeTeamFull = _teamFullNames[homeTeam] ?? widget.feedData['homeTeam'];
     final awayTeamFull = _teamFullNames[awayTeam] ?? widget.feedData['awayTeam'];
 
+    final photos = widget.feedData['mediaUrls'] as List? ?? [];
+    final longContent = widget.feedData['longContent'] ?? '';
+    final emotionLabel = widget.feedData['emotionLabel'] ?? _getEmotionLabel(widget.feedData['emotionCode'] ?? 0);
+
+    double topSpacing;
+    if (photos.isNotEmpty && longContent.isEmpty && emotionLabel.isEmpty) {
+      // 사진만 있을 때
+      topSpacing = scaleHeight(14);
+    } else {
+      // 나머지 모든 경우
+      topSpacing = scaleHeight(10);
+    }
+
     return Padding(
-      padding: EdgeInsets.only(top: scaleHeight(6)),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _getTeamLogo(homeTeam),
-          SizedBox(width: scaleWidth(4)),
-          FixedText(
-            '$homeTeamFull VS $awayTeamFull',
-            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray400),
-          ),
-          SizedBox(width: scaleWidth(3)),
-          _getTeamLogo(awayTeam),
-        ],
+      padding: EdgeInsets.only(
+        top: topSpacing,
+        left: scaleWidth(20),
+        right: scaleWidth(20),
+      ),
+      child: Container(
+        width: double.infinity,
+        height: scaleHeight(40),
+        decoration: BoxDecoration(
+          color: AppColors.gray30,
+          borderRadius: BorderRadius.circular(scaleWidth(6)),
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _getTeamLogo(homeTeam),
+            SizedBox(width: scaleWidth(8)),
+            FixedText(
+              '$homeTeamFull VS $awayTeamFull',
+              style: AppFonts.pretendard.caption_md_500(context).copyWith(
+                color: AppColors.gray500,
+              ),
+            ),
+            SizedBox(width: scaleWidth(8)),
+            _getTeamLogo(awayTeam),
+          ],
+        ),
       ),
     );
   }
@@ -678,20 +782,20 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     return Image.asset(logoPath, width: scaleWidth(24), height: scaleHeight(24), fit: BoxFit.contain);
   }
 
-  // ✅ _buildBottomInfo 수정 (파라미터 제거, 로컬 _commentCount 사용)
+
+  // 좋아요, 댓글, 구장명 등
   Widget _buildBottomInfo() {
     final stadium = _extractShortStadiumName(widget.feedData['stadium'] ?? '');
     final gameDate = widget.feedData['gameDate'] ?? '';
-
     final stadiumFull = _getStadiumFullName(stadium);
     final formattedDate = _formatGameDate(gameDate);
 
     return Container(
       padding: EdgeInsets.only(
-        top: scaleHeight(9),
+        top: scaleHeight(10),
         bottom: scaleHeight(16),
-        left: scaleWidth(16),
-        right: scaleWidth(17),
+        left: scaleWidth(20),
+        right: scaleWidth(20),
       ),
       child: Row(
         children: [
@@ -713,20 +817,28 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
                   SizedBox(width: scaleWidth(4)),
                   FixedText(
                     _likeCount.toString(),
-                    style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
+                    style: AppFonts.pretendard.caption_md_400(context).copyWith(
+                      color: AppColors.gray300,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          SizedBox(width: scaleWidth(8)),
+          SizedBox(width: scaleWidth(12)),
           Row(
             children: [
-              SvgPicture.asset(AppImages.comment, width: scaleWidth(16), height: scaleHeight(16)),
+              SvgPicture.asset(
+                AppImages.comment,
+                width: scaleWidth(16),
+                height: scaleHeight(16),
+              ),
               SizedBox(width: scaleWidth(4)),
               FixedText(
-                _commentCount.toString(), // ✅ 로컬 상태 _commentCount 사용 (전역 상태와 동기화됨)
-                style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
+                _commentCount.toString(),
+                style: AppFonts.pretendard.caption_md_400(context).copyWith(
+                  color: AppColors.gray300,
+                ),
               ),
             ],
           ),
@@ -735,14 +847,22 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
             children: [
               FixedText(
                 formattedDate,
-                style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
+                style: AppFonts.pretendard.caption_re_400(context).copyWith(
+                  color: AppColors.gray400,
+                ),
               ),
               SizedBox(width: scaleWidth(4)),
-              SvgPicture.asset(AppImages.ellipse, width: scaleWidth(2), height: scaleHeight(2)),
+              SvgPicture.asset(
+                AppImages.ellipse,
+                width: scaleWidth(2),
+                height: scaleHeight(2),
+              ),
               SizedBox(width: scaleWidth(4)),
               FixedText(
                 stadiumFull,
-                style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
+                style: AppFonts.pretendard.caption_re_400(context).copyWith(
+                  color: AppColors.gray400,
+                ),
               ),
             ],
           ),

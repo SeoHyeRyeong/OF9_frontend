@@ -672,5 +672,4 @@ class _PretendardFonts {
     height: 18 / 12,
     letterSpacing: -0.24,
   );
-
 }

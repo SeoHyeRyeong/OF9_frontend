@@ -103,12 +103,29 @@ class _FollowingScreenState extends State<FollowingScreen> {
       if (currentStatus == 'FOLLOWING') {
         // 언팔로우
         await UserApi.unfollowUser(userId);
-        setState(() {
-          followings[index]['followStatus'] = 'NOT_FOLLOWING';
-          followings[index]['isFollowing'] = false;
-          followings[index]['isRequested'] = false;
-          followings[index]['isMutualFollow'] = true;
-        });
+
+        // 📡 백엔드에서 최신 상태 가져오기
+        try {
+          final myProfile = await UserApi.getMyProfile();
+          final myUserId = myProfile['data']['id'];
+          final myFollowers = await UserApi.getFollowers(myUserId);
+          final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+
+          setState(() {
+            followings[index]['followStatus'] = 'NOT_FOLLOWING';
+            followings[index]['isFollowing'] = false;
+            followings[index]['isRequested'] = false;
+            // 📡 백엔드 응답 기준: 상대방이 나를 팔로우하고 있는지
+            followings[index]['isMutualFollow'] = followerIds.contains(userId);
+          });
+        } catch (e) {
+          print('사용자 정보 업데이트 실패: $e');
+          setState(() {
+            followings[index]['followStatus'] = 'NOT_FOLLOWING';
+            followings[index]['isFollowing'] = false;
+            followings[index]['isRequested'] = false;
+          });
+        }
       } else if (currentStatus == 'NOT_FOLLOWING') {
         // 팔로우 요청
         final response = await UserApi.followUser(userId);
@@ -120,24 +137,43 @@ class _FollowingScreenState extends State<FollowingScreen> {
             followings[index]['followStatus'] = 'REQUESTED';
             followings[index]['isFollowing'] = false;
             followings[index]['isRequested'] = true;
-            followings[index]['isMutualFollow'] = false;
+            // 📡 백엔드 응답에서 isFollower 값 사용
+            followings[index]['isMutualFollow'] = responseData['isFollower'] ?? false;
           } else {
             // 공개 계정 - 즉시 팔로우
             followings[index]['followStatus'] = 'FOLLOWING';
             followings[index]['isFollowing'] = true;
             followings[index]['isRequested'] = false;
-            followings[index]['isMutualFollow'] = false;
+            // 📡 백엔드 응답에서 isFollower 값 사용
+            followings[index]['isMutualFollow'] = responseData['isFollower'] ?? false;
           }
         });
       } else if (currentStatus == 'REQUESTED') {
         // 요청 취소 (언팔로우 API 사용)
         await UserApi.unfollowUser(userId);
-        setState(() {
-          followings[index]['followStatus'] = 'NOT_FOLLOWING';
-          followings[index]['isFollowing'] = false;
-          followings[index]['isRequested'] = false;
-          followings[index]['isMutualFollow'] = true;
-        });
+
+        // 📡 백엔드에서 최신 상태 가져오기
+        try {
+          final myProfile = await UserApi.getMyProfile();
+          final myUserId = myProfile['data']['id'];
+          final myFollowers = await UserApi.getFollowers(myUserId);
+          final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+
+          setState(() {
+            followings[index]['followStatus'] = 'NOT_FOLLOWING';
+            followings[index]['isFollowing'] = false;
+            followings[index]['isRequested'] = false;
+            // 📡 백엔드 응답 기준: 상대방이 나를 팔로우하고 있는지
+            followings[index]['isMutualFollow'] = followerIds.contains(userId);
+          });
+        } catch (e) {
+          print('사용자 정보 업데이트 실패: $e');
+          setState(() {
+            followings[index]['followStatus'] = 'NOT_FOLLOWING';
+            followings[index]['isFollowing'] = false;
+            followings[index]['isRequested'] = false;
+          });
+        }
       }
     } catch (e) {
       print('❌ 팔로우 처리 실패: $e');

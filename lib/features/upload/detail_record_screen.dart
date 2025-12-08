@@ -1172,7 +1172,7 @@ Widget _buildInputWithCounter({
             color: isActive ? AppColors.gray900 : AppColors.gray200,
             height: 1.5,
           ),
-          textInputAction: TextInputAction.done,
+          textInputAction: TextInputAction.newline,
           onEditingComplete: () => focusNode.unfocus(),
         ),
       ),

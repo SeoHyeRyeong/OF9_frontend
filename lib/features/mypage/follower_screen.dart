@@ -104,11 +104,13 @@ class _FollowerScreenState extends State<FollowerScreen> {
       if (currentStatus == 'FOLLOWING') {
         // 언팔로우
         await UserApi.unfollowUser(userId);
+
+        // 📡 follower 화면에서는 상대방이 확실히 나를 팔로우하고 있으므로 isMutualFollow = true
         setState(() {
           followers[index]['followStatus'] = 'NOT_FOLLOWING';
           followers[index]['isFollowing'] = false;
           followers[index]['isRequested'] = false;
-          followers[index]['isMutualFollow'] = false;
+          followers[index]['isMutualFollow'] = true;
         });
       } else if (currentStatus == 'NOT_FOLLOWING') {
         // 팔로우 요청
@@ -121,18 +123,22 @@ class _FollowerScreenState extends State<FollowerScreen> {
             followers[index]['followStatus'] = 'REQUESTED';
             followers[index]['isFollowing'] = false;
             followers[index]['isRequested'] = true;
-            followers[index]['isMutualFollow'] = false;
+            // 📡 백엔드 응답에서 isFollower 값 사용 (follower 화면이므로 항상 true일 것)
+            followers[index]['isMutualFollow'] = responseData['isFollower'] ?? true;
           } else {
             // 공개 계정 - 즉시 팔로우
             followers[index]['followStatus'] = 'FOLLOWING';
             followers[index]['isFollowing'] = true;
             followers[index]['isRequested'] = false;
-            followers[index]['isMutualFollow'] = false;
+            // 📡 백엔드 응답에서 isFollower 값 사용 (follower 화면이므로 항상 true일 것)
+            followers[index]['isMutualFollow'] = responseData['isFollower'] ?? true;
           }
         });
       } else if (currentStatus == 'REQUESTED') {
         // 요청 취소 (언팔로우 API 사용)
         await UserApi.unfollowUser(userId);
+
+        // 📡 follower 화면에서는 상대방이 확실히 나를 팔로우하고 있으므로 isMutualFollow = true
         setState(() {
           followers[index]['followStatus'] = 'NOT_FOLLOWING';
           followers[index]['isFollowing'] = false;
@@ -197,8 +203,8 @@ class _FollowerScreenState extends State<FollowerScreen> {
                             onTap: () {
                               if (Navigator.canPop(context)) {
                                 //친구 프로필에서 온 경우
-                              Navigator.pop(context);
-                            } else if (widget.targetUserId == null) {
+                                Navigator.pop(context);
+                              } else if (widget.targetUserId == null) {
                                 // 내 팔로워 목록에서 온 경우: MyPage로 이동
                                 Navigator.pushReplacement(
                                   context,

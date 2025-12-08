@@ -21,14 +21,7 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _indicatorAnimation;
-  late PageController _pageController;
-
-  double _currentPageValue = 0.0;
-  bool _isPageViewScrolling = false;
-  int _selectedTabIndex = 0;
-
+  String selectedFeedType = '추천'; // '추천' 또는 '팔로잉'
   List<Map<String, dynamic>> _recommendFeedItems = [];
   List<Map<String, dynamic>> _followingFeedItems = [];
   bool _isLoadingRecommend = true;
@@ -50,39 +43,12 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: Duration(milliseconds: 250),
-      vsync: this,
-    );
-
-    _indicatorAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    _pageController = PageController(initialPage: 0);
-    _currentPageValue = 0.0;
-
-    _pageController.addListener(() {
-      if (_pageController.hasClients) {
-        setState(() {
-          _currentPageValue = _pageController.page ?? 0.0;
-          _isPageViewScrolling = true;
-        });
-      }
-    });
-
     _loadRecommendFeed();
     _loadFollowingFeed();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _pageController.dispose();
     super.dispose();
   }
 
@@ -417,137 +383,6 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
     }
   }
 
-  ///===================================================
-  /// 탭 처리
-  ///===================================================
-  void _onPageChanged(int index) {
-    setState(() {
-      _isPageViewScrolling = false;
-      _selectedTabIndex = index;
-    });
-
-    if (index == 1) {
-      _animationController.forward();
-    } else {
-      _animationController.reverse();
-    }
-  }
-
-  void _onTabTapped(int index) {
-    setState(() {
-      _isPageViewScrolling = false;
-    });
-
-    _pageController.animateToPage(
-      index,
-      duration: Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-
-    if (index == 1) {
-      _animationController.forward();
-    } else {
-      _animationController.reverse();
-    }
-  }
-
-  Color _getTabColor(int tabIndex) {
-    final progress = (_currentPageValue - tabIndex).abs();
-    final opacity = (1.0 - progress).clamp(0.0, 1.0);
-
-    if (tabIndex == 0) {
-      return Color.lerp(AppColors.gray300, AppColors.gray600, opacity) ?? AppColors.gray600;
-    } else {
-      return Color.lerp(AppColors.gray300, AppColors.gray600, opacity) ?? AppColors.gray600;
-    }
-  }
-
-  Widget _buildRealtimeIndicator() {
-    final screenWidth = MediaQuery.of(context).size.width - scaleWidth(40);
-    final tabWidth = screenWidth / 2;
-
-    final scrollProgress = _currentPageValue.clamp(0.0, 1.0);
-    final indicatorOffset = scrollProgress * tabWidth;
-
-    return Container(
-      width: double.infinity,
-      height: scaleHeight(2),
-      child: Stack(
-        children: [
-          AnimatedPositioned(
-            duration: _isPageViewScrolling ? Duration.zero : Duration(milliseconds: 250),
-            left: indicatorOffset,
-            bottom: 0,
-            child: Container(
-              width: tabWidth,
-              height: scaleHeight(2),
-              color: AppColors.gray600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabBar() {
-    return Column(
-      children: [
-        Container(
-          height: scaleHeight(36),
-          margin: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-          child: Column(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _onTabTapped(0),
-                        child: Container(
-                          color: Colors.transparent,
-                          child: Center(
-                            child: FixedText(
-                              '추천',
-                              style: AppFonts.suite.body_sm_500(context).copyWith(
-                                color: _getTabColor(0),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _onTabTapped(1),
-                        child: Container(
-                          color: Colors.transparent,
-                          child: Center(
-                            child: FixedText(
-                              '팔로잉',
-                              style: AppFonts.suite.body_sm_500(context).copyWith(
-                                color: _getTabColor(1),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _buildRealtimeIndicator(),
-            ],
-          ),
-        ),
-        Container(
-          height: 1.0,
-          width: double.infinity,
-          color: AppColors.gray50,
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -557,8 +392,7 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder:
-                  (context, animation1, animation2) => const ReportScreen(),
+              pageBuilder: (context, animation1, animation2) => const ReportScreen(),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
@@ -568,92 +402,117 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
-          child: NestedScrollView(
-            headerSliverBuilder: (
-              BuildContext context,
-              bool innerBoxIsScrolled,
-            ) {
-              return <Widget>[
-                SliverAppBar(
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                  pinned: false,
-                  floating: false,
-                  expandedHeight: scaleHeight(60),
-                  automaticallyImplyLeading: false,
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Container(
-                      padding: EdgeInsets.only(
-                        top: scaleHeight(24),
-                        left: scaleWidth(20),
-                        right: scaleWidth(20),
-                      ),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          // 👈 이 부분을 center로 변경
-                          children: [
-                            FixedText(
-                              '피드',
-                              style: AppFonts.suite
-                                  .h3_b(context)
-                                  .copyWith(color: Colors.black, height: 1.0),
-                            ),
-                            SizedBox(width: scaleWidth(11)),
-                            GestureDetector(
-                              onTap: _showFilterSheet,
-                              child: SvgPicture.asset(
-                                AppImages.filter,
-                                width: scaleWidth(28),
-                                height: scaleHeight(28),
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                            const Spacer(),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder:
-                                        (context, animation1, animation2) =>
-                                            const SearchScreen(),
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
-                                  ),
-                                );
-                              },
-                              child: SvgPicture.asset(
-                                AppImages.search,
-                                width: scaleWidth(24),
-                                height: scaleHeight(24),
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ],
+          child: Column(
+            children: [
+              // 1. 피드 제목 + 검색 아이콘
+              Container(
+                padding: EdgeInsets.only(
+                  top: scaleHeight(24),
+                  left: scaleWidth(20),
+                  right: scaleWidth(20),
+                ),
+                height: scaleHeight(60),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      FixedText(
+                        '피드',
+                        style: AppFonts.pretendard.title_md_600(context).copyWith(
+                          color: Colors.black,
+                          height: 1.0,
                         ),
                       ),
-                    ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation1, animation2) =>
+                              const SearchScreen(),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
+                            ),
+                          );
+                        },
+                        child: SvgPicture.asset(
+                          AppImages.search,
+                          width: scaleWidth(24),
+                          height: scaleHeight(24),
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyTabBarDelegate(
-                    child: Container(
-                      color: Colors.white,
-                      child: _buildTabBar(),
-                    ),
-                    height: scaleHeight(39),
-                  ),
+              ),
+
+              // 2. 추천/팔로잉 버튼 + 필터
+              Padding(
+                padding: EdgeInsets.only(
+                  top: scaleHeight(11),
+                  left: scaleWidth(20),
+                  right: scaleWidth(20),
                 ),
-              ];
-            },
-            body: PageView(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              children: [_buildRecommendTab(), _buildFollowingTab()],
-            ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // 왼쪽: 추천/팔로잉 버튼
+                    Row(
+                      children: ['추천', '팔로잉'].map((type) {
+                        final isSelected = selectedFeedType == type;
+                        return Padding(
+                          padding: EdgeInsets.only(right: scaleWidth(8)),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedFeedType = type;
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: scaleWidth(14),
+                                vertical: scaleHeight(4),
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.gray30 : AppColors.gray20,
+                                borderRadius: BorderRadius.circular(scaleHeight(8)),
+                              ),
+                              child: FixedText(
+                                type,
+                                style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                                  color: isSelected ? AppColors.gray600 : AppColors.gray300,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    // 오른쪽: 필터 아이콘
+                    GestureDetector(
+                      onTap: _showFilterSheet,
+                      child: SvgPicture.asset(
+                        AppImages.filter,
+                        width: scaleWidth(28),
+                        height: scaleHeight(28),
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: scaleHeight(10)),
+
+              // 3. 피드 리스트
+              Expanded(
+                child: _buildScrollableFeedList(),
+              ),
+            ],
           ),
         ),
         bottomNavigationBar: CustomBottomNavBar(currentIndex: 1),
@@ -661,111 +520,65 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildRecommendTab() {
-    if (_isLoadingRecommend) {
-      return Center(child: CircularProgressIndicator());
-    }
+// 새로운 메서드: ListView로 스크롤 가능한 리스트 생성
+  Widget _buildScrollableFeedList() {
+    if (selectedFeedType == '추천') {
+      if (_isLoadingRecommend) {
+        return Center(child: CircularProgressIndicator());
+      }
 
-    final filteredItems = _getFilteredRecommendItems();
+      final filteredItems = _getFilteredRecommendItems();
 
-    return RefreshIndicator(
-      onRefresh: _refreshRecommendFeed,
-      color: AppColors.pri900,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (ScrollNotification scrollInfo) {
-          if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-            if (!_isLoadingMoreRecommend && _hasMoreRecommend) {
+      return ListView.builder(
+        padding: EdgeInsets.only(top: scaleHeight(10)),
+        itemCount: filteredItems.length + (_hasMoreRecommend ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == filteredItems.length) {
+            if (_hasMoreRecommend && !_isLoadingMoreRecommend) {
               _loadMoreRecommendFeed();
             }
+            return _buildLoadingIndicator();
           }
-          return false;
+
+          return Column(
+            children: [
+              _buildFeedItem(filteredItems[index]),
+              if (index < filteredItems.length - 1)
+                SizedBox(height: scaleHeight(20)),
+            ],
+          );
         },
-        child: ListView.builder(
-          padding: EdgeInsets.only(top: scaleHeight(21)),
-          itemCount: filteredItems.length + (_hasMoreRecommend ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == filteredItems.length) {
-              return _buildLoadingIndicator();
-            }
-            return _buildFeedItem(filteredItems[index]);
-          },
-        ),
-      ),
-    );
-  }
+      );
+    } else {
+      // 팔로잉
+      if (_isLoadingFollowing) {
+        return Center(child: CircularProgressIndicator());
+      }
 
-  Widget _buildFollowingTab() {
-    if (_isLoadingFollowing) {
-      return Center(child: CircularProgressIndicator());
-    }
-
-    return RefreshIndicator(
-      onRefresh: _refreshFollowingFeed,
-      color: AppColors.pri900,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (ScrollNotification scrollInfo) {
-          if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-            if (!_isLoadingMoreFollowing && _hasMoreFollowing) {
+      return ListView.builder(
+        padding: EdgeInsets.only(top: scaleHeight(10)),
+        itemCount: _followingFeedItems.length + (_hasMoreFollowing ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _followingFeedItems.length) {
+            if (_hasMoreFollowing && !_isLoadingMoreFollowing) {
               _loadMoreFollowingFeed();
             }
+            return _buildLoadingIndicator();
           }
-          return false;
+
+          return Column(
+            children: [
+              _buildFeedItem(_followingFeedItems[index]),
+              if (index < _followingFeedItems.length - 1)
+                SizedBox(height: scaleHeight(20)),
+            ],
+          );
         },
-        child: ListView.builder(
-          padding: EdgeInsets.only(top: scaleHeight(21)),
-          itemCount: _followingFeedItems.length + (_hasMoreFollowing ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == _followingFeedItems.length) {
-              return _buildLoadingIndicator();
-            }
-            return _buildFeedItem(_followingFeedItems[index]);
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _refreshRecommendFeed() async {
-    try {
-      final feeds = await FeedApi.getAllFeed(page: 0, size: 20);
-      _likeManager.clear();
-
-      setState(() {
-        _recommendFeedItems = feeds;
-        _recommendCurrentPage = 0;
-        _hasMoreRecommend = feeds.length >= 20;
-      });
-
-      // 새로운 데이터로 전역 상태 재설정
-      _likeManager.setInitialStates(feeds);
-
-      print('✅ 추천 피드 새로고침 완료');
-      print('📊 첫 번째 아이템 - likeCount: ${feeds.isNotEmpty ? feeds[0]['likeCount'] : 'N/A'}');
-    } catch (e) {
-      print('❌ 추천 피드 새로고침 실패: $e');
+      );
     }
   }
 
-  Future<void> _refreshFollowingFeed() async {
-    try {
-      final feeds = await FeedApi.getFollowingFeed(page: 0, size: 20);
-      _likeManager.clear();
-
-      setState(() {
-        _followingFeedItems = feeds;
-        _followingCurrentPage = 0;
-        _hasMoreFollowing = feeds.length >= 20;
-      });
-
-      // 새로운 데이터로 전역 상태 재설정
-      _likeManager.setInitialStates(feeds);
-
-      print('✅ 팔로잉 피드 새로고침 완료');
-    } catch (e) {
-      print('❌ 팔로잉 피드 새로고침 실패: $e');
-    }
-  }
-
+  // 로딩 인디케이터
   Widget _buildLoadingIndicator() {
     return Container(
       padding: EdgeInsets.symmetric(vertical: scaleHeight(20)),
@@ -833,29 +646,5 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
         }
       },
     );
-  }
-}
-
-
-class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-  final double height;
-
-  _StickyTabBarDelegate({
-    required this.child,
-    required this.height,
-  });
-
-  @override
-  double get minExtent => height;
-  @override
-  double get maxExtent => height;
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
-  }
-  @override
-  bool shouldRebuild(_StickyTabBarDelegate oldDelegate) {
-    return child != oldDelegate.child;
   }
 }

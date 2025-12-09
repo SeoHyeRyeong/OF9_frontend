@@ -47,10 +47,11 @@ class AppImages {
   static const icCornerBottomLeft = 'assets/imgs/ic_corner_bottom_left.svg';
   static const icCornerBottomRight = 'assets/imgs/ic_corner_bottom_right.svg';
 
-  // 티켓인식 카메라, 갤러리, 경고 팝업
+  // 티켓인식 카메라, 갤러리, 직접 작성, 경고 팝업
   static const camera = 'assets/imgs/ic_camera_grayscale20.svg';
   static const solar_gallery = 'assets/imgs/ic_solar_gallery.svg';
   static const icAlert = 'assets/imgs/ic_alert.svg';
+  static const write = 'assets/imgs/ic_wirte.svg';
 
   //티켓 정보 확인
   static const dropdown = 'assets/imgs/ic_right_black_24.svg';

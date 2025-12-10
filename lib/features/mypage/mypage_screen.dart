@@ -332,7 +332,21 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   }
 
   Widget _buildGridItem(Map<String, dynamic> record) {
-    final String gameDate = record['gameDate'] ?? '날짜 없음';
+    final dynamic rawGameDate = record['gameDate'];
+    String gameDateText = '날짜 없음';
+
+    if (rawGameDate != null) {
+      try {
+        final String dateStr = rawGameDate.toString();
+        final DateTime date = DateTime.parse(dateStr);
+        gameDateText =
+        '${(date.year % 100).toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+      } catch (e) {
+        // 파싱 안 되면 원본 그대로
+        gameDateText = rawGameDate.toString();
+      }
+    }
+
     final int likeCount = record['likeCount'] ?? 0;
 
     return GestureDetector(
@@ -341,36 +355,28 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation1, animation2) =>
-                DetailFeedScreen(
-                  recordId: record['recordId'],
-                ),
+                DetailFeedScreen(recordId: record['recordId']),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),
         );
 
-        // result 처리 추가
         if (result != null && result is Map) {
           if (result['deleted'] == true) {
-            // 삭제된 경우
             final deletedRecordId = result['recordId'];
             setState(() {
               feedList.removeWhere((r) => r['recordId'] == deletedRecordId);
             });
             _loadUserInfo();
           } else if (result['updated'] == true) {
-            // 수정된 경우 - 해당 아이템만 업데이트
             final updatedRecordId = result['recordId'];
-            final updatedData = result['updatedData'] as Map<String, dynamic>;
-
+            final updatedData =
+            result['updatedData'] as Map<String, dynamic>;
             setState(() {
-              final index = feedList.indexWhere(
-                      (r) => r['recordId'] == updatedRecordId
-              );
+              final index =
+              feedList.indexWhere((r) => r['recordId'] == updatedRecordId);
               if (index != -1) {
-                // gameDate는 기존 값 유지, 나머지만 업데이트
                 final originalGameDate = feedList[index]['gameDate'];
-
                 feedList[index] = {
                   ...feedList[index],
                   ...updatedData,
@@ -388,29 +394,27 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (record['mediaUrls'] != null && record['mediaUrls'].isNotEmpty)
+              if (record['mediaUrls'] != null &&
+                  record['mediaUrls'].isNotEmpty)
                 _buildMediaImage(
-                  record['mediaUrls'][0],
-                  double.infinity,
-                  double.infinity,
-                )
+                    record['mediaUrls'][0], double.infinity, double.infinity)
               else
                 _buildImageErrorWidget(double.infinity, double.infinity),
-
-              // 날짜 배지
               Align(
                 alignment: Alignment.topCenter,
                 child: Padding(
                   padding: EdgeInsets.only(top: scaleHeight(9)),
                   child: Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: scaleWidth(6), vertical: scaleHeight(3)),
+                      horizontal: scaleWidth(6),
+                      vertical: scaleHeight(3),
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.trans500,
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text(
-                      gameDate,
+                      gameDateText,
                       textAlign: TextAlign.center,
                       style: AppFonts.suite.c3_sb(context).copyWith(
                         color: Colors.white,
@@ -421,8 +425,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                   ),
                 ),
               ),
-
-              // 좋아요 배지
               Align(
                 alignment: Alignment.bottomRight,
                 child: Padding(
@@ -432,7 +434,9 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                   ),
                   child: Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: scaleWidth(6), vertical: scaleHeight(2)),
+                      horizontal: scaleWidth(6),
+                      vertical: scaleHeight(2),
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.trans300,
                       borderRadius: BorderRadius.circular(scaleWidth(12)),
@@ -441,8 +445,10 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SvgPicture.asset(
-                            AppImages.heart_white, width: scaleWidth(14),
-                            height: scaleHeight(14)),
+                          AppImages.heart_white,
+                          width: scaleWidth(14),
+                          height: scaleHeight(14),
+                        ),
                         SizedBox(width: scaleWidth(2)),
                         Text(
                           likeCount.toString(),

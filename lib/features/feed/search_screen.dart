@@ -881,56 +881,62 @@ class UserSearchTileWidget extends StatefulWidget {
 class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
   late String _currentFollowStatus;
   bool _isLoading = false;
-  bool isMutualFollow = false;
-  bool _isMutualCheckComplete = false; // 맞팔 체크 완료 플래그
+  late bool isMutualFollow;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _currentFollowStatus = widget.user.followStatus ?? 'NOT_FOLLOWING';
-    _checkMutualFollow();
+    _currentFollowStatus = widget.user.followStatus;
+    isMutualFollow = widget.user.isMutualFollow ?? false;
+
+    // 🔍 디버그: 초기 상태 로그
+    print('🔍 UserSearchTile 초기화: ${widget.user.nickname}');
+    print('   followStatus: $_currentFollowStatus');
+    print('   isMutualFollow from API: ${widget.user.isMutualFollow}');
+    print('   isMutualFollow (사용): $isMutualFollow');
+
+    // 📡 백엔드가 isMutualFollow를 제공하지 않는 경우 대비
+    if (widget.user.isMutualFollow == null && _currentFollowStatus == 'NOT_FOLLOWING') {
+      _checkMutualFollowFallback();
+    } else {
+      _isInitialized = true;
+    }
   }
 
-  Future<void> _checkMutualFollow() async {
+  // 📡 백엔드 응답에 isMutualFollow가 없을 때만 사용하는 fallback
+  Future<void> _checkMutualFollowFallback() async {
     try {
       final myProfile = await UserApi.getMyProfile();
       final myUserId = myProfile['data']['id'];
-
-      final myFollowing = await UserApi.getFollowing(myUserId);
       final myFollowers = await UserApi.getFollowers(myUserId);
-
-      final iFollowIds = myFollowing['data']?.map((u) => u['id']).toSet() ?? <int>{};
-      final iAmFollowedIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
-
-      final isMutual = !iFollowIds.contains(widget.user.userId) && iAmFollowedIds.contains(widget.user.userId);
+      final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
 
       if (mounted) {
         setState(() {
-          isMutualFollow = isMutual;
-          _isMutualCheckComplete = true; // 체크 완료
+          isMutualFollow = followerIds.contains(widget.user.userId);
+          _isInitialized = true;
+          print('📡 Fallback check - isMutualFollow: $isMutualFollow');
         });
       }
     } catch (e) {
-      print('Mutual follow check error: $e');
+      print('❌ Fallback mutual check error: $e');
       if (mounted) {
         setState(() {
-          _isMutualCheckComplete = true; // 에러여도 완료 처리
+          _isInitialized = true;
         });
       }
     }
   }
 
   String _getButtonText() {
-    // followStatus를 먼저 체크
     if (_currentFollowStatus == 'FOLLOWING') {
       return '팔로잉';
     } else if (_currentFollowStatus == 'REQUESTED') {
       return '요청됨';
     } else if (isMutualFollow) {
-      // 맞팔 체크 완료되고 실제로 맞팔이면
       return '맞팔로우';
     }
-    // NOT_FOLLOWING - 일단 "팔로우" 표시 (맞팔 체크 완료되면 자동 업데이트됨)
     return '팔로우';
   }
 
@@ -965,34 +971,22 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
         // 언팔로우
         await UserApi.unfollowUser(userId);
 
-        // 📡 백엔드에서 최신 상태 가져오기
+        // 📡 백엔드에서 최신 상태 가져오기 (isMutualFollow 확인)
+        bool mutual = false;
         try {
-          final response = await FeedApi.getUserFeed(userId);
-          if (mounted) {
-            setState(() {
-              _currentFollowStatus = 'NOT_FOLLOWING';
-              // followStatus가 NOT_FOLLOWING이고, 상대방이 나를 팔로우하는지 확인
-              // 여기서는 간단히 API를 다시 호출하여 확인
-            });
-          }
-          // isMutualFollow 업데이트를 위해 팔로워 목록 확인
-          try {
-            final myProfile = await UserApi.getMyProfile();
-            final myUserId = myProfile['data']['id'];
-            final myFollowers = await UserApi.getFollowers(myUserId);
-            final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
-            if (mounted) {
-              setState(() {
-                isMutualFollow = followerIds.contains(userId);
-              });
-            }
-          } catch (e) {
-            print('❌ 맞팔 체크 실패: $e');
-          }
+          final myProfile = await UserApi.getMyProfile();
+          final myUserId = myProfile['data']['id'];
+          final myFollowers = await UserApi.getFollowers(myUserId);
+          final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
+          mutual = followerIds.contains(userId);
         } catch (e) {
-          print('사용자 정보 업데이트 실패: $e');
+          print('❌ 맞팔 체크 실패: $e');
+        }
+
+        if (mounted) {
           setState(() {
             _currentFollowStatus = 'NOT_FOLLOWING';
+            isMutualFollow = mutual;
           });
         }
       } else if (_currentFollowStatus == 'NOT_FOLLOWING' || isMutualFollow) {
@@ -1000,64 +994,39 @@ class _UserSearchTileWidgetState extends State<UserSearchTileWidget> {
         final response = await UserApi.followUser(userId);
         final responseData = response['data'];
 
-        // 🔍 디버그: API 응답 확인
-        print('📡 followUser API response: $responseData');
-        print('📡 isFollower: ${responseData['isFollower']}');
-        print('📡 isFollowing: ${responseData['isFollowing']}');
-        print('📡 isMutual: ${responseData['isMutual']}');
-
-        setState(() {
-          if (responseData['pending'] == true) {
-            _currentFollowStatus = 'REQUESTED';
-            // 📡 백엔드 응답에서 isFollower 값 사용
-            isMutualFollow = responseData['isFollower'] ?? false;
-          } else {
-            _currentFollowStatus = 'FOLLOWING';
-            // 📡 백엔드 응답에서 isFollower 값 사용
-            isMutualFollow = responseData['isFollower'] ?? false;
-          }
-          print('📡 Updated isMutualFollow: $isMutualFollow');
-          print('📡 Updated followStatus: $_currentFollowStatus');
-        });
-
-        // 📡 추가: API 응답이 부정확할 수 있으니 팔로워 목록 재확인
-        if (responseData['pending'] != true) {
-          try {
-            final myProfile = await UserApi.getMyProfile();
-            final myUserId = myProfile['data']['id'];
-            final myFollowers = await UserApi.getFollowers(myUserId);
-            final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
-
-            if (mounted) {
-              setState(() {
-                bool isActuallyFollower = followerIds.contains(userId);
-                print('📡 Double-check isMutualFollow: $isActuallyFollower (was: $isMutualFollow)');
-                isMutualFollow = isActuallyFollower;
-              });
+        if (mounted) {
+          setState(() {
+            if (responseData['pending'] == true) {
+              _currentFollowStatus = 'REQUESTED';
+              // 📡 백엔드 응답에서 isFollower 값 사용
+              isMutualFollow = responseData['isFollower'] ?? false;
+            } else {
+              _currentFollowStatus = 'FOLLOWING';
+              // 📡 백엔드 응답에서 isFollower 값 사용
+              isMutualFollow = responseData['isFollower'] ?? false;
             }
-          } catch (e) {
-            print('❌ 맞팔 재확인 실패: $e');
-          }
+          });
         }
-      } else if (_currentFollowStatus == 'REQUESTED' || _currentFollowStatus == 'PENDING') {
+      } else if (_currentFollowStatus == 'REQUESTED') {
         // 요청 취소
         await UserApi.unfollowUser(userId);
 
         // 📡 백엔드에서 최신 상태 가져오기
+        bool mutual = false;
         try {
           final myProfile = await UserApi.getMyProfile();
           final myUserId = myProfile['data']['id'];
           final myFollowers = await UserApi.getFollowers(myUserId);
           final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
-
-          setState(() {
-            _currentFollowStatus = 'NOT_FOLLOWING';
-            isMutualFollow = followerIds.contains(userId);
-          });
+          mutual = followerIds.contains(userId);
         } catch (e) {
-          print('사용자 정보 업데이트 실패: $e');
+          print('❌ 맞팔 체크 실패: $e');
+        }
+
+        if (mounted) {
           setState(() {
             _currentFollowStatus = 'NOT_FOLLOWING';
+            isMutualFollow = mutual;
           });
         }
       }

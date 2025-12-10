@@ -769,7 +769,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                   child: Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: scaleWidth(31),
-                      vertical: scaleHeight(200),
+                      vertical: scaleHeight(250),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -792,13 +792,6 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                     ),
                   ),
                 ),
-
-                if (_isCameraInitialized && _cameraController.value.isInitialized && _isProcessing)
-                  Positioned.fill(
-                    child: Center(
-                      child: CircularProgressIndicator(color: AppColors.pri500),
-                    ),
-                  ),
 
                 Positioned(
                   left: 0,

@@ -168,7 +168,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
         print('🎞️ 프레임 수신: ${now.millisecondsSinceEpoch}');
 
-        if (_lastScanTime != null && now.difference(_lastScanTime!).inMilliseconds < 1000) {
+        if (_lastScanTime != null && now.difference(_lastScanTime!).inMilliseconds < 500) {
           return;
         }
 
@@ -769,7 +769,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                   child: Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: scaleWidth(31),
-                      vertical: scaleHeight(200),
+                      vertical: scaleHeight(250),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -792,13 +792,6 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                     ),
                   ),
                 ),
-
-                if (_isCameraInitialized && _cameraController.value.isInitialized && _isProcessing)
-                  Positioned.fill(
-                    child: Center(
-                      child: CircularProgressIndicator(color: AppColors.pri500),
-                    ),
-                  ),
 
                 Positioned(
                   left: 0,

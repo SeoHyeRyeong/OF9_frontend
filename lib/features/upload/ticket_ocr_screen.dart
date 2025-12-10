@@ -168,7 +168,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
         print('🎞️ 프레임 수신: ${now.millisecondsSinceEpoch}');
 
-        if (_lastScanTime != null && now.difference(_lastScanTime!).inMilliseconds < 1000) {
+        if (_lastScanTime != null && now.difference(_lastScanTime!).inMilliseconds < 500) {
           return;
         }
 

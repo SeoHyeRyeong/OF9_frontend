@@ -214,6 +214,14 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final recordState = Provider.of<RecordState>(context, listen: false);
 
+      // ✨ 디버그 로그 추가
+      print('📖 TicketInfoScreen initState:');
+      print('  recordState.selectedHome: ${recordState.selectedHome}');
+      print('  recordState.selectedAway: ${recordState.selectedAway}');
+      print('  recordState.selectedDateTime: ${recordState.selectedDateTime}');
+      print('  recordState.selectedStadium: ${recordState.selectedStadium}');
+      print('  recordState.gameId: ${recordState.gameId}');
+
       if (widget.isEditMode && widget.recordId != null) {
         // 수정 모드: RecordState에서 데이터 복원
         setState(() {
@@ -231,18 +239,43 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
           extractedTime = recordState.extractedTime;
           extractedStadium = recordState.extractedStadium;
           extractedSeat = recordState.extractedSeat;
-
-          // 이미지 설정
-          if (widget.imagePath.isNotEmpty) {
-            _selectedImage = XFile(widget.imagePath);
-          }
         });
+
+        // 이미지 설정
+        if (widget.imagePath.isNotEmpty) {
+          _selectedImage = XFile(widget.imagePath);
+        }
       } else if (widget.imagePath.isNotEmpty) {
-        // 일반 모드: OCR 실행
-        _processImage(widget.imagePath);
+        // ✨ OCR 스캔에서 온 경우: RecordState에 이미 데이터가 있는지 확인
+        if (recordState.selectedHome != null || recordState.selectedAway != null) {
+          // OCR 스캔 완료 후 넘어온 경우 - RecordState에서 정보 가져오기
+          print('✅ OCR 스캔 완료 상태: RecordState에서 정보 복원');
+          setState(() {
+            selectedHome = recordState.selectedHome;
+            selectedAway = recordState.selectedAway;
+            selectedDateTime = recordState.selectedDateTime;
+            selectedStadium = recordState.selectedStadium;
+            selectedSeat = recordState.selectedSeat;
+            selectedGameId = recordState.gameId;
+
+            extractedHomeTeam = recordState.extractedHomeTeam;
+            extractedAwayTeam = recordState.extractedAwayTeam;
+            extractedDate = recordState.extractedDate;
+            extractedTime = recordState.extractedTime;
+            extractedStadium = recordState.extractedStadium;
+            extractedSeat = recordState.extractedSeat;
+
+            _selectedImage = XFile(widget.imagePath);
+          });
+        } else {
+          // 갤러리에서 직접 선택한 경우 - OCR 실행
+          print('🔄 갤러리 선택: OCR 실행 필요');
+          _processImage(widget.imagePath);
+        }
       }
     });
   }
+
 
   void _showMissingInfoDialog(String imagePath) {
     showDialog(

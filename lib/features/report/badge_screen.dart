@@ -53,82 +53,37 @@ class _BadgeScreenState extends State<BadgeScreen> {
     }
   }
 
-  String _convertFavTeam(String favTeam) {
-    switch (favTeam) {
-      case 'KIA 타이거즈': return 'KIA';
-      case '두산 베어스': return '두산';
-      case '롯데 자이언츠': return '롯데';
-      case '삼성 라이온즈': return '삼성';
-      case '키움 히어로즈': return '키움';
-      case '한화 이글스': return '한화';
-      case 'KT WIZ': return 'KT';
-      case 'LG 트윈스': return 'LG';
-      case 'NC 다이노스': return 'NC';
-      case 'SSG 랜더스': return 'SSG';
-      default: return favTeam;
-    }
-  }
-
   // 동적으로 뱃지 목록 생성
   Map<String, List<Map<String, String>>> _getAllBadges() {
-    final favTeam = _userData?['favTeam'] as String? ?? 'NC 다이노스';
-    final shortTeam = _convertFavTeam(favTeam);
-
     return {
-      "구단 도장깨기": [
-        {"name": "잠실 정복", "assetPath": "assets/imgs/badge/1_Jamsil.png"},
-        {"name": "고척 정복", "assetPath": "assets/imgs/badge/1_Gocheok.png"},
-        {"name": "부산 정복", "assetPath": "assets/imgs/badge/1_Busan.png"},
-        {"name": "대구 정복", "assetPath": "assets/imgs/badge/1_Daegu.png"},
-        {"name": "광주 정복", "assetPath": "assets/imgs/badge/1_Gwangju.png"},
-        {"name": "대전 정복", "assetPath": "assets/imgs/badge/1_Daejeon.png"},
-        {"name": "창원 정복", "assetPath": "assets/imgs/badge/1_Changwon.png"},
-        {"name": "인천 정복", "assetPath": "assets/imgs/badge/1_Incheon.png"},
-        {"name": "수원 정복", "assetPath": "assets/imgs/badge/1_Suwon.png"},
+      "어서와, 야구 직관은 처음이지?": [
+        {"name": "기록의 시작", "assetPath": "assets/imgs/badge/1_start.png"},
+        {"name": "홈의 따뜻함", "assetPath": "assets/imgs/badge/1_home.png"},
+        {"name": "원정의 즐거움", "assetPath": "assets/imgs/badge/1_away.png"},
+        {"name": "같이 응원해요", "assetPath": "assets/imgs/badge/1_cheer.png"},
+        {"name": "속닥속닥", "assetPath": "assets/imgs/badge/1_comment.png"},
       ],
-      "직관 기록수": [
-        {"name": "직관 5회", "assetPath": "assets/imgs/badge/2_5.png"},
-        {"name": "직관 10회", "assetPath": "assets/imgs/badge/2_10.png"},
-        {"name": "직관 25회", "assetPath": "assets/imgs/badge/2_25.png"},
-        {"name": "직관 50회", "assetPath": "assets/imgs/badge/2_50.png"},
-        {"name": "직관 75회", "assetPath": "assets/imgs/badge/2_75.png"},
-        {"name": "직관 100회", "assetPath": "assets/imgs/badge/2_100.png"},
+      "나는야 승리요정": [
+        {"name": "응원의 보답", "assetPath": "assets/imgs/badge/2_heart.png"},
+        {"name": "네잎클로버", "assetPath": "assets/imgs/badge/2_clover.png"},
+        {"name": "행운의 편지", "assetPath": "assets/imgs/badge/2_letter.png"},
       ],
-      "$shortTeam 직관 기록수": [
-        {"name": "$shortTeam 직관 5회", "assetPath": "assets/imgs/badge/3_${shortTeam}_5.png"},
-        {"name": "$shortTeam 직관 10회", "assetPath": "assets/imgs/badge/3_${shortTeam}_10.png"},
-        {"name": "$shortTeam 직관 25회", "assetPath": "assets/imgs/badge/3_${shortTeam}_25.png"},
-        {"name": "$shortTeam 직관 50회", "assetPath": "assets/imgs/badge/3_${shortTeam}_50.png"},
-        {"name": "$shortTeam 직관 75회", "assetPath": "assets/imgs/badge/3_${shortTeam}_75.png"},
-        {"name": "$shortTeam 직관 100회", "assetPath": "assets/imgs/badge/3_${shortTeam}_100.png"},
+      "패배해도 괜찮아": [
+        {"name": "토닥토닥", "assetPath": "assets/imgs/badge/3_halfheart.png"},
+        {"name": "그래도 응원해", "assetPath": "assets/imgs/badge/3_force.png"},
+        {"name": "이게 사랑이야", "assetPath": "assets/imgs/badge/3_ring.png"},
       ],
-      "승리요정": [
-        {"name": "승리요정 입문", "assetPath": "assets/imgs/badge/4_Win_1.png"},
-        {"name": "승리요정 초급", "assetPath": "assets/imgs/badge/4_Win_5.png"},
-        {"name": "승리요정 중급", "assetPath": "assets/imgs/badge/4_Win_15.png"},
-        {"name": "승리요정 고급", "assetPath": "assets/imgs/badge/4_Win_30.png"},
-        {"name": "승리는 나의 것", "assetPath": "assets/imgs/badge/4_Win_50.png"},
-        {"name": "KBO는 내 손에", "assetPath": "assets/imgs/badge/4_Win_100.png"},
-      ],
-      "패배요정": [
-        {"name": "패배요정 입문", "assetPath": "assets/imgs/badge/5_Lose_1.png"},
-        {"name": "패배요정 초급", "assetPath": "assets/imgs/badge/5_Lose_5.png"},
-        {"name": "패배요정 중급", "assetPath": "assets/imgs/badge/5_Lose_15.png"},
-        {"name": "패배요정 고급", "assetPath": "assets/imgs/badge/5_Lose_30.png"},
-        {"name": "지면 또 와요...", "assetPath": "assets/imgs/badge/5_Lose_50.png"},
-        {"name": "패배의 저주", "assetPath": "assets/imgs/badge/5_Lose_100.png"},
-      ],
-      "감정 수집": [
-        {"name": "짜릿함 중독", "assetPath": "assets/imgs/badge/6_Emotion_1.png"},
-        {"name": "만족의 미학", "assetPath": "assets/imgs/badge/6_Emotion_2.png"},
-        {"name": "감동주의보", "assetPath": "assets/imgs/badge/6_Emotion_3.png"},
-        {"name": "예측불가!", "assetPath": "assets/imgs/badge/6_Emotion_4.png"},
-        {"name": "행복전도사", "assetPath": "assets/imgs/badge/6_Emotion_5.png"},
-        {"name": "고구마 먹방", "assetPath": "assets/imgs/badge/6_Emotion_6.png"},
-        {"name": "조금만 더...", "assetPath": "assets/imgs/badge/6_Emotion_7.png"},
-        {"name": "분노의질주", "assetPath": "assets/imgs/badge/6_Emotion_8.png"},
-        {"name": "피로회복제", "assetPath": "assets/imgs/badge/6_Emotion_9.png"},
-        {"name": "감정수집가", "assetPath": "assets/imgs/badge/6_Emotion_All.png"},
+      "모든 야구장을 제패하겠어": [
+        {"name": "베어스 정복", "assetPath": "assets/imgs/badge/4_bears.png"},
+        {"name": "갈매기 정복", "assetPath": "assets/imgs/badge/4_lotte.png"},
+        {"name": "사자 정복", "assetPath": "assets/imgs/badge/4_lions.png"},
+        {"name": "히어로 정복", "assetPath": "assets/imgs/badge/4_kiwoom.png"},
+        {"name": "독수리 정복", "assetPath": "assets/imgs/badge/4_eagles.png"},
+        {"name": "호랑이 정복", "assetPath": "assets/imgs/badge/4_kia.png"},
+        {"name": "마법사 정복", "assetPath": "assets/imgs/badge/4_kt.png"},
+        {"name": "쌍둥이 정복", "assetPath": "assets/imgs/badge/4_lg.png"},
+        {"name": "공룡 정복", "assetPath": "assets/imgs/badge/4_nc.png"},
+        {"name": "랜더스 정복", "assetPath": "assets/imgs/badge/4_ssg.png"},
       ],
     };
   }
@@ -174,14 +129,7 @@ class _BadgeScreenState extends State<BadgeScreen> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation1, animation2) => const ReportScreen(),
-                            transitionDuration: Duration.zero,
-                            reverseTransitionDuration: Duration.zero,
-                          ),
-                        );
+                        Navigator.pop(context, true);
                       },
                       child: Container(
                         width: scaleHeight(24),
@@ -199,7 +147,8 @@ class _BadgeScreenState extends State<BadgeScreen> {
                       child: Center(
                         child: Text(
                           "나의 뱃지",
-                          style: AppFonts.suite.head_sm_700(context).copyWith(color: Colors.black),
+                          style: AppFonts.pretendard.body_md_500(context).copyWith(
+                              color: AppColors.gray900),
                         ),
                       ),
                     ),
@@ -218,7 +167,6 @@ class _BadgeScreenState extends State<BadgeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 헤더 아래 10px 간격
                     SizedBox(height: scaleHeight(10)),
 
                     // 직관 기록 독려
@@ -226,10 +174,10 @@ class _BadgeScreenState extends State<BadgeScreen> {
                       padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                       child: Container(
                         width: double.infinity,
-                        height: scaleHeight(90),
+                        height: scaleHeight(88),
                         decoration: BoxDecoration(
                           color: AppColors.gray50,
-                          borderRadius: BorderRadius.circular(scaleWidth(12)),
+                          borderRadius: BorderRadius.circular(scaleWidth(16)),
                         ),
                         child: Padding(
                           padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
@@ -242,12 +190,16 @@ class _BadgeScreenState extends State<BadgeScreen> {
                                   children: [
                                     Text(
                                       "직관을 기록하고",
-                                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray700),
+                                      style: AppFonts.pretendard.body_sm_500(
+                                          context).copyWith(
+                                          color: AppColors.gray700),
                                     ),
                                     SizedBox(height: scaleHeight(4)),
                                     Text(
                                       "더 많은 배지를 모아 보세요!",
-                                      style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray900),
+                                      style: AppFonts.pretendard.body_sm_500(
+                                          context).copyWith(
+                                          color: AppColors.gray900),
                                     ),
                                   ],
                                 ),
@@ -266,8 +218,7 @@ class _BadgeScreenState extends State<BadgeScreen> {
                       ),
                     ),
 
-                    // 독려 영역과 배지 제목 사이 간격 줄이기
-                    SizedBox(height: scaleHeight(16)), // 20에서 16으로 줄임
+                    SizedBox(height: scaleHeight(28)),
 
                     // 보유한 배지 제목
                     Padding(
@@ -276,12 +227,14 @@ class _BadgeScreenState extends State<BadgeScreen> {
                         children: [
                           Text(
                             "보유한 배지",
-                            style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray900),
+                            style: AppFonts.pretendard.head_sm_600(context).copyWith(
+                                color: AppColors.gray900),
                           ),
                           SizedBox(width: scaleWidth(6)),
                           Text(
                             "${_badgeData?['myBadgeCount'] ?? 0}",
-                            style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.pri700),
+                            style: AppFonts.pretendard.head_sm_600(context).copyWith(
+                                color: AppColors.pri700),
                           ),
                         ],
                       ),
@@ -289,7 +242,7 @@ class _BadgeScreenState extends State<BadgeScreen> {
 
                     // 배지 목록
                     _buildAllBadgeCategories(),
-                    SizedBox(height: scaleHeight(40)),
+                    SizedBox(height: scaleHeight(46)),
                   ],
                 ),
               ),
@@ -310,7 +263,8 @@ class _BadgeScreenState extends State<BadgeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (int categoryIndex = 0; categoryIndex < categoryNames.length; categoryIndex++)
+        for (int categoryIndex = 0; categoryIndex <
+            categoryNames.length; categoryIndex++)
           _buildCategorySection(
               categoryNames[categoryIndex],
               allBadges[categoryNames[categoryIndex]]!,
@@ -321,40 +275,36 @@ class _BadgeScreenState extends State<BadgeScreen> {
   }
 
   // 각 카테고리 섹션 빌드
-  Widget _buildCategorySection(String categoryName, List<Map<String, String>> badges, bool isLastCategory) {
+  Widget _buildCategorySection(String categoryName,
+      List<Map<String, String>> badges, bool isLastCategory) {
+    // 첫 번째 카테고리인지 확인 (인덱스 전달 필요하므로 간접적으로 판단)
+    final allBadges = _getAllBadges();
+    final isFirstCategory = categoryName == allBadges.keys.first;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 카테고리 제목
-        SizedBox(height: scaleHeight(16)),
+        SizedBox(height: scaleHeight(isFirstCategory ? 24 : 48)),
         Padding(
           padding: EdgeInsets.only(left: scaleWidth(20)),
           child: Text(
             categoryName,
-            style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray700),
+            style: AppFonts.pretendard.body_md_500(context).copyWith(
+                color: AppColors.gray800),
           ),
         ),
 
         // 뱃지 그리드 (3개씩 배치)
-        SizedBox(height: scaleHeight(12)),
+        SizedBox(height: scaleHeight(16)),
         _buildBadgeGrid(categoryName, badges),
-
-        // 마지막 카테고리가 아니면 구분선 추가
-        if (!isLastCategory) ...[
-          SizedBox(height: scaleHeight(28)),
-          Container(
-            width: double.infinity,
-            height: scaleHeight(8),
-            color: AppColors.gray30,
-          ),
-          SizedBox(height: scaleHeight(14)),
-        ],
       ],
     );
   }
 
   // 뱃지 그리드 (3개씩 배치)
-  Widget _buildBadgeGrid(String categoryName, List<Map<String, String>> badges) {
+  Widget _buildBadgeGrid(String categoryName,
+      List<Map<String, String>> badges) {
     List<Widget> rows = [];
 
     for (int i = 0; i < badges.length; i += 3) {
@@ -367,7 +317,7 @@ class _BadgeScreenState extends State<BadgeScreen> {
 
       // 부족한 자리는 빈 공간으로 채우기
       while (rowItems.length < 3) {
-        rowItems.add(SizedBox(width: scaleWidth(80)));
+        rowItems.add(SizedBox(width: scaleWidth(84)));
       }
 
       rows.add(
@@ -395,37 +345,35 @@ class _BadgeScreenState extends State<BadgeScreen> {
     final assetPath = badge['assetPath']!;
     final isAchieved = _isBadgeAchieved(categoryName, name);
 
-    return Container(
-      width: scaleWidth(80),
-      height: scaleHeight(110),
+    return IntrinsicHeight(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: scaleWidth(80),
-            height: scaleHeight(80),
-            child: isAchieved
-                ? Image.asset(
-              assetPath,
-              width: scaleWidth(79),
-              height: scaleHeight(79),
-              fit: BoxFit.contain,
-            )
-                : SvgPicture.asset(
-              categoryName == "승리요정" ? 'assets/imgs/badge/circle.svg' : 'assets/imgs/badge/polygon.svg',
-              width: scaleWidth(79),
-              height: scaleHeight(79),
-              fit: BoxFit.contain,
+          ClipOval(
+            child: SizedBox(
+              width: scaleWidth(84),
+              height: scaleWidth(84),
+              child: isAchieved
+                  ? Transform.scale(
+                scale: 1.38,
+                child: Image.asset(assetPath, fit: BoxFit.cover),
+              )
+                  : Image.asset(
+                  'assets/imgs/badge/lock.png', fit: BoxFit.cover),
             ),
           ),
-          SizedBox(height: scaleHeight(8)),
-          Text(
-            name,
-            style: AppFonts.suite.body_sm_400(context).copyWith(
-              color: isAchieved ? AppColors.gray900 : AppColors.gray300,
+          SizedBox(height: scaleHeight(10)),
+          SizedBox(
+            width: scaleWidth(84),
+            child: Text(
+              name,
+              style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                color: isAchieved ? Colors.black : Colors.black,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

@@ -132,4 +132,6 @@ class AppImages {
   //리포트
   static const telescope = 'assets/imgs/ic_report/ic_telescope.svg';
   static const location_marker = 'assets/imgs/ic_report/ic_location_marker.svg';
+  static const day = 'assets/imgs/ic_report/ic_day.png';
+  static const stadium = 'assets/imgs/ic_report/ic_stadium.png';
 }

@@ -113,7 +113,10 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         backCamera,
         ResolutionPreset.high,
         enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.yuv420,
+        // ✨ 안드로이드/iOS 포맷 분기 처리
+        imageFormatGroup: Platform.isAndroid
+            ? ImageFormatGroup.nv21
+            : ImageFormatGroup.yuv420,
       );
 
       await _cameraController.initialize();
@@ -139,6 +142,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       }
     }
   }
+
 
   void _startAutoScan() {
     print('📸 _startAutoScan 호출됨');
@@ -221,7 +225,28 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
           _cameraController.value.deviceOrientation ?? DeviceOrientation.portraitUp
       );
 
-      final InputImageFormat format = _imageFormatToInputImageFormat(image.format.group);
+      // ✨ 안드로이드/iOS 포맷 분기 처리
+      InputImageFormat format;
+      if (Platform.isAndroid) {
+        // 안드로이드: nv21 또는 yuv420
+        if (image.format.group == ImageFormatGroup.nv21) {
+          format = InputImageFormat.nv21;
+        } else if (image.format.group == ImageFormatGroup.yuv420) {
+          format = InputImageFormat.yuv420;
+        } else {
+          print('❌ 지원하지 않는 안드로이드 이미지 포맷: ${image.format.group}');
+          return;
+        }
+      } else {
+        // iOS: bgra8888 또는 yuv420
+        if (image.format.group == ImageFormatGroup.bgra8888) {
+          format = InputImageFormat.bgra8888;
+        } else {
+          format = InputImageFormat.yuv420;
+        }
+      }
+
+      print('  포맷: $format, rotation: $rotation');
 
       final inputImage = InputImage.fromBytes(
         bytes: bytes,
@@ -262,6 +287,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     }
   }
 
+
   InputImageRotation _rotationIntToInputImageRotation(DeviceOrientation orientation) {
     switch (orientation) {
       case DeviceOrientation.portraitUp:
@@ -274,21 +300,6 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         return InputImageRotation.rotation90deg;
       default:
         return InputImageRotation.rotation0deg;
-    }
-  }
-
-  InputImageFormat _imageFormatToInputImageFormat(ImageFormatGroup group) {
-    switch (group) {
-      case ImageFormatGroup.yuv420:
-        return InputImageFormat.yuv420;
-      case ImageFormatGroup.bgra8888:
-        return InputImageFormat.bgra8888;
-      case ImageFormatGroup.jpeg:
-        return InputImageFormat.yuv420;
-      case ImageFormatGroup.nv21:
-        return InputImageFormat.nv21;
-      default:
-        return InputImageFormat.yuv420;
     }
   }
 

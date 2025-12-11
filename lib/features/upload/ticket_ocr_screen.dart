@@ -767,9 +767,15 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
                 Positioned.fill(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: scaleWidth(31),
-                      vertical: scaleHeight(250),
+                    padding: EdgeInsets.only(
+                      left: scaleWidth(31),
+                      right: scaleWidth(31),
+                      // ✨ 위: 안내 텍스트 끝 + 44 여백
+                      top: scaleHeight(50) + MediaQuery.of(context).padding.top + scaleHeight(20 + 8 + 14 + 44),
+                      // 안내 텍스트 위치(50) + 타이틀 높이(20) + 간격(8) + 서브타이틀 높이(14) + 여백(44)
+                      // ✨ 아래: 버튼 위 + 44 여백
+                      bottom: MediaQuery.of(context).padding.bottom + scaleHeight(70) + scaleHeight(24) + scaleHeight(44) + scaleHeight(44),
+                      // 내비바(70) + 간격(24) + 버튼 높이(44) + 여백(44)
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

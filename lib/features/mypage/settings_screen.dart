@@ -409,76 +409,119 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SizedBox(height: scaleHeight(8)),
                       // 프로필 카드
                       Padding(
-                        padding: EdgeInsets.only(left: scaleWidth(20), right:scaleWidth(18),),
+                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
                         child: Container(
-                          height: scaleHeight(130),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // 프로필 이미지
-                                Padding(
-                                  padding: EdgeInsets.only(top: scaleHeight(28)),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(30),
-                                    child: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
-                                        ? Image.network(
-                                      profileImageUrl!,
-                                      width: scaleWidth(80),
-                                      height: scaleHeight(80),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => SvgPicture.asset(
+                            padding: EdgeInsets.only(
+                              left: scaleWidth(22),
+                              right: scaleWidth(22),
+                              top: scaleHeight(22),
+                              bottom: scaleHeight(18),
+                            ),
+                            child: IntrinsicHeight(
+                              child: Row(
+                                children: [
+                                  Align(
+                                    alignment: Alignment.center,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(30),
+                                      child: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
+                                          ? Image.network(
+                                        profileImageUrl!,
+                                        width: scaleWidth(80),
+                                        height: scaleHeight(80),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => SvgPicture.asset(
+                                          AppImages.profile,
+                                          width: scaleWidth(80),
+                                          height: scaleHeight(80),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                          : SvgPicture.asset(
                                         AppImages.profile,
                                         width: scaleWidth(80),
                                         height: scaleHeight(80),
                                         fit: BoxFit.cover,
                                       ),
-                                    )
-                                        : SvgPicture.asset(
-                                      AppImages.profile,
-                                      width: scaleWidth(80),
-                                      height: scaleHeight(80),
-                                      fit: BoxFit.cover,
                                     ),
                                   ),
-                                ),
+                                  SizedBox(width: scaleWidth(20)),
 
-                                SizedBox(width: scaleWidth(18)),
-
-                                // 사용자 정보
-                                Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(top: scaleHeight(35)),
+                                  Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
-                                        // 닉네임
-                                        isLoading
-                                            ? CircularProgressIndicator()
-                                            : FixedText(
-                                          nickname,
-                                          style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.black),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Padding(
+                                                padding: EdgeInsets.only(top: scaleHeight(5)), // 그대로
+                                                child: isLoading
+                                                    ? CircularProgressIndicator()
+                                                    : FixedText(
+                                                  nickname,
+                                                  style: AppFonts.pretendard.body_sm_500(context)
+                                                      .copyWith(color: AppColors.black),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.only(top: scaleHeight(5)), // 그대로
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  final result = await Navigator.push(
+                                                    context,
+                                                    PageRouteBuilder(
+                                                      pageBuilder: (context, animation1, animation2) =>
+                                                      const EditProfileScreen(previousRoute: 'settings'),
+                                                      transitionDuration: Duration.zero,
+                                                      reverseTransitionDuration: Duration.zero,
+                                                    ),
+                                                  );
+                                                  if (result == true) {
+                                                    _loadUserInfo();
+                                                    _loadBlockedUsers();
+                                                  }
+                                                },
+                                                child: Container(
+                                                  width: scaleWidth(42),
+                                                  height: scaleHeight(20),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.gray30,
+                                                    borderRadius: BorderRadius.circular(20),
+                                                  ),
+                                                  child: Center(
+                                                    child: FixedText(
+                                                      '수정',
+                                                      style: AppFonts.pretendard.caption_re_400(context)
+                                                          .copyWith(color: AppColors.pri800),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
+
                                         SizedBox(height: scaleHeight(5)),
-                                        // 최애구단
                                         isLoading
-                                            ? Container()
+                                            ? const SizedBox.shrink()
                                             : FixedText(
-                                          "$favTeam 팬",
+                                          '$favTeam 팬',
                                           style: AppFonts.pretendard.caption_re_400(context).copyWith(
-                                              color: AppColors.gray400,
-                                              fontSize: scaleFont(10)),
+                                            color: AppColors.gray400,
+                                            fontSize: scaleFont(10),
+                                          ),
                                         ),
                                         SizedBox(height: scaleHeight(7)),
-                                        // 팔로잉/팔로워
                                         Row(
                                           children: [
                                             GestureDetector(
@@ -498,13 +541,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               child: Row(
                                                 children: [
                                                   FixedText(
-                                                    "팔로잉",
-                                                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray500),
+                                                    '팔로잉',
+                                                    style: AppFonts.pretendard.caption_md_400(context)
+                                                        .copyWith(color: AppColors.gray500),
                                                   ),
                                                   SizedBox(width: scaleWidth(2)),
                                                   FixedText(
-                                                    "$followingCount",
-                                                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray900),
+                                                    '$followingCount',
+                                                    style: AppFonts.pretendard.caption_md_400(context)
+                                                        .copyWith(color: AppColors.gray900),
                                                   ),
                                                 ],
                                               ),
@@ -527,13 +572,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               child: Row(
                                                 children: [
                                                   FixedText(
-                                                    "팔로워",
-                                                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray500),
+                                                    '팔로워',
+                                                    style: AppFonts.pretendard.caption_md_400(context)
+                                                        .copyWith(color: AppColors.gray500),
                                                   ),
                                                   SizedBox(width: scaleWidth(2)),
                                                   FixedText(
-                                                    "$followerCount",
-                                                    style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray900),
+                                                    '$followerCount',
+                                                    style: AppFonts.pretendard.caption_md_400(context)
+                                                        .copyWith(color: AppColors.gray900),
                                                   ),
                                                 ],
                                               ),
@@ -543,43 +590,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ],
                                     ),
                                   ),
-                                ),
-
-                                // 수정 버튼
-                                Padding(
-                                  padding: EdgeInsets.only(top: scaleHeight(35)),
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      final result = await Navigator.push(
-                                        context,
-                                        PageRouteBuilder(
-                                          pageBuilder: (context, animation1, animation2) => const EditProfileScreen(previousRoute: 'settings'),
-                                          transitionDuration: Duration.zero,
-                                          reverseTransitionDuration: Duration.zero,
-                                        ),
-                                      );
-                                      if (result == true) {
-                                        _loadUserInfo();
-                                        _loadBlockedUsers();
-                                      }
-                                    },
-                                    child: Container(
-                                      width: scaleWidth(42),
-                                      height: scaleHeight(20),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.gray30,
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Center(
-                                        child: FixedText(
-                                          "수정",
-                                          style: AppFonts.pretendard.caption_re_400(context).copyWith(color: AppColors.pri800),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),

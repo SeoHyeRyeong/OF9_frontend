@@ -193,21 +193,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         print('차단 확인 에러: $e');
       }
 
-      bool mutual = false;
-      if (newFollowStatus == 'NOT_FOLLOWING' && !blocked) {
-        try {
-          final myProfile = await UserApi.getMyProfile();
-          final myUserId = myProfile['data']['id'];
-
-          final myFollowers = await UserApi.getFollowers(myUserId);
-          final followerIds = myFollowers['data']?.map((u) => u['id']).toSet() ?? <int>{};
-
-          // 상대가 나를 팔로우 중이면 맞팔
-          mutual = followerIds.contains(widget.userId);
-        } catch (e) {
-          print('❌ 맞팔 체크 실패: $e');
-        }
-      }
+      // ✅ 백엔드 응답에서 isMutualFollow 바로 사용
+      bool mutual = response['isMutualFollow'] ?? false;
 
       if (!mounted) return;
 
@@ -1032,8 +1019,23 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     return content;
   }
 
-  // 팔로우 버튼 (프로필 수정 버튼 위치)
+  // 팔로우 버튼
   Widget _buildFollowButton() {
+    if (isLoading || followStatus == null) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
+        child: SizedBox(
+          height: scaleHeight(42),
+          width: double.infinity,
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.gray100,
+              borderRadius: BorderRadius.circular(scaleHeight(8)),
+            ),
+          ),
+        ),
+      );
+    }
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
       child: SizedBox(

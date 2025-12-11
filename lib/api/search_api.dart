@@ -61,6 +61,7 @@ class UserSearchResult {
   final String favTeam;
   final bool isPrivate;
   final String followStatus;
+  final bool? isMutualFollow;
 
   UserSearchResult.fromJson(Map<String, dynamic> json)
       : userId = json['userId'],
@@ -68,7 +69,8 @@ class UserSearchResult {
         profileImageUrl = json['profileImageUrl'],
         favTeam = json['favTeam'],
         isPrivate = json['isPrivate'],
-        followStatus = json['followStatus'];
+        followStatus = json['followStatus'],
+        isMutualFollow = json['isMutualFollow'];
 }
 
 // 페이징 처리된 직관 기록 목록

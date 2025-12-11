@@ -1258,13 +1258,13 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
     final imagePath = emotionImages[emotionCode];
     if (imagePath == null) {
-      return SizedBox(width: scaleWidth(50), height: scaleHeight(50));
+      return SizedBox(width: scaleWidth(35), height: scaleHeight(35));
     }
 
     return SvgPicture.asset(
       imagePath,
-      width: scaleWidth(50),
-      height: scaleHeight(50),
+      width: scaleWidth(35),
+      height: scaleHeight(35),
     );
   }
 

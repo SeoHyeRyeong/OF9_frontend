@@ -317,26 +317,34 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 프로필 이미지
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(scaleWidth(18)),
-                  child: (profileImageUrl.isNotEmpty)
-                      ? Image.network(
-                    profileImageUrl,
-                    width: scaleWidth(36),
-                    height: scaleHeight(36),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => SvgPicture.asset(
+                Container(
+                  width: scaleWidth(38),
+                  height: scaleHeight(38),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.gray50, width: 1),
+                    borderRadius: BorderRadius.circular(scaleWidth(19)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(scaleWidth(18)),
+                    child: (profileImageUrl.isNotEmpty)
+                        ? Image.network(
+                      profileImageUrl,
+                      width: scaleWidth(36),
+                      height: scaleHeight(36),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => SvgPicture.asset(
+                        AppImages.profile,
+                        width: scaleWidth(36),
+                        height: scaleHeight(36),
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                        : SvgPicture.asset(
                       AppImages.profile,
                       width: scaleWidth(36),
                       height: scaleHeight(36),
                       fit: BoxFit.cover,
                     ),
-                  )
-                      : SvgPicture.asset(
-                    AppImages.profile,
-                    width: scaleWidth(36),
-                    height: scaleHeight(36),
-                    fit: BoxFit.cover,
                   ),
                 ),
                 SizedBox(width: scaleWidth(10)),
@@ -520,7 +528,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _getEmotionIcon(emotionCode),
-          SizedBox(width: scaleWidth(4)),
+          SizedBox(width: scaleWidth(8)),
           FixedText(
             emotionLabel,
             style: AppFonts.pretendard.body_sm_400(context).copyWith(
@@ -558,15 +566,15 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
     if (iconPath == null) {
       return SizedBox(
-        width: scaleWidth(44),
-        height: scaleHeight(44),
+        width: scaleWidth(32),
+        height: scaleHeight(32),
       );
     }
 
     return SvgPicture.asset(
       iconPath,
-      width: scaleWidth(44),
-      height: scaleHeight(44),
+      width: scaleWidth(32),
+      height: scaleHeight(32),
       fit: BoxFit.contain,
     );
   }

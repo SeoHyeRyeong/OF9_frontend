@@ -146,7 +146,7 @@ class _BadgeScreenState extends State<BadgeScreen> {
                     Expanded(
                       child: Center(
                         child: Text(
-                          "나의 뱃지",
+                          "나의 배지",
                           style: AppFonts.pretendard.body_md_500(context).copyWith(
                               color: AppColors.gray900),
                         ),

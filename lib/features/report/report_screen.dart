@@ -176,12 +176,24 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                   child: Align(
                     alignment: Alignment.topLeft,
-                    child: Text(
-                      '2025',
-                      style: AppFonts.pretendard.title_md_600(context).copyWith(
-                        color: Colors.black,
-                        height: 1.0,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '2025',
+                          style: AppFonts.pretendard.title_md_600(context).copyWith(
+                            color: Colors.black,
+                            height: 1.0,
+                          ),
+                        ),
+                        SizedBox(width: scaleWidth(10)),
+                        SvgPicture.asset(
+                          AppImages.dropdown,
+                          width: scaleWidth(16),
+                          height: scaleHeight(16),
+                          fit: BoxFit.contain,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -770,19 +782,22 @@ class _ReportScreenState extends State<ReportScreen> {
     return GestureDetector(
       onTap: () {},
       child: Container(
-        width: scaleWidth(73),
-        height: scaleHeight(26),
+        padding: EdgeInsets.symmetric(
+          horizontal: scaleWidth(10),
+          vertical: scaleHeight(4),
+        ),
         decoration: BoxDecoration(
-          color: AppColors.gray600,
+          color: hasRecords
+              ? AppColors.gray600
+              : AppColors.gray600.withOpacity(0.8),
           borderRadius: BorderRadius.circular(scaleWidth(16)),
         ),
-        child: Center(
-          child: Text(
-            "이미지 저장",
-            style: AppFonts.pretendard.caption_md_500(context).copyWith(
-              color: hasRecords
-                  ? AppColors.gray50 : AppColors.gray800,
-            ),
+        child: Text(
+          "이미지 저장",
+          style: AppFonts.pretendard.caption_md_500(context).copyWith(
+            color: hasRecords
+                ? AppColors.gray50
+                : AppColors.gray800,
           ),
         ),
       ),
@@ -807,6 +822,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   style: AppFonts.pretendard.caption_md_500(context).copyWith(
                       color: AppColors.gray400),
                 ),
+                SizedBox(width: scaleWidth(5)),
                 Icon(
                   Icons.arrow_forward_ios,
                   size: scaleWidth(10),
@@ -819,7 +835,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  /// 나의 뱃지 섹션
+  /// 나의 배지 섹션
   Widget _buildBadgeSection({required bool hasRecords}) {
     final badgeSummary = _reportData?['badgeSummary'];
     final mainPageBadges = badgeSummary?['mainPageBadges'] as List<dynamic>? ??
@@ -829,22 +845,14 @@ class _ReportScreenState extends State<ReportScreen> {
     print("badgeSummary: $badgeSummary");
     print("mainPageBadges: $mainPageBadges");
 
-    // 초기 뱃지 이름
-    final initialBadgeNames = ['기록의 시작', '홈의 따뜻함', '응원의 보답', '토닥토닥', '베어스 정복'];
-
-    // mainPageBadges를 slotOrder 역순으로 정렬 (큰 숫자가 최신 = 왼쪽에 표시)
-    final sortedBadges = List<dynamic>.from(mainPageBadges);
-    sortedBadges.sort((a, b) {
-      final aOrder = (a as Map<String, dynamic>)['slotOrder'] as int? ?? 0;
-      final bOrder = (b as Map<String, dynamic>)['slotOrder'] as int? ?? 0;
-      return bOrder.compareTo(aOrder); // 내림차순 정렬 (큰 숫자 먼저)
-    });
+    // 디폴트로 보여줄 뱃지 이름 (아무것도 획득 안했을 때)
+    final defaultBadgeNames = ['기록의 시작', '홈의 따뜻함', '응원의 보답', '토닥토닥', '베어스 정복'];
 
     List<Map<String, dynamic>> displayBadges = [];
     Set<String> addedBadgeNames = {};
 
-    // 1. 획득한 뱃지를 역순으로 추가 (최신이 먼저)
-    for (var badge in sortedBadges) {
+    // 1. 획득한 뱃지 추가
+    for (var badge in mainPageBadges) {
       if (displayBadges.length >= 5) break;
 
       final badgeMap = badge as Map<String, dynamic>;
@@ -861,8 +869,8 @@ class _ReportScreenState extends State<ReportScreen> {
       }
     }
 
-    // 2. 부족한 자리는 초기 뱃지로 채우기 (획득하지 않은 것만)
-    for (var badgeName in initialBadgeNames) {
+    // 2. 부족한 자리는 디폴트 뱃지로 채우기 (획득하지 않은 것만)
+    for (var badgeName in defaultBadgeNames) {
       if (displayBadges.length >= 5) break;
       if (!addedBadgeNames.contains(badgeName)) {
         displayBadges.add({
@@ -874,9 +882,19 @@ class _ReportScreenState extends State<ReportScreen> {
       }
     }
 
+    // 3. 그래도 5개가 안되면 빈 슬롯으로 채우기 (혹시 모를 경우 대비)
+    while (displayBadges.length < 5) {
+      displayBadges.add({
+        'name': null,
+        'imageUrl': null,
+        'category': null,
+        'isAchieved': false,
+      });
+    }
+
     return Column(
       children: [
-        _buildSectionHeader("나의 뱃지", onTap: () async {
+        _buildSectionHeader("나의 배지", onTap: () async {
           final result = await Navigator.push(
             context,
             PageRouteBuilder(
@@ -982,7 +1000,6 @@ class _ReportScreenState extends State<ReportScreen> {
       ),
     );
   }
-
 
   /// 나의 직관 기록 분석 섹션
   Widget _buildAnalysisSection({required bool hasRecords}) {

@@ -11,6 +11,7 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
+import 'package:frontend/utils/follow_status_manager.dart';
 import 'package:frontend/utils/team_utils.dart';
 import 'package:frontend/utils/time_utils.dart';
 
@@ -61,10 +62,13 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
   };
 
   final _likeManager = FeedCountManager();
+  final _followManager = FollowStatusManager();
 
   late bool _isLiked;
   late int _likeCount;
   late int _commentCount;
+  late String _followStatus;
+  bool _isFollowLoading = false;
 
   @override
   void initState() {
@@ -72,39 +76,44 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
     final recordId = widget.feedData['recordId'] as int?;
     if (recordId != null) {
-      // 전역 상태 우선 사용 (최신 값)
-      _isLiked = _likeManager.getLikedStatus(recordId)
-          ?? widget.feedData['isLiked']
-          ?? false;
-      _likeCount = _likeManager.getLikeCount(recordId)
-          ?? widget.feedData['likeCount']
-          ?? 0;
-      _commentCount = _likeManager.getCommentCount(recordId)
-          ?? widget.feedData['commentCount']
-          ?? 0;
+      // 백엔드 데이터(feedData) 우선 사용
+      _isLiked = widget.feedData['isLiked'] ?? false;
+      _likeCount = widget.feedData['likeCount'] ?? 0;
+      _commentCount = widget.feedData['commentCount'] ?? 0;
 
-      // 전역 상태 없으면 feedData로 초기화
-      if (_likeManager.getLikedStatus(recordId) == null) {
-        _likeManager.setInitialState(
-          recordId,
-          _isLiked,
-          _likeCount,
-          commentCount: _commentCount,
-        );
-      }
+      // 전역 상태에 백엔드 데이터로 초기화/업데이트
+      _likeManager.setInitialState(
+        recordId,
+        _isLiked,
+        _likeCount,
+        commentCount: _commentCount,
+      );
     } else {
       _isLiked = widget.feedData['isLiked'] ?? false;
       _likeCount = widget.feedData['likeCount'] ?? 0;
       _commentCount = widget.feedData['commentCount'] ?? 0;
     }
 
-    // 전역 상태 변경 리스너 등록 (좋아요 + 댓글)
+    // followStatus 초기화
+    final userId = widget.feedData['userId'] ?? widget.feedData['authorId'];
+    if (userId != null) {
+      _followStatus = widget.feedData['followStatus'] ?? 'NOT_FOLLOWING';
+
+      // 전역 상태에 백엔드 데이터로 초기화/업데이트
+      _followManager.setInitialStatus(userId, _followStatus);
+    } else {
+      _followStatus = widget.feedData['followStatus'] ?? 'NOT_FOLLOWING';
+    }
+
+    // 전역 상태 변경 리스너 등록 (좋아요 + 댓글 + 팔로우)
     _likeManager.addListener(_onGlobalStateChanged);
+    _followManager.addListener(_onFollowStatusChanged);
   }
 
   @override
   void dispose() {
     _likeManager.removeListener(_onGlobalStateChanged);
+    _followManager.removeListener(_onFollowStatusChanged);
     super.dispose();
   }
 
@@ -129,6 +138,21 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     }
   }
 
+  // 팔로우 상태 변경 감지
+  void _onFollowStatusChanged() {
+    final userId = widget.feedData['userId'] ?? widget.feedData['authorId'];
+    if (userId != null) {
+      final newFollowStatus = _followManager.getFollowStatus(userId);
+      if (newFollowStatus != null && newFollowStatus != _followStatus) {
+        setState(() {
+          _followStatus = newFollowStatus;
+          widget.feedData['followStatus'] = newFollowStatus;
+        });
+        print('✅ [FeedItemWidget] 팔로우 상태 동기화: userId=$userId, followStatus=$newFollowStatus');
+      }
+    }
+  }
+
   @override
   void didUpdateWidget(covariant FeedItemWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -141,7 +165,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       final globalCommentCount = _likeManager.getCommentCount(recordId);
 
       if (globalIsLiked != null && globalLikeCount != null && globalCommentCount != null) {
-        // 전역 상태 사용 (더 최신)
+        // 전역 상태 사용
         if (_isLiked != globalIsLiked || _likeCount != globalLikeCount || _commentCount != globalCommentCount) {
           setState(() {
             _isLiked = globalIsLiked;
@@ -174,6 +198,25 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
         }
       }
     }
+
+    // followStatus 업데이트
+    final userId = widget.feedData['userId'] ?? widget.feedData['authorId'];
+    if (userId != null) {
+      final globalFollowStatus = _followManager.getFollowStatus(userId);
+      if (globalFollowStatus != null && globalFollowStatus != _followStatus) {
+        setState(() {
+          _followStatus = globalFollowStatus;
+        });
+      } else {
+        final newFollowStatus = widget.feedData['followStatus'];
+        if (newFollowStatus != null && newFollowStatus != _followStatus) {
+          setState(() {
+            _followStatus = newFollowStatus;
+          });
+          _followManager.setInitialStatus(userId, newFollowStatus);
+        }
+      }
+    }
   }
 
   Future<void> _toggleLike() async {
@@ -186,16 +229,61 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       final likeCountRaw = result['likeCount'];
       final likeCount = likeCountRaw is int ? likeCountRaw : (likeCountRaw as num).toInt();
 
-      // 🔥 전역 상태 업데이트 (모든 화면에 전파됨)
       _likeManager.updateLikeState(int.parse(recordId), isLiked, likeCount);
 
-      // 로컬 상태도 업데이트 (즉각 반영)
       setState(() {
         _isLiked = isLiked;
         _likeCount = likeCount;
       });
     } catch (e) {
       print('❌ 좋아요 토글 실패: $e');
+    }
+  }
+
+  Future<void> _handleFollowToggle() async {
+    if (_isFollowLoading) return;
+
+    final userId = widget.feedData['userId'];
+    if (userId == null) return;
+
+    setState(() {
+      _isFollowLoading = true;
+    });
+
+    try {
+      if (_followStatus == 'NOT_FOLLOWING') {
+        // 팔로우 요청
+        final result = await UserApi.followUser(userId);
+        final data = result['data'];
+
+        // API 응답에서 followStatus 계산
+        final isFollowing = data['isFollowing'] as bool;
+        final pending = data['pending'] as bool? ?? false;
+
+        String newStatus;
+        if (pending) {
+          newStatus = 'REQUESTED';
+        } else if (isFollowing) {
+          newStatus = 'FOLLOWING';
+        } else {
+          newStatus = 'NOT_FOLLOWING';
+        }
+
+        _followManager.updateFollowStatus(userId, newStatus);
+
+        setState(() {
+          _followStatus = newStatus;
+          widget.feedData['followStatus'] = newStatus;
+        });
+
+        print('✅ 팔로우 성공: userId=$userId, newStatus=$newStatus (isFollowing: $isFollowing, pending: $pending)');
+      }
+    } catch (e) {
+      print('❌ 팔로우 실패: $e');
+    } finally {
+      setState(() {
+        _isFollowLoading = false;
+      });
     }
   }
 
@@ -243,6 +331,9 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     final userId = widget.feedData['userId'] ?? widget.feedData['authorId'];
     final createdAt = widget.feedData['createdAt'] ?? widget.feedData['gameDate'] ?? '';
 
+    // 팔로우 버튼 표시 여부: NOT_FOLLOWING일 때만 (ME, FOLLOWING, REQUESTED는 버튼 숨김)
+    final shouldShowFollowButton = _followStatus == "NOTFOLLOWING" && _followStatus != "ME";
+
     return Padding(
       padding: EdgeInsets.only(
         top: scaleHeight(20),
@@ -252,6 +343,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 프로필 이미지
           GestureDetector(
             onTap: () async {
               try {
@@ -303,6 +395,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
                   if (result != null && result is String) {
                     setState(() {
+                      _followStatus = result;
                       widget.feedData['followStatus'] = result;
                     });
                     widget.onProfileNavigated?.call();
@@ -313,82 +406,177 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
               }
             },
             behavior: HitTestBehavior.opaque,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 프로필 이미지
-                Container(
-                  width: scaleWidth(38),
-                  height: scaleHeight(38),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.gray50, width: 1),
-                    borderRadius: BorderRadius.circular(scaleWidth(19)),
+            child: Container(
+              width: scaleWidth(38),
+              height: scaleHeight(38),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.gray50, width: 1),
+                borderRadius: BorderRadius.circular(scaleWidth(19)),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(scaleWidth(18)),
+                child: (profileImageUrl.isNotEmpty)
+                    ? Image.network(
+                  profileImageUrl,
+                  width: scaleWidth(36),
+                  height: scaleHeight(36),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => SvgPicture.asset(
+                    AppImages.profile,
+                    width: scaleWidth(36),
+                    height: scaleHeight(36),
+                    fit: BoxFit.cover,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(scaleWidth(18)),
-                    child: (profileImageUrl.isNotEmpty)
-                        ? Image.network(
-                      profileImageUrl,
-                      width: scaleWidth(36),
-                      height: scaleHeight(36),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => SvgPicture.asset(
-                        AppImages.profile,
-                        width: scaleWidth(36),
-                        height: scaleHeight(36),
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                        : SvgPicture.asset(
-                      AppImages.profile,
-                      width: scaleWidth(36),
-                      height: scaleHeight(36),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                )
+                    : SvgPicture.asset(
+                  AppImages.profile,
+                  width: scaleWidth(36),
+                  height: scaleHeight(36),
+                  fit: BoxFit.cover,
                 ),
-                SizedBox(width: scaleWidth(10)),
+              ),
+            ),
+          ),
+          SizedBox(width: scaleWidth(10)),
 
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 닉네임 + 팀 배지
-                    Row(
-                      children: [
-                        FixedText(
+          // 닉네임 + 팀 배지 + 작성 시간 (Expanded로 감싸서 팔로우 버튼 공간 확보)
+          Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                try {
+                  final myProfile = await UserApi.getMyProfile();
+                  final myUserId = myProfile['data']['id'];
+
+                  if (userId == myUserId) {
+                    // 이미 MyPageScreen에 있는지 확인
+                    final currentRoute = ModalRoute.of(context);
+                    final isOnMyPage = currentRoute?.settings.name == null &&
+                        context.findAncestorWidgetOfExactType<MyPageScreen>() != null;
+
+                    // 이미 마이페이지에 있으면 클릭 무시
+                    if (isOnMyPage) {
+                      return;
+                    }
+
+                    await Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                        const MyPageScreen(
+                          fromNavigation: false,
+                          showBackButton: true,
+                        ),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                    widget.onProfileNavigated?.call();
+                  } else {
+                    // 이미 FriendProfileScreen에 있는지 확인
+                    final isOnFriendProfile = context.findAncestorWidgetOfExactType<FriendProfileScreen>() != null;
+
+                    // 이미 친구 프로필 화면에 있으면 클릭 무시
+                    if (isOnFriendProfile) {
+                      return;
+                    }
+
+                    final result = await Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            FriendProfileScreen(userId: userId),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+
+                    if (result != null && result is String) {
+                      setState(() {
+                        _followStatus = result;
+                        widget.feedData['followStatus'] = result;
+                      });
+                      widget.onProfileNavigated?.call();
+                    }
+                  }
+                } catch (e) {
+                  print('프로필 이동 실패: $e');
+                }
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 닉네임 + 팀 배지
+                  Row(
+                    children: [
+                      Flexible(
+                        child: FixedText(
                           nickname,
                           style: AppFonts.pretendard.body_sm_500(context).copyWith(
                             color: AppColors.gray950,
                           ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
-                        if (favTeam.isNotEmpty && favTeam != '-' && favTeam != '응원팀 없음') ...[
-                          SizedBox(width: scaleWidth(6)),
-                          TeamUtils.buildTeamBadge(
-                            context: context,
-                            teamName: favTeam,
-                            textStyle: AppFonts.pretendard.caption_sm_500(context),
-                            padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
-                            borderRadius: scaleWidth(4),
-                            height: scaleHeight(18),
-                            suffix: ' 팬',
-                          ),
-                        ],
-                      ],
-                    ),
-                    SizedBox(height: scaleHeight(2)),
-
-                    // 작성 시간
-                    FixedText(
-                      TimeUtils.getTimeAgo(createdAt),
-                      style: AppFonts.pretendard.caption_md_500(context).copyWith(
-                        color: AppColors.gray300,
                       ),
+                      if (favTeam.isNotEmpty && favTeam != '-' && favTeam != '응원팀 없음') ...[
+                        SizedBox(width: scaleWidth(6)),
+                        TeamUtils.buildTeamBadge(
+                          context: context,
+                          teamName: favTeam,
+                          textStyle: AppFonts.pretendard.caption_sm_500(context),
+                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
+                          borderRadius: scaleWidth(4),
+                          height: scaleHeight(18),
+                          suffix: ' 팬',
+                        ),
+                      ],
+                    ],
+                  ),
+                  SizedBox(height: scaleHeight(2)),
+
+                  // 작성 시간
+                  FixedText(
+                    TimeUtils.getTimeAgo(createdAt),
+                    style: AppFonts.pretendard.caption_md_500(context).copyWith(
+                      color: AppColors.gray300,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
+
+          // 팔로우 버튼 (NOT_FOLLOWING일 때만 표시)
+          if (shouldShowFollowButton) ...[
+            SizedBox(width: scaleWidth(8)),
+            GestureDetector(
+              onTap: _isFollowLoading ? null : _handleFollowToggle,
+              child: Container(
+                width: scaleWidth(52),
+                height: scaleHeight(28),
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                ),
+                alignment: Alignment.center,
+                child: _isFollowLoading
+                    ? SizedBox(
+                  width: scaleWidth(16),
+                  height: scaleHeight(16),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.pri700),
+                  ),
+                )
+                    : FixedText(
+                  '팔로우',
+                  style: AppFonts.pretendard.caption_md_500(context).copyWith(
+                    color: AppColors.pri700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -566,15 +754,15 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
     if (iconPath == null) {
       return SizedBox(
-        width: scaleWidth(32),
-        height: scaleHeight(32),
+        width: scaleWidth(28),
+        height: scaleHeight(28),
       );
     }
 
     return SvgPicture.asset(
       iconPath,
-      width: scaleWidth(32),
-      height: scaleHeight(32),
+      width: scaleWidth(28),
+      height: scaleHeight(28),
       fit: BoxFit.contain,
     );
   }
@@ -915,9 +1103,14 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     try {
       if (gameDate.contains('년')) {
         final dateOnly = gameDate.split('(')[0].trim();
-        return dateOnly.replaceAllMapped(
+        return dateOnly
+            .replaceAllMapped(
           RegExp(r'년 0(\d)월'),
               (match) => '년 ${match.group(1)}월',
+        )
+            .replaceAllMapped(
+          RegExp(r'월 0(\d)일'),
+              (match) => '월 ${match.group(1)}일',
         );
       }
       final date = DateTime.parse(gameDate);

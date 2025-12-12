@@ -19,6 +19,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
+import 'package:frontend/utils/follow_status_manager.dart';
 import 'package:frontend/components/custom_action_sheet.dart';
 import 'dart:async';
 import 'package:frontend/components/custom_toast.dart';
@@ -39,7 +40,7 @@ class FriendProfileScreen extends StatefulWidget {
 
 class _FriendProfileScreenState extends State<FriendProfileScreen>
     with SingleTickerProviderStateMixin {
-  int selectedTabIndex = 2; // 0: 캘린더, 1: 리스트, 2: 모아보기
+  int selectedTabIndex = 1; // 0: 캘린더, 1: 리스트, 2: 모아보기
   String nickname = "로딩중...";
   String favTeam = "로딩중...";
   String? profileImageUrl;
@@ -50,6 +51,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   String? followStatus;
   bool isBlocked = false;
   final _likeManager = FeedCountManager();
+  final _followManager = FollowStatusManager();
   bool _showStickyHeader = false;
   bool _unfollowPending = false;
   bool _unfollowCancelled = false;
@@ -92,8 +94,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       vsync: this,
     );
 
-    _tabPageController = PageController(initialPage: 2);
-    _currentTabPageValue = 2.0;
+    _tabPageController = PageController(initialPage: 1);
+    _currentTabPageValue = 1.0;
     _tabPageController.addListener(() {
       if (_tabPageController.hasClients) {
         setState(() {
@@ -410,6 +412,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               followerCount = followerCount > 0 ? followerCount - 1 : 0;
               isMutualFollow = mutual;
             });
+            // 🔥 전역 상태 업데이트
+            _followManager.updateFollowStatus(widget.userId, 'NOT_FOLLOWING');
           }
 
           _hasStateChanged = true;
@@ -458,6 +462,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 // 📡 백엔드 응답에서 isFollower 값 사용
                 isMutualFollow = responseData['isFollower'] ?? false;
               });
+              // 🔥 전역 상태 업데이트
+              _followManager.updateFollowStatus(widget.userId, 'FOLLOWING');
             } catch (e) {
               print('재팔로우 API 에러: $e');
             }
@@ -476,12 +482,16 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             followStatus = 'REQUESTED';
             // 📡 백엔드 응답에서 isFollower 값 사용
             isMutualFollow = responseData['isFollower'] ?? false;
+            // 🔥 전역 상태 업데이트
+            _followManager.updateFollowStatus(widget.userId, 'REQUESTED');
           } else {
             followStatus = 'FOLLOWING';
             followerCount++;
             // 📡 백엔드 응답에서 isFollower 값 사용
             isMutualFollow = responseData['isFollower'] ?? false;
             _hasStateChanged = true;
+            // 🔥 전역 상태 업데이트
+            _followManager.updateFollowStatus(widget.userId, 'FOLLOWING');
           }
         });
       } else if (followStatus == 'REQUESTED') {
@@ -505,6 +515,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             followStatus = 'NOT_FOLLOWING';
             isMutualFollow = mutual;
           });
+          // 🔥 전역 상태 업데이트
+          _followManager.updateFollowStatus(widget.userId, 'NOT_FOLLOWING');
         } catch (e) {
           print('사용자 정보 업데이트 실패: $e');
           setState(() {
@@ -1740,9 +1752,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
             final feedData = {
               'recordId': record['recordId'],
+              'userId': record['userId'] ?? widget.userId,
               'profileImageUrl': record['profileImageUrl'],
               'nickname': record['nickname'],
               'favTeam': record['favTeam'],
+              'createdAt': record['createdAt'] ?? '',
               'mediaUrls': record['mediaUrls'] ?? [],
               'longContent': record['longContent'] ?? '',
               'emotionCode': record['emotionCode'],
@@ -1754,6 +1768,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               'isLiked': isLiked,
               'likeCount': likeCount,
               'commentCount': commentCount,
+              'followStatus': followStatus ?? 'NOT_FOLLOWING',
             };
 
             return FeedItemWidget(

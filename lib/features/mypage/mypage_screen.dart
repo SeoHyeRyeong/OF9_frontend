@@ -41,7 +41,7 @@ class MyPageScreen extends StatefulWidget {
 }
 
 class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderStateMixin {
-  int selectedTabIndex = 2; // 0: 캘린더, 1: 리스트, 2: 모아보기(그리드)
+  int selectedTabIndex = 1; // 0: 캘린더, 1: 리스트, 2: 모아보기(그리드)
 
   String nickname = "로딩중...";
   String favTeam = "로딩중...";
@@ -88,8 +88,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       vsync: this,
     );
 
-    _tabPageController = PageController(initialPage: 2); // 초기 페이지 설정: 모아보기
-    _currentTabPageValue = 2.0;
+    _tabPageController = PageController(initialPage: 1); // 초기 페이지 설정: 모아보기
+    _currentTabPageValue = 1.0;
 
     _tabPageController.addListener(() {
       if (_tabPageController.hasClients) {

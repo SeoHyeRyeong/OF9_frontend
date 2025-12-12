@@ -8,6 +8,7 @@ import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/onboarding_login/favorite_team_screen.dart';
 import 'package:frontend/features/report/report_screen.dart';
 import 'package:frontend/utils/fixed_text.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -52,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: scaleHeight(10),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _currentIndex == index ? AppColors.pri600: AppColors.pri100,
+                color: _currentIndex == index ? AppColors.gray700: AppColors.gray100,
               ),
             ),
             if (index != onboardingData.length - 1)
@@ -116,6 +117,18 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('로그인 처리 중 오류가 발생했습니다')),
       );
+    }
+  }
+
+  // URL 열기 함수 추가
+  Future<void> _launchHelpUrl() async {
+    final Uri url = Uri.parse('https://www.notion.so/2c6f22b2f4cd806e8dabd3d01ed28d3d');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('링크를 열 수 없습니다')),
+        );
+      }
     }
   }
 
@@ -215,10 +228,13 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: scaleHeight(16)),
 
               // 6. 로그인 문제 텍스트
-              FixedText(
-                '로그인에 문제가 있나요?',
-                style: AppFonts.pretendard.body_sm_400(context).copyWith(
-                  color: AppColors.gray300,
+              GestureDetector(
+                onTap: _launchHelpUrl,
+                child: FixedText(
+                  '로그인에 문제가 있나요?',
+                  style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                    color: AppColors.gray300,
+                  ),
                 ),
               ),
               Spacer(),

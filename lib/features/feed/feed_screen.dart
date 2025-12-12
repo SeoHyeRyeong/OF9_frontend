@@ -555,6 +555,19 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
         return Center(child: CircularProgressIndicator());
       }
 
+      // 팔로잉 피드가 비어있을 때
+      if (_followingFeedItems.isEmpty) {
+        return Center(
+          child: Text(
+            '팔로우 한 친구가 없어요',
+            style: AppFonts.pretendard.head_sm_600(context).copyWith(
+              color: AppColors.gray400,
+            ),
+          ),
+        );
+      }
+
+
       return ListView.builder(
         padding: EdgeInsets.only(top: scaleHeight(10)),
         itemCount: _followingFeedItems.length + (_hasMoreFollowing ? 1 : 0),
@@ -639,7 +652,6 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
                 };
               }
             });
-            print('게시글 ${updatedRecordId}번 업데이트됨 - 스크롤 위치 유지');
           }
         } else {
           print('[Feed] Detail에서 돌아옴 (전역 상태로 동기화됨)');

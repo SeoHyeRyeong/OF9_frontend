@@ -10,6 +10,9 @@ import 'package:frontend/api/record_api.dart';
 import 'package:frontend/api/feed_api.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
 import 'package:frontend/utils/comment_state_manager.dart';
+import 'package:frontend/utils/follow_status_manager.dart';
+import 'package:frontend/utils/team_utils.dart';
+import 'package:frontend/utils/time_utils.dart';
 import 'dart:math' as math;
 import 'package:frontend/components/custom_action_sheet.dart';
 import 'package:frontend/api/user_api.dart';
@@ -46,6 +49,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
   final TextEditingController _commentController = TextEditingController();
   final _feedCountManager = FeedCountManager();
   final _commentListManager = CommentListManager();
+  final _followManager = FollowStatusManager();
   final FocusNode _commentFocusNode = FocusNode();
 
   Map<String, dynamic>? _recordDetail;
@@ -59,6 +63,10 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   int? _currentUserId;
   bool _isGameCardExpanded = false;
+
+  // 팔로우 상태 관리
+  String _followStatus = 'NOT_FOLLOWING';
+  bool _isFollowLoading = false;
 
   // 댓글 수정 관련 상태
   int? _editingCommentId;
@@ -77,6 +85,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     super.initState();
     _feedCountManager.addListener(_onGlobalCountChanged);
     _commentListManager.addListener(_onGlobalCommentListChanged);
+    _followManager.addListener(_onFollowStatusChanged);
     _loadCurrentUserId();
     _loadRecordDetail();
     _loadComments();
@@ -94,6 +103,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     _commentFocusNode.dispose();
     _feedCountManager.removeListener(_onGlobalCountChanged);
     _commentListManager.removeListener(_onGlobalCommentListChanged);
+    _followManager.removeListener(_onFollowStatusChanged);
     super.dispose();
   }
 
@@ -116,13 +126,15 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     final newCommentCount = _feedCountManager.getCommentCount(widget.recordId);
 
     if (newIsLiked != null && newLikeCount != null && newCommentCount != null) {
-      if (_isLiked != newIsLiked || _likeCount != newLikeCount || _commentCount != newCommentCount) {
+      if (_isLiked != newIsLiked || _likeCount != newLikeCount ||
+          _commentCount != newCommentCount) {
         setState(() {
           _isLiked = newIsLiked;
           _likeCount = newLikeCount;
           _commentCount = newCommentCount;
         });
-        print('✅ [DetailFeedScreen] 전역 카운트 동기화 - commentCount: $newCommentCount');
+        print(
+            '✅ [DetailFeedScreen] 전역 카운트 동기화 - commentCount: $newCommentCount');
       }
     }
   }
@@ -135,6 +147,23 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         _comments = List.from(comments);
       });
       print('✅ [DetailFeedScreen] 전역 댓글 목록 동기화: ${comments.length}개');
+    }
+  }
+
+  void _onFollowStatusChanged() {
+    final userId = _recordDetail?['userId'];
+    if (userId != null) {
+      final newFollowStatus = _followManager.getFollowStatus(userId);
+      if (newFollowStatus != null && newFollowStatus != _followStatus) {
+        setState(() {
+          _followStatus = newFollowStatus;
+          if (_recordDetail != null) {
+            _recordDetail!['followStatus'] = newFollowStatus;
+          }
+        });
+        print(
+            '✅ [DetailFeedScreen] 팔로우 상태 동기화: userId=$userId, followStatus=$newFollowStatus');
+      }
     }
   }
 
@@ -151,7 +180,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
       final globalIsLiked = _feedCountManager.getLikedStatus(widget.recordId);
       final globalLikeCount = _feedCountManager.getLikeCount(widget.recordId);
-      final globalCommentCount = _feedCountManager.getCommentCount(widget.recordId);
+      final globalCommentCount = _feedCountManager.getCommentCount(
+          widget.recordId);
 
       setState(() {
         _recordDetail = data;
@@ -159,6 +189,9 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         _likeCount = globalLikeCount ?? (data['likeCount'] ?? 0);
         _commentCount = globalCommentCount ?? (data['commentCount'] ?? 0);
         _isLoading = false;
+
+        // 팔로우 상태 초기화
+        _followStatus = data['followStatus'] ?? 'NOT_FOLLOWING';
       });
 
       _feedCountManager.setInitialState(
@@ -168,7 +201,15 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         commentCount: _commentCount,
       );
 
+      // 팔로우 상태 전역 관리자에 초기화
+      final userId = data['userId'];
+      if (userId != null) {
+        _followManager.setInitialStatus(userId, _followStatus);
+      }
+
       print('✅ 직관 기록 조회 성공: ${data['nickname']}');
+      print('🔍 followStatus: ${data['followStatus']}');
+      print('🔍 isMutualFollow: ${data['isMutualFollow']}');
     } catch (e) {
       print('❌ 직관 기록 조회 실패: $e');
       setState(() {
@@ -205,7 +246,9 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
       final isLiked = result['isLiked'] as bool;
       final likeCountRaw = result['likeCount'];
-      final likeCount = likeCountRaw is int ? likeCountRaw : (likeCountRaw as num).toInt();
+      final likeCount = likeCountRaw is int
+          ? likeCountRaw
+          : (likeCountRaw as num).toInt();
 
       _feedCountManager.updateLikeState(widget.recordId, isLiked, likeCount);
 
@@ -250,17 +293,18 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         await _loadComments();
       } else {
         // 댓글 작성 모드
-        final result = await FeedApi.createComment(widget.recordId.toString(), originalContent);
-        print('💬 댓글 작성 응답: $result');
+        final result = await FeedApi.createComment(
+            widget.recordId.toString(), originalContent);
 
         final newComment = CommentDto.fromJson(result);
         if (newComment.totalCommentCount == null) {
-          final currentCount = _feedCountManager.getCommentCount(widget.recordId) ?? _commentCount;
-          _feedCountManager.updateCommentCount(widget.recordId, currentCount + 1);
+          final currentCount = _feedCountManager.getCommentCount(
+              widget.recordId) ?? _commentCount;
+          _feedCountManager.updateCommentCount(
+              widget.recordId, currentCount + 1);
         }
         _commentListManager.addComment(widget.recordId, newComment);
 
-        print('✅ 댓글 작성 성공 - totalCommentCount: ${newComment.totalCommentCount}');
       }
     } catch (e, stackTrace) {
       print('❌ 댓글 ${_editingCommentId != null ? "수정" : "작성"} 실패: $e');
@@ -316,7 +360,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => const FeedScreen(),
+              pageBuilder: (context, animation1,
+                  animation2) => const FeedScreen(),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
@@ -335,149 +380,175 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
   }
 
   void _showMoreOptions() {
-    showCustomActionSheet(
-      context: context,
-      options: [
-        ActionSheetOption(
-          text: '게시글 수정',
-          textColor: AppColors.gray950,
-          onTap: () async {
-            Navigator.pop(context);
+    // 본인 게시글일 때만 수정/삭제
+    if (_isMyPost) {
+      showCustomActionSheet(
+        context: context,
+        options: [
+          ActionSheetOption(
+            text: '게시글 수정',
+            textColor: Colors.black,
+            onTap: () async {
+              Navigator.pop(context);
 
-            // RecordState에 현재 게시글 데이터 로드
-            final recordState = Provider.of<RecordState>(context, listen: false);
+              // RecordState에 현재 게시글 데이터 로드
+              final recordState = Provider.of<RecordState>(
+                  context, listen: false);
 
-            // 백업 저장 (취소 시 복원용)
-            recordState.saveBackup();
+              // 백업 저장 (취소 시 복원용)
+              recordState.saveBackup();
 
-            // 기존 게시글 데이터를 RecordState에 설정
-            final mediaUrls = _recordDetail?['mediaUrls'] as List<dynamic>?;
+              // 기존 게시글 데이터를 RecordState에 설정
+              final mediaUrls = _recordDetail?['mediaUrls'] as List<dynamic>?;
 
-            // 티켓 이미지는 ticketImageUrl 필드에서 가져옴 (없으면 null)
-            final ticketImageUrl = _recordDetail?['ticketImageUrl'] as String?;
+              // 티켓 이미지는 ticketImageUrl 필드에서 가져옴 (없으면 null)
+              final ticketImageUrl = _recordDetail?['ticketImageUrl'] as String?;
 
-            // 게임 정보 직접 추출 (gameInfo가 아닌 최상위 필드)
-            final homeTeam = _recordDetail?['homeTeam'] as String?;
-            final awayTeam = _recordDetail?['awayTeam'] as String?;
-            final gameDate = _recordDetail?['gameDate'] as String?;
-            final gameTime = _recordDetail?['gameTime'] as String?;
-            final gameId = _recordDetail?['gameId']?.toString();
+              // 게임 정보 직접 추출 (gameInfo가 아닌 최상위 필드)
+              final homeTeam = _recordDetail?['homeTeam'] as String?;
+              final awayTeam = _recordDetail?['awayTeam'] as String?;
+              final gameDate = _recordDetail?['gameDate'] as String?;
+              final gameTime = _recordDetail?['gameTime'] as String?;
+              final gameId = _recordDetail?['gameId']?.toString();
 
-            print('📋 추출된 데이터:');
-            print('  ticketImageUrl: $ticketImageUrl');
-            print('  mediaUrls: $mediaUrls');
-            print('  homeTeam: $homeTeam');
-            print('  awayTeam: $awayTeam');
-            print('  gameDate: $gameDate');
-            print('  gameTime: $gameTime');
-            print('  gameId: $gameId');
+              print('📋 추출된 데이터:');
+              print('  ticketImageUrl: $ticketImageUrl');
+              print('  mediaUrls: $mediaUrls');
+              print('  homeTeam: $homeTeam');
+              print('  awayTeam: $awayTeam');
+              print('  gameDate: $gameDate');
+              print('  gameTime: $gameTime');
+              print('  gameId: $gameId');
 
-            // gameDate 파싱: "2025년 04월 24일 (목)요일" -> "2025-04-24"
-            String? parsedDate;
-            if (gameDate != null) {
-              final dateMatch = RegExp(r'(\d{4})년\s*(\d{2})월\s*(\d{2})일').firstMatch(gameDate);
-              if (dateMatch != null) {
-                parsedDate = '${dateMatch.group(1)}-${dateMatch.group(2)}-${dateMatch.group(3)}';
+              // gameDate 파싱: "2025년 04월 24일 (목)요일" -> "2025-04-24"
+              String? parsedDate;
+              if (gameDate != null) {
+                final dateMatch = RegExp(r'(\d{4})년\s*(\d{2})월\s*(\d{2})일')
+                    .firstMatch(gameDate);
+                if (dateMatch != null) {
+                  parsedDate =
+                  '${dateMatch.group(1)}-${dateMatch.group(2)}-${dateMatch
+                      .group(3)}';
+                }
               }
-            }
 
-            // gameTime 파싱: "18:30" -> "18:30:00"
-            String? parsedTime;
-            if (gameTime != null) {
-              parsedTime = gameTime.contains(':') ? gameTime : null;
-              if (parsedTime != null && !parsedTime.contains(':00')) {
-                parsedTime = '$parsedTime:00';
+              // gameTime 파싱: "18:30" -> "18:30:00"
+              String? parsedTime;
+              if (gameTime != null) {
+                parsedTime = gameTime.contains(':') ? gameTime : null;
+                if (parsedTime != null && !parsedTime.contains(':00')) {
+                  parsedTime = '$parsedTime:00';
+                }
               }
-            }
 
-            print('📋 파싱된 데이터:');
-            print('  parsedDate: $parsedDate');
-            print('  parsedTime: $parsedTime');
+              print('📋 파싱된 데이터:');
+              print('  parsedDate: $parsedDate');
+              print('  parsedTime: $parsedTime');
 
-            // 티켓 이미지 경로 설정 (없으면 빈 문자열)
-            final ticketPath = ticketImageUrl ?? '';
+              // 티켓 이미지 경로 설정 (없으면 빈 문자열)
+              final ticketPath = ticketImageUrl ?? '';
 
-            recordState.setTicketInfo(
-              ticketImagePath: ticketPath,
-              selectedHome: homeTeam,
-              selectedAway: awayTeam,
-              selectedDateTime: parsedDate != null && parsedTime != null ? '$parsedDate $parsedTime' : null,
-              selectedStadium: _recordDetail?['stadium'] as String?,
-              selectedSeat: _recordDetail?['seatInfo'] as String?,
-              extractedHomeTeam: homeTeam,
-              extractedAwayTeam: awayTeam,
-              extractedDate: parsedDate,
-              extractedTime: parsedTime,
-              extractedStadium: _recordDetail?['stadium'] as String?,
-              extractedSeat: _recordDetail?['seatInfo'] as String?,
-              gameId: gameId,
-            );
-
-            // RecordState 저장 후 확인
-            recordState.printCurrentState();
-
-            // 감정 코드
-            recordState.updateEmotionCode(_recordDetail?['emotionCode'] as int? ?? 1);
-
-            // 상세 기록
-            recordState.updateLongContent(_recordDetail?['longContent'] as String? ?? '');
-            recordState.updateBestPlayer(_recordDetail?['bestPlayer'] as String? ?? '');
-
-            // 친구 태그
-            final companions = _recordDetail?['companions'] as List<dynamic>?;
-            if (companions != null && companions.isNotEmpty) {
-              recordState.updateCompanions(
-                  companions.map((c) => c['id'] as int).toList()
+              recordState.setTicketInfo(
+                ticketImagePath: ticketPath,
+                selectedHome: homeTeam,
+                selectedAway: awayTeam,
+                selectedDateTime: parsedDate != null && parsedTime != null
+                    ? '$parsedDate $parsedTime'
+                    : null,
+                selectedStadium: _recordDetail?['stadium'] as String?,
+                selectedSeat: _recordDetail?['seatInfo'] as String?,
+                extractedHomeTeam: homeTeam,
+                extractedAwayTeam: awayTeam,
+                extractedDate: parsedDate,
+                extractedTime: parsedTime,
+                extractedStadium: _recordDetail?['stadium'] as String?,
+                extractedSeat: _recordDetail?['seatInfo'] as String?,
+                gameId: gameId,
               );
-            }
 
-            // 먹거리 태그
-            final foodTags = _recordDetail?['foodTags'] as List<dynamic>?;
-            if (foodTags != null && foodTags.isNotEmpty) {
-              recordState.updateFoodTags(
-                  foodTags.map((f) => f.toString()).toList()
+              // RecordState 저장 후 확인
+              recordState.printCurrentState();
+
+              // 감정 코드
+              recordState.updateEmotionCode(
+                  _recordDetail?['emotionCode'] as int? ?? 1);
+
+              // 상세 기록
+              recordState.updateLongContent(
+                  _recordDetail?['longContent'] as String? ?? '');
+              recordState.updateBestPlayer(
+                  _recordDetail?['bestPlayer'] as String? ?? '');
+
+              // 친구 태그
+              final companions = _recordDetail?['companions'] as List<dynamic>?;
+              if (companions != null && companions.isNotEmpty) {
+                recordState.updateCompanions(
+                    companions.map((c) => c['id'] as int).toList()
+                );
+              }
+
+              // 먹거리 태그
+              final foodTags = _recordDetail?['foodTags'] as List<dynamic>?;
+              if (foodTags != null && foodTags.isNotEmpty) {
+                recordState.updateFoodTags(
+                    foodTags.map((f) => f.toString()).toList()
+                );
+              }
+
+              // 상세 이미지 (mediaUrls는 detailImages로 저장)
+              if (mediaUrls != null && mediaUrls.isNotEmpty) {
+                recordState.updateDetailImages(
+                    mediaUrls.map((url) => url.toString()).toList()
+                );
+              }
+
+              // TicketInfoScreen으로 이동
+              final result = await Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      TicketInfoScreen(
+                        imagePath: ticketPath,
+                        recordId: widget.recordId,
+                        isEditMode: true,
+                      ),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
               );
-            }
 
-            // 상세 이미지 (mediaUrls는 detailImages로 저장)
-            if (mediaUrls != null && mediaUrls.isNotEmpty) {
-              recordState.updateDetailImages(
-                  mediaUrls.map((url) => url.toString()).toList()
-              );
-            }
-
-            // TicketInfoScreen으로 이동
-            final result = await Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    TicketInfoScreen(
-                      imagePath: ticketPath,
-                      recordId: widget.recordId,
-                      isEditMode: true,
-                    ),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-              ),
-            );
-
-            // 수정 완료 후 데이터 새로고침
-            if (result == true) {
-              await _loadRecordDetail();
-              setState(() {});
-            }
-          },
-        ),
-        ActionSheetOption(
-          text: '게시글 삭제',
-          textColor: AppColors.error,
-          onTap: () {
-            Navigator.pop(context);
-            _deleteRecord();
-          },
-        ),
-      ],
-    );
+              // 수정 완료 후 데이터 새로고침
+              if (result == true) {
+                await _loadRecordDetail();
+                setState(() {});
+              }
+            },
+          ),
+          ActionSheetOption(
+            text: '게시글 삭제',
+            textColor: AppColors.error,
+            onTap: () {
+              Navigator.pop(context);
+              _deleteRecord();
+            },
+          ),
+        ],
+      );
+    } else {
+      // 타인 게시글: 신고하기만
+      showCustomActionSheet(
+        context: context,
+        options: [
+          ActionSheetOption(
+            text: '신고하기',
+            textColor: AppColors.error,
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      );
+    }
   }
 
   void _showCommentOptions(CommentDto comment) {
@@ -537,6 +608,57 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     return fullTeamName;
   }
 
+  /// createdAt 시간을 기준으로 "n초 전", "n분 전" 등으로 표시
+  Future<void> _handleFollowToggle() async {
+    if (_isFollowLoading) return;
+
+    final userId = _recordDetail?['userId'];
+    if (userId == null) return;
+
+    setState(() {
+      _isFollowLoading = true;
+    });
+
+    try {
+      if (_followStatus == 'NOT_FOLLOWING') {
+        // 팔로우 요청
+        final result = await UserApi.followUser(userId);
+        final data = result['data'];
+
+        // API 응답에서 followStatus 계산
+        final isFollowing = data['isFollowing'] as bool;
+        final pending = data['pending'] as bool? ?? false;
+
+        String newStatus;
+        if (pending) {
+          newStatus = 'REQUESTED';
+        } else if (isFollowing) {
+          newStatus = 'FOLLOWING';
+        } else {
+          newStatus = 'NOT_FOLLOWING';
+        }
+
+        _followManager.updateFollowStatus(userId, newStatus);
+
+        setState(() {
+          _followStatus = newStatus;
+          if (_recordDetail != null) {
+            _recordDetail!['followStatus'] = newStatus;
+          }
+        });
+
+        print(
+            '✅ 팔로우 성공: userId=$userId, newStatus=$newStatus (isFollowing: $isFollowing, pending: $pending)');
+      }
+    } catch (e) {
+      print('❌ 팔로우 실패: $e');
+    } finally {
+      setState(() {
+        _isFollowLoading = false;
+      });
+    }
+  }
+
   //토스트
   void _showUploadToast(String nickname) {
     CustomToast.showSimpleTop(
@@ -591,7 +713,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                       : CustomScrollView(
                     slivers: [
                       SliverToBoxAdapter(child: _buildContent()),
-                      SliverToBoxAdapter(child: _buildCommentHeaderAndDivider()),
+                      SliverToBoxAdapter(
+                          child: _buildCommentHeaderAndDivider()),
                       _buildCommentAreaSliver(),
                     ],
                   ),
@@ -643,7 +766,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 Navigator.pushReplacement(
                   context,
                   PageRouteBuilder(
-                    pageBuilder: (context, animation1, animation2) => const FeedScreen(),
+                    pageBuilder: (context, animation1,
+                        animation2) => const FeedScreen(),
                     transitionDuration: Duration.zero,
                     reverseTransitionDuration: Duration.zero,
                   ),
@@ -664,8 +788,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               fit: BoxFit.contain,
             ),
           ),
-          _isMyPost
-              ? Row(
+          Row(
             children: [
               GestureDetector(
                 onTap: () => print('공유하기'),
@@ -688,16 +811,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 ),
               ),
             ],
-          )
-              : GestureDetector(
-            onTap: () => print('공유하기'),
-            child: SvgPicture.asset(
-              AppImages.Share,
-              width: scaleWidth(24),
-              height: scaleHeight(24),
-              fit: BoxFit.contain,
-              color: AppColors.gray900,
-            ),
           ),
         ],
       ),
@@ -722,7 +835,9 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     final emotionLabel = _recordDetail!['emotionLabel'] ?? '';
     final mediaUrls = _recordDetail!['mediaUrls'] as List<dynamic>? ?? [];
 
-    final bool hasLongContent = longContent.trim().isNotEmpty;
+    final bool hasLongContent = longContent
+        .trim()
+        .isNotEmpty;
     final homeTeamShort = _extractShortTeamName(homeTeam);
     final awayTeamShort = _extractShortTeamName(awayTeam);
 
@@ -762,11 +877,16 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
             }
           },
           behavior: HitTestBehavior.opaque,
-          child: Container(
-            padding: EdgeInsets.only(top: scaleHeight(12), left: scaleWidth(20)),
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: scaleHeight(14),
+              left: scaleWidth(20),
+              right: scaleWidth(20),
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 프로필 이미지
                 ClipRRect(
                   borderRadius: BorderRadius.circular(scaleWidth(18)),
                   child: (profileImageUrl.isNotEmpty)
@@ -775,12 +895,13 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                     width: scaleWidth(36),
                     height: scaleHeight(36),
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => SvgPicture.asset(
-                      AppImages.profile,
-                      width: scaleWidth(36),
-                      height: scaleHeight(36),
-                      fit: BoxFit.cover,
-                    ),
+                    errorBuilder: (_, __, ___) =>
+                        SvgPicture.asset(
+                          AppImages.profile,
+                          width: scaleWidth(36),
+                          height: scaleHeight(36),
+                          fit: BoxFit.cover,
+                        ),
                   )
                       : SvgPicture.asset(
                     AppImages.profile,
@@ -790,20 +911,88 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                   ),
                 ),
                 SizedBox(width: scaleWidth(12)),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    FixedText(
-                      nickname,
-                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
-                    ),
-                    SizedBox(height: scaleHeight(2)),
-                    FixedText(
-                      '$favTeam 팬',
-                      style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray400),
-                    ),
-                  ],
+
+                // 닉네임 + 팀 배지 + 시간
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 닉네임 + 팀 배지
+                      Row(
+                        children: [
+                          Flexible(
+                            child: FixedText(
+                              nickname,
+                              style: AppFonts.pretendard.body_sm_500(context)
+                                  .copyWith(
+                                color: AppColors.gray950,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                          if (favTeam.isNotEmpty && favTeam != '-' &&
+                              favTeam != '응원팀 없음') ...[
+                            SizedBox(width: scaleWidth(6)),
+                            TeamUtils.buildTeamBadge(
+                              context: context,
+                              teamName: favTeam,
+                              textStyle: AppFonts.pretendard.caption_sm_500(
+                                  context),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: scaleWidth(7)),
+                              borderRadius: scaleWidth(4),
+                              height: scaleHeight(18),
+                              suffix: ' 팬',
+                            ),
+                          ],
+                        ],
+                      ),
+                      SizedBox(height: scaleHeight(2)),
+                      // 시간
+                      FixedText(
+                        TimeUtils.getTimeAgo(_recordDetail!['createdAt']),
+                        style: AppFonts.pretendard.caption_md_500(context)
+                            .copyWith(
+                          color: AppColors.gray300,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+
+                // 팔로우 버튼 (본인 아니면서 NOT_FOLLOWING일 때만 표시)
+                if (!_isMyPost && _followStatus == 'NOT_FOLLOWING') ...[
+                  SizedBox(width: scaleWidth(8)),
+                  GestureDetector(
+                    onTap: _isFollowLoading ? null : _handleFollowToggle,
+                    child: Container(
+                      width: scaleWidth(52),
+                      height: scaleHeight(28),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                      ),
+                      alignment: Alignment.center,
+                      child: _isFollowLoading
+                          ? SizedBox(
+                        width: scaleWidth(16),
+                        height: scaleHeight(16),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.pri700),
+                        ),
+                      )
+                          : FixedText(
+                        '팔로우',
+                        style: AppFonts.pretendard.caption_md_500(context)
+                            .copyWith(
+                          color: AppColors.pri700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -814,19 +1003,31 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
             padding: EdgeInsets.symmetric(horizontal: scaleWidth(20)),
             child: FixedText(
               longContent,
-              style: AppFonts.pretendard.body_sm_400(context).copyWith(color: Colors.black),
+              style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                  color: Colors.black),
             ),
           ),
           SizedBox(height: scaleHeight(12)),
         ],
-        _buildGameCard(homeTeamShort, awayTeamShort, homeScore, awayScore, emotionCode, emotionLabel, gameDate, gameTime, stadium, _recordDetail!),
+        _buildGameCard(
+            homeTeamShort,
+            awayTeamShort,
+            homeScore,
+            awayScore,
+            emotionCode,
+            emotionLabel,
+            gameDate,
+            gameTime,
+            stadium,
+            _recordDetail!),
         if (mediaUrls.isNotEmpty) ...[
           SizedBox(height: scaleHeight(16)),
           _buildMediaSection(mediaUrls),
         ],
         SizedBox(height: scaleHeight(16)),
         Padding(
-          padding: EdgeInsets.only(left: scaleWidth(20), bottom: scaleHeight(16)),
+          padding: EdgeInsets.only(left: scaleWidth(20), bottom: scaleHeight(
+              16)),
           child: Row(
             children: [
               GestureDetector(
@@ -835,26 +1036,30 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 child: Row(
                   children: [
                     SvgPicture.asset(
-                      _isLiked ? AppImages.heart_filled : AppImages.heart_outlined,
-                      width: scaleWidth(24),
-                      height: scaleHeight(24),
+                      _isLiked ? AppImages.heart_filled : AppImages
+                          .heart_outlined,
+                      width: scaleWidth(20),
+                      height: scaleHeight(20),
                     ),
                     SizedBox(width: scaleWidth(4)),
                     FixedText(
                       _likeCount.toString(),
-                      style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
+                      style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                          color: AppColors.gray300),
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: scaleWidth(8)),
+              SizedBox(width: scaleWidth(14)),
               Row(
                 children: [
-                  SvgPicture.asset(AppImages.comment_detail, width: scaleWidth(24), height: scaleHeight(24)),
-                  SizedBox(width: scaleWidth(6)),
+                  SvgPicture.asset(AppImages.comment, width: scaleWidth(20),
+                      height: scaleHeight(20)),
+                  SizedBox(width: scaleWidth(4)),
                   FixedText(
                     _commentCount.toString(),
-                    style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
+                    style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                        color: AppColors.gray300),
                   ),
                 ],
               ),
@@ -876,10 +1081,10 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           child: Container(height: 1, color: AppColors.gray50),
         ),
         Padding(
-          padding: EdgeInsets.only(top: scaleHeight(16), left: scaleWidth(20), bottom: scaleHeight(16)),
+          padding: EdgeInsets.only(top: scaleHeight(12), left: scaleWidth(20), bottom: scaleHeight(16)),
           child: FixedText(
             '댓글',
-            style: AppFonts.suite.body_re_400(context).copyWith(color: AppColors.gray300),
+            style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray300),
           ),
         ),
       ],
@@ -890,22 +1095,16 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     if (_comments.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
-        child: Center(
+        child: Align(
+          alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: EdgeInsets.only(bottom: scaleHeight(120)),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FixedText(
-                  '댓글이 없어요.',
-                  style: AppFonts.pretendard.body_md_400(context).copyWith(color: AppColors.gray400),
-                ),
-                SizedBox(height: scaleHeight(4)),
-                FixedText(
-                  '가장 먼저 남겨보세요.',
-                  style: AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray400),
-                ),
-              ],
+            padding: EdgeInsets.only(bottom: scaleHeight(43)),
+            child: FixedText(
+              '댓글이 없어요.\n가장 먼저 남겨보세요.',
+              style: AppFonts.pretendard.body_md_500(context).copyWith(
+                color: AppColors.gray400,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -916,7 +1115,9 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       delegate: SliverChildBuilderDelegate(
             (context, index) {
           final comment = _comments[index];
-          final bottomPadding = index < _comments.length - 1 ? scaleHeight(20) : scaleHeight(0);
+          final bottomPadding = index == _comments.length - 1
+              ? scaleHeight(20)
+              : scaleHeight(24);
           return Padding(
             padding: EdgeInsets.only(bottom: bottomPadding),
             child: _buildCommentItem(comment),
@@ -933,97 +1134,129 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: () async {
-              if (comment.userId == _currentUserId) {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                    const MyPageScreen(
-                      fromNavigation: false,
-                      showBackButton: true,
+          // 상단: 프로필 + 닉네임 + 팀배지 + 시간 + dots
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 프로필 이미지 (28*28)
+              GestureDetector(
+                onTap: () async {
+                  if (comment.userId == _currentUserId) {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                        const MyPageScreen(
+                          fromNavigation: false,
+                          showBackButton: true,
+                        ),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            FriendProfileScreen(userId: comment.userId),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                  }
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: scaleWidth(28),
+                  height: scaleHeight(28),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppColors.gray50,
+                      width: 1,
                     ),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
+                    borderRadius: BorderRadius.circular(scaleWidth(14)),
                   ),
-                );
-              } else {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        FriendProfileScreen(userId: comment.userId),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
-                  ),
-                );
-              }
-            },
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(scaleWidth(14)),
-                  child: (comment.profileImageUrl.isNotEmpty)
-                      ? Image.network(
-                    comment.profileImageUrl,
-                    width: scaleWidth(28),
-                    height: scaleHeight(28),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => SvgPicture.asset(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(scaleWidth(14)),
+                    child: comment.profileImageUrl.isNotEmpty
+                        ? Image.network(
+                      comment.profileImageUrl,
+                      width: scaleWidth(28),
+                      height: scaleHeight(28),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          SvgPicture.asset(
+                            AppImages.profile,
+                            width: scaleWidth(28),
+                            height: scaleHeight(28),
+                            fit: BoxFit.cover,
+                          ),
+                    )
+                        : SvgPicture.asset(
                       AppImages.profile,
                       width: scaleWidth(28),
                       height: scaleHeight(28),
                       fit: BoxFit.cover,
                     ),
-                  )
-                      : SvgPicture.asset(
-                    AppImages.profile,
-                    width: scaleWidth(28),
-                    height: scaleHeight(28),
-                    fit: BoxFit.cover,
                   ),
                 ),
-                SizedBox(width: scaleWidth(8)),
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      FixedText(
-                        comment.nickname,
-                        style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
+              ),
+              SizedBox(width: scaleWidth(12)),
+              // 닉네임 + 팀배지 + 시간
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 닉네임
+                    FixedText(
+                      comment.nickname,
+                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
+                    ),
+                    SizedBox(width: scaleWidth(6)),
+                    // 팀배지
+                    if (comment.favTeam.isNotEmpty && comment.favTeam != '-' && comment.favTeam != '응원팀 없음')
+                      TeamUtils.buildTeamBadge(
+                        context: context,
+                        teamName: comment.favTeam,
+                        textStyle: AppFonts.pretendard.caption_sm_500(context),
+                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
+                        borderRadius: scaleWidth(4),
+                        height: scaleHeight(18),
+                        suffix: ' 팬',
                       ),
-                      SizedBox(width: scaleWidth(4)),
-                      SvgPicture.asset(AppImages.ellipse, width: scaleWidth(2), height: scaleHeight(2)),
-                      SizedBox(width: scaleWidth(4)),
-                      FixedText(
-                        '${comment.favTeam} 팬',
-                        style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400),
-                      ),
-                    ],
-                  ),
-                ),
-                if (comment.userId == _currentUserId)
-                  GestureDetector(
-                    onTap: () => _showCommentOptions(comment),
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: EdgeInsets.all(scaleWidth(4)),
-                      child: SvgPicture.asset(
-                          AppImages.more,
-                          width: scaleWidth(20),
-                          height: scaleHeight(20),
-                          fit: BoxFit.contain
+                    if (comment.favTeam.isNotEmpty && comment.favTeam != '-' && comment.favTeam != '응원팀 없음')
+                      SizedBox(width: scaleWidth(6)),
+                    // 시간
+                    FixedText(
+                      TimeUtils.getTimeAgo(comment.createdAt),
+                      style: AppFonts.pretendard.caption_re_400(context).copyWith(
+                        color: AppColors.gray400,
                       ),
                     ),
+                  ],
+                ),
+              ),
+              // dots
+              if (comment.userId == _currentUserId)
+                GestureDetector(
+                  onTap: () => _showCommentOptions(comment),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: EdgeInsets.all(scaleWidth(4)),
+                    child: SvgPicture.asset(
+                        AppImages.more,
+                        width: scaleWidth(20),
+                        height: scaleHeight(20),
+                        fit: BoxFit.contain
+                    ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
+          // 하단: 댓글 내용
           Padding(
-            padding: EdgeInsets.only(left: scaleWidth(36), top: scaleHeight(4)),
+            padding: EdgeInsets.only(left: scaleWidth(40), right: scaleWidth(20)),
             child: FixedText(
               comment.content,
               style: AppFonts.pretendard.body_sm_400(context).copyWith(color: Colors.black),
@@ -1034,7 +1267,10 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     );
   }
 
-  Widget _buildGameCard(String homeTeamShort, String awayTeamShort, int? homeScore, int? awayScore, int? emotionCode, String emotionLabel, String gameDate, String gameTime, String stadium, Map<String, dynamic> recordDetail) {
+  Widget _buildGameCard(String homeTeamShort, String awayTeamShort,
+      int? homeScore, int? awayScore, int? emotionCode, String emotionLabel,
+      String gameDate, String gameTime, String stadium,
+      Map<String, dynamic> recordDetail) {
     return GestureDetector(
       onTap: () => setState(() => _isGameCardExpanded = !_isGameCardExpanded),
       child: AnimatedSize(
@@ -1056,32 +1292,42 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           ),
           child: Stack(
             children: [
-              // 메인 콘텐츠 (BackBlack 영향 없음)
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // emotion 이미지와 라벨 - 세로 중앙 정렬
+                    // emotion 이미지와 라벨
                     Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          SizedBox(height: scaleHeight(2)),
                           _getEmotionImage(emotionCode),
-                          FixedText(
-                            emotionLabel,
-                            style: AppFonts.suite.caption_md_500(context).copyWith(color: AppColors.gray600),
+                          SizedBox(height: scaleHeight(5)),
+                          Container(
+                            width: scaleWidth(32),
+                            child: FixedText(
+                              emotionLabel,
+                              style: AppFonts.suite.caption_md_400(context).copyWith(color: AppColors.gray900,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(width: scaleWidth(15)),
+                    SizedBox(width: scaleWidth(18)),
                     // 구분선
-                    Container(
-                      width: 1,
-                      color: AppColors.gray50,
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: scaleHeight(4)),
+                      child: Container(
+                        width: 1,
+                        color: AppColors.gray50,
+                      ),
                     ),
-                    SizedBox(width: scaleWidth(17)),
-                    // 게임 정보 영역 - 패딩 제거 (전체 공간 사용)
+                    SizedBox(width: scaleWidth(18)),
+                    // 게임 정보 영역
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1091,14 +1337,18 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                             children: [
                               FixedText(
                                 _formatGameDateTime(gameDate, gameTime),
-                                style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400, fontSize: scaleFont(10), height: 14 / 10),
+                                style: AppFonts.pretendard.caption_re_400(context).copyWith(color: AppColors.gray400,
+                                    fontSize: scaleFont(10),
+                                    height: 14 / 10),
                               ),
                               SizedBox(width: scaleWidth(4)),
                               SvgPicture.asset(AppImages.ellipse, width: scaleWidth(2), height: scaleHeight(2)),
-                              SizedBox(width: scaleWidth(3)),
+                              SizedBox(width: scaleWidth(4)),
                               FixedText(
                                 stadium,
-                                style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray400, fontSize: scaleFont(10), height: 14 / 10),
+                                style: AppFonts.pretendard.caption_re_400(context).copyWith(color: AppColors.gray400,
+                                    fontSize: scaleFont(10),
+                                    height: 14 / 10),
                               ),
                             ],
                           ),
@@ -1128,13 +1378,12 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                   ],
                 ),
               ),
-              // backBlack 아이콘 - 오버레이로 배치 (공간을 차지하지 않음)
               Positioned(
-                right: 0, // 내부 패딩 기준 right: 0
-                top: scaleHeight(20), // 20px 아래
+                right: 0,
+                top: scaleHeight(20),
                 child: AnimatedRotation(
                   duration: Duration(milliseconds: 300),
-                  turns: _isGameCardExpanded ? -0.25 : 0.25,
+                  turns: _isGameCardExpanded ? 0.25 : -0.25,
                   child: SvgPicture.asset(
                     AppImages.backBlack,
                     width: scaleWidth(20),
@@ -1158,7 +1407,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         height: scaleHeight(159),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          image: DecorationImage(image: NetworkImage(mediaUrls[0]), fit: BoxFit.cover),
+          image: DecorationImage(
+              image: NetworkImage(mediaUrls[0]), fit: BoxFit.cover),
         ),
       );
     } else if (mediaUrls.length == 2) {
@@ -1171,7 +1421,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(image: NetworkImage(mediaUrls[0]), fit: BoxFit.cover),
+                  image: DecorationImage(
+                      image: NetworkImage(mediaUrls[0]), fit: BoxFit.cover),
                 ),
               ),
             ),
@@ -1180,7 +1431,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(image: NetworkImage(mediaUrls[1]), fit: BoxFit.cover),
+                  image: DecorationImage(
+                      image: NetworkImage(mediaUrls[1]), fit: BoxFit.cover),
                 ),
               ),
             ),
@@ -1200,7 +1452,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               margin: EdgeInsets.only(right: scaleWidth(8)),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(image: NetworkImage(mediaUrls[index]), fit: BoxFit.cover),
+                image: DecorationImage(
+                    image: NetworkImage(mediaUrls[index]), fit: BoxFit.cover),
               ),
             );
           },
@@ -1258,13 +1511,13 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
     final imagePath = emotionImages[emotionCode];
     if (imagePath == null) {
-      return SizedBox(width: scaleWidth(35), height: scaleHeight(35));
+      return SizedBox(width: scaleWidth(36), height: scaleHeight(36));
     }
 
     return SvgPicture.asset(
       imagePath,
-      width: scaleWidth(35),
-      height: scaleHeight(35),
+      width: scaleWidth(36),
+      height: scaleHeight(36),
     );
   }
 
@@ -1303,9 +1556,20 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     final seatInfo = recordDetail['seatInfo'] ?? '';
     final bestPlayer = recordDetail['bestPlayer'];
     final companions = recordDetail['companions'] as List<dynamic>?;
+    final homeTeam = recordDetail['homeTeam'] ?? '';
 
-    final hasBestPlayer = bestPlayer != null && bestPlayer.toString().trim().isNotEmpty;
+    final hasBestPlayer = bestPlayer != null && bestPlayer
+        .toString()
+        .trim()
+        .isNotEmpty;
     final hasCompanions = companions != null && companions.isNotEmpty;
+
+    String bestPlayerText = '';
+    if (hasBestPlayer) {
+      bestPlayerText = homeTeam.isNotEmpty
+          ? '$homeTeam ${bestPlayer.toString()}'
+          : bestPlayer.toString();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1313,13 +1577,14 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         _buildInfoRow('좌석', seatInfo, AppColors.gray400),
         if (hasBestPlayer) ...[
           SizedBox(height: scaleHeight(6)),
-          _buildInfoRow('MVP', bestPlayer.toString(), AppColors.gray400),
+          _buildInfoRow('MVP', bestPlayerText, AppColors.gray400),
         ],
         if (hasCompanions) ...[
           SizedBox(height: scaleHeight(6)),
           _buildInfoRow(
-            '직관친구',
-            companions!.map((c) => '@${c is Map ? c['nickname'] ?? '' : c}').join(' '),
+            '직관 친구',
+            companions!.map((c) => '@${c is Map ? c['nickname'] ?? '' : c}')
+                .join(' '),
             AppColors.pri600,
           ),
         ],
@@ -1328,23 +1593,31 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
   }
 
   Widget _buildInfoRow(String label, String value, Color valueColor) {
+    // "직관 친구" 텍스트의 너비를 기준으로 레이블 영역 크기 고정
+    final labelWidth = _calculateTextWidth(
+        '직관 친구',
+        AppFonts.pretendard.caption_re_400(context).copyWith(
+            color: AppColors.gray300)
+    );
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: scaleWidth(40),
-          child: Center(
-            child: FixedText(
-              label,
-              style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray300),
-            ),
+          width: labelWidth,
+          child: FixedText(
+            label,
+            style: AppFonts.pretendard.caption_re_400(context).copyWith(
+                color: AppColors.gray300),
+            textAlign: TextAlign.left,
           ),
         ),
-        SizedBox(width: scaleWidth(8)),
+        SizedBox(width: scaleWidth(10)),
         Expanded(
           child: FixedText(
             value,
-            style: AppFonts.suite.caption_re_400(context).copyWith(color: valueColor),
+            style: AppFonts.pretendard.caption_re_400(context).copyWith(
+                color: valueColor),
           ),
         ),
       ],
@@ -1370,10 +1643,12 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               child: TextField(
                 controller: _commentController,
                 focusNode: _commentFocusNode,
-                style: AppFonts.pretendard.body_sm_400(context).copyWith(color: AppColors.gray900),
+                style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                    color: AppColors.gray900),
                 decoration: InputDecoration(
                   hintText: '댓글을 작성해 보세요',
-                  hintStyle: AppFonts.pretendard.body_sm_400(context).copyWith(color: AppColors.gray200),
+                  hintStyle: AppFonts.pretendard.body_sm_400(context).copyWith(
+                      color: AppColors.gray200),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.only(
                     left: scaleWidth(16),
@@ -1404,5 +1679,16 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         ),
       ),
     );
+  }
+
+  // 텍스트 너비 계산 헬퍼 함수
+  double _calculateTextWidth(String text, TextStyle style) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )
+      ..layout();
+    return textPainter.size.width;
   }
 }

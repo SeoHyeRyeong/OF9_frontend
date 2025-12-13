@@ -551,6 +551,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               followingCount = response['followingCount'] ?? followingCount;
               postCount = response['recordCount'] ?? postCount;
             });
+
+            // 차단 해제 후 즉시 데이터 새로고침
+            await _loadMyRecords();
           }
         } catch (e) {
           print('❌ 프로필 정보 갱신 실패: $e');
@@ -582,6 +585,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               followingCount = response['followingCount'] ?? followingCount;
               postCount = response['recordCount'] ?? postCount;
               isMutualFollow = false;
+            });
+
+            // 차단 후 데이터 초기화
+            setState(() {
+              feedList = [];
+              calendarData = {};
             });
           }
         } catch (e) {
@@ -1197,6 +1206,24 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   // 캘린더 탭
   Widget _buildCalendarTab() {
+    // 차단되거나 비공개 계정인 경우
+    if (isBlocked) {
+      return Center(
+        child: Text(
+          '차단된 사용자입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+    if (isPrivate && followStatus != 'FOLLOWING') {
+      return Center(
+        child: Text(
+          '비공개 계정입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+
     return _KeepAliveWrapper(
       child: isLoadingRecords
           ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
@@ -1728,6 +1755,24 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   ///리스트 탭
   Widget _buildListTab() {
+    // 차단되거나 비공개 계정인 경우
+    if (isBlocked) {
+      return Center(
+        child: Text(
+          '차단된 사용자입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+    if (isPrivate && followStatus != 'FOLLOWING') {
+      return Center(
+        child: Text(
+          '비공개 계정입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+
     return _KeepAliveWrapper(
       child: isLoadingRecords
           ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
@@ -1803,6 +1848,24 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   ///모아보기 탭
   Widget _buildGridTab() {
+    // 차단되거나 비공개 계정인 경우
+    if (isBlocked) {
+      return Center(
+        child: Text(
+          '차단된 사용자입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+    if (isPrivate && followStatus != 'FOLLOWING') {
+      return Center(
+        child: Text(
+          '비공개 계정입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+
     return _KeepAliveWrapper(
       child: isLoadingRecords
           ? Center(child: CircularProgressIndicator(color: AppColors.pri500))

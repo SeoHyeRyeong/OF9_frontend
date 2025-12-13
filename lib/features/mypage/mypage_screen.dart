@@ -956,6 +956,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             'profileImageUrl': record['profileImageUrl'],
             'nickname': record['nickname'],
             'favTeam': record['favTeam'],
+            'followStatus': record['followStatus'] ?? 'ME',
             'mediaUrls': record['mediaUrls'] ?? [],
             'longContent': record['longContent'] ?? '',
             'emotionCode': record['emotionCode'],
@@ -1458,8 +1459,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         Text(
           text,
           style: AppFonts.suite.c3_sb(context).copyWith(
-            color: textColor,
-            fontSize: 8.sp
+              color: textColor,
+              fontSize: 8.sp
           ),
         ),
       ],
@@ -1626,7 +1627,7 @@ class _MyPageTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-   return Container(
+    return Container(
       color: Colors.white,
       child: child,
     );

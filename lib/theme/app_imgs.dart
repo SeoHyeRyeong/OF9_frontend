@@ -134,4 +134,5 @@ class AppImages {
   static const location_marker = 'assets/imgs/ic_report/ic_location_marker.svg';
   static const day = 'assets/imgs/ic_report/ic_day.png';
   static const stadium = 'assets/imgs/ic_report/ic_stadium.png';
+  static const arrow = 'assets/imgs/ic_report/arrow_forward_ios.svg';
 }

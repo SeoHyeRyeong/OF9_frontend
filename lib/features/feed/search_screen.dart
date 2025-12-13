@@ -802,6 +802,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
               'authorProfileImage': record.authorProfileImage,
               'authorNickname': record.authorNickname,
               'authorFavTeam': record.authorFavTeam,
+              'followStatus': record.followStatus ?? 'NOT_FOLLOWING',
               'mediaUrls': record.mediaUrls,
               'longContent': record.longContent,
               'emotionCode': record.emotionCode,

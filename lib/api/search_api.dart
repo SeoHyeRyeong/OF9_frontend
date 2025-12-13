@@ -10,6 +10,7 @@ class Record {
   final String authorNickname;
   final String? authorProfileImage;
   final String authorFavTeam;
+  final String followStatus;
   final String gameDate;
   final String gameTime;
   final String homeTeam;
@@ -34,6 +35,7 @@ class Record {
         authorNickname = json['authorNickname'],
         authorProfileImage = json['authorProfileImage'],
         authorFavTeam = json['authorFavTeam'],
+        followStatus = json['followStatus'] ?? 'NOT_FOLLOWING',
         gameDate = json['gameDate'],
         gameTime = json['gameTime'],
         homeTeam = json['homeTeam'],

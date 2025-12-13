@@ -12,6 +12,7 @@ import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
 import 'package:frontend/features/report/report_screen.dart';
+import 'package:frontend/api/user_api.dart'; // UserApi import 추가
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -40,9 +41,13 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   // 필터링 관련 - 다중 선택
   Set<String> _selectedTeamFilters = {};
 
+  // 현재 사용자 favTeam
+  String? _currentUserFavTeam;
+
   @override
   void initState() {
     super.initState();
+    _loadUserInfo();
     _loadRecommendFeed();
     _loadFollowingFeed();
   }
@@ -50,6 +55,50 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     super.dispose();
+  }
+
+  // 사용자 정보 로드
+  Future<void> _loadUserInfo() async {
+    try {
+      final response = await UserApi.getMyProfile();
+      if (response['success'] == true && mounted) {
+        final userInfo = response['data'];
+        setState(() {
+          _currentUserFavTeam = userInfo['favTeam'];
+        });
+        print('✅ 사용자 favTeam 로드 성공: $_currentUserFavTeam');
+      }
+    } catch (e) {
+      print('❌ 사용자 정보 로드 실패: $e');
+    }
+  }
+
+  String _getFilterAssetPath(String? favTeam) {
+    // 필터가 선택되지 않은 경우 기본 필터 아이콘
+    if (_selectedTeamFilters.isEmpty) {
+      return AppImages.filter;
+    }
+
+    // 필터가 적용된 경우에만 사용자의 favTeam 색상 필터 사용
+    if (favTeam == null || favTeam.isEmpty) {
+      return AppImages.filter; // favTeam이 없으면 기본 아이콘
+    }
+
+    final teamMap = {
+      '두산 베어스': AppImages.filter_doosan,
+      '한화 이글스': AppImages.filter_hanwha,
+      'KIA 타이거즈': AppImages.filter_kia,
+      '키움 히어로즈': AppImages.filter_kiwoom,
+      'KT 위즈': AppImages.filter_kt,
+      'LG 트윈스': AppImages.filter_lg,
+      '롯데 자이언츠': AppImages.filter_lotte,
+      'NC 다이노스': AppImages.filter_nc,
+      '삼성 라이온즈': AppImages.filter_samsung,
+      'SSG 랜더스': AppImages.filter_ssg,
+    };
+
+    // 매칭되는 팀이 있으면 해당 필터, 없으면 기본 아이콘
+    return teamMap[favTeam] ?? AppImages.filter;
   }
 
   //추천 피드 로드
@@ -492,11 +541,11 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
                         );
                       }).toList(),
                     ),
-                    // 오른쪽: 필터 아이콘
+                    // 오른쪽: 필터 아이콘 (사용자의 favTeam 색상으로 표시)
                     GestureDetector(
                       onTap: _showFilterSheet,
                       child: SvgPicture.asset(
-                        AppImages.filter,
+                        _getFilterAssetPath(_currentUserFavTeam),
                         width: scaleWidth(28),
                         height: scaleHeight(28),
                         fit: BoxFit.contain,

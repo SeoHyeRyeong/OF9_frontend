@@ -1134,11 +1134,10 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 상단: 프로필 + 닉네임 + 팀배지 + 시간 + dots
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 프로필 이미지 (28*28)
+              // 프로필 이미지 (28x28) - 클릭 가능
               GestureDetector(
                 onTap: () async {
                   if (comment.userId == _currentUserId) {
@@ -1171,10 +1170,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                   width: scaleWidth(28),
                   height: scaleHeight(28),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppColors.gray50,
-                      width: 1,
-                    ),
+                    border: Border.all(color: AppColors.gray50, width: 1),
                     borderRadius: BorderRadius.circular(scaleWidth(14)),
                   ),
                   child: ClipRRect(
@@ -1185,13 +1181,12 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                       width: scaleWidth(28),
                       height: scaleHeight(28),
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          SvgPicture.asset(
-                            AppImages.profile,
-                            width: scaleWidth(28),
-                            height: scaleHeight(28),
-                            fit: BoxFit.cover,
-                          ),
+                      errorBuilder: (_, __, ___) => SvgPicture.asset(
+                        AppImages.profile,
+                        width: scaleWidth(28),
+                        height: scaleHeight(28),
+                        fit: BoxFit.cover,
+                      ),
                     )
                         : SvgPicture.asset(
                       AppImages.profile,
@@ -1203,38 +1198,76 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 ),
               ),
               SizedBox(width: scaleWidth(12)),
-              // 닉네임 + 팀배지 + 시간
+              // 닉네임+팀배지+시간 영역
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // 닉네임
-                    FixedText(
-                      comment.nickname,
-                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray950),
-                    ),
-                    SizedBox(width: scaleWidth(6)),
-                    // 팀배지
-                    if (comment.favTeam.isNotEmpty && comment.favTeam != '-' && comment.favTeam != '응원팀 없음')
-                      TeamUtils.buildTeamBadge(
-                        context: context,
-                        teamName: comment.favTeam,
-                        textStyle: AppFonts.pretendard.caption_sm_500(context),
-                        padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
-                        borderRadius: scaleWidth(4),
-                        height: scaleHeight(18),
-                        suffix: ' 팬',
+                child: GestureDetector(
+                  onTap: () async {
+                    if (comment.userId == _currentUserId) {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) =>
+                          const MyPageScreen(
+                            fromNavigation: false,
+                            showBackButton: true,
+                          ),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) =>
+                              FriendProfileScreen(userId: comment.userId),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
+                    }
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    children: [
+                      // 닉네임
+                      Flexible(
+                        child: FixedText(
+                          comment.nickname,
+                          style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                            color: AppColors.gray950,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
-                    if (comment.favTeam.isNotEmpty && comment.favTeam != '-' && comment.favTeam != '응원팀 없음')
                       SizedBox(width: scaleWidth(6)),
-                    // 시간
-                    FixedText(
-                      TimeUtils.getTimeAgo(comment.createdAt),
-                      style: AppFonts.pretendard.caption_re_400(context).copyWith(
-                        color: AppColors.gray400,
+                      // 팀 배지
+                      if (comment.favTeam.isNotEmpty &&
+                          comment.favTeam != "응원팀 없음" &&
+                          comment.favTeam != "-")
+                        TeamUtils.buildTeamBadge(
+                          context: context,
+                          teamName: comment.favTeam,
+                          textStyle: AppFonts.pretendard.caption_sm_500(context),
+                          padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
+                          borderRadius: scaleWidth(4),
+                          height: scaleHeight(18),
+                          suffix: ' 팬',
+                        ),
+                      if (comment.favTeam.isNotEmpty &&
+                          comment.favTeam != "응원팀 없음" &&
+                          comment.favTeam != "-")
+                        SizedBox(width: scaleWidth(6)),
+                      // 시간
+                      FixedText(
+                        TimeUtils.getTimeAgo(comment.createdAt),
+                        style: AppFonts.pretendard.caption_re_400(context).copyWith(
+                          color: AppColors.gray400,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               // dots
@@ -1242,14 +1275,11 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                 GestureDetector(
                   onTap: () => _showCommentOptions(comment),
                   behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: EdgeInsets.all(scaleWidth(4)),
-                    child: SvgPicture.asset(
-                        AppImages.more,
-                        width: scaleWidth(20),
-                        height: scaleHeight(20),
-                        fit: BoxFit.contain
-                    ),
+                  child: SvgPicture.asset(
+                    AppImages.more,
+                    width: scaleWidth(20),
+                    height: scaleHeight(20),
+                    fit: BoxFit.contain,
                   ),
                 ),
             ],

@@ -18,6 +18,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:frontend/features/mypage/follower_screen.dart';
 import 'package:frontend/features/mypage/following_screen.dart';
+import 'package:frontend/utils/team_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -364,15 +365,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) =>
-              const MyPageScreen(),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
+          Navigator.pop(context, true);
         }
       },
       child: Scaffold(
@@ -511,17 +504,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           ],
                                         ),
 
-                                        SizedBox(height: scaleHeight(5)),
-                                        isLoading
-                                            ? const SizedBox.shrink()
-                                            : FixedText(
-                                          '$favTeam 팬',
-                                          style: AppFonts.pretendard.caption_re_400(context).copyWith(
-                                            color: AppColors.gray400,
-                                            fontSize: scaleFont(10),
+                                        SizedBox(height: scaleHeight(6)),
+                                        if (!isLoading && favTeam.isNotEmpty && favTeam != "응원팀 없음") ...[
+                                          IntrinsicWidth(
+                                            child: TeamUtils.buildTeamBadge(
+                                              context: context,
+                                              teamName: favTeam,
+                                              textStyle: AppFonts.pretendard.caption_sm_500(context),
+                                              padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
+                                              borderRadius: scaleWidth(4),
+                                              height: scaleHeight(18),
+                                              suffix: ' 팬',
+                                            ),
                                           ),
-                                        ),
-                                        SizedBox(height: scaleHeight(7)),
+                                          SizedBox(height: scaleHeight(7)),
+                                        ],
                                         Row(
                                           children: [
                                             GestureDetector(

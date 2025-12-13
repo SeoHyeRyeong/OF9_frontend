@@ -119,6 +119,22 @@ class AppImages {
   static const more = 'assets/imgs/ic_feed/more_vert.svg';
   static const dots_horizontal = 'assets/imgs/ic_feed/dots_horizontal.svg';
 
+  //필터링
+  static const filter_doosan = 'assets/imgs/ic_feed/ic_filter/filter_doosan.svg';
+  static const filter_hanwha = 'assets/imgs/ic_feed/ic_filter/filter_hanwha.svg';
+  static const filter_kia = 'assets/imgs/ic_feed/ic_filter/filter_kia.svg';
+  static const filter_kiwoom = 'assets/imgs/ic_feed/ic_filter/filter_kiwoom.svg';
+  static const filter_kt = 'assets/imgs/ic_feed/ic_filter/filter_kt.svg';
+  static const filter_lg = 'assets/imgs/ic_feed/ic_filter/filter_lg.svg';
+  static const filter_lotte = 'assets/imgs/ic_feed/ic_filter/filter_lotte.svg';
+  static const filter_nc = 'assets/imgs/ic_feed/ic_filter/filter_nc.svg';
+  static const filter_samsung = 'assets/imgs/ic_feed/ic_filter/filter_samsung.svg';
+  static const filter_ssg = 'assets/imgs/ic_feed/ic_filter/filter_ssg.svg';
+
+
+
+
+
   //마이페이지
   static const btn_camera = 'assets/imgs/btn_camera_24.svg';
   static const delete = 'assets/imgs/ic_delete_18.svg';

@@ -578,8 +578,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 ),
                 SizedBox(width: scaleWidth(20)),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final result = await Navigator.push(
                       context,
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -1478,7 +1478,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(scaleWidth(16)),
-        border: Border.all(color: AppColors.gray50, width: 1),
         boxShadow: [
           BoxShadow(
             color: const Color(0x1A9397A1),

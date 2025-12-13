@@ -23,6 +23,7 @@ import 'package:frontend/utils/follow_status_manager.dart';
 import 'package:frontend/components/custom_action_sheet.dart';
 import 'dart:async';
 import 'package:frontend/components/custom_toast.dart';
+import 'package:frontend/utils/team_utils.dart';
 
 class FriendProfileScreen extends StatefulWidget {
   final int userId;
@@ -923,7 +924,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                   return Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                           : null,
                       strokeWidth: 2,
                       color: AppColors.pri400,
@@ -939,31 +941,27 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             ),
           ),
           SizedBox(width: scaleWidth(16)),
+          // 팀 정보 + 닉네임 + 통계
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: scaleHeight(2)),
+                SizedBox(height: scaleHeight(6)),
                 if (!isLoading && favTeam.isNotEmpty && favTeam != "응원팀 없음") ...[
                   IntrinsicWidth(
-                    child: Container(
-                      height: scaleHeight(22),
-                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
-                      decoration: BoxDecoration(
-                        color: AppColors.gray30,
-                        borderRadius: BorderRadius.circular(scaleWidth(20)),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "$favTeam 팬",
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
-                          color: AppColors.pri800,
-                        ),
-                      ),
+                    child: TeamUtils.buildTeamBadge(
+                      context: context,
+                      teamName: favTeam,
+                      textStyle: AppFonts.pretendard.caption_sm_500(context),
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
+                      borderRadius: scaleWidth(4),
+                      height: scaleHeight(18),
+                      suffix: ' 팬',
                     ),
                   ),
                   SizedBox(height: scaleHeight(8)),
                 ],
+                // 닉네임
                 isLoading
                     ? Text("...", style: AppFonts.pretendard.head_sm_600(context))
                     : Text(
@@ -974,6 +972,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                   ),
                 ),
                 SizedBox(height: scaleHeight(12)),
+                // 통계 정보 (게시글, 팔로잉, 팔로워)
                 Row(
                   children: [
                     _buildStatItem("게시글", postCount),
@@ -1016,14 +1015,14 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       children: [
         Text(
           label,
-          style: AppFonts.suite.caption_re_400(context).copyWith(
+          style: AppFonts.pretendard.caption_md_400(context).copyWith(
             color: AppColors.gray500,
           ),
         ),
         SizedBox(width: scaleWidth(2)),
         Text(
           count.toString(),
-          style: AppFonts.suite.caption_md_500(context).copyWith(
+          style: AppFonts.pretendard.caption_md_400(context).copyWith(
             color: AppColors.gray900,
           ),
         ),
@@ -1036,7 +1035,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         child: content,
       );
     }
-
     return content;
   }
 
@@ -1074,7 +1072,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           ),
           child: Text(
             _getButtonText(),
-            style: AppFonts.suite.caption_md_500(context).copyWith(color: _getButtonTextColor()),
+            style: AppFonts.pretendard.caption_md_500(context).copyWith(color: _getButtonTextColor()),
           ),
         ),
       ),
@@ -1626,7 +1624,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(scaleWidth(16)),
-        border: Border.all(color: AppColors.gray50, width: 1),
         boxShadow: [
           BoxShadow(
             color: Color(0x1A9397A1),
@@ -1648,7 +1645,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             children: [
               Text(
                 '${_focusedDay.month}월 직관 분석',
-                style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+                style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray900),
               ),
               SizedBox(width: scaleWidth(6)),
               Container(
@@ -1661,7 +1658,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 alignment: Alignment.center,
                 child: Text(
                   '리포트',
-                  style: AppFonts.suite.caption_md_500(context).copyWith(
+                  style: AppFonts.pretendard.caption_md_500(context).copyWith(
                     color: AppColors.pri700,
                     fontSize: 10.sp,
                   ),
@@ -1675,7 +1672,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             Center(
               child: Text(
                 '업로드한 기록이 아직 없어요',
-                style: AppFonts.suite.body_md_500(context).copyWith(color: AppColors.gray300),
+                style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray300),
               ),
             )
           else
@@ -1690,7 +1687,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     children: [
                       Text(
                         '직관 승률',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                        style: AppFonts.pretendard.caption_md_500(context).copyWith(
                           color: AppColors.gray500,
                           fontSize: 10.sp,
                         ),
@@ -1707,7 +1704,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     children: [
                       Text(
                         '기록 횟수',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                        style: AppFonts.pretendard.caption_md_500(context).copyWith(
                           color: AppColors.gray500,
                           fontSize: 10.sp,
                         ),
@@ -1724,7 +1721,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     children: [
                       Text(
                         '공감 받은 횟수',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                        style: AppFonts.pretendard.caption_md_500(context).copyWith(
                           color: AppColors.gray500,
                           fontSize: 10.sp,
                         ),
@@ -1990,7 +1987,7 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
             Expanded(
               child: Text(
                 nickname,
-                style: AppFonts.suite.head_sm_700(context).copyWith(color: Colors.black),
+                style: AppFonts.pretendard.head_sm_600(context).copyWith(color: Colors.black),
                 overflow: TextOverflow.ellipsis,
               ),
             ),

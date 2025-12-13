@@ -332,7 +332,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     final createdAt = widget.feedData['createdAt'] ?? widget.feedData['gameDate'] ?? '';
 
     // 팔로우 버튼 표시 여부: NOT_FOLLOWING일 때만 (ME, FOLLOWING, REQUESTED는 버튼 숨김)
-    final shouldShowFollowButton = _followStatus == "NOTFOLLOWING" && _followStatus != "ME";
+    final shouldShowFollowButton = _followStatus == "NOT_FOLLOWING" && _followStatus != "ME";
 
     return Padding(
       padding: EdgeInsets.only(

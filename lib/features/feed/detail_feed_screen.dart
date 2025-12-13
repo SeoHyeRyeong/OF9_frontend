@@ -178,37 +178,37 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
       final data = await RecordApi.getRecordDetail(widget.recordId.toString());
 
-      final globalIsLiked = _feedCountManager.getLikedStatus(widget.recordId);
-      final globalLikeCount = _feedCountManager.getLikeCount(widget.recordId);
-      final globalCommentCount = _feedCountManager.getCommentCount(
-          widget.recordId);
+      // 백엔드 응답 우선 사용
+      final backendIsLiked = data['isLiked'] ?? false;
+      final backendLikeCount = data['likeCount'] ?? 0;
+      final backendCommentCount = data['commentCount'] ?? 0;
+      final backendFollowStatus = data['followStatus'] ?? 'NOT_FOLLOWING';
 
       setState(() {
         _recordDetail = data;
-        _isLiked = globalIsLiked ?? (data['isLiked'] ?? false);
-        _likeCount = globalLikeCount ?? (data['likeCount'] ?? 0);
-        _commentCount = globalCommentCount ?? (data['commentCount'] ?? 0);
+        _isLiked = backendIsLiked;
+        _likeCount = backendLikeCount;
+        _commentCount = backendCommentCount;
+        _followStatus = backendFollowStatus;
         _isLoading = false;
-
-        // 팔로우 상태 초기화
-        _followStatus = data['followStatus'] ?? 'NOT_FOLLOWING';
       });
 
+      // 전역 상태에 백엔드 데이터로 초기화/업데이트
       _feedCountManager.setInitialState(
         widget.recordId,
-        _isLiked,
-        _likeCount,
-        commentCount: _commentCount,
+        backendIsLiked,
+        backendLikeCount,
+        commentCount: backendCommentCount,
       );
 
-      // 팔로우 상태 전역 관리자에 초기화
+      // 팔로우 상태 전역 관리자에 백엔드 데이터로 초기화/업데이트
       final userId = data['userId'];
       if (userId != null) {
-        _followManager.setInitialStatus(userId, _followStatus);
+        _followManager.setInitialStatus(userId, backendFollowStatus);
       }
 
       print('✅ 직관 기록 조회 성공: ${data['nickname']}');
-      print('🔍 followStatus: ${data['followStatus']}');
+      print('🔍 followStatus: $backendFollowStatus');
       print('🔍 isMutualFollow: ${data['isMutualFollow']}');
     } catch (e) {
       print('❌ 직관 기록 조회 실패: $e');

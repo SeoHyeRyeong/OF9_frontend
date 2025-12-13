@@ -535,7 +535,9 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
         itemBuilder: (context, index) {
           if (index == filteredItems.length) {
             if (_hasMoreRecommend && !_isLoadingMoreRecommend) {
-              _loadMoreRecommendFeed();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _loadMoreRecommendFeed();
+              });
             }
             return _buildLoadingIndicator();
           }
@@ -567,14 +569,15 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
         );
       }
 
-
       return ListView.builder(
         padding: EdgeInsets.only(top: scaleHeight(10)),
         itemCount: _followingFeedItems.length + (_hasMoreFollowing ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == _followingFeedItems.length) {
             if (_hasMoreFollowing && !_isLoadingMoreFollowing) {
-              _loadMoreFollowingFeed();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _loadMoreFollowingFeed();
+              });
             }
             return _buildLoadingIndicator();
           }

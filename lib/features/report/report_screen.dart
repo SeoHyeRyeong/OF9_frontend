@@ -379,7 +379,10 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ],
         ),
-        bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
+        bottomNavigationBar: CustomBottomNavBar(
+          currentIndex: 0,
+          isDisabled: _isNetworkError, // 네트워크 오류 시 네비게이션 비활성화
+        ),
       ),
     );
   }

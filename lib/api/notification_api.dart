@@ -209,17 +209,21 @@ class NotificationApi {
 
   static Future<void> saveFcmToken(String fcmToken) async {
     try {
-      final headers = await _authHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/fcm-token'), // 또는 /notifications/fcm-token
-        headers: headers,
-        body: jsonEncode({'fcmToken': fcmToken}),
+      print('📤 FCM 토큰 전송 시도: $fcmToken');
+
+      final response = await _makeRequestWithRetry(  // ✅ 토큰 갱신 로직 적용
+        request: (headers) => http.post(
+          Uri.parse('$baseUrl/users/fcm-token'),  // ✅ 경로 수정 (users 추가)
+          headers: headers,
+          body: jsonEncode({'fcmToken': fcmToken}),
+        ),
       );
 
       if (response.statusCode == 200) {
         print('✅ FCM 토큰 저장 성공');
       } else {
         print('❌ FCM 토큰 저장 실패: ${response.statusCode}');
+        print('   응답: ${response.body}');
         throw Exception('Failed to save FCM token: ${response.body}');
       }
     } catch (e) {
@@ -227,6 +231,7 @@ class NotificationApi {
       rethrow;
     }
   }
+
 }
 
 enum FollowButtonStatus { canFollow, following, requestSent }

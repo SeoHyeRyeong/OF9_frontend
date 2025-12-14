@@ -22,6 +22,96 @@ class KakaoAuthService {
     }
   }
 
+  /// 앱 시작 시 토큰 검증 및 자동 갱신
+  Future<bool> validateAndRefreshTokenOnStartup() async {
+    print('🚀 ===== 앱 시작 시 토큰 검증 시작 =====');
+
+    try {
+      final accessToken = await getAccessToken();
+      final refreshToken = await getRefreshToken();
+
+      // 토큰이 없으면 false 반환 (로그인 필요)
+      if (accessToken == null || refreshToken == null) {
+        print('❌ 저장된 토큰 없음 - 로그인 필요');
+        return false;
+      }
+
+      print('✅ 토큰 존재 확인 완료');
+
+      // JWT 토큰 만료 여부 확인
+      final isAccessTokenExpired = _isTokenExpired(accessToken);
+      final isRefreshTokenExpired = _isTokenExpired(refreshToken);
+
+      print('🔍 Access Token 만료 여부: $isAccessTokenExpired');
+      print('🔍 Refresh Token 만료 여부: $isRefreshTokenExpired');
+
+      // Refresh Token도 만료되었으면 재로그인 필요
+      if (isRefreshTokenExpired) {
+        print('❌ Refresh Token 만료 - 재로그인 필요');
+        await clearTokens();
+        return false;
+      }
+
+      // Access Token이 만료되었거나 곧 만료될 예정이면 갱신
+      if (isAccessTokenExpired) {
+        print('⏰ Access Token 만료 - 갱신 시도');
+        final result = await refreshTokens();
+        if (result != null) {
+          print('✅ 토큰 갱신 성공 - 로그인 상태 유지');
+          return true;
+        } else {
+          print('❌ 토큰 갱신 실패 - 재로그인 필요');
+          await clearTokens();
+          return false;
+        }
+      }
+
+      print('✅ 유효한 토큰 존재 - 로그인 상태 유지');
+      return true;
+
+    } catch (e) {
+      print('❌ 토큰 검증 실패: $e');
+      await clearTokens();
+      return false;
+    }
+  }
+
+  /// JWT 토큰 만료 여부 확인 (만료 5분 전부터 갱신 필요로 판단)
+  bool _isTokenExpired(String token) {
+    try {
+      // JWT는 'header.payload.signature' 형식
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        print('⚠️ 유효하지 않은 JWT 형식');
+        return true;
+      }
+
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final payloadMap = jsonDecode(decoded) as Map<String, dynamic>;
+
+      // exp (만료 시간, Unix timestamp in seconds)
+      final exp = payloadMap['exp'] as int?;
+      if (exp == null) {
+        print('⚠️ exp 필드가 없는 토큰');
+        return true;
+      }
+
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final timeUntilExpiry = exp - now;
+
+      print('🕐 토큰 만료까지 남은 시간: ${timeUntilExpiry}초 (${(timeUntilExpiry / 60).toStringAsFixed(1)}분)');
+
+      // 만료 30분 전부터 갱신 필요로 판단
+      return timeUntilExpiry < 1800;
+
+    } catch (e) {
+      print('❌ 토큰 만료 확인 중 오류: $e');
+      return true; // 오류 발생 시 만료된 것으로 간주
+    }
+  }
+
   /// 1) 카카오 로그인 → 액세스 토큰 획득 (기존 로직 유지)
   Future<String?> kakaoLogin() async {
     try {
@@ -186,11 +276,9 @@ class KakaoAuthService {
     try {
       final response = await http.post(
         url,
-        // ⚠️ 수정: 토큰 갱신 시 만료된 AccessToken을 헤더에 보내지 않도록 Authorization 헤더를 제거했습니다.
-        // 백엔드에서 Refresh Token은 보통 Body를 통해 처리됩니다.
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $currentAccessToken', // 만료된 AT는 제거
+          // 'Authorization': 'Bearer $currentAccessToken',
         },
         body: payload,
       ).timeout(const Duration(seconds: 8));
@@ -256,10 +344,9 @@ class KakaoAuthService {
     }
 
     final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
-    // ⚠️ 수정: backendUrl이 슬래시(/)로 끝나는 경우를 대비하여 중복 슬래시를 방지합니다.
     final cleanBackendUrl = backendUrl.endsWith('/') ? backendUrl.substring(0, backendUrl.length - 1) : backendUrl;
     final url = Uri.parse('$cleanBackendUrl$endpoint');
-    print('✅ 최종 URL: $url'); // URL 확인 로그 추가
+    print('✅ 최종 URL: $url');
 
     String? accessToken = await getAccessToken();
     if (accessToken == null) {

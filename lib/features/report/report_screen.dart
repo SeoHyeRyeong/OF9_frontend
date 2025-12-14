@@ -29,6 +29,7 @@ class _ReportScreenState extends State<ReportScreen> {
   Map<String, dynamic>? _reportData;
   Map<String, dynamic>? _userData; // 사용자 정보 저장
   String? _errorMessage;
+  bool _isNetworkError = false;
 
   // 티켓 위젯 캡처를 위한 GlobalKey
   final GlobalKey _ticketKey = GlobalKey();
@@ -126,6 +127,7 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _isNetworkError = false;
     });
     try {
       final results = await Future.wait([
@@ -136,19 +138,22 @@ class _ReportScreenState extends State<ReportScreen> {
 
       setState(() {
         _reportData = results[0] as Map<String, dynamic>;
-
-        print("=== 전체 reportData ===");
-        print(_reportData);
-
         final userApiResponse = results[1] as Map<String, dynamic>;
         _userData = userApiResponse['data'] as Map<String, dynamic>?;
         _isLoading = false;
+        _isNetworkError = false;
       });
     } catch (e) {
       if (!mounted) return;
       print('❌ 리포트 데이터 로딩 실패: $e');
+      final isNetwork = e.toString().contains('SocketException') ||
+          e.toString().contains('TimeoutException') ||
+          e.toString().contains('Failed host lookup') ||
+          e.toString().contains('Connection') ||
+          e.toString().contains('Network');
       setState(() {
         _isLoading = false;
+        _isNetworkError = isNetwork;
         _errorMessage = '리포트 정보를 불러오는 데 실패했습니다.';
       });
     }
@@ -202,9 +207,62 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
+  // 네트워크 오류 화면 위젯
+  Widget _buildNetworkErrorScreen() {
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '네트워크에 연결할 수 없습니다.',
+              style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                color: AppColors.gray500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: scaleHeight(8)),
+            Text(
+              '네트워크 연결 상태를 확인하신 후 다시 시도해 주세요.',
+              style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                color: AppColors.gray500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: scaleHeight(24)),
+            GestureDetector(
+              onTap: _loadReportData,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: scaleWidth(24),
+                  vertical: scaleHeight(12),
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.gray700,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '재시도',
+                  style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
-    final bool hasRecords = !_isLoading && _errorMessage == null &&
+    final bool hasRecords = !_isLoading && _errorMessage == null && !_isNetworkError &&
         (_reportData?['winRateInfo']?['totalGameCount'] ?? 0) > 0;
 
     return PopScope(
@@ -218,7 +276,7 @@ class _ReportScreenState extends State<ReportScreen> {
         backgroundColor: Colors.white,
         body: Column(
           children: [
-            // 홈 헤더 (고정)
+            // 홈 헤더
             SafeArea(
               bottom: false,
               child: Container(
@@ -260,6 +318,8 @@ class _ReportScreenState extends State<ReportScreen> {
               child: _isLoading
                   ? Center(
                   child: CircularProgressIndicator(color: AppColors.pri500))
+                  : _isNetworkError
+                  ? _buildNetworkErrorScreen()
                   : Stack(
                 children: [
                   // 카운트다운, 티켓 요약 카드
@@ -319,7 +379,10 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ],
         ),
-        bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
+        bottomNavigationBar: CustomBottomNavBar(
+          currentIndex: 0,
+          isDisabled: _isNetworkError, // 네트워크 오류 시 네비게이션 비활성화
+        ),
       ),
     );
   }

@@ -133,8 +133,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           _likeCount = newLikeCount;
           _commentCount = newCommentCount;
         });
-        print(
-            '✅ [DetailFeedScreen] 전역 카운트 동기화 - commentCount: $newCommentCount');
       }
     }
   }
@@ -146,7 +144,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       setState(() {
         _comments = List.from(comments);
       });
-      print('✅ [DetailFeedScreen] 전역 댓글 목록 동기화: ${comments.length}개');
     }
   }
 
@@ -161,8 +158,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
             _recordDetail!['followStatus'] = newFollowStatus;
           }
         });
-        print(
-            '✅ [DetailFeedScreen] 팔로우 상태 동기화: userId=$userId, followStatus=$newFollowStatus');
       }
     }
   }
@@ -173,8 +168,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         _isLoading = true;
         _errorMessage = null;
       });
-
-      print('📋 직관 기록 조회 시작: recordId=${widget.recordId}');
 
       final data = await RecordApi.getRecordDetail(widget.recordId.toString());
 
@@ -208,8 +201,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       }
 
       print('✅ 직관 기록 조회 성공: ${data['nickname']}');
-      print('🔍 followStatus: $backendFollowStatus');
-      print('🔍 isMutualFollow: ${data['isMutualFollow']}');
     } catch (e) {
       print('❌ 직관 기록 조회 실패: $e');
       setState(() {
@@ -221,8 +212,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   Future<void> _loadComments() async {
     try {
-      print('💬 댓글 목록 조회 시작: recordId=${widget.recordId}');
-
       final data = await FeedApi.getComments(widget.recordId.toString());
       final comments = data.map((e) => CommentDto.fromJson(e)).toList();
 
@@ -240,8 +229,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   Future<void> _toggleLike() async {
     try {
-      print('🔄 좋아요 토글 시작: recordId=${widget.recordId}');
-
       final result = await FeedApi.toggleLike(widget.recordId.toString());
 
       final isLiked = result['isLiked'] as bool;
@@ -269,7 +256,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
     final originalContent = content;
     _commentController.clear();
-
     _commentFocusNode.unfocus();
     FocusScope.of(context).unfocus();
     await Future.delayed(Duration(milliseconds: 100));
@@ -281,30 +267,36 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           _editingCommentId.toString(),
           originalContent,
         );
-
         print('✅ 댓글 수정 성공');
 
-        // 수정 모드 종료
         setState(() {
           _editingCommentId = null;
         });
 
-        // 댓글 목록 다시 불러오기
         await _loadComments();
       } else {
         // 댓글 작성 모드
         final result = await FeedApi.createComment(
             widget.recordId.toString(), originalContent);
-
         final newComment = CommentDto.fromJson(result);
-        if (newComment.totalCommentCount == null) {
-          final currentCount = _feedCountManager.getCommentCount(
-              widget.recordId) ?? _commentCount;
-          _feedCountManager.updateCommentCount(
-              widget.recordId, currentCount + 1);
-        }
-        _commentListManager.addComment(widget.recordId, newComment);
 
+        print('✅ 댓글 작성 API 응답 받음: ${newComment.content}');
+        print('📊 응답에 포함된 totalCommentCount: ${newComment.totalCommentCount}');
+
+        // 서버에서 최신 댓글 목록 다시 불러오기 (이게 가장 확실함)
+        await _loadComments();
+
+        // 댓글 카운트 업데이트
+        if (newComment.totalCommentCount != null) {
+          setState(() {
+            _commentCount = newComment.totalCommentCount!;
+          });
+          _feedCountManager.updateCommentCount(
+              widget.recordId, newComment.totalCommentCount!);
+          print('✅ 댓글 카운트 업데이트: ${newComment.totalCommentCount}');
+        }
+
+        print('✅ 댓글 작성 완료 - 총 ${_comments.length}개');
       }
     } catch (e, stackTrace) {
       print('❌ 댓글 ${_editingCommentId != null ? "수정" : "작성"} 실패: $e');
@@ -470,14 +462,11 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               recordState.printCurrentState();
 
               // 감정 코드
-              recordState.updateEmotionCode(
-                  _recordDetail?['emotionCode'] as int? ?? 1);
+              recordState.updateEmotionCode(_recordDetail?['emotionCode'] as int? ?? 1);
 
               // 상세 기록
-              recordState.updateLongContent(
-                  _recordDetail?['longContent'] as String? ?? '');
-              recordState.updateBestPlayer(
-                  _recordDetail?['bestPlayer'] as String? ?? '');
+              recordState.updateLongContent(_recordDetail?['longContent'] as String? ?? '');
+              recordState.updateBestPlayer(_recordDetail?['bestPlayer'] as String? ?? '');
 
               // 친구 태그
               final companions = _recordDetail?['companions'] as List<dynamic>?;
@@ -647,8 +636,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           }
         });
 
-        print(
-            '✅ 팔로우 성공: userId=$userId, newStatus=$newStatus (isFollowing: $isFollowing, pending: $pending)');
+        print('✅ 팔로우 성공: userId=$userId, newStatus=$newStatus (isFollowing: $isFollowing, pending: $pending)');
       }
     } catch (e) {
       print('❌ 팔로우 실패: $e');
@@ -760,7 +748,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         children: [
           GestureDetector(
             onTap: () {
-              // ✅ fromUpload 분기 처리 추가
+              // fromUpload 분기 처리 추가
               if (widget.fromUpload) {
                 // 업로드 완료 후 -> FeedScreen으로 이동
                 Navigator.pushReplacement(
@@ -1335,14 +1323,12 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                           SizedBox(height: scaleHeight(2)),
                           _getEmotionImage(emotionCode),
                           SizedBox(height: scaleHeight(5)),
-                          Container(
-                            width: scaleWidth(32),
-                            child: FixedText(
-                              emotionLabel,
-                              style: AppFonts.suite.caption_md_400(context).copyWith(color: AppColors.gray900,
-                              ),
-                              textAlign: TextAlign.center,
+                          FixedText(
+                            emotionLabel,
+                            style: AppFonts.suite.caption_md_400(context).copyWith(
+                              color: AppColors.gray900,
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),

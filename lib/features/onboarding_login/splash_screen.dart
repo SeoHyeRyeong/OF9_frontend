@@ -7,6 +7,9 @@ import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/report/report_screen.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/theme/app_imgs.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -49,15 +52,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     // 토큰 확인과 최소 시간 병렬 처리
     final results = await Future.wait([
-      _checkAuthStatus(),
+      _checkAuthAndValidateToken(),
       Future.delayed(const Duration(seconds: 3)),
     ]);
 
     final isLoggedIn = results[0] as bool;
-
     if (mounted) {
       await _fadeController.reverse();
-
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
@@ -71,13 +72,115 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  Future<bool> _checkAuthStatus() async {
+  /// 토큰 검증 및 자동 갱신 + 실제 API 호출로 재확인
+  Future<bool> _checkAuthAndValidateToken() async {
     try {
-      final isLoggedIn = await kakaoAuthService.hasStoredTokens();
-      print('🚀 로그인 상태: $isLoggedIn');
-      return isLoggedIn;
+      // 1단계: JWT 디코딩으로 토큰 존재 여부 및 기본 만료 확인
+      final isValid = await kakaoAuthService.validateAndRefreshTokenOnStartup();
+      print('🚀 JWT 검증 결과: $isValid');
+
+      if (!isValid) {
+        return false;
+      }
+
+      // 2단계: 실제 API 호출로 토큰이 서버에서도 유효한지 확인
+      print('🔍 실제 API 호출로 토큰 유효성 재확인');
+      try {
+        final backendUrl = dotenv.env['BACKEND_URL'];
+        if (backendUrl == null) {
+          print('❌ BACKEND_URL 설정 안 됨');
+          return false;
+        }
+        final accessToken = await kakaoAuthService.getAccessToken();
+        if (accessToken == null) {
+          print('❌ Access Token이 null');
+          return false;
+        }
+
+        final response = await http.get(
+          Uri.parse('$backendUrl/users/me'),
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+            'Content-Type': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 5));
+
+
+        // 200이면 토큰이 유효함
+        if (response.statusCode == 200) {
+          print('✅ 토큰이 서버에서도 유효함');
+          return true;
+        }
+
+        // 401/403이면 토큰 갱신 시도
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          print('⏰ 서버에서 토큰 거부됨, 갱신 시도');
+          final refreshResult = await kakaoAuthService.refreshTokens();
+          if (refreshResult != null) {
+            print('✅ 토큰 갱신 성공');
+            return true;
+          } else {
+            print('❌ 토큰 갱신 실패 - 재로그인 필요');
+            await kakaoAuthService.clearTokens();
+            return false;
+          }
+        }
+
+        // 그 외 에러는 토큰 무효로 간주
+        print('❌ 예상치 못한 응답: ${response.statusCode}');
+        await kakaoAuthService.clearTokens();
+        return false;
+
+      } catch (e) {
+        print('❌ API 호출 오류: $e');
+
+        // 네트워크 오류인 경우에도 JWT 만료 시간 체크
+        if (e.toString().contains('TimeoutException') ||
+            e.toString().contains('SocketException')) {
+
+          print('⚠️ 네트워크 오류 발생 - JWT 만료 시간 확인 중...');
+
+          // JWT 만료 시간 직접 확인
+          final accessToken = await kakaoAuthService.getAccessToken();
+          if (accessToken != null) {
+            final parts = accessToken.split('.');
+            if (parts.length == 3) {
+              try {
+                final payload = parts[1];
+                final normalized = base64Url.normalize(payload);
+                final decoded = utf8.decode(base64Url.decode(normalized));
+                final payloadMap = jsonDecode(decoded) as Map<String, dynamic>;
+                final exp = payloadMap['exp'] as int;
+                final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+                // JWT가 아직 유효한 경우에만 통과
+                if (exp > now) {
+                  final timeLeft = exp - now;
+                  print('✅ 네트워크 오류지만 JWT는 유효 (${timeLeft}초 = ${(timeLeft / 60).toStringAsFixed(1)}분 남음) - 통과');
+                  return true;
+                } else {
+                  print('❌ 네트워크 오류 + JWT 만료됨 - 재로그인 필요');
+                  await kakaoAuthService.clearTokens();
+                  return false;
+                }
+              } catch (parseError) {
+                print('❌ JWT 파싱 실패: $parseError');
+                await kakaoAuthService.clearTokens();
+                return false;
+              }
+            }
+          }
+
+          print('❌ 네트워크 오류 + 토큰 확인 실패 - 재로그인 필요');
+          await kakaoAuthService.clearTokens();
+          return false;
+        }
+        // 기타 오류는 재로그인 필요
+        await kakaoAuthService.clearTokens();
+        return false;
+      }
     } catch (e) {
-      print('❌ 토큰 확인 오류: $e');
+      print('❌ 토큰 검증 오류: $e');
       return false;
     }
   }
@@ -152,7 +255,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
 
-                  // Lottie 애니메이션 - 원본 크기 그대로
+                  // Lottie 애니메이션
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Column(

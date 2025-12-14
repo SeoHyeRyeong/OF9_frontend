@@ -15,15 +15,17 @@ import 'package:frontend/features/report/report_screen.dart';
 // import 'package:frontend/components/custom_bottom_navbar.dart';
 // bottomNavigationBar: CustomBottomNavBar(
 //   currentIndex: 0,
+//   isDisabled: false, // 네트워크 오류 시 true로 설정
 // ),
-// 위에 currentIndex만 바꾸면 됨
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
+  final bool isDisabled; // 네트워크 오류 등으로 네비게이션 비활성화
 
   const CustomBottomNavBar({
     Key? key,
     required this.currentIndex,
+    this.isDisabled = false,
   }) : super(key: key);
 
   static const _navItems = [
@@ -35,6 +37,11 @@ class CustomBottomNavBar extends StatelessWidget {
   ];
 
   void _handleTap(BuildContext context, int index) {
+    // 비활성화 상태면 아무 동작도 하지 않음
+    if (isDisabled) {
+      return;
+    }
+
     Widget? target;
 
     switch (index) {
@@ -95,7 +102,7 @@ class CustomBottomNavBar extends StatelessWidget {
             final isActive = currentIndex == index;
             return GestureDetector(
               onTap: () => _handleTap(context, index),
-              behavior: HitTestBehavior.opaque, // 터치 안 되는 문제 방지
+              behavior: HitTestBehavior.opaque,
               child: SizedBox(
                 width: scaleWidth(32),
                 height: scaleHeight(44),

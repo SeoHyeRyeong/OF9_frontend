@@ -1956,46 +1956,6 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
     });
   }
 
-  /*void _updateFocusState() {
-    setState(() {
-      _isFocused = _focusNode.hasFocus;
-      _showDropdown = _focusNode.hasFocus;
-    });
-    if (_isFocused) {
-      _controller.removeListener(_updateState);
-      if (_controller.text.isEmpty) {
-        _controller.text = '@';
-        _controller.selection = TextSelection.fromPosition(TextPosition(offset: 1));
-      } else if (_selectedFriends.isNotEmpty && !_controller.text.endsWith('@')) {
-        _controller.text = '${_controller.text} @';
-        _controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
-      }
-      _controller.addListener(_updateState);
-      _scrollToTextField();
-    } else {
-      final trimmedText = _controller.text.trim();
-      if (_selectedFriends.isEmpty && (trimmedText.isEmpty || trimmedText == '@')) {
-        _controller.removeListener(_updateState);
-        _focusNode.removeListener(_updateFocusState);
-        _controller.clear();
-        Future.delayed(Duration(milliseconds: 100), () {
-          if (mounted) {
-            _controller.addListener(_updateState);
-            _focusNode.addListener(_updateFocusState);
-            setState(() {
-              _showDropdown = false;
-            });
-          }
-        });
-      } else if (_selectedFriends.isNotEmpty && trimmedText.endsWith('@')) {
-        final nicknames = _selectedFriends.map((f) => f['nickname']).join(', ');
-        _controller.removeListener(_updateState);
-        _controller.text = nicknames;
-        _controller.addListener(_updateState);
-      }
-    }
-  }*/
-
   void _clearText() {
     setState(() {
       _controller.clear();

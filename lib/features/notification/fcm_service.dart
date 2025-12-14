@@ -69,14 +69,18 @@ class FCMService {
   }
 
   // FCM 토큰을 백엔드에 저장
+  // FCM 토큰을 백엔드에 저장
   Future<void> _saveFCMTokenToBackend(String token) async {
     try {
+      print('📤 FCM 토큰 백엔드 저장 시도');
       await NotificationApi.saveFcmToken(token);
       print('✅ FCM 토큰 백엔드 저장 완료');
     } catch (e) {
-      print('❌ FCM 토큰 저장 실패: $e');
+      print('❌ FCM 토큰 저장 실패 (무시): $e');
+      // ✅ 에러 발생해도 앱 실행 계속되도록 catch만 하고 끝
     }
   }
+
 
   // 알림 탭 처리 - NotificationScreen 로직과 동일하게 구현
   void _handleNotificationTap(Map<String, dynamic> data) {

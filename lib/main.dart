@@ -12,6 +12,9 @@ import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:frontend/features/notification/fcm_service.dart';
 import 'firebase_options.dart';
+import 'package:uni_links/uni_links.dart';
+import 'dart:async';
+
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -56,8 +59,61 @@ Future<void> _initializeInBackground() async {
   KakaoSdk.init(nativeAppKey: dotenv.env['NATIVE_APP_KEY']);
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  StreamSubscription? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _initUniLinks();
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initUniLinks() async {
+    try {
+      final initialUri = await getInitialUri();
+      if (initialUri != null) {
+        _handleDeepLink(initialUri);
+      }
+
+      _sub = uriLinkStream.listen((Uri? uri) {
+        if (uri != null) {
+          _handleDeepLink(uri);
+        }
+      });
+    } catch (e) {
+      print('❌ Deep Link 초기화 실패: $e');
+    }
+  }
+
+  void _handleDeepLink(Uri uri) {
+    if (uri.host == 'dodada.site' && uri.pathSegments.length > 1) {
+      if (uri.pathSegments[0] == 'profile') {
+        final userId = uri.pathSegments[1];
+        Future.delayed(const Duration(milliseconds: 500), () {
+          // TODO: OtherUserProfileScreen import 후 사용
+          // navigatorKey.currentState?.push(
+          //   MaterialPageRoute(
+          //     builder: (context) => OtherUserProfileScreen(userId: userId),
+          //   ),
+          // );
+          print('✅ 프로필 페이지로 이동: userId=$userId');
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

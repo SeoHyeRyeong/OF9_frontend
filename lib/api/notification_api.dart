@@ -211,9 +211,16 @@ class NotificationApi {
     try {
       print('📤 FCM 토큰 전송 시도: $fcmToken');
 
-      final response = await _makeRequestWithRetry(  // ✅ 토큰 갱신 로직 적용
+      // ✅ 토큰 확인 - 없으면 저장 안 함
+      final token = await _kakaoAuth.getAccessToken();
+      if (token == null || token.isEmpty) {
+        print('⚠️ 액세스 토큰 없음. FCM 토큰 저장 건너뜀 (로그인 후 자동 전송됨)');
+        return;
+      }
+
+      final response = await _makeRequestWithRetry(
         request: (headers) => http.post(
-          Uri.parse('$baseUrl/users/fcm-token'),  // ✅ 경로 수정 (users 추가)
+          Uri.parse('$baseUrl/users/fcm-token'),
           headers: headers,
           body: jsonEncode({'fcmToken': fcmToken}),
         ),
@@ -228,9 +235,10 @@ class NotificationApi {
       }
     } catch (e) {
       print('🔥 FCM 토큰 저장 오류: $e');
-      rethrow;
+      // ✅ 에러 발생해도 앱 실행은 계속되도록 rethrow 제거
     }
   }
+
 
 }
 

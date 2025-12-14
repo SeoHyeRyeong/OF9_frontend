@@ -49,15 +49,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     // 토큰 확인과 최소 시간 병렬 처리
     final results = await Future.wait([
-      _checkAuthStatus(),
+      _checkAuthAndValidateToken(), // 토큰 검증 및 자동 갱신 포함
       Future.delayed(const Duration(seconds: 3)),
     ]);
 
     final isLoggedIn = results[0] as bool;
-
     if (mounted) {
       await _fadeController.reverse();
-
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
@@ -71,13 +69,19 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  Future<bool> _checkAuthStatus() async {
+  /// 토큰 존재 여부만 확인 → 토큰 검증 및 자동 갱신으로 변경
+  Future<bool> _checkAuthAndValidateToken() async {
     try {
-      final isLoggedIn = await kakaoAuthService.hasStoredTokens();
-      print('🚀 로그인 상태: $isLoggedIn');
-      return isLoggedIn;
+      // validateAndRefreshTokenOnStartup()는:
+      // 1. 토큰 존재 확인
+      // 2. JWT 만료 시간 체크
+      // 3. Access Token 만료되었으면 자동 갱신
+      // 4. Refresh Token도 만료되었으면 false 반환 (재로그인 필요)
+      final isValid = await kakaoAuthService.validateAndRefreshTokenOnStartup();
+      print('🚀 토큰 검증 결과: $isValid');
+      return isValid;
     } catch (e) {
-      print('❌ 토큰 확인 오류: $e');
+      print('❌ 토큰 검증 오류: $e');
       return false;
     }
   }
@@ -152,7 +156,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
 
-                  // Lottie 애니메이션 - 원본 크기 그대로
+                  // Lottie 애니메이션
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Column(

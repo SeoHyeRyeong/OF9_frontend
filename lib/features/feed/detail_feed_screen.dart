@@ -269,7 +269,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
     final originalContent = content;
     _commentController.clear();
-
     _commentFocusNode.unfocus();
     FocusScope.of(context).unfocus();
     await Future.delayed(Duration(milliseconds: 100));
@@ -281,30 +280,37 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           _editingCommentId.toString(),
           originalContent,
         );
-
         print('✅ 댓글 수정 성공');
 
-        // 수정 모드 종료
         setState(() {
           _editingCommentId = null;
         });
 
-        // 댓글 목록 다시 불러오기
         await _loadComments();
       } else {
         // 댓글 작성 모드
+        print('📝 댓글 작성 API 호출 중...');
         final result = await FeedApi.createComment(
             widget.recordId.toString(), originalContent);
-
         final newComment = CommentDto.fromJson(result);
-        if (newComment.totalCommentCount == null) {
-          final currentCount = _feedCountManager.getCommentCount(
-              widget.recordId) ?? _commentCount;
-          _feedCountManager.updateCommentCount(
-              widget.recordId, currentCount + 1);
-        }
-        _commentListManager.addComment(widget.recordId, newComment);
 
+        print('✅ 댓글 작성 API 응답 받음: ${newComment.content}');
+        print('📊 응답에 포함된 totalCommentCount: ${newComment.totalCommentCount}');
+
+        // 서버에서 최신 댓글 목록 다시 불러오기 (이게 가장 확실함)
+        await _loadComments();
+
+        // 댓글 카운트 업데이트
+        if (newComment.totalCommentCount != null) {
+          setState(() {
+            _commentCount = newComment.totalCommentCount!;
+          });
+          _feedCountManager.updateCommentCount(
+              widget.recordId, newComment.totalCommentCount!);
+          print('✅ 댓글 카운트 업데이트: ${newComment.totalCommentCount}');
+        }
+
+        print('✅ 댓글 작성 완료 - 총 ${_comments.length}개');
       }
     } catch (e, stackTrace) {
       print('❌ 댓글 ${_editingCommentId != null ? "수정" : "작성"} 실패: $e');

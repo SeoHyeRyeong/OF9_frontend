@@ -90,8 +90,13 @@ void showCustomActionSheet({
                       final optionIndex = index ~/ 2;
                       final option = options[optionIndex];
 
-                      return ListTile(
-                        title: Center(
+                      return GestureDetector(
+                        onTap: option.onTap,
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          width: double.infinity,
+                          height: scaleHeight(54),
+                          alignment: Alignment.center,
                           child: FixedText(
                             option.text,
                             style: AppFonts.pretendard.body_md_400(context).copyWith(
@@ -99,7 +104,6 @@ void showCustomActionSheet({
                             ),
                           ),
                         ),
-                        onTap: option.onTap,
                       );
                     },
                   ),
@@ -118,7 +122,7 @@ void showCustomActionSheet({
                     backgroundColor: AppColors.gray30,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(scaleHeight(16)),
+                      borderRadius: BorderRadius.circular(scaleHeight(12)),
                     ),
                   ),
                   child: FixedText(

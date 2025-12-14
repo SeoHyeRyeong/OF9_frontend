@@ -599,11 +599,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 _hasNicknameError()
                                     ? FixedText(
                                   '$_currentLength / $_maxLength',
-                                  style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.error),
+                                  style: AppFonts.pretendard.caption_re_400(context).copyWith(color: AppColors.error),
                                 )
                                     : FixedText(
                                   '$_currentLength / $_maxLength',
-                                  style: AppFonts.suite.caption_re_400(context).copyWith(color: AppColors.gray800),
+                                  style: AppFonts.pretendard.caption_re_400(context).copyWith(color: AppColors.gray800),
                                 ),
                               ],
                             ),

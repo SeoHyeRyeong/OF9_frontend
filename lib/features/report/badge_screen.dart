@@ -6,7 +6,7 @@ import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/theme/app_fonts.dart';
 import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/size_utils.dart';
-import 'package:frontend/features/report/report_screen.dart';
+import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 
 class BadgeScreen extends StatefulWidget {
@@ -146,7 +146,7 @@ class _BadgeScreenState extends State<BadgeScreen> {
                     Expanded(
                       child: Center(
                         child: Text(
-                          "나의 뱃지",
+                          "나의 배지",
                           style: AppFonts.pretendard.body_md_500(context).copyWith(
                               color: AppColors.gray900),
                         ),
@@ -190,26 +190,53 @@ class _BadgeScreenState extends State<BadgeScreen> {
                                   children: [
                                     Text(
                                       "직관을 기록하고",
-                                      style: AppFonts.pretendard.body_sm_500(
-                                          context).copyWith(
-                                          color: AppColors.gray700),
+                                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray700),
                                     ),
                                     SizedBox(height: scaleHeight(4)),
                                     Text(
                                       "더 많은 배지를 모아 보세요!",
-                                      style: AppFonts.pretendard.body_sm_500(
-                                          context).copyWith(
-                                          color: AppColors.gray900),
+                                      style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray900),
                                     ),
                                   ],
                                 ),
                               ),
-                              Container(
-                                alignment: Alignment.center,
-                                child: SvgPicture.asset(
-                                  AppImages.party,
-                                  width: scaleWidth(48),
-                                  height: scaleHeight(48),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => TicketOcrScreen(),
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  width: scaleWidth(94),
+                                  height: scaleHeight(42),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.pri800,
+                                    borderRadius: BorderRadius.circular(scaleWidth(16)),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.only(left: scaleWidth(16)),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "기록하기",
+                                          style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray20),
+                                        ),
+                                        SizedBox(width: scaleWidth(2)),
+                                        SvgPicture.asset(
+                                          AppImages.arrow,
+                                          width: scaleWidth(16),
+                                          height: scaleHeight(16),
+                                          color: AppColors.gray20,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],

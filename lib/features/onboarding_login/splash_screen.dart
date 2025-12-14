@@ -3,14 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
 import 'package:frontend/features/onboarding_login/login_screen.dart';
+import 'package:frontend/features/onboarding_login/kakao_auth_service.dart';
 import 'package:frontend/features/report/report_screen.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/theme/app_imgs.dart';
 
 class SplashScreen extends StatefulWidget {
-  final bool isLoggedIn;
-
-  const SplashScreen({Key? key, required this.isLoggedIn}) : super(key: key);
+  const SplashScreen({Key? key}) : super(key: key);
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -21,6 +20,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _lottieController;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  final kakaoAuthService = KakaoAuthService();
 
   @override
   void initState() {
@@ -44,12 +44,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startSplashSequence() async {
+    // 페이드 인 즉시 시작
     _fadeController.forward();
 
-    await Future.wait([
+    // 토큰 확인과 최소 시간 병렬 처리
+    final results = await Future.wait([
+      _checkAuthStatus(),
       Future.delayed(const Duration(seconds: 3)),
-      _performAppInitialization(),
     ]);
+
+    final isLoggedIn = results[0] as bool;
 
     if (mounted) {
       await _fadeController.reverse();
@@ -57,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen>
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
-          widget.isLoggedIn ? const ReportScreen() : const LoginScreen(),
+          isLoggedIn ? const ReportScreen() : const LoginScreen(),
           transitionDuration: const Duration(milliseconds: 300),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
@@ -67,8 +71,15 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  Future<void> _performAppInitialization() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+  Future<bool> _checkAuthStatus() async {
+    try {
+      final isLoggedIn = await kakaoAuthService.hasStoredTokens();
+      print('🚀 로그인 상태: $isLoggedIn');
+      return isLoggedIn;
+    } catch (e) {
+      print('❌ 토큰 확인 오류: $e');
+      return false;
+    }
   }
 
   @override
@@ -80,11 +91,10 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    // 중복 제거된 SystemUiOverlayStyle 설정
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark, // 한 번만 지정
+        statusBarIconBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.dark,
         systemNavigationBarDividerColor: Colors.transparent,
@@ -103,7 +113,7 @@ class _SplashScreenState extends State<SplashScreen>
         removeBottom: true,
         removeLeft: true,
         removeRight: true,
-        child: Container(
+        child: SizedBox(
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
           child: LayoutBuilder(
@@ -114,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
               return Stack(
                 children: [
                   // 배경 레이어
-                  Container(
+                  SizedBox(
                     width: screenWidth,
                     height: screenHeight,
                     child: Column(
@@ -142,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
 
-                  // Lottie 애니메이션
+                  // Lottie 애니메이션 - 원본 크기 그대로
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Column(
@@ -153,9 +163,9 @@ class _SplashScreenState extends State<SplashScreen>
                           child: Lottie.asset(
                             'assets/animations/splash.json',
                             controller: _lottieController,
-                            width: scaleWidth(225),
-                            height: scaleHeight(136),
                             fit: BoxFit.contain,
+                            width: scaleWidth(230),
+                            height: scaleHeight(140),
                             repeat: true,
                             onLoaded: (composition) {
                               _lottieController

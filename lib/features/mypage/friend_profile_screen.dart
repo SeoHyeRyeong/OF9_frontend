@@ -19,9 +19,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
 import 'package:frontend/features/feed/feed_item_widget.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
+import 'package:frontend/utils/follow_status_manager.dart';
 import 'package:frontend/components/custom_action_sheet.dart';
 import 'dart:async';
 import 'package:frontend/components/custom_toast.dart';
+import 'package:frontend/utils/team_utils.dart';
 
 class FriendProfileScreen extends StatefulWidget {
   final int userId;
@@ -39,7 +41,7 @@ class FriendProfileScreen extends StatefulWidget {
 
 class _FriendProfileScreenState extends State<FriendProfileScreen>
     with SingleTickerProviderStateMixin {
-  int selectedTabIndex = 2; // 0: 캘린더, 1: 리스트, 2: 모아보기
+  int selectedTabIndex = 1; // 0: 캘린더, 1: 리스트, 2: 모아보기
   String nickname = "로딩중...";
   String favTeam = "로딩중...";
   String? profileImageUrl;
@@ -50,6 +52,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   String? followStatus;
   bool isBlocked = false;
   final _likeManager = FeedCountManager();
+  final _followManager = FollowStatusManager();
   bool _showStickyHeader = false;
   bool _unfollowPending = false;
   bool _unfollowCancelled = false;
@@ -92,8 +95,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       vsync: this,
     );
 
-    _tabPageController = PageController(initialPage: 2);
-    _currentTabPageValue = 2.0;
+    _tabPageController = PageController(initialPage: 1);
+    _currentTabPageValue = 1.0;
     _tabPageController.addListener(() {
       if (_tabPageController.hasClients) {
         setState(() {
@@ -410,6 +413,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               followerCount = followerCount > 0 ? followerCount - 1 : 0;
               isMutualFollow = mutual;
             });
+            // 🔥 전역 상태 업데이트
+            _followManager.updateFollowStatus(widget.userId, 'NOT_FOLLOWING');
           }
 
           _hasStateChanged = true;
@@ -458,6 +463,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 // 📡 백엔드 응답에서 isFollower 값 사용
                 isMutualFollow = responseData['isFollower'] ?? false;
               });
+              // 🔥 전역 상태 업데이트
+              _followManager.updateFollowStatus(widget.userId, 'FOLLOWING');
             } catch (e) {
               print('재팔로우 API 에러: $e');
             }
@@ -476,12 +483,16 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             followStatus = 'REQUESTED';
             // 📡 백엔드 응답에서 isFollower 값 사용
             isMutualFollow = responseData['isFollower'] ?? false;
+            // 🔥 전역 상태 업데이트
+            _followManager.updateFollowStatus(widget.userId, 'REQUESTED');
           } else {
             followStatus = 'FOLLOWING';
             followerCount++;
             // 📡 백엔드 응답에서 isFollower 값 사용
             isMutualFollow = responseData['isFollower'] ?? false;
             _hasStateChanged = true;
+            // 🔥 전역 상태 업데이트
+            _followManager.updateFollowStatus(widget.userId, 'FOLLOWING');
           }
         });
       } else if (followStatus == 'REQUESTED') {
@@ -505,6 +516,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             followStatus = 'NOT_FOLLOWING';
             isMutualFollow = mutual;
           });
+          // 🔥 전역 상태 업데이트
+          _followManager.updateFollowStatus(widget.userId, 'NOT_FOLLOWING');
         } catch (e) {
           print('사용자 정보 업데이트 실패: $e');
           setState(() {
@@ -539,6 +552,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               followingCount = response['followingCount'] ?? followingCount;
               postCount = response['recordCount'] ?? postCount;
             });
+
+            // 차단 해제 후 즉시 데이터 새로고침
+            await _loadMyRecords();
           }
         } catch (e) {
           print('❌ 프로필 정보 갱신 실패: $e');
@@ -570,6 +586,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               followingCount = response['followingCount'] ?? followingCount;
               postCount = response['recordCount'] ?? postCount;
               isMutualFollow = false;
+            });
+
+            // 차단 후 데이터 초기화
+            setState(() {
+              feedList = [];
+              calendarData = {};
             });
           }
         } catch (e) {
@@ -902,7 +924,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                   return Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                           : null,
                       strokeWidth: 2,
                       color: AppColors.pri400,
@@ -918,31 +941,27 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             ),
           ),
           SizedBox(width: scaleWidth(16)),
+          // 팀 정보 + 닉네임 + 통계
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: scaleHeight(2)),
+                SizedBox(height: scaleHeight(6)),
                 if (!isLoading && favTeam.isNotEmpty && favTeam != "응원팀 없음") ...[
                   IntrinsicWidth(
-                    child: Container(
-                      height: scaleHeight(22),
-                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
-                      decoration: BoxDecoration(
-                        color: AppColors.gray30,
-                        borderRadius: BorderRadius.circular(scaleWidth(20)),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "$favTeam 팬",
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
-                          color: AppColors.pri800,
-                        ),
-                      ),
+                    child: TeamUtils.buildTeamBadge(
+                      context: context,
+                      teamName: favTeam,
+                      textStyle: AppFonts.pretendard.caption_sm_500(context),
+                      padding: EdgeInsets.symmetric(horizontal: scaleWidth(7)),
+                      borderRadius: scaleWidth(4),
+                      height: scaleHeight(18),
+                      suffix: ' 팬',
                     ),
                   ),
                   SizedBox(height: scaleHeight(8)),
                 ],
+                // 닉네임
                 isLoading
                     ? Text("...", style: AppFonts.pretendard.head_sm_600(context))
                     : Text(
@@ -953,6 +972,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                   ),
                 ),
                 SizedBox(height: scaleHeight(12)),
+                // 통계 정보 (게시글, 팔로잉, 팔로워)
                 Row(
                   children: [
                     _buildStatItem("게시글", postCount),
@@ -995,14 +1015,14 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       children: [
         Text(
           label,
-          style: AppFonts.suite.caption_re_400(context).copyWith(
+          style: AppFonts.pretendard.caption_md_400(context).copyWith(
             color: AppColors.gray500,
           ),
         ),
         SizedBox(width: scaleWidth(2)),
         Text(
           count.toString(),
-          style: AppFonts.suite.caption_md_500(context).copyWith(
+          style: AppFonts.pretendard.caption_md_400(context).copyWith(
             color: AppColors.gray900,
           ),
         ),
@@ -1015,7 +1035,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         child: content,
       );
     }
-
     return content;
   }
 
@@ -1053,7 +1072,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           ),
           child: Text(
             _getButtonText(),
-            style: AppFonts.suite.caption_md_500(context).copyWith(color: _getButtonTextColor()),
+            style: AppFonts.pretendard.caption_md_500(context).copyWith(color: _getButtonTextColor()),
           ),
         ),
       ),
@@ -1185,6 +1204,24 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   // 캘린더 탭
   Widget _buildCalendarTab() {
+    // 차단되거나 비공개 계정인 경우
+    if (isBlocked) {
+      return Center(
+        child: Text(
+          '차단된 사용자입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+    if (isPrivate && followStatus != 'FOLLOWING') {
+      return Center(
+        child: Text(
+          '비공개 계정입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+
     return _KeepAliveWrapper(
       child: isLoadingRecords
           ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
@@ -1587,7 +1624,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(scaleWidth(16)),
-        border: Border.all(color: AppColors.gray50, width: 1),
         boxShadow: [
           BoxShadow(
             color: Color(0x1A9397A1),
@@ -1609,7 +1645,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             children: [
               Text(
                 '${_focusedDay.month}월 직관 분석',
-                style: AppFonts.suite.body_sm_500(context).copyWith(color: AppColors.gray900),
+                style: AppFonts.pretendard.body_sm_500(context).copyWith(color: AppColors.gray900),
               ),
               SizedBox(width: scaleWidth(6)),
               Container(
@@ -1622,7 +1658,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 alignment: Alignment.center,
                 child: Text(
                   '리포트',
-                  style: AppFonts.suite.caption_md_500(context).copyWith(
+                  style: AppFonts.pretendard.caption_md_500(context).copyWith(
                     color: AppColors.pri700,
                     fontSize: 10.sp,
                   ),
@@ -1636,7 +1672,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             Center(
               child: Text(
                 '업로드한 기록이 아직 없어요',
-                style: AppFonts.suite.body_md_500(context).copyWith(color: AppColors.gray300),
+                style: AppFonts.pretendard.body_md_500(context).copyWith(color: AppColors.gray300),
               ),
             )
           else
@@ -1651,7 +1687,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     children: [
                       Text(
                         '직관 승률',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                        style: AppFonts.pretendard.caption_md_500(context).copyWith(
                           color: AppColors.gray500,
                           fontSize: 10.sp,
                         ),
@@ -1668,7 +1704,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     children: [
                       Text(
                         '기록 횟수',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                        style: AppFonts.pretendard.caption_md_500(context).copyWith(
                           color: AppColors.gray500,
                           fontSize: 10.sp,
                         ),
@@ -1685,7 +1721,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     children: [
                       Text(
                         '공감 받은 횟수',
-                        style: AppFonts.suite.caption_md_500(context).copyWith(
+                        style: AppFonts.pretendard.caption_md_500(context).copyWith(
                           color: AppColors.gray500,
                           fontSize: 10.sp,
                         ),
@@ -1716,6 +1752,24 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   ///리스트 탭
   Widget _buildListTab() {
+    // 차단되거나 비공개 계정인 경우
+    if (isBlocked) {
+      return Center(
+        child: Text(
+          '차단된 사용자입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+    if (isPrivate && followStatus != 'FOLLOWING') {
+      return Center(
+        child: Text(
+          '비공개 계정입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+
     return _KeepAliveWrapper(
       child: isLoadingRecords
           ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
@@ -1740,9 +1794,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
             final feedData = {
               'recordId': record['recordId'],
+              'userId': record['userId'] ?? widget.userId,
               'profileImageUrl': record['profileImageUrl'],
               'nickname': record['nickname'],
               'favTeam': record['favTeam'],
+              'createdAt': record['createdAt'] ?? '',
               'mediaUrls': record['mediaUrls'] ?? [],
               'longContent': record['longContent'] ?? '',
               'emotionCode': record['emotionCode'],
@@ -1754,6 +1810,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               'isLiked': isLiked,
               'likeCount': likeCount,
               'commentCount': commentCount,
+              'followStatus': followStatus ?? 'NOT_FOLLOWING',
             };
 
             return FeedItemWidget(
@@ -1788,6 +1845,24 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   ///모아보기 탭
   Widget _buildGridTab() {
+    // 차단되거나 비공개 계정인 경우
+    if (isBlocked) {
+      return Center(
+        child: Text(
+          '차단된 사용자입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+    if (isPrivate && followStatus != 'FOLLOWING') {
+      return Center(
+        child: Text(
+          '비공개 계정입니다',
+          style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400),
+        ),
+      );
+    }
+
     return _KeepAliveWrapper(
       child: isLoadingRecords
           ? Center(child: CircularProgressIndicator(color: AppColors.pri500))
@@ -1912,7 +1987,7 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
             Expanded(
               child: Text(
                 nickname,
-                style: AppFonts.suite.head_sm_700(context).copyWith(color: Colors.black),
+                style: AppFonts.pretendard.head_sm_600(context).copyWith(color: Colors.black),
                 overflow: TextOverflow.ellipsis,
               ),
             ),

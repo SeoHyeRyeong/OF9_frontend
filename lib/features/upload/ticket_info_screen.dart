@@ -590,7 +590,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                               alignment: Alignment.centerLeft,
                                               decoration: BoxDecoration(
                                                 color: AppColors.gray50,
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius: BorderRadius.circular(12),
                                               ),
                                               child: Row(
                                                 children: [
@@ -637,7 +637,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                               alignment: Alignment.centerLeft,
                                               decoration: BoxDecoration(
                                                 color: AppColors.gray50,
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius: BorderRadius.circular(12),
                                               ),
                                               child: Row(
                                                 children: [
@@ -709,7 +709,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                         alignment: Alignment.centerLeft,
                                         decoration: BoxDecoration(
                                           color: AppColors.gray50,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Row(
                                           children: [
@@ -774,7 +774,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                         alignment: Alignment.centerLeft,
                                         decoration: BoxDecoration(
                                           color: AppColors.gray50,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Row(
                                           children: [
@@ -828,7 +828,7 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                         alignment: Alignment.centerLeft,
                                         decoration: BoxDecoration(
                                           color: AppColors.gray50,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Row(
                                           children: [

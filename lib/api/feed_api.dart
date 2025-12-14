@@ -94,6 +94,8 @@ class FeedApi {
   /// 1. 전체 피드 조회
   static Future<List<Map<String, dynamic>>> getAllFeed({
     String? team,
+    String? stadium,
+    String? seatInfo,
     int page = 0,
     int size = 20,
   }) async {
@@ -104,6 +106,14 @@ class FeedApi {
 
     if (team != null && team.isNotEmpty) {
       queryParams['team'] = team;
+    }
+
+    if (stadium != null && stadium.isNotEmpty) {
+      queryParams['stadium'] = stadium;
+    }
+
+    if (seatInfo != null && seatInfo.isNotEmpty) {
+      queryParams['seatInfo'] = seatInfo;
     }
 
     final uri = Uri.parse('$baseUrl/feed/all').replace(
@@ -126,6 +136,8 @@ class FeedApi {
   /// 2. 팔로잉 피드 조회
   static Future<List<Map<String, dynamic>>> getFollowingFeed({
     String? team,
+    String? stadium,
+    String? seatInfo,
     int page = 0,
     int size = 20,
   }) async {
@@ -136,6 +148,14 @@ class FeedApi {
 
     if (team != null && team.isNotEmpty) {
       queryParams['team'] = team;
+    }
+
+    if (stadium != null && stadium.isNotEmpty) {
+      queryParams['stadium'] = stadium;
+    }
+
+    if (seatInfo != null && seatInfo.isNotEmpty) {
+      queryParams['seatInfo'] = seatInfo;
     }
 
     final uri = Uri.parse('$baseUrl/feed/following').replace(

@@ -41,7 +41,7 @@ class MyPageScreen extends StatefulWidget {
 }
 
 class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderStateMixin {
-  int selectedTabIndex = 2; // 0: 캘린더, 1: 리스트, 2: 모아보기(그리드)
+  int selectedTabIndex = 1; // 0: 캘린더, 1: 리스트, 2: 모아보기(그리드)
 
   String nickname = "로딩중...";
   String favTeam = "로딩중...";
@@ -88,8 +88,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       vsync: this,
     );
 
-    _tabPageController = PageController(initialPage: 2); // 초기 페이지 설정: 모아보기
-    _currentTabPageValue = 2.0;
+    _tabPageController = PageController(initialPage: 1); // 초기 페이지 설정: 모아보기
+    _currentTabPageValue = 1.0;
 
     _tabPageController.addListener(() {
       if (_tabPageController.hasClients) {
@@ -578,8 +578,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 ),
                 SizedBox(width: scaleWidth(20)),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final result = await Navigator.push(
                       context,
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -956,6 +956,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
             'profileImageUrl': record['profileImageUrl'],
             'nickname': record['nickname'],
             'favTeam': record['favTeam'],
+            'followStatus': record['followStatus'] ?? 'ME',
             'mediaUrls': record['mediaUrls'] ?? [],
             'longContent': record['longContent'] ?? '',
             'emotionCode': record['emotionCode'],
@@ -1458,8 +1459,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
         Text(
           text,
           style: AppFonts.suite.c3_sb(context).copyWith(
-            color: textColor,
-            fontSize: 8.sp
+              color: textColor,
+              fontSize: 8.sp
           ),
         ),
       ],
@@ -1477,7 +1478,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(scaleWidth(16)),
-        border: Border.all(color: AppColors.gray50, width: 1),
         boxShadow: [
           BoxShadow(
             color: const Color(0x1A9397A1),
@@ -1626,7 +1626,7 @@ class _MyPageTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-   return Container(
+    return Container(
       color: Colors.white,
       child: child,
     );

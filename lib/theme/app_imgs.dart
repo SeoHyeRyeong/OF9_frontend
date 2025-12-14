@@ -100,6 +100,7 @@ class AppImages {
 
   //피드
   static const search = 'assets/imgs/ic_feed/ic_search.svg';
+  static const search2 = 'assets/imgs/ic_feed/ic_search_2.svg';
   static const x = 'assets/imgs/ic_feed/ic_x.svg';
   static const update = 'assets/imgs/ic_feed/ic_update.svg';
   static const location = 'assets/imgs/ic_feed/location_on.svg';
@@ -114,10 +115,25 @@ class AppImages {
   static const ellipse = 'assets/imgs/ic_feed/ellipse.svg';
   static const dots = 'assets/imgs/ic_feed/dots_vertical.svg';
   static const send = 'assets/imgs/ic_feed/send.svg';
-  static const comment_detail = 'assets/imgs/ic_feed/comment_detail.svg';
   static const logo_dodada = 'assets/imgs/ic_feed/logo_dodada.png';
   static const more = 'assets/imgs/ic_feed/more_vert.svg';
   static const dots_horizontal = 'assets/imgs/ic_feed/dots_horizontal.svg';
+
+  //필터링
+  static const filter_doosan = 'assets/imgs/ic_feed/ic_filter/filter_doosan.svg';
+  static const filter_hanwha = 'assets/imgs/ic_feed/ic_filter/filter_hanwha.svg';
+  static const filter_kia = 'assets/imgs/ic_feed/ic_filter/filter_kia.svg';
+  static const filter_kiwoom = 'assets/imgs/ic_feed/ic_filter/filter_kiwoom.svg';
+  static const filter_kt = 'assets/imgs/ic_feed/ic_filter/filter_kt.svg';
+  static const filter_lg = 'assets/imgs/ic_feed/ic_filter/filter_lg.svg';
+  static const filter_lotte = 'assets/imgs/ic_feed/ic_filter/filter_lotte.svg';
+  static const filter_nc = 'assets/imgs/ic_feed/ic_filter/filter_nc.svg';
+  static const filter_samsung = 'assets/imgs/ic_feed/ic_filter/filter_samsung.svg';
+  static const filter_ssg = 'assets/imgs/ic_feed/ic_filter/filter_ssg.svg';
+
+
+
+
 
   //마이페이지
   static const btn_camera = 'assets/imgs/btn_camera_24.svg';
@@ -134,4 +150,5 @@ class AppImages {
   static const location_marker = 'assets/imgs/ic_report/ic_location_marker.svg';
   static const day = 'assets/imgs/ic_report/ic_day.png';
   static const stadium = 'assets/imgs/ic_report/ic_stadium.png';
+  static const arrow = 'assets/imgs/ic_report/arrow_forward_ios.svg';
 }

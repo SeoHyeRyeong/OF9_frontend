@@ -12,6 +12,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:frontend/features/upload/ticket_ocr_screen.dart';
 import 'package:frontend/features/report/badge_screen.dart';
+import 'package:flutter/rendering.dart';
+import 'dart:typed_data';
+import 'package:gal/gal.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({Key? key}) : super(key: key);
@@ -25,6 +29,9 @@ class _ReportScreenState extends State<ReportScreen> {
   Map<String, dynamic>? _reportData;
   Map<String, dynamic>? _userData; // 사용자 정보 저장
   String? _errorMessage;
+
+  // 티켓 위젯 캡처를 위한 GlobalKey
+  final GlobalKey _ticketKey = GlobalKey();
 
   // 감정 코드와 이미지 경로 매핑 (AppImages에 정의된 경로 사용)
   final Map<int, String> _emotionImageMap = {
@@ -147,6 +154,54 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
+  // 티켓 이미지 저장 함수
+  Future<void> _saveTicketImage() async {
+    try {
+      // Android 13 이상에서는 권한 불필요, iOS는 항상 권한 필요
+      if (Theme.of(context).platform == TargetPlatform.iOS) {
+        final status = await Permission.photos.request();
+        if (!status.isGranted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('갤러리 접근 권한이 필요합니다.')),
+            );
+          }
+          return;
+        }
+      }
+
+      // RepaintBoundary를 찾아서 이미지로 변환
+      RenderRepaintBoundary boundary =
+      _ticketKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
+      // 고해상도 이미지를 위해 pixelRatio 설정
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      // 임시 파일 경로 생성
+      final String fileName = "baseball_diary_${DateTime.now().millisecondsSinceEpoch}.png";
+
+      // gal 패키지로 갤러리에 저장
+      await Gal.putImageBytes(pngBytes, name: fileName);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('이미지가 갤러리에 저장되었습니다.'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ 이미지 저장 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('이미지 저장 중 오류가 발생했습니다.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool hasRecords = !_isLoading && _errorMessage == null &&
@@ -176,12 +231,24 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                   child: Align(
                     alignment: Alignment.topLeft,
-                    child: Text(
-                      '2025',
-                      style: AppFonts.pretendard.title_md_600(context).copyWith(
-                        color: Colors.black,
-                        height: 1.0,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '2025',
+                          style: AppFonts.pretendard.title_md_600(context).copyWith(
+                            color: Colors.black,
+                            height: 1.0,
+                          ),
+                        ),
+                        SizedBox(width: scaleWidth(10)),
+                        SvgPicture.asset(
+                          AppImages.dropdown,
+                          width: scaleWidth(16),
+                          height: scaleHeight(16),
+                          fit: BoxFit.contain,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -257,7 +324,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  /// 카운트다운, 티켓 요약 카드
+  ///카운트다운,티켓 요약 카드
   Widget _buildCountdownSection({required bool hasRecords}) {
     final seasonInfo = _reportData?['seasonInfo'];
     final message = seasonInfo?['message'] ?? '시즌 정보 없음';
@@ -353,7 +420,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     final bool isNumeric = int.tryParse(
                         daysRemainingStr[index]) != null;
                     final Color textColor = (isDDay && isNumeric) ? AppColors
-                        .error : AppColors.gray900;
+                        .error: AppColors.gray900;
 
                     return Padding(
                       padding: EdgeInsets.only(
@@ -417,277 +484,273 @@ class _ReportScreenState extends State<ReportScreen> {
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: scaleWidth(16)),
-      child: Container(
-        width: double.infinity,
-        height: scaleHeight(195),
-        child: Stack(
-          children: [
-            // 기본 티켓
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(scaleWidth(12)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x339397A1),
-                    blurRadius: scaleWidth(32),
-                    offset: Offset(0, 0),
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: CustomPaint(
-                painter: TicketShapePainter(
-                  backgroundColor: Colors.white,
-                  dividerColor: Color(0xFFB1C4D3),
-                  notchRadius: scaleWidth(12),
-                  dividerDashWidth: scaleHeight(7),
-                  dividerDashSpace: scaleHeight(7),
-                  dividerXPosition: (MediaQuery
-                      .of(context)
-                      .size
-                      .width - scaleWidth(32)) * 0.7,
-                  dividerStrokeWidth: 1.47,
+      child: RepaintBoundary(
+        key: _ticketKey,
+        child: Container(
+          width: double.infinity,
+          height: scaleHeight(195),
+          child: Stack(
+            children: [
+              // 기본 티켓
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(scaleWidth(12)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x339397A1),
+                      blurRadius: scaleWidth(32),
+                      offset: Offset(0, 0),
+                      spreadRadius: 0,
+                    ),
+                  ],
                 ),
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: scaleWidth(15.27),
-                    top: scaleHeight(16.4),
-                    right: scaleWidth(10.25),
+                child: CustomPaint(
+                  painter: TicketShapePainter(
+                    backgroundColor: Colors.white,
+                    dividerColor: Color(0xFFB1C4D3),
+                    notchRadius: scaleWidth(12),
+                    dividerDashWidth: scaleHeight(7),
+                    dividerDashSpace: scaleHeight(7),
+                    dividerXPosition: (MediaQuery
+                        .of(context)
+                        .size
+                        .width - scaleWidth(32)) * 0.7,
+                    dividerStrokeWidth: 1.47,
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 왼쪽 영역
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 프로필
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: scaleWidth(32),
-                                  height: scaleHeight(32),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(
-                                        scaleWidth(11.85)),
-                                    border: Border.all(
-                                        color: AppColors.gray100, width: 0.76),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(
-                                        scaleWidth(11.85)),
-                                    child: profileImageUrl != null &&
-                                        profileImageUrl!.isNotEmpty
-                                        ? Image.network(
-                                      profileImageUrl!,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                      errorBuilder: (context, error,
-                                          stackTrace) =>
-                                          SvgPicture.asset(
-                                            AppImages.profile,
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            fit: BoxFit.cover,
-                                          ),
-                                    )
-                                        : SvgPicture.asset(
-                                      AppImages.profile,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                      fit: BoxFit.cover,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: scaleWidth(15.27),
+                      top: scaleHeight(16.4),
+                      right: scaleWidth(10.25),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 왼쪽 영역
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 프로필
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: scaleWidth(32),
+                                    height: scaleHeight(32),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                          scaleWidth(11.85)),
+                                      border: Border.all(
+                                          color: AppColors.gray100, width: 0.76),
                                     ),
-                                  ),
-                                ),
-                                SizedBox(width: scaleWidth(9)),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      nickname,
-                                      style: AppFonts.suite.caption_md_500(
-                                          context).copyWith(
-                                          color: AppColors.gray800),
-                                    ),
-                                    if (favTeam != '응원팀 없음')
-                                      Text(
-                                        "$favTeam 팬",
-                                        style: AppFonts.suite.caption_re_400(
-                                            context).copyWith(
-                                            color: AppColors.gray300),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                          scaleWidth(11.85)),
+                                      child: profileImageUrl != null &&
+                                          profileImageUrl!.isNotEmpty
+                                          ? Image.network(
+                                        profileImageUrl!,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        errorBuilder: (context, error,
+                                            stackTrace) =>
+                                            SvgPicture.asset(
+                                              AppImages.profile,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                              fit: BoxFit.cover,
+                                            ),
+                                      )
+                                          : SvgPicture.asset(
+                                        AppImages.profile,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        fit: BoxFit.cover,
                                       ),
+                                    ),
+                                  ),
+                                  SizedBox(width: scaleWidth(9)),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        nickname,
+                                        style: AppFonts.suite.caption_md_500(
+                                            context).copyWith(
+                                            color: AppColors.gray800),
+                                      ),
+                                      if (favTeam != '응원팀 없음')
+                                        Text(
+                                          "$favTeam 팬",
+                                          style: AppFonts.suite.caption_re_400(
+                                              context).copyWith(
+                                              color: AppColors.gray300),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: scaleHeight(3)),
+
+                              Align(
+                                alignment: Alignment((0.36 * 2) - 1, 0),
+                                child: Text(
+                                  "${totalWinRate % 1 == 0
+                                      ? totalWinRate.toInt()
+                                      : totalWinRate.toStringAsFixed(1)}%",
+                                  style: TextStyle(
+                                    fontFamily: AppFonts.suiteFontFamily,
+                                    fontSize: 42.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.gray800,
+                                    height: 1.6,
+                                    letterSpacing: -0.84,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+
+                              Align(
+                                alignment: Alignment((0.37 * 2) - 1, 0),
+                                child: Text(
+                                  "총 ${totalGames}회의 경기를 관람했어요",
+                                  style: AppFonts.suite.caption_re_400(context)
+                                      .copyWith(
+                                      color: AppColors.gray600, fontSize: 10.sp),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+
+                              SizedBox(height: scaleHeight(14)),
+
+                              Align(
+                                alignment: Alignment((0.29 * 2) - 1, 0),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildWinLossDrawBadge(
+                                        AppImages.win, totalWin),
+                                    SizedBox(width: scaleWidth(10)),
+                                    _buildWinLossDrawBadge(
+                                        AppImages.tie, totalDraw),
+                                    SizedBox(width: scaleWidth(10)),
+                                    _buildWinLossDrawBadge(
+                                        AppImages.lose, totalLose),
                                   ],
                                 ),
-                              ],
-                            ),
-                            SizedBox(height: scaleHeight(3)),
-
-                            Align(
-                              alignment: Alignment((0.36 * 2) - 1, 0),
-                              child: Text(
-                                "${totalWinRate % 1 == 0
-                                    ? totalWinRate.toInt()
-                                    : totalWinRate.toStringAsFixed(1)}%",
-                                style: TextStyle(
-                                  fontFamily: AppFonts.suiteFontFamily,
-                                  fontSize: 42.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.gray800,
-                                  height: 1.6,
-                                  letterSpacing: -0.84,
-                                ),
-                                textAlign: TextAlign.center,
                               ),
-                            ),
-
-                            Align(
-                              alignment: Alignment((0.37 * 2) - 1, 0),
-                              child: Text(
-                                "총 ${totalGames}회의 경기를 관람했어요",
-                                style: AppFonts.suite.caption_re_400(context)
-                                    .copyWith(
-                                    color: AppColors.gray600, fontSize: 10.sp),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-
-                            SizedBox(height: scaleHeight(14)),
-
-                            Align(
-                              alignment: Alignment((0.29 * 2) - 1, 0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                            ],
+                          ),
+                        ),
+                        // 오른쪽 홈/원정 박스
+                        Column(
+                          children: [
+                            Expanded(
+                              child: Column(
                                 children: [
-                                  _buildWinLossDrawBadge(
-                                      AppImages.win, totalWin),
-                                  SizedBox(width: scaleWidth(10)),
-                                  _buildWinLossDrawBadge(
-                                      AppImages.tie, totalDraw),
-                                  SizedBox(width: scaleWidth(10)),
-                                  _buildWinLossDrawBadge(
-                                      AppImages.lose, totalLose),
+                                  Expanded(child: _buildHomeAwayBox(
+                                      "홈", homeWinRate, homeWin, homeLose)),
+                                  SizedBox(height: scaleHeight(8)),
+                                  Expanded(child: _buildHomeAwayBox(
+                                      "원정", awayWinRate, awayWin, awayLose)),
                                 ],
+                              ),
+                            ),
+                            SizedBox(height: scaleHeight(14)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 기록 없을 때만 블러 오버레이 표시
+              if (!hasRecords)
+                Container(
+                  width: double.infinity,
+                  height: scaleHeight(195),
+                  child: ClipPath(
+                    clipper: TicketShapeClipper(
+                      notchRadius: scaleWidth(12),
+                      dividerXPosition: (MediaQuery.of(context).size.width - scaleWidth(32)) * 0.7,
+                    ),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                      child: Container(
+                        width: double.infinity,
+                        height: scaleHeight(195), // 전체 티켓 높이
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(height: scaleHeight(5)),
+                            Text(
+                              "첫 직관 기록을 시작해 보세요!",
+                              style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray800),
+                            ),
+                            SizedBox(height: scaleHeight(10)),
+                            Text(
+                              "첫 직관을 기록하고 나의 승률 데이터를 확인해 보세요.",
+                              style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray600),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: scaleHeight(23)),
+                            Container(
+                              width: scaleWidth(178),
+                              height: scaleHeight(45),
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation1, animation2) => const TicketOcrScreen(),
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.gray700,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(scaleWidth(16)),
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  elevation: 0,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "직관 기록하러 가기",
+                                      style: AppFonts.pretendard.body_md_500(context).copyWith(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(width: scaleWidth(3)),
+                                    SvgPicture.asset(
+                                      AppImages.arrow,
+                                      width: scaleWidth(20),
+                                      height: scaleHeight(20),
+                                      color: AppColors.gray20,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      // 오른쪽 홈/원정 박스
-                      Column(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Expanded(child: _buildHomeAwayBox(
-                                    "홈", homeWinRate, homeWin, homeLose)),
-                                SizedBox(height: scaleHeight(8)),
-                                Expanded(child: _buildHomeAwayBox(
-                                    "원정", awayWinRate, awayWin, awayLose)),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: scaleHeight(14)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // 기록 없을 때만 블러 오버레이 표시
-            if (!hasRecords)
-              Container(
-                width: double.infinity,
-                height: scaleHeight(195),
-                child: ClipPath(
-                  clipper: TicketShapeClipper(
-                    notchRadius: scaleWidth(12),
-                    dividerXPosition: (MediaQuery
-                        .of(context)
-                        .size
-                        .width - scaleWidth(32)) * 0.7,
-                  ),
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                    child: Container(
-                      width: double.infinity,
-                      height: scaleHeight(195), // 전체 티켓 높이
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.5),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(height: scaleHeight(5)),
-                          Text(
-                            "첫 직관 기록을 시작해 보세요!",
-                            style: AppFonts.pretendard.head_sm_600(context)
-                                .copyWith(color: AppColors.gray800),
-                          ),
-                          SizedBox(height: scaleHeight(10)),
-                          Text(
-                            "첫 직관을 기록하고 나의 승률 데이터를 확인해 보세요.",
-                            style: AppFonts.pretendard.caption_md_500(context)
-                                .copyWith(color: AppColors.gray600),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: scaleHeight(23)),
-                          Container(
-                            width: scaleWidth(178),
-                            height: scaleHeight(45),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation1,
-                                        animation2) => const TicketOcrScreen(),
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.gray700,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      scaleWidth(16)),
-                                ),
-                                padding: EdgeInsets.zero,
-                                elevation: 0,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "직관 기록하러 가기",
-                                    style: AppFonts.pretendard.body_md_500(
-                                        context).copyWith(
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  SvgPicture.asset(
-                                    AppImages.right_black,
-                                    width: scaleWidth(20),
-                                    height: scaleHeight(20),
-                                    color: AppColors.gray20,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -768,21 +831,24 @@ class _ReportScreenState extends State<ReportScreen> {
         totalGames > 0;
 
     return GestureDetector(
-      onTap: () {},
+      onTap: hasRecords ? _saveTicketImage : null,
       child: Container(
-        width: scaleWidth(73),
-        height: scaleHeight(26),
+        padding: EdgeInsets.symmetric(
+          horizontal: scaleWidth(10),
+          vertical: scaleHeight(4),
+        ),
         decoration: BoxDecoration(
-          color: AppColors.gray600,
+          color: hasRecords
+              ? AppColors.gray600
+              : AppColors.gray600.withOpacity(0.8),
           borderRadius: BorderRadius.circular(scaleWidth(16)),
         ),
-        child: Center(
-          child: Text(
-            "이미지 저장",
-            style: AppFonts.pretendard.caption_md_500(context).copyWith(
-              color: hasRecords
-                  ? AppColors.gray50 : AppColors.gray800,
-            ),
+        child: Text(
+          "이미지 저장",
+          style: AppFonts.pretendard.caption_md_500(context).copyWith(
+            color: hasRecords
+                ? AppColors.gray50
+                : AppColors.gray800,
           ),
         ),
       ),
@@ -804,12 +870,13 @@ class _ReportScreenState extends State<ReportScreen> {
               children: [
                 Text(
                   "자세히 보기",
-                  style: AppFonts.pretendard.caption_md_500(context).copyWith(
-                      color: AppColors.gray400),
+                  style: AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.gray400),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: scaleWidth(10),
+                SizedBox(width: scaleWidth(2)),
+                SvgPicture.asset(
+                  AppImages.arrow,
+                  width: scaleWidth(15),
+                  height: scaleHeight(15),
                   color: AppColors.gray400,
                 ),
               ]
@@ -819,7 +886,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  /// 나의 뱃지 섹션
+  ///나의 배지 섹션
   Widget _buildBadgeSection({required bool hasRecords}) {
     final badgeSummary = _reportData?['badgeSummary'];
     final mainPageBadges = badgeSummary?['mainPageBadges'] as List<dynamic>? ??
@@ -829,22 +896,14 @@ class _ReportScreenState extends State<ReportScreen> {
     print("badgeSummary: $badgeSummary");
     print("mainPageBadges: $mainPageBadges");
 
-    // 초기 뱃지 이름
-    final initialBadgeNames = ['기록의 시작', '홈의 따뜻함', '응원의 보답', '토닥토닥', '베어스 정복'];
-
-    // mainPageBadges를 slotOrder 역순으로 정렬 (큰 숫자가 최신 = 왼쪽에 표시)
-    final sortedBadges = List<dynamic>.from(mainPageBadges);
-    sortedBadges.sort((a, b) {
-      final aOrder = (a as Map<String, dynamic>)['slotOrder'] as int? ?? 0;
-      final bOrder = (b as Map<String, dynamic>)['slotOrder'] as int? ?? 0;
-      return bOrder.compareTo(aOrder); // 내림차순 정렬 (큰 숫자 먼저)
-    });
+    // 디폴트로 보여줄 뱃지 이름 (아무것도 획득 안했을 때)
+    final defaultBadgeNames = ['기록의 시작', '홈의 따뜻함', '응원의 보답', '토닥토닥', '베어스 정복'];
 
     List<Map<String, dynamic>> displayBadges = [];
     Set<String> addedBadgeNames = {};
 
-    // 1. 획득한 뱃지를 역순으로 추가 (최신이 먼저)
-    for (var badge in sortedBadges) {
+    // 1. 획득한 뱃지 추가
+    for (var badge in mainPageBadges) {
       if (displayBadges.length >= 5) break;
 
       final badgeMap = badge as Map<String, dynamic>;
@@ -861,8 +920,8 @@ class _ReportScreenState extends State<ReportScreen> {
       }
     }
 
-    // 2. 부족한 자리는 초기 뱃지로 채우기 (획득하지 않은 것만)
-    for (var badgeName in initialBadgeNames) {
+    // 2. 부족한 자리는 디폴트 뱃지로 채우기 (획득하지 않은 것만)
+    for (var badgeName in defaultBadgeNames) {
       if (displayBadges.length >= 5) break;
       if (!addedBadgeNames.contains(badgeName)) {
         displayBadges.add({
@@ -874,9 +933,19 @@ class _ReportScreenState extends State<ReportScreen> {
       }
     }
 
+    // 3. 그래도 5개가 안되면 빈 슬롯으로 채우기 (혹시 모를 경우 대비)
+    while (displayBadges.length < 5) {
+      displayBadges.add({
+        'name': null,
+        'imageUrl': null,
+        'category': null,
+        'isAchieved': false,
+      });
+    }
+
     return Column(
       children: [
-        _buildSectionHeader("나의 뱃지", onTap: () async {
+        _buildSectionHeader("나의 배지", onTap: () async {
           final result = await Navigator.push(
             context,
             PageRouteBuilder(
@@ -971,7 +1040,7 @@ class _ReportScreenState extends State<ReportScreen> {
             child: Text(
               name ?? '뱃지 이름',
               style: AppFonts.pretendard.caption_md_500(context).copyWith(
-                color: isAchieved ? AppColors.gray800 : AppColors.gray800,
+                color: isAchieved ? AppColors.gray800: AppColors.gray800,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
@@ -983,8 +1052,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-
-  /// 나의 직관 기록 분석 섹션
+  ///나의 직관 기록 분석 섹션
   Widget _buildAnalysisSection({required bool hasRecords}) {
     // 데이터 추출
     final bestMonth = _reportData?['bestAttendanceMonth'];
@@ -1008,8 +1076,7 @@ class _ReportScreenState extends State<ReportScreen> {
         // 제목
         Text(
           "나의 직관 기록 분석",
-          style: AppFonts.pretendard.body_md_500(context).copyWith(
-              color: Colors.black),
+          style: AppFonts.pretendard.body_md_500(context).copyWith(color: Colors.black),
         ),
         SizedBox(height: scaleHeight(14)),
 
@@ -1067,7 +1134,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  // 새로운 분석 카드 위젯 (2x2 그리드용)
+  // 분석 카드 위젯 (2x2 그리드용)
   Widget _buildAnalysisCardNew({
     String? iconPath,
     required String subtitle,
@@ -1079,103 +1146,110 @@ class _ReportScreenState extends State<ReportScreen> {
     // 플레이스홀더일 때 투명도 적용
     final double opacity = isPlaceholder ? 0.2 : 1.0;
 
-    // 아이콘 위젯 결정
-    Widget iconWidget;
-    if (isProfileImage) {
-      // 프로필 이미지
-      final bool hasProfileUrl = iconPath != null && iconPath.isNotEmpty &&
-          !isPlaceholder;
-      iconWidget = ClipOval(
-        child: hasProfileUrl
-            ? Image.network(
-          iconPath,
-          width: scaleWidth(40),
-          height: scaleHeight(40),
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return SvgPicture.asset(
-              AppImages.profile,
-              width: scaleWidth(40),
-              height: scaleHeight(40),
-              fit: BoxFit.cover,
-            );
-          },
-        )
-            : SvgPicture.asset(
-          AppImages.profile,
-          width: scaleWidth(40),
-          height: scaleHeight(40),
-          fit: BoxFit.cover,
-        ),
-      );
-    } else if (isEmotion) {
-      // 감정 이미지 (SVG)
-      iconWidget = SvgPicture.asset(
-        iconPath ?? AppImages.emotion_5,
-        width: scaleWidth(40),
-        height: scaleHeight(40),
-      );
-    } else {
-      // PNG 아이콘 (day, stadium)
-      String displayIconPath = iconPath ?? '';
-      iconWidget = Image.asset(
-        displayIconPath,
-        width: scaleWidth(40),
-        height: scaleHeight(40),
-      );
-    }
-
     return LayoutBuilder(
       builder: (context, constraints) {
         // 가로 크기를 기준으로 세로 크기 계산 (비율 156:132)
-        final double cardHeight = constraints.maxWidth * (132 / 156);
+        final double cardWidth = constraints.maxWidth;
+        final double cardHeight = cardWidth * (132 / 156);
+
+        final double scale = cardWidth / 156;
+
+        final double iconSize = 40 * scale;
+        final double horizontalPadding = 12 * scale;
+        final double verticalPadding = 16 * scale;
+        final double iconBottomMargin = 8 * scale;
+        final double textBottomMargin = 6 * scale;
+        final double tagVerticalPadding = 5 * scale;
+        final double tagHorizontalPadding = 8 * scale;
+
+        // 아이콘 위젯 결정
+        Widget iconWidget;
+        if (isProfileImage) {
+          // 프로필 이미지
+          final bool hasProfileUrl = iconPath != null && iconPath.isNotEmpty &&
+              !isPlaceholder;
+          iconWidget = ClipOval(
+            child: hasProfileUrl
+                ? Image.network(
+              iconPath,
+              width: iconSize,
+              height: iconSize,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return SvgPicture.asset(
+                  AppImages.profile,
+                  width: iconSize,
+                  height: iconSize,
+                  fit: BoxFit.cover,
+                );
+              },
+            )
+                : SvgPicture.asset(
+              AppImages.profile,
+              width: iconSize,
+              height: iconSize,
+              fit: BoxFit.cover,
+            ),
+          );
+        } else if (isEmotion) {
+          // 감정 이미지 (SVG)
+          iconWidget = SvgPicture.asset(
+            iconPath ?? AppImages.emotion_5,
+            width: iconSize,
+            height: iconSize,
+          );
+        } else {
+          // PNG 아이콘 (day, stadium)
+          String displayIconPath = iconPath ?? '';
+          iconWidget = Image.asset(
+            displayIconPath,
+            width: iconSize,
+            height: iconSize,
+          );
+        }
 
         return Container(
           height: cardHeight,
           decoration: BoxDecoration(
             color: AppColors.gray50,
-            borderRadius: BorderRadius.circular(scaleWidth(12)),
+            borderRadius: BorderRadius.circular(12 * scale),
           ),
           child: Opacity(
             opacity: opacity,
-            child: Column(
-              children: [
-                SizedBox(height: scaleHeight(16)),
-
-                // 아이콘
-                iconWidget,
-
-                SizedBox(height: scaleHeight(8)),
-
-                // 설명 텍스트
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
-                  child: Text(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: verticalPadding,
+              ),
+              child: Column(
+                children: [
+                  // 아이콘
+                  iconWidget,
+                  SizedBox(height: iconBottomMargin),
+                  // 설명 텍스트
+                  Text(
                     subtitle,
                     style: AppFonts.pretendard.caption_md_500(context).copyWith(
                       color: AppColors.gray700,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                ),
-
-                SizedBox(height: scaleHeight(6)),
-
-                // 값 태그
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: scaleWidth(12)),
-                  child: Container(
+                  SizedBox(height: textBottomMargin),
+                  // 값 태그
+                  Container(
                     width: double.infinity,
-                    padding: EdgeInsets.symmetric(vertical: scaleHeight(5)),
+                    padding: EdgeInsets.symmetric(
+                      vertical: tagVerticalPadding,
+                      horizontal: tagHorizontalPadding,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.pri800,
-                      borderRadius: BorderRadius.circular(scaleWidth(38)),
+                      borderRadius: BorderRadius.circular(38 * scale),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       value,
-                      style: AppFonts.pretendard.caption_md_500(context)
-                          .copyWith(
+                      style: AppFonts.pretendard.caption_md_500(context).copyWith(
                         color: AppColors.gray20,
                       ),
                       textAlign: TextAlign.center,
@@ -1183,8 +1257,8 @@ class _ReportScreenState extends State<ReportScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

@@ -47,6 +47,16 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchController.addListener(() {
       setState(() {
         _hasText = _searchController.text.isNotEmpty;
+
+        // 텍스트가 비워지면 검색 전 뷰로 돌아가기
+        if (_searchController.text.isEmpty && _hasSearched) {
+          _hasSearched = false;
+          _searchResult = null;
+          _allRecords.clear();
+          _currentRecordPage = 0;
+          _hasMoreRecords = true;
+          _selectedTabIndex = 0;
+        }
       });
     });
     _focusNode.addListener(() {
@@ -212,11 +222,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   String _getButtonIcon() {
     if (_hasSearched && !_isSearchFocused && _hasText) {
-      return AppImages.search;
+      return AppImages.search2;
     } else if (_hasText) {
       return AppImages.x;
     } else {
-      return AppImages.search;
+      return AppImages.search2;
     }
   }
 
@@ -792,6 +802,7 @@ class _RecordsListWidgetState extends State<RecordsListWidget> {
               'authorProfileImage': record.authorProfileImage,
               'authorNickname': record.authorNickname,
               'authorFavTeam': record.authorFavTeam,
+              'followStatus': record.followStatus ?? 'NOT_FOLLOWING',
               'mediaUrls': record.mediaUrls,
               'longContent': record.longContent,
               'emotionCode': record.emotionCode,

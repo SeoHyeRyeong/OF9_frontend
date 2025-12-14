@@ -99,8 +99,8 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     if (userId != null) {
       _followStatus = widget.feedData['followStatus'] ?? 'NOT_FOLLOWING';
 
-      // 전역 상태에 백엔드 데이터로 초기화/업데이트
-      _followManager.setInitialStatus(userId, _followStatus);
+      // 전역 상태에 백엔드 데이터로 강제 업데이트 (검색 결과 등 최신 데이터 우선)
+      _followManager.updateFollowStatus(userId, _followStatus);
     } else {
       _followStatus = widget.feedData['followStatus'] ?? 'NOT_FOLLOWING';
     }
@@ -202,19 +202,13 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     // followStatus 업데이트
     final userId = widget.feedData['userId'] ?? widget.feedData['authorId'];
     if (userId != null) {
-      final globalFollowStatus = _followManager.getFollowStatus(userId);
-      if (globalFollowStatus != null && globalFollowStatus != _followStatus) {
+      final newFollowStatus = widget.feedData['followStatus'];
+      if (newFollowStatus != null && newFollowStatus != _followStatus) {
         setState(() {
-          _followStatus = globalFollowStatus;
+          _followStatus = newFollowStatus;
         });
-      } else {
-        final newFollowStatus = widget.feedData['followStatus'];
-        if (newFollowStatus != null && newFollowStatus != _followStatus) {
-          setState(() {
-            _followStatus = newFollowStatus;
-          });
-          _followManager.setInitialStatus(userId, newFollowStatus);
-        }
+        // 백엔드 데이터로 전역 상태 강제 업데이트
+        _followManager.updateFollowStatus(userId, newFollowStatus);
       }
     }
   }
@@ -331,8 +325,8 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     final userId = widget.feedData['userId'] ?? widget.feedData['authorId'];
     final createdAt = widget.feedData['createdAt'] ?? widget.feedData['gameDate'] ?? '';
 
-    // 팔로우 버튼 표시 여부: NOT_FOLLOWING일 때만 (ME, FOLLOWING, REQUESTED는 버튼 숨김)
-    final shouldShowFollowButton = _followStatus == "NOT_FOLLOWING" && _followStatus != "ME";
+    // 팔로우 버튼 표시 여부: NOT_FOLLOWING일 때만 (ME, FOLLOWING, MUTUAL, REQUESTED는 버튼 숨김)
+    final shouldShowFollowButton = _followStatus == "NOT_FOLLOWING";
 
     return Padding(
       padding: EdgeInsets.only(

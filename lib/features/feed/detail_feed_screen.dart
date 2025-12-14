@@ -133,8 +133,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           _likeCount = newLikeCount;
           _commentCount = newCommentCount;
         });
-        print(
-            '✅ [DetailFeedScreen] 전역 카운트 동기화 - commentCount: $newCommentCount');
       }
     }
   }
@@ -146,7 +144,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       setState(() {
         _comments = List.from(comments);
       });
-      print('✅ [DetailFeedScreen] 전역 댓글 목록 동기화: ${comments.length}개');
     }
   }
 
@@ -161,8 +158,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
             _recordDetail!['followStatus'] = newFollowStatus;
           }
         });
-        print(
-            '✅ [DetailFeedScreen] 팔로우 상태 동기화: userId=$userId, followStatus=$newFollowStatus');
       }
     }
   }
@@ -173,8 +168,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         _isLoading = true;
         _errorMessage = null;
       });
-
-      print('📋 직관 기록 조회 시작: recordId=${widget.recordId}');
 
       final data = await RecordApi.getRecordDetail(widget.recordId.toString());
 
@@ -208,8 +201,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
       }
 
       print('✅ 직관 기록 조회 성공: ${data['nickname']}');
-      print('🔍 followStatus: $backendFollowStatus');
-      print('🔍 isMutualFollow: ${data['isMutualFollow']}');
     } catch (e) {
       print('❌ 직관 기록 조회 실패: $e');
       setState(() {
@@ -221,8 +212,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   Future<void> _loadComments() async {
     try {
-      print('💬 댓글 목록 조회 시작: recordId=${widget.recordId}');
-
       final data = await FeedApi.getComments(widget.recordId.toString());
       final comments = data.map((e) => CommentDto.fromJson(e)).toList();
 
@@ -240,8 +229,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
   Future<void> _toggleLike() async {
     try {
-      print('🔄 좋아요 토글 시작: recordId=${widget.recordId}');
-
       final result = await FeedApi.toggleLike(widget.recordId.toString());
 
       final isLiked = result['isLiked'] as bool;
@@ -289,7 +276,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         await _loadComments();
       } else {
         // 댓글 작성 모드
-        print('📝 댓글 작성 API 호출 중...');
         final result = await FeedApi.createComment(
             widget.recordId.toString(), originalContent);
         final newComment = CommentDto.fromJson(result);
@@ -476,14 +462,11 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
               recordState.printCurrentState();
 
               // 감정 코드
-              recordState.updateEmotionCode(
-                  _recordDetail?['emotionCode'] as int? ?? 1);
+              recordState.updateEmotionCode(_recordDetail?['emotionCode'] as int? ?? 1);
 
               // 상세 기록
-              recordState.updateLongContent(
-                  _recordDetail?['longContent'] as String? ?? '');
-              recordState.updateBestPlayer(
-                  _recordDetail?['bestPlayer'] as String? ?? '');
+              recordState.updateLongContent(_recordDetail?['longContent'] as String? ?? '');
+              recordState.updateBestPlayer(_recordDetail?['bestPlayer'] as String? ?? '');
 
               // 친구 태그
               final companions = _recordDetail?['companions'] as List<dynamic>?;
@@ -653,8 +636,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           }
         });
 
-        print(
-            '✅ 팔로우 성공: userId=$userId, newStatus=$newStatus (isFollowing: $isFollowing, pending: $pending)');
+        print('✅ 팔로우 성공: userId=$userId, newStatus=$newStatus (isFollowing: $isFollowing, pending: $pending)');
       }
     } catch (e) {
       print('❌ 팔로우 실패: $e');
@@ -766,7 +748,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         children: [
           GestureDetector(
             onTap: () {
-              // ✅ fromUpload 분기 처리 추가
+              // fromUpload 분기 처리 추가
               if (widget.fromUpload) {
                 // 업로드 완료 후 -> FeedScreen으로 이동
                 Navigator.pushReplacement(

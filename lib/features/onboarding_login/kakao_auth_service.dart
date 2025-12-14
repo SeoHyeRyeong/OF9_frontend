@@ -103,8 +103,8 @@ class KakaoAuthService {
 
       print('🕐 토큰 만료까지 남은 시간: ${timeUntilExpiry}초 (${(timeUntilExpiry / 60).toStringAsFixed(1)}분)');
 
-      // 만료 5분 전부터 갱신 필요로 판단
-      return timeUntilExpiry < 300;
+      // 만료 30분 전부터 갱신 필요로 판단
+      return timeUntilExpiry < 1800;
 
     } catch (e) {
       print('❌ 토큰 만료 확인 중 오류: $e');

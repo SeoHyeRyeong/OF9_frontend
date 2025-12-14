@@ -1323,14 +1323,12 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
                           SizedBox(height: scaleHeight(2)),
                           _getEmotionImage(emotionCode),
                           SizedBox(height: scaleHeight(5)),
-                          Container(
-                            width: scaleWidth(32),
-                            child: FixedText(
-                              emotionLabel,
-                              style: AppFonts.suite.caption_md_400(context).copyWith(color: AppColors.gray900,
-                              ),
-                              textAlign: TextAlign.center,
+                          FixedText(
+                            emotionLabel,
+                            style: AppFonts.suite.caption_md_400(context).copyWith(
+                              color: AppColors.gray900,
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),

@@ -637,7 +637,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
   // ==================== 5. 베스트플레이어 영역 ====================
   Widget _buildBestPlayerSection() {
     return _buildSectionCard(
-      child: BestPlayerSectionContent(scrollController: _scrollController),
+      child: BestPlayerSectionContent(
+        scrollController: _scrollController,
+        parent: this,
+      ),
       height: null,
     );
   }
@@ -645,7 +648,10 @@ class _DetailRecordScreenState extends State<DetailRecordScreen> with WidgetsBin
   // ==================== 6. 함께 직관한 친구 영역 ====================
   Widget _buildCheerFriendSection() {
     return _buildSectionCard(
-      child: CheerFriendSectionContent(scrollController: _scrollController),
+      child: CheerFriendSectionContent(
+        scrollController: _scrollController,
+        parent: this,
+      ),
       height: null,
     );
   }
@@ -1195,8 +1201,7 @@ Widget _buildInputWithCounter({
   );
 }
 
-// 단순 텍스트 필드 (베스트 플레이어 / 함께 직관한 친구)
-Widget _buildSimpleInput({
+Widget _buildSimpleInputWithPrefix({
   Key? key,
   required BuildContext context,
   required TextEditingController controller,
@@ -1296,7 +1301,6 @@ Widget _buildSimpleInput({
                     (index) {
                   final item = searchResults[index];
                   final isLast = index == searchResults.length - 1;
-
                   return Column(
                     children: [
                       GestureDetector(
@@ -1313,7 +1317,6 @@ Widget _buildSimpleInput({
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // 프로필 이미지
                                 Padding(
                                   padding: EdgeInsets.only(top: scaleHeight(4)),
                                   child: ClipRRect(
@@ -1341,7 +1344,6 @@ Widget _buildSimpleInput({
                                   ),
                                 ),
                                 SizedBox(width: scaleWidth(12)),
-                                // 텍스트 영역
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1357,8 +1359,8 @@ Widget _buildSimpleInput({
                                       ),
                                       FixedText(
                                         type == 'player'
-                                            ? (item['team'] ?? item['favTeam'] ?? '') :
-                                        '${item['favTeam'] ?? ''} 팬',
+                                            ? (item['team'] ?? item['favTeam'] ?? '')
+                                            : '${item['favTeam'] ?? ''} 팬',
                                         style: AppFonts.pretendard.caption_re_400(context).copyWith(
                                           color: AppColors.gray300,
                                         ),
@@ -1392,6 +1394,7 @@ Widget _buildSimpleInput({
     ],
   );
 }
+
 
 
 // ===============================================================================
@@ -1507,7 +1510,12 @@ class _DiaryNoteSectionContentState extends State<DiaryNoteSectionContent> {
 /// 베스트 플레이어
 class BestPlayerSectionContent extends StatefulWidget {
   final ScrollController scrollController;
-  const BestPlayerSectionContent({required this.scrollController});
+  final _DetailRecordScreenState parent;
+
+  const BestPlayerSectionContent({
+    required this.scrollController,
+    required this.parent,
+  });
 
   @override
   State<BestPlayerSectionContent> createState() => _BestPlayerSectionContentState();
@@ -1529,7 +1537,6 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // 초기 값 설정
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final recordState = Provider.of<RecordState>(context, listen: false);
       if (recordState.bestPlayer != null && recordState.bestPlayer!.isNotEmpty) {
@@ -1557,17 +1564,13 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
   void didChangeMetrics() {
     final bottomInset = View.of(context).viewInsets.bottom;
     final isKeyboardVisible = bottomInset > 0;
-
     if (_wasKeyboardVisible && !isKeyboardVisible && _focusNode.hasFocus) {
       final trimmedText = _controller.text.trim();
-
       if (!_isPlayerSelected && (trimmedText.isEmpty || trimmedText == '@')) {
         _controller.removeListener(_updateState);
         _focusNode.removeListener(_updateFocusState);
-
         _focusNode.unfocus();
         _controller.clear();
-
         Future.delayed(Duration(milliseconds: 100), () {
           if (mounted) {
             _controller.addListener(_updateState);
@@ -1579,24 +1582,14 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
         });
       }
     }
-
     _wasKeyboardVisible = isKeyboardVisible;
   }
 
-  // 텍스트 변화 감지 및 검색/선택 상태 업데이트
   void _updateState() async {
     final currentText = _controller.text;
 
-    // 포커스 중일 때 @ 문자 유지
-    if (_focusNode.hasFocus && !currentText.startsWith('@')) {
-      _controller.text = '@${currentText.replaceAll('@', '')}';
-      _controller.selection = TextSelection.fromPosition(
-        TextPosition(offset: _controller.text.length),
-      );
-      return;
-    }
+    // @ 추가 로직 완전 제거 - 포커스 시에만 처리
 
-    // 텍스트 변경 시 선택 상태 해제 로직
     final currentName = currentText.replaceAll('@', '').trim();
     if (_isPlayerSelected && currentName != _selectedPlayerName) {
       setState(() {
@@ -1606,18 +1599,14 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
       Provider.of<RecordState>(context, listen: false).updateBestPlayer('');
     }
 
-    // 포커스 상태면 항상 드롭다운 표시
     setState(() {
       _showDropdown = _focusNode.hasFocus;
     });
 
-    // 디바운스 로직 (검색 딜레이)
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 100), () async {
       final searchText = currentText.replaceAll('@', '').trim();
-
       if (searchText.isNotEmpty) {
-        // API 검색 호출
         try {
           final results = await PlayerApi.searchPlayers(searchText);
           setState(() {
@@ -1630,7 +1619,6 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
           });
         }
       } else {
-        // 검색어 없으면 결과 초기화
         setState(() {
           _searchResults = [];
         });
@@ -1638,7 +1626,44 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
     });
   }
 
-  // 텍스트 필드로 스크롤
+  void _updateFocusState() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
+      _showDropdown = _focusNode.hasFocus;
+    });
+
+    if (_isFocused) {
+      // 포커스 얻을 때만 @ 추가 (한 번만)
+      if (!_controller.text.startsWith('@')) {
+        final currentText = _controller.text;
+        _controller.removeListener(_updateState);
+        _controller.text = '@$currentText';
+        _controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: _controller.text.length),
+        );
+        _controller.addListener(_updateState);
+      }
+      _scrollToTextField();
+    } else {
+      // 포커스 잃을 때 빈 값 처리
+      final trimmedText = _controller.text.trim();
+      if (!_isPlayerSelected && (trimmedText.isEmpty || trimmedText == '@')) {
+        _controller.removeListener(_updateState);
+        _focusNode.removeListener(_updateFocusState);
+        _controller.clear();
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (mounted) {
+            _controller.addListener(_updateState);
+            _focusNode.addListener(_updateFocusState);
+            setState(() {
+              _showDropdown = false;
+            });
+          }
+        });
+      }
+    }
+  }
+
   void _scrollToTextField() {
     Future.delayed(Duration(milliseconds: 100), () {
       if (_textFieldKey.currentContext != null) {
@@ -1652,23 +1677,20 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
     });
   }
 
-  void _updateFocusState() {
+  /*void _updateFocusState() {
     setState(() {
       _isFocused = _focusNode.hasFocus;
       _showDropdown = _focusNode.hasFocus;
     });
-
     if (_isFocused && !_controller.text.startsWith('@')) {
       _controller.text = '@${_controller.text}';
       _controller.selection = TextSelection.fromPosition(
         TextPosition(offset: _controller.text.length),
       );
     }
-
     if (_isFocused) {
-      _scrollToTextField(); // 초기 스크롤만
+      _scrollToTextField();
     } else {
-      // 포커스 잃을 때 @ 제거
       final trimmedText = _controller.text.trim();
       if (!_isPlayerSelected && (trimmedText.isEmpty || trimmedText == '@')) {
         _controller.removeListener(_updateState);
@@ -1685,26 +1707,20 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
         });
       }
     }
-  }
+  }*/
 
-  // 텍스트 초기화 및 포커스 해제
   void _clearText() {
     setState(() {
-      _controller.clear(); // 텍스트 완전 삭제
+      _controller.clear();
       _searchResults = [];
       _isPlayerSelected = false;
       _selectedPlayerName = '';
     });
-
-    // 텍스트 지운 후 @ 자동 추가
     _controller.text = '@';
-    _controller.selection = TextSelection.fromPosition(
-      TextPosition(offset: 1),
-    );
+    _controller.selection = TextSelection.fromPosition(TextPosition(offset: 1));
     Provider.of<RecordState>(context, listen: false).updateBestPlayer('');
   }
 
-  // 선수 선택 처리
   void _selectPlayer(Map<String, dynamic> player) {
     final playerName = player['name'] ?? '';
     setState(() {
@@ -1712,9 +1728,8 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
       _searchResults = [];
       _isPlayerSelected = true;
       _selectedPlayerName = playerName;
-      _showDropdown = false; // 선택 완료 시 드롭다운 숨김
+      _showDropdown = false;
     });
-
     Provider.of<RecordState>(context, listen: false).updateBestPlayer(playerName);
     _focusNode.unfocus();
   }
@@ -1727,38 +1742,45 @@ class _BestPlayerSectionContentState extends State<BestPlayerSectionContent> wit
         _buildSectionHeader(
           context,
           AppImages.bestplayer,
-          '베스트플레이어',
-          '오늘의 베스트플레이어를 뽑아주세요',
+          '베스트 플레이어',
+          '오늘의 베스트 플레이어를 입력해주세요',
         ),
         SizedBox(height: scaleHeight(22)),
-        _buildSimpleInput(
+        _buildSimpleInputWithPrefix(
           key: _textFieldKey,
           context: context,
           controller: _controller,
           focusNode: _focusNode,
-          // @만 남았을 때는 비활성화된 것처럼 보이도록 처리
           isActive: _controller.text.isNotEmpty && _controller.text.trim() != '@',
           onTap: _scrollToTextField,
-          hintText: '베스트 플레이어를 검색해 보세요',
+          hintText: '검색어를 입력해주세요',
           inputHeight: scaleHeight(54),
           hintTextStyle: AppFonts.pretendard.body_sm_500(context).copyWith(
-              color: AppColors.gray200, height: 1.0),
+            color: AppColors.gray200,
+            height: 1.0,
+          ),
           showDropdown: _showDropdown,
           onClear: _clearText,
           searchResults: _searchResults,
           onSelectItem: _selectPlayer,
           type: 'player',
-          isSelected: _isPlayerSelected, // 선택된 상태일 때 pri600
+          isSelected: _isPlayerSelected,
         ),
       ],
     );
   }
 }
 
+
 /// 함께 직관한 친구
 class CheerFriendSectionContent extends StatefulWidget {
   final ScrollController scrollController;
-  const CheerFriendSectionContent({required this.scrollController});
+  final _DetailRecordScreenState parent;
+
+  const CheerFriendSectionContent({
+    required this.scrollController,
+    required this.parent,
+  });
 
   @override
   State<CheerFriendSectionContent> createState() => _CheerFriendSectionContentState();
@@ -1786,7 +1808,7 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
         final userInfo = await UserApi.getMyProfile();
         _myUserId = userInfo['data']['id'];
       } catch (e) {
-        print('❌ 사용자 정보 가져오기 실패: $e');
+        print('❌ 사용자 정보 로드 실패: $e');
       }
     });
     _controller.addListener(_updateState);
@@ -1808,18 +1830,13 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
   void didChangeMetrics() {
     final bottomInset = View.of(context).viewInsets.bottom;
     final isKeyboardVisible = bottomInset > 0;
-
     if (_wasKeyboardVisible && !isKeyboardVisible && _focusNode.hasFocus) {
       final trimmedText = _controller.text.trim();
-
-      // ✅ 베스트플레이어와 동일: 선택하지 않았고 @만 남았거나 비어있으면 초기화
       if (_selectedFriends.isEmpty && (trimmedText.isEmpty || trimmedText == '@')) {
         _controller.removeListener(_updateState);
         _focusNode.removeListener(_updateFocusState);
-
         _focusNode.unfocus();
         _controller.clear();
-
         Future.delayed(Duration(milliseconds: 100), () {
           if (mounted) {
             _controller.addListener(_updateState);
@@ -1829,38 +1846,24 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
             });
           }
         });
-      }
-      // 친구를 선택했지만 마지막 @에서 아무것도 선택하지 않은 경우
-      else if (_selectedFriends.isNotEmpty && trimmedText.endsWith('@')) {
-        final nicknames = _selectedFriends.map((f) => '@${f['nickname']}').join(' ');
+      } else if (_selectedFriends.isNotEmpty && trimmedText.endsWith('@')) {
+        final nicknames = _selectedFriends.map((f) => f['nickname']).join(', ');
         _controller.removeListener(_updateState);
         _controller.text = nicknames;
         _controller.addListener(_updateState);
-
         setState(() {
           _showDropdown = false;
         });
       }
     }
-
     _wasKeyboardVisible = isKeyboardVisible;
   }
 
   void _updateState() async {
     final text = _controller.text;
 
-    // ✅ 베스트플레이어와 동일: 포커스 중일 때 @ 문자 유지
-    if (_focusNode.hasFocus && !text.startsWith('@')) {
-      _controller.removeListener(_updateState);
-      _controller.text = '@${text.replaceAll('@', '')}';
-      _controller.selection = TextSelection.fromPosition(
-        TextPosition(offset: _controller.text.length),
-      );
-      _controller.addListener(_updateState);
-      return;
-    }
+    // @ 추가 로직 완전 제거 - 포커스 시에만 처리
 
-    // 텍스트가 변경되면 미완성 선택 상태 해제
     if (_isAllSelected) {
       setState(() {
         _isAllSelected = false;
@@ -1872,19 +1875,16 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       final lastAtIndex = text.lastIndexOf('@');
-
       if (lastAtIndex != -1 && _myUserId != null) {
         final searchText = text.substring(lastAtIndex + 1).trim();
-
         if (searchText.isNotEmpty) {
           try {
-            // 전체 사용자 검색
             final results = await RecordApi.searchUsers(query: searchText);
             setState(() {
               _searchResults = results;
             });
           } catch (e) {
-            print('❌ 사용자 검색 실패: $e');
+            print('❌ 친구 검색 실패: $e');
             setState(() {
               _searchResults = [];
             });
@@ -1898,19 +1898,6 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
     });
   }
 
-  void _scrollToTextField() {
-    Future.delayed(Duration(milliseconds: 100), () {
-      if (_textFieldKey.currentContext != null) {
-        Scrollable.ensureVisible(
-          _textFieldKey.currentContext!,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          alignment: 0.25,
-        );
-      }
-    });
-  }
-
   void _updateFocusState() {
     setState(() {
       _isFocused = _focusNode.hasFocus;
@@ -1918,22 +1905,19 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
     });
 
     if (_isFocused) {
+      // 포커스 얻을 때만 @ 처리 (한 번만)
       _controller.removeListener(_updateState);
       if (_controller.text.isEmpty) {
         _controller.text = '@';
-        _controller.selection = TextSelection.fromPosition(
-          TextPosition(offset: 1),
-        );
+        _controller.selection = TextSelection.fromPosition(TextPosition(offset: 1));
       } else if (_selectedFriends.isNotEmpty && !_controller.text.endsWith('@')) {
         _controller.text = '${_controller.text} @';
-        _controller.selection = TextSelection.fromPosition(
-          TextPosition(offset: _controller.text.length),
-        );
+        _controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
       }
       _controller.addListener(_updateState);
       _scrollToTextField();
     } else {
-      // 포커스 잃을 때 @ 제거
+      // 포커스 잃을 때 정리
       final trimmedText = _controller.text.trim();
       if (_selectedFriends.isEmpty && (trimmedText.isEmpty || trimmedText == '@')) {
         _controller.removeListener(_updateState);
@@ -1949,7 +1933,7 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
           }
         });
       } else if (_selectedFriends.isNotEmpty && trimmedText.endsWith('@')) {
-        final nicknames = _selectedFriends.map((f) => f['nickname']).join(' ');
+        final nicknames = _selectedFriends.map((f) => f['nickname']).join(', ');
         _controller.removeListener(_updateState);
         _controller.text = nicknames;
         _controller.addListener(_updateState);
@@ -1957,47 +1941,90 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
     }
   }
 
+
+
+  void _scrollToTextField() {
+    Future.delayed(Duration(milliseconds: 100), () {
+      if (_textFieldKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _textFieldKey.currentContext!,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: 0.25,
+        );
+      }
+    });
+  }
+
+  /*void _updateFocusState() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
+      _showDropdown = _focusNode.hasFocus;
+    });
+    if (_isFocused) {
+      _controller.removeListener(_updateState);
+      if (_controller.text.isEmpty) {
+        _controller.text = '@';
+        _controller.selection = TextSelection.fromPosition(TextPosition(offset: 1));
+      } else if (_selectedFriends.isNotEmpty && !_controller.text.endsWith('@')) {
+        _controller.text = '${_controller.text} @';
+        _controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
+      }
+      _controller.addListener(_updateState);
+      _scrollToTextField();
+    } else {
+      final trimmedText = _controller.text.trim();
+      if (_selectedFriends.isEmpty && (trimmedText.isEmpty || trimmedText == '@')) {
+        _controller.removeListener(_updateState);
+        _focusNode.removeListener(_updateFocusState);
+        _controller.clear();
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (mounted) {
+            _controller.addListener(_updateState);
+            _focusNode.addListener(_updateFocusState);
+            setState(() {
+              _showDropdown = false;
+            });
+          }
+        });
+      } else if (_selectedFriends.isNotEmpty && trimmedText.endsWith('@')) {
+        final nicknames = _selectedFriends.map((f) => f['nickname']).join(', ');
+        _controller.removeListener(_updateState);
+        _controller.text = nicknames;
+        _controller.addListener(_updateState);
+      }
+    }
+  }*/
+
   void _clearText() {
     setState(() {
-      _controller.clear(); // 텍스트 완전 삭제
+      _controller.clear();
       _searchResults = [];
-      _selectedFriends = []; // 선택된 친구 초기화
+      _selectedFriends = [];
       _isAllSelected = false;
     });
-
     _controller.text = '@';
-    _controller.selection = TextSelection.fromPosition(
-      TextPosition(offset: 1),
-    );
+    _controller.selection = TextSelection.fromPosition(TextPosition(offset: 1));
     Provider.of<RecordState>(context, listen: false).updateCompanions([]);
   }
 
   void _selectFriend(Map<String, dynamic> friend) {
     final friendId = friend['id'] as int;
-
     if (!_selectedFriends.any((f) => f['id'] == friendId)) {
       setState(() {
         _selectedFriends.add(friend);
         _searchResults = [];
-
-        final nicknames = _selectedFriends.map((f) => '@${f['nickname']}').join(' ');
-
-        _controller.removeListener(_updateState);
-        _controller.text = nicknames;
-        _isAllSelected = true;
-
-        // 커서를 맨 끝으로 이동
-        _controller.selection = TextSelection.fromPosition(
-          TextPosition(offset: _controller.text.length),
-        );
-        _controller.addListener(_updateState);
       });
-
+      final taggedNames = _selectedFriends.map((f) => '@${f['nickname']}').join(', ');
+      _controller.text = taggedNames;
+      _controller.removeListener(_updateState);
+      _isAllSelected = true;
+      _controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
+      _controller.addListener(_updateState);
       final companionIds = _selectedFriends.map((f) => f['id'] as int).toList();
       Provider.of<RecordState>(context, listen: false).updateCompanions(companionIds);
-
-      _focusNode.unfocus();
     }
+    _focusNode.unfocus();
   }
 
   @override
@@ -2009,22 +2036,22 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
           context,
           AppImages.cheer,
           '함께 직관한 친구',
-          '오늘의 경기를 함께 한 친구를 적어주세요',
+          '함께 직관한 친구를 태그해주세요',
         ),
         SizedBox(height: scaleHeight(22)),
-        _buildSimpleInput(
+        _buildSimpleInputWithPrefix(
           key: _textFieldKey,
           context: context,
           controller: _controller,
           focusNode: _focusNode,
           isActive: _controller.text.isNotEmpty && _controller.text.trim() != '@',
-          onTap: () {
-            _scrollToTextField();
-          },
-          hintText: '팔로우 한 친구만 검색 가능해요',
+          onTap: _scrollToTextField,
+          hintText: '검색어를 입력해주세요',
           inputHeight: scaleHeight(54),
           hintTextStyle: AppFonts.pretendard.body_sm_500(context).copyWith(
-              color: AppColors.gray200, height: 1.0),
+            color: AppColors.gray200,
+            height: 1.0,
+          ),
           showDropdown: _showDropdown,
           onClear: _clearText,
           searchResults: _searchResults,
@@ -2036,6 +2063,7 @@ class _CheerFriendSectionContentState extends State<CheerFriendSectionContent> w
     );
   }
 }
+
 
 /// 먹거리 태그
 /*

@@ -10,6 +10,11 @@ import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:clarity_flutter/clarity_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:frontend/features/notification/fcm_service.dart';
+import 'firebase_options.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +25,13 @@ Future<void> main() async {
     SystemUiMode.edgeToEdge,
   );
 
-  // SystemUiOverlayStyle 설정
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // FCM 초기화 (한 줄만 추가!)
+  await FCMService().initialize();
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -43,7 +54,6 @@ Future<void> main() async {
 
   print('🚀 앱 시작 - 로그인 상태: $isLoggedIn');
 
-  // Clarity 설정 추가
   final clarityConfig = ClarityConfig(
     projectId: dotenv.env['CLARITY_PROJECT_ID']!,
     logLevel: LogLevel.None,
@@ -71,6 +81,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => RecordState(),
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Flutter Kakao Login',
         theme: ThemeData(
           primarySwatch: Colors.blue,

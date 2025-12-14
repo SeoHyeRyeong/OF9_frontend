@@ -206,6 +206,27 @@ class NotificationApi {
       rethrow;
     }
   }
+
+  static Future<void> saveFcmToken(String fcmToken) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/fcm-token'), // 또는 /notifications/fcm-token
+        headers: headers,
+        body: jsonEncode({'fcmToken': fcmToken}),
+      );
+
+      if (response.statusCode == 200) {
+        print('✅ FCM 토큰 저장 성공');
+      } else {
+        print('❌ FCM 토큰 저장 실패: ${response.statusCode}');
+        throw Exception('Failed to save FCM token: ${response.body}');
+      }
+    } catch (e) {
+      print('🔥 FCM 토큰 저장 오류: $e');
+      rethrow;
+    }
+  }
 }
 
 enum FollowButtonStatus { canFollow, following, requestSent }
@@ -223,3 +244,4 @@ class FollowActionResult {
   final FollowButtonStatus buttonState;
   FollowActionResult({required this.success, required this.message, required this.buttonState});
 }
+

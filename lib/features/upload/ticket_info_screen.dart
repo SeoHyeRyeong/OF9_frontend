@@ -793,11 +793,6 @@ class _TicketInfoScreenState extends State<TicketInfoScreen> {
                                         ),
                                       ),
                                     ),
-                                    SizedBox(height: scaleHeight(4)),
-                                    FixedText(
-                                      '*홈 구장과 실제 경기 구장이 다를 경우 직접 작성해 주세요',
-                                      style: AppFonts.pretendard.caption_re_400(context).copyWith(color: AppColors.gray300),
-                                    ),
                                   ],
                                 ),
                                 SizedBox(height: scaleHeight(14)),

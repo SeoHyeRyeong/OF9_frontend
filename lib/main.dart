@@ -9,11 +9,26 @@ import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:clarity_flutter/clarity_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:frontend/features/notification/fcm_service.dart';
+import 'firebase_options.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  await SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+  );
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // FCM 초기화
+  await FCMService().initialize();
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -25,6 +40,7 @@ Future<void> main() async {
       systemNavigationBarContrastEnforced: false,
     ),
   );
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -76,6 +92,7 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) => MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Flutter Kakao Login',
         theme: ThemeData(
           primarySwatch: Colors.blue,

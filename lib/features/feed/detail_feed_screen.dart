@@ -22,6 +22,11 @@ import 'package:frontend/features/feed/feed_screen.dart';
 import 'package:frontend/components/custom_toast.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/features/upload/providers/record_state.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:frontend/api/user_api.dart';
+
+
 
 class DetailFeedScreen extends StatefulWidget {
   final String? imagePath;
@@ -707,6 +712,28 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     );
   }
 
+  void _shareRecordLink() async {
+    try {
+      // 작성자 닉네임 가져오기 (이미 _recordDetail에 있음)
+      final nickname = _recordDetail?['nickname'] ?? '두다다';
+
+      // 이 기록 디테일 링크
+      final recordId = widget.recordId;
+      final recordUrl = 'https://dodada.site/record/$recordId/details';
+
+      await Share.share(
+        '$nickname님의 직관 기록\n$recordUrl',
+        subject: '두다다 직관 기록 공유',
+      );
+
+      print('✅ 기록 공유 완료: $recordUrl');
+    } catch (e) {
+      print('❌ 기록 공유 실패: $e');
+    }
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -830,7 +857,8 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
           Row(
             children: [
               GestureDetector(
-                onTap: () => print('공유하기'),
+                onTap: _shareRecordLink,
+                behavior: HitTestBehavior.opaque,
                 child: SvgPicture.asset(
                   AppImages.Share,
                   width: scaleWidth(24),

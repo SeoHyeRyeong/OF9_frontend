@@ -19,9 +19,9 @@
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>NSPhotoLibraryAddUsageDescription</key>
-        <string>야구 일기 티켓을 갤러리에 저장하기 위해 권한이 필요합니다.</string>
+        <string>티켓을 사진보관함에 저장하기 위해 권한이 필요합니다.</string>
         <key>NSPhotoLibraryUsageDescription</key>
-        <string>야구 일기 티켓을 갤러리에 저장하기 위해 권한이 필요합니다.</string>
+        <string>티켓을 사진보관함에 저장하기 위해 권한이 필요합니다.</string>
         <key>CFBundleShortVersionString</key>
         <string>$(FLUTTER_BUILD_NAME)</string>
         <key>CFBundleSignature</key>

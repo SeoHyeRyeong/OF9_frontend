@@ -16,6 +16,8 @@ import 'package:flutter/rendering.dart';
 import 'dart:typed_data';
 import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:frontend/components/custom_popup_dialog.dart';
+
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({Key? key}) : super(key: key);
@@ -115,6 +117,29 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
+  // ✨ 갤러리 권한 커스텀 팝업
+  void _showGalleryPermissionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CustomPopupDialog(
+        imageAsset: AppImages.icAlert,
+        title: '갤러리 저장 권한이\n필요해요',
+        subtitle: '설정에서 사진 권한을 허용해주세요',
+        firstButtonText: '설정으로 이동',
+        firstButtonAction: () {
+          Navigator.pop(context);
+          openAppSettings();
+        },
+        secondButtonText: '취소',
+        secondButtonAction: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+
   @override
   void initState() {
     super.initState();
@@ -160,52 +185,122 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   // 티켓 이미지 저장 함수
-  Future<void> _saveTicketImage() async {
+  /*Future _saveTicketImage() async {
     try {
-      // Android 13 이상에서는 권한 불필요, iOS는 항상 권한 필요
       if (Theme.of(context).platform == TargetPlatform.iOS) {
-        final status = await Permission.photos.request();
-        if (!status.isGranted) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('갤러리 접근 권한이 필요합니다.')),
-            );
+        final status = await Permission.photos.status;
+        print('📱 iOS Photos status: $status');
+
+        // 1️⃣ 처음 (denied) → 시스템 팝업
+        if (status == PermissionStatus.denied) {
+          final result = await Permission.photos.request();
+          print('📱 Request result: $result');
+
+          if (!result.isGranted) {
+            if (result == PermissionStatus.permanentlyDenied) {
+              _showGalleryPermissionDialog();
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('갤러리 권한을 허용해주세요')),
+              );
+            }
+            return;
           }
+        }
+        // 2️⃣ 이미 permanentlyDenied → 커스텀 팝업
+        else if (status == PermissionStatus.permanentlyDenied) {
+          _showGalleryPermissionDialog();
+          return;
+        }
+        // 3️⃣ granted → 저장
+        else if (!status.isGranted) {
           return;
         }
       }
 
-      // RepaintBoundary를 찾아서 이미지로 변환
-      RenderRepaintBoundary boundary =
-      _ticketKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      print('✅ 권한 확인 완료, 저장 시작');
 
-      // 고해상도 이미지를 위해 pixelRatio 설정
+      // 이미지 캡처
+      RenderRepaintBoundary boundary = _ticketKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-      // 임시 파일 경로 생성
+      // gal 저장 (에러 핸들링 강화)
       final String fileName = "baseball_diary_${DateTime.now().millisecondsSinceEpoch}.png";
-
-      // gal 패키지로 갤러리에 저장
       await Gal.putImageBytes(pngBytes, name: fileName);
 
+      print('✅ gal 저장 성공');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('이미지가 갤러리에 저장되었습니다.'),
-          ),
+          SnackBar(content: Text('이미지가 갤러리에 저장되었습니다.')),
         );
       }
     } catch (e) {
-      print('❌ 이미지 저장 실패: $e');
+      print('❌ 저장 실패 상세: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('이미지 저장 중 오류가 발생했습니다.')),
+          SnackBar(content: Text('저장 실패: $e')),
+        );
+      }
+    }
+  }*/
+
+  Future<void> _saveTicketImage() async {
+    try {
+      // iOS에서 permanentlyDenied만 체크
+      if (Theme.of(context).platform == TargetPlatform.iOS) {
+        final status = await Permission.photos.status;
+        print('📸 iOS Photos 상태: $status');
+
+        if (status == PermissionStatus.permanentlyDenied) {
+          _showGalleryPermissionDialog();
+          return;
+        }
+      }
+
+      print('🎉 두다다 티켓 저장 시작!');
+
+      // 이미지 캡처
+      RenderRepaintBoundary boundary =
+      _ticketKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      print('🖼️ 캡처 완료: ${pngBytes.length} bytes');
+
+      // Gal 저장 + 권한 거절 시 커스텀 팝업
+      final String fileName = "DODADA_${DateTime.now().millisecondsSinceEpoch}.png";
+      await Gal.putImageBytes(pngBytes, name: fileName);
+
+      print('✅ 갤러리 저장 성공!');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('티켓을 저장했습니다'),
+            //backgroundColor: AppColors.pri500,
+          ),
+        );
+      }
+    } on GalException catch (e) {
+      print('❌ Gal 권한 오류: $e');
+      if (mounted) {
+        _showGalleryPermissionDialog(); // **GalException → 커스텀 팝업**
+      }
+    } catch (e) {
+      print('❌ 기타 저장 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('저장 중 오류 발생: $e')),
         );
       }
     }
   }
+
+
+
+
 
   // 네트워크 오류 화면 위젯
   Widget _buildNetworkErrorScreen() {

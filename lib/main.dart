@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' hide UserApi;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:frontend/features/onboarding_login/splash_screen.dart';
@@ -14,6 +14,9 @@ import 'package:frontend/features/notification/fcm_service.dart';
 import 'firebase_options.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
+import 'package:frontend/api/user_api.dart';
+import 'package:frontend/features/mypage/friend_profile_screen.dart';
+
 
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -99,17 +102,33 @@ class _MyAppState extends State<MyApp> {
       final userId = int.parse(uri.pathSegments[1]);
       print('✅ [Flutter] 프로필 이동: userId=$userId');
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         final context = navigatorKey.currentContext;
         if (context != null) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => MyPageScreen(
-                fromNavigation: false,
-                showBackButton: true,
+          // 내 userId 조회
+          final myProfile = await UserApi.getMyProfile();
+          final myUserId = myProfile['data']['id'];
+
+          if (userId == myUserId) {
+            // 내 프로필
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => MyPageScreen(
+                  fromNavigation: false,
+                  showBackButton: true,
+                ),
               ),
-            ),
-          );
+            );
+          } else {
+            // 친구 프로필
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => FriendProfileScreen(
+                  userId: userId,
+                ),
+              ),
+            );
+          }
           print('✅ [Flutter] 프로필 네비게이션 완료');
         }
       });

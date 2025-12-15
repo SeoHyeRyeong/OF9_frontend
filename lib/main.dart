@@ -13,6 +13,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:frontend/features/notification/fcm_service.dart';
 import 'firebase_options.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
+import 'package:frontend/features/feed/detail_feed_screen.dart';
+
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -90,6 +92,7 @@ class _MyAppState extends State<MyApp> {
   void _handleDeepLinkUrl(String urlString) {
     final uri = Uri.parse(urlString);
 
+    // 1) 프로필
     if (uri.host == 'dodada.site' &&
         uri.pathSegments.isNotEmpty &&
         uri.pathSegments[0] == 'profile') {
@@ -107,11 +110,36 @@ class _MyAppState extends State<MyApp> {
               ),
             ),
           );
-          print('✅ [Flutter] 네비게이션 완료');
+          print('✅ [Flutter] 프로필 네비게이션 완료');
+        }
+      });
+
+      // 2) 기록 상세 (/records/{id}/details)
+    } else if (uri.host == 'dodada.site' &&
+        uri.pathSegments.length >= 3 &&
+        uri.pathSegments[0] == 'record' &&   // ✅ 여기
+        uri.pathSegments[2] == 'details') {
+      final recordId = int.parse(uri.pathSegments[1]);
+      print('✅ [Flutter] 기록 상세 이동: recordId=$recordId');
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => DetailFeedScreen(
+                recordId: recordId,
+                fromUpload: false,
+                showUploadToast: false,
+              ),
+            ),
+          );
+          print('✅ [Flutter] 기록 네비게이션 완료');
         }
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

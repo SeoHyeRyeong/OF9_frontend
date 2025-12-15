@@ -579,31 +579,21 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 ),*/
                 GestureDetector(
                   onTap: () async {
-                    // 현재 사용자 정보를 가져와서 공유 링크 생성
                     try {
                       final response = await UserApi.getMyProfile();
-                      print('🔍 API 응답: ${response}'); // 디버깅용
+                      final userId = response['data']['id'];
 
-                      final userId = response['data']['id']; // 또는 nickname
-
-                      // 프로필 공유 링크 생성
+                      // https 링크로 공유 (웹에서도 작동)
                       final profileUrl = 'https://dodada.site/profile/$userId';
 
-                      // 공유 실행
                       await Share.share(
                         '$nickname님의 두다다 프로필\n$profileUrl',
-                        subject: '$nickname님의 야구 직관 기록',
+                        subject: '두다다 프로필 공유',
                       );
 
-                      print("✅ 프로필 링크 공유: $profileUrl");
+                      print("✅ 프로필 공유 완료: $profileUrl");
                     } catch (e) {
                       print('❌ 공유 실패: $e');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('공유하기에 실패했습니다.'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
                     }
                   },
                   child: SvgPicture.asset(

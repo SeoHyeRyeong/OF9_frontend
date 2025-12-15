@@ -12,9 +12,7 @@ import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:frontend/features/notification/fcm_service.dart';
 import 'firebase_options.dart';
-import 'package:uni_links/uni_links.dart';
-import 'dart:async';
-
+import 'package:frontend/features/mypage/mypage_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -67,51 +65,51 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  StreamSubscription? _sub;
+  // ✅ MethodChannel을 클래스 안으로
+  static const platform = MethodChannel('com.of9.dodada/deeplink');
 
   @override
   void initState() {
     super.initState();
-    _initUniLinks();
+    _setupNativeDeepLink();
   }
 
-  @override
-  void dispose() {
-    _sub?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _initUniLinks() async {
-    try {
-      final initialUri = await getInitialUri();
-      if (initialUri != null) {
-        _handleDeepLink(initialUri);
+  // ✅ 네이티브에서 호출받기
+  void _setupNativeDeepLink() {
+    platform.setMethodCallHandler((call) async {
+      if (call.method == 'handleDeepLink') {
+        final String url = call.arguments;
+        print('✅ [Flutter] 네이티브에서 URL 수신: $url');
+        _handleDeepLinkUrl(url);
       }
+    });
+  }
 
-      _sub = uriLinkStream.listen((Uri? uri) {
-        if (uri != null) {
-          _handleDeepLink(uri);
+  void _handleDeepLinkUrl(String urlString) {
+    final uri = Uri.parse(urlString);
+
+    if (uri.host == 'dodada.site' &&
+        uri.pathSegments.isNotEmpty &&
+        uri.pathSegments[0] == 'profile') {
+
+      final userId = int.parse(uri.pathSegments[1]);
+      print('✅ [Flutter] 프로필 이동: userId=$userId');
+
+      // ✅ 즉시 네비게이션
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => MyPageScreen(
+                fromNavigation: false,
+                showBackButton: true,
+              ),
+            ),
+          );
+          print('✅ [Flutter] 네비게이션 완료');
         }
       });
-    } catch (e) {
-      print('❌ Deep Link 초기화 실패: $e');
-    }
-  }
-
-  void _handleDeepLink(Uri uri) {
-    if (uri.host == 'dodada.site' && uri.pathSegments.length > 1) {
-      if (uri.pathSegments[0] == 'profile') {
-        final userId = uri.pathSegments[1];
-        Future.delayed(const Duration(milliseconds: 500), () {
-          // TODO: OtherUserProfileScreen import 후 사용
-          // navigatorKey.currentState?.push(
-          //   MaterialPageRoute(
-          //     builder: (context) => OtherUserProfileScreen(userId: userId),
-          //   ),
-          // );
-          print('✅ 프로필 페이지로 이동: userId=$userId');
-        });
-      }
     }
   }
 

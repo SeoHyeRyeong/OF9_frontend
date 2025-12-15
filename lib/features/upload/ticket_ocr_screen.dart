@@ -21,6 +21,9 @@ import 'package:frontend/theme/app_imgs.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/utils/ticket_info_extractor.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;  // 새로 추가
+
 
 late List<CameraDescription> _cameras;
 late CameraController _cameraController;
@@ -46,6 +49,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
   bool _isDialogShowing = false;
   final ImagePicker _picker = ImagePicker();
   DateTime? _lastScanTime;
+  CameraImage? _successfulScanFrame;
 
   bool _isMovingToNextScreen = false;
 
@@ -147,11 +151,15 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
   void _startAutoScan() {
     print('📸 _startAutoScan 호출됨');
     print('  _isCameraInitialized: $_isCameraInitialized');
-    print('  _cameraController.value.isInitialized: ${_cameraController.value.isInitialized}');
-    print('  _cameraController.value.isStreamingImages: ${_cameraController.value.isStreamingImages}');
+    print('  _cameraController.value.isInitialized: ${_cameraController.value
+        .isInitialized}');
+    print(
+        '  _cameraController.value.isStreamingImages: ${_cameraController.value
+            .isStreamingImages}');
     print('  _isMovingToNextScreen: $_isMovingToNextScreen');
 
-    if (!_isCameraInitialized || !_cameraController.value.isInitialized || _cameraController.value.isStreamingImages) {
+    if (!_isCameraInitialized || !_cameraController.value.isInitialized ||
+        _cameraController.value.isStreamingImages) {
       print('❌ 자동 스캔 시작 실패: 조건 미충족');
       return;
     }
@@ -168,7 +176,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
         print('🎞️ 프레임 수신: ${now.millisecondsSinceEpoch}');
 
-        if (_lastScanTime != null && now.difference(_lastScanTime!).inMilliseconds < 500) {
+        if (_lastScanTime != null && now
+            .difference(_lastScanTime!)
+            .inMilliseconds < 500) {
           return;
         }
 
@@ -202,6 +212,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
   @override
   void dispose() {
+    _successfulScanFrame = null;
     _stopAutoScan();
     WidgetsBinding.instance.removeObserver(this);
     if (_isCameraInitialized) {
@@ -218,11 +229,15 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       for (final Plane plane in image.planes) {
         allBytes.putUint8List(plane.bytes);
       }
-      final bytes = allBytes.done().buffer.asUint8List();
+      final bytes = allBytes
+          .done()
+          .buffer
+          .asUint8List();
       print('  이미지 바이트 변환 완료: ${bytes.length} bytes');
 
       final InputImageRotation rotation = _rotationIntToInputImageRotation(
-          _cameraController.value.deviceOrientation ?? DeviceOrientation.portraitUp
+          _cameraController.value.deviceOrientation ??
+              DeviceOrientation.portraitUp
       );
 
       // ✨ 안드로이드/iOS 포맷 분기 처리
@@ -259,13 +274,16 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       );
       print('  InputImage 생성 완료');
 
-      final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
+      final textRecognizer = TextRecognizer(
+          script: TextRecognitionScript.korean);
       print('  TextRecognizer 생성 완료');
 
       final recognizedText = await textRecognizer.processImage(inputImage);
       print('  OCR 처리 완료');
 
-      final cleanedText = recognizedText.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+      final cleanedText = recognizedText.text
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
 
       print('====================================');
       print('🔍 OCR 인식 텍스트 (총 ${recognizedText.text.length}자):');
@@ -273,14 +291,13 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       print('====================================');
 
       if (cleanedText.isNotEmpty) {
-        await _attemptMatchAndMove(cleanedText);
+        await _attemptMatchAndMove(cleanedText, image);
       } else {
         print('⚠️ OCR 결과가 비어있음');
       }
 
       await textRecognizer.close();
       print('  TextRecognizer 종료 완료');
-
     } catch (e) {
       print('❌ _processCameraImage 오류: $e');
       print('❌ 스택 트레이스: ${StackTrace.current}');
@@ -288,7 +305,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
   }
 
 
-  InputImageRotation _rotationIntToInputImageRotation(DeviceOrientation orientation) {
+  InputImageRotation _rotationIntToInputImageRotation(
+      DeviceOrientation orientation) {
     switch (orientation) {
       case DeviceOrientation.portraitUp:
         return InputImageRotation.rotation0deg;
@@ -303,7 +321,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     }
   }
 
-  Future<void> _attemptMatchAndMove(String cleanedText) async {
+  Future<void> _attemptMatchAndMove(String cleanedText,
+      CameraImage image) async {
     if (_isMovingToNextScreen || !mounted) return;
 
     final extracted = _extractTicketInfoFromText(cleanedText);
@@ -311,11 +330,11 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     print('🔍 매칭 시도:');
     print('  extracted.awayTeam: ${extracted.awayTeam}');
     print('  extracted.date: ${extracted.date}');
-    print('  조건 통과: ${extracted.awayTeam?.isNotEmpty == true && extracted.date?.isNotEmpty == true}');
+    print('  조건 통과: ${extracted.awayTeam?.isNotEmpty == true &&
+        extracted.date?.isNotEmpty == true}');
 
     if (extracted.awayTeam?.isNotEmpty == true &&
         extracted.date?.isNotEmpty == true) {
-
       final String awayTeam = extracted.awayTeam!;
       final String dateStr = extracted.date!;
 
@@ -339,6 +358,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         if (matchedGames.isNotEmpty) {
           final game = matchedGames.first;
 
+          _successfulScanFrame = image;
+
           HapticFeedback.mediumImpact();
 
           setState(() {
@@ -357,7 +378,6 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         } else {
           print('❌ DB 매칭 실패: $awayTeam, $dateStr 와 일치하는 경기가 없습니다.');
         }
-
       } catch (e) {
         print('❌ DB 통신 오류: $e');
       }
@@ -366,26 +386,26 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     }
   }
 
-  Future<void> _handleScanSuccess(dynamic game, ExtractedTicketInfo extracted) async {
+  Future<void> _handleScanSuccess(dynamic game,
+      ExtractedTicketInfo extracted) async {
     _stopAutoScan();
 
     try {
-      final XFile file = await _cameraController.takePicture();
-      _capturedImagePath = file.path;
-
-      if (_capturedImagePath == null) {
-        throw Exception("Captured image path is null.");
+      // ✅ 무음 Raw 캡처 (3줄 변환!)
+      if (_successfulScanFrame == null) {
+        throw Exception("No successful frame captured.");
       }
+      final imageBytes = await _cameraImageToJpegBytes(_successfulScanFrame!);
+      _capturedImagePath = await _saveBytesToTempFile(imageBytes);
 
       final recordState = Provider.of<RecordState>(context, listen: false);
       recordState.reset();
 
-      // ✨ DB 형식을 풀네임으로 변환
+      // ✨ DB 형식을 풀네임으로 변환 (기존 그대로)
       final fullHomeTeam = _mapCorpToFullName(game.homeTeam) ?? game.homeTeam;
       final fullAwayTeam = _mapCorpToFullName(game.awayTeam) ?? game.awayTeam;
       final fullStadium = _mapStadiumName(game.stadium) ?? game.stadium;
 
-      // 날짜와 시간을 합쳐서 DateTime 형식으로 만들기
       String formattedDateTime = '';
       if (extracted.date != null && game.time != null) {
         formattedDateTime = '${extracted.date} ${game.time}';
@@ -393,20 +413,19 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
       print('💾 RecordState 저장 시작:');
       print('  ticketImagePath: $_capturedImagePath');
-      print('  selectedHome: $fullHomeTeam (원본: ${game.homeTeam})');
-      print('  selectedAway: $fullAwayTeam (원본: ${game.awayTeam})');
+      print('  selectedHome: $fullHomeTeam');
+      print('  selectedAway: $fullAwayTeam');
       print('  selectedDateTime: $formattedDateTime');
-      print('  selectedStadium: $fullStadium (원본: ${game.stadium})');
+      print('  selectedStadium: $fullStadium');
       print('  gameId: ${game.gameId}');
 
       recordState.setTicketInfo(
         ticketImagePath: _capturedImagePath!,
-        selectedHome: fullHomeTeam,           // ✨ 풀네임
-        selectedAway: fullAwayTeam,           // ✨ 풀네임
+        selectedHome: fullHomeTeam,
+        selectedAway: fullAwayTeam,
         selectedDateTime: formattedDateTime,
-        selectedStadium: fullStadium,         // ✨ 풀네임
+        selectedStadium: fullStadium,
         gameId: game.gameId,
-        // extracted* 필드도 함께 저장
         extractedHomeTeam: fullHomeTeam,
         extractedAwayTeam: fullAwayTeam,
         extractedDate: extracted.date,
@@ -420,10 +439,11 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation1, animation2) => TicketInfoScreen(
-              imagePath: _capturedImagePath!,
-              skipOcrFailPopup: true,
-            ),
+            pageBuilder: (context, animation1, animation2) =>
+                TicketInfoScreen(
+                  imagePath: _capturedImagePath!,
+                  skipOcrFailPopup: true,
+                ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),
@@ -440,6 +460,7 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       }
     }
   }
+
 
   // ✨ 헬퍼 함수: 짧은 팀명 → 풀네임
   String? _mapCorpToFullName(String? shortName) {
@@ -503,22 +524,23 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => CustomPopupDialog(
-        imageAsset: AppImages.icAlert,
-        title: '현재 카메라 사용에 대한\n접근 권한이 없어요',
-        subtitle: '설정에서 카메라 권한을 허용해주세요',
-        firstButtonText: '직접 입력',
-        firstButtonAction: () {
-          _isDialogShowing = false;
-          Navigator.pop(context);
-          _onDirectWriteButtonPressed();
-        },
-        secondButtonText: '확인',
-        secondButtonAction: () {
-          _isDialogShowing = false;
-          Navigator.pop(context);
-        },
-      ),
+      builder: (context) =>
+          CustomPopupDialog(
+            imageAsset: AppImages.icAlert,
+            title: '현재 카메라 사용에 대한\n접근 권한이 없어요',
+            subtitle: '설정에서 카메라 권한을 허용해주세요',
+            firstButtonText: '직접 입력',
+            firstButtonAction: () {
+              _isDialogShowing = false;
+              Navigator.pop(context);
+              _onDirectWriteButtonPressed();
+            },
+            secondButtonText: '확인',
+            secondButtonAction: () {
+              _isDialogShowing = false;
+              Navigator.pop(context);
+            },
+          ),
     );
   }
 
@@ -526,41 +548,44 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => CustomPopupDialog(
-        imageAsset: AppImages.icAlert,
-        title: '티켓 속 정보를\n인식하지 못했어요',
-        subtitle: '다시 시도하거나 정보를 직접 입력해 주세요',
-        firstButtonText: '직접 입력',
-        firstButtonAction: () {
-          Navigator.pop(context);
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => TicketInfoScreen(
-                imagePath: imagePath,
-                skipOcrFailPopup: true,
-              ),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
-        },
-        secondButtonText: '다시 시도하기',
-        secondButtonAction: () {
-          Navigator.pop(context);
-          setState(() {
-            _isMovingToNextScreen = false;
-          });
-          _startAutoScan();
-        },
-      ),
+      builder: (context) =>
+          CustomPopupDialog(
+            imageAsset: AppImages.icAlert,
+            title: '티켓 속 정보를\n인식하지 못했어요',
+            subtitle: '다시 시도하거나 정보를 직접 입력해 주세요',
+            firstButtonText: '직접 입력',
+            firstButtonAction: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) =>
+                      TicketInfoScreen(
+                        imagePath: imagePath,
+                        skipOcrFailPopup: true,
+                      ),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            },
+            secondButtonText: '다시 시도하기',
+            secondButtonAction: () {
+              Navigator.pop(context);
+              setState(() {
+                _isMovingToNextScreen = false;
+              });
+              _startAutoScan();
+            },
+          ),
     );
   }
 
   Future<void> _onGalleryButtonPressed() async {
     _stopAutoScan();
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? pickedFile = await _picker.pickImage(
+          source: ImageSource.gallery);
       if (pickedFile == null) {
         _startAutoScan();
         return;
@@ -572,7 +597,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => TicketInfoScreen(imagePath: pickedFile.path),
+          pageBuilder: (_, __, ___) =>
+              TicketInfoScreen(imagePath: pickedFile.path),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
         ),
@@ -580,7 +606,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     } catch (e) {
       _startAutoScan();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('갤러리 접근 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('갤러리 접근 실패: $e')));
       }
     }
   }
@@ -593,7 +620,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const TicketInfoScreen(
+        pageBuilder: (_, __, ___) =>
+        const TicketInfoScreen(
           imagePath: '',
           skipOcrFailPopup: true,
         ),
@@ -614,7 +642,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
       child: Container(
         width: scaleWidth(115),
         height: scaleHeight(44),
-        padding: EdgeInsets.symmetric(horizontal: scaleWidth(14), vertical: scaleHeight(8)),
+        padding: EdgeInsets.symmetric(
+            horizontal: scaleWidth(14), vertical: scaleHeight(8)),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(scaleWidth(60)),
@@ -665,7 +694,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation1, animation2) => const ReportScreen(),
+              pageBuilder: (context, animation1,
+                  animation2) => const ReportScreen(),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero,
             ),
@@ -680,7 +710,8 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
 
             return Stack(
               children: [
-                if (_isCameraInitialized && _cameraController.value.isInitialized)
+                if (_isCameraInitialized &&
+                    _cameraController.value.isInitialized)
                   SizedBox(
                     height: screenHeight,
                     width: double.infinity,
@@ -711,7 +742,10 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                   right: 0,
                   bottom: 0,
                   child: Container(
-                    height: scaleHeight(70) + MediaQuery.of(context).padding.bottom,
+                    height: scaleHeight(70) + MediaQuery
+                        .of(context)
+                        .padding
+                        .bottom,
                     color: Colors.white,
                   ),
                 ),
@@ -736,7 +770,10 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                 ),
 
                 Positioned(
-                  top: scaleHeight(50) + MediaQuery.of(context).padding.top,
+                  top: scaleHeight(50) + MediaQuery
+                      .of(context)
+                      .padding
+                      .top,
                   left: 0,
                   right: 0,
                   child: Column(
@@ -745,7 +782,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                     children: [
                       FixedText(
                         '티켓을 스캔해 주세요',
-                        style: AppFonts.pretendard.head_md_600(context).copyWith(
+                        style: AppFonts.pretendard
+                            .head_md_600(context)
+                            .copyWith(
                           color: Colors.white,
                           fontSize: scaleFont(20),
                           fontWeight: FontWeight.w700,
@@ -755,7 +794,9 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                       SizedBox(height: scaleHeight(8)),
                       FixedText(
                         '팀명, 일시가 잘 보이게 직관 티켓을 스캔해 주세요',
-                        style: AppFonts.pretendard.body_sm_400(context).copyWith(
+                        style: AppFonts.pretendard
+                            .body_sm_400(context)
+                            .copyWith(
                           color: AppColors.gray30,
                           fontSize: scaleFont(14),
                         ),
@@ -771,10 +812,17 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                       left: scaleWidth(31),
                       right: scaleWidth(31),
                       // ✨ 위: 안내 텍스트 끝 + 44 여백
-                      top: scaleHeight(50) + MediaQuery.of(context).padding.top + scaleHeight(20 + 8 + 14 + 44),
+                      top: scaleHeight(50) + MediaQuery
+                          .of(context)
+                          .padding
+                          .top + scaleHeight(20 + 8 + 14 + 44),
                       // 안내 텍스트 위치(50) + 타이틀 높이(20) + 간격(8) + 서브타이틀 높이(14) + 여백(44)
                       // ✨ 아래: 버튼 위 + 44 여백
-                      bottom: MediaQuery.of(context).padding.bottom + scaleHeight(70) + scaleHeight(24) + scaleHeight(44) + scaleHeight(44),
+                      bottom: MediaQuery
+                          .of(context)
+                          .padding
+                          .bottom + scaleHeight(70) + scaleHeight(24) +
+                          scaleHeight(44) + scaleHeight(44),
                       // 내비바(70) + 간격(24) + 버튼 높이(44) + 여백(44)
                     ),
                     child: Column(
@@ -783,15 +831,27 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            SvgPicture.asset(AppImages.icCornerTopLeft, width: scaleWidth(24), height: scaleHeight(24), color: Colors.white),
-                            SvgPicture.asset(AppImages.icCornerTopRight, width: scaleWidth(24), height: scaleHeight(24), color: Colors.white),
+                            SvgPicture.asset(AppImages.icCornerTopLeft,
+                                width: scaleWidth(24),
+                                height: scaleHeight(24),
+                                color: Colors.white),
+                            SvgPicture.asset(AppImages.icCornerTopRight,
+                                width: scaleWidth(24),
+                                height: scaleHeight(24),
+                                color: Colors.white),
                           ],
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            SvgPicture.asset(AppImages.icCornerBottomLeft, width: scaleWidth(24), height: scaleHeight(24), color: Colors.white),
-                            SvgPicture.asset(AppImages.icCornerBottomRight, width: scaleWidth(24), height: scaleHeight(24), color: Colors.white),
+                            SvgPicture.asset(AppImages.icCornerBottomLeft,
+                                width: scaleWidth(24),
+                                height: scaleHeight(24),
+                                color: Colors.white),
+                            SvgPicture.asset(AppImages.icCornerBottomRight,
+                                width: scaleWidth(24),
+                                height: scaleHeight(24),
+                                color: Colors.white),
                           ],
                         ),
                       ],
@@ -802,7 +862,10 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
                 Positioned(
                   left: 0,
                   right: 0,
-                  bottom: MediaQuery.of(context).padding.bottom + scaleHeight(88) + scaleHeight(24),
+                  bottom: MediaQuery
+                      .of(context)
+                      .padding
+                      .bottom + scaleHeight(88) + scaleHeight(24),
                   child: Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -837,5 +900,176 @@ class _TicketOcrScreenState extends State<TicketOcrScreen>
         ),
       ),
     );
+  }
+
+  // ticket_ocr_screen.dart: _TicketOcrScreenState 클래스 내부
+// ... (생략)
+
+  Future<Uint8List> _cameraImageToJpegBytes(CameraImage image) async {
+    Uint8List? rgbBytes;
+
+    // 1. Raw 카메라 이미지 데이터를 RGB 바이트로 변환
+    if (image.format.group == ImageFormatGroup.yuv420 ||
+        image.format.group == ImageFormatGroup.nv21) {
+      // YUV 계열 포맷 (Android 및 일부 iOS)
+      rgbBytes = _yuv420toRgb(image);
+      print('✅ Raw YUV420 → RGB 변환 완료');
+    } else if (image.format.group == ImageFormatGroup.bgra8888) {
+      // BGRA8888 포맷 (iOS)
+      rgbBytes = _bgra8888toRgb(image);
+      print('✅ Raw BGRA8888 → RGB 변환 완료');
+    } else {
+      print('❌ 지원하지 않는 이미지 포맷: ${image.format.group}');
+      throw Exception("Unsupported image format for JPEG encoding.");
+    }
+
+    if (rgbBytes == null) {
+      throw Exception("Failed to convert raw image to RGB bytes.");
+    }
+
+    // 2. RGB 바이트를 image 패키지의 Image 객체로 변환
+    // 💡 img.Image.fromBytes는 buffer를 사용하고, numChannels: 4 (RGBA/ARGB)를 명시해야 합니다.
+    final img.Image? decodedImage = img.Image.fromBytes(
+      width: image.width,
+      height: image.height,
+      bytes: rgbBytes.buffer,
+      numChannels: 4, // ARGB (Alpha, Red, Green, Blue) 4채널
+    );
+
+    if (decodedImage == null) {
+      throw Exception("Failed to decode RGB bytes into img.Image.");
+    }
+
+    // 3. Image 객체를 JPEG로 인코딩하여 유효한 파일 데이터 생성
+    // (선택 사항: Android/iOS에서 디바이스 방향에 따라 회전이 필요할 수 있습니다.)
+    // final img.Image rotatedImage = img.copyRotate(decodedImage, angle: 90);
+
+    final Uint8List jpgBytes = img.encodeJpg(decodedImage, quality: 90);
+    print('✅ RGB → JPEG 인코딩 성공 (${jpgBytes.length} bytes)');
+
+    return jpgBytes;
+  }
+
+  Future<String> _saveBytesToTempFile(Uint8List bytes) async {
+    final tempDir = await getTemporaryDirectory();
+    final timestamp = DateTime
+        .now()
+        .millisecondsSinceEpoch;
+    final file = File('${tempDir.path}/ticket_$timestamp.jpg');
+    await file.writeAsBytes(bytes);
+    print('💾 컬러 티켓 저장: ${file.path} (${bytes.length} bytes)');
+    return file.path;
+  }
+
+
+  // YUV420 포맷에서 RGB로 변환하는 로직 (Android/iOS YUV 포맷 처리)
+  Uint8List _yuv420toRgb(CameraImage image) {
+    if (image.planes.length < 2) {
+      throw Exception("YUV420 conversion failed: insufficient planes (${image.planes.length}).");
+    }
+
+    final int width = image.width;
+    final int height = image.height;
+
+    // --- Y Plane (Luminance) ---
+    final int yRowStride = image.planes[0].bytesPerRow;
+    final Uint8List y = image.planes[0].bytes;
+
+    // --- UV Planes (Chrominance) ---
+    final Uint8List uv = image.planes[1].bytes;
+    final Uint8List? vPlane = image.planes.length > 2 ? image.planes[2].bytes : null;
+
+    // UV 데이터 접근 정보
+    final int uvRowStride = image.planes[1].bytesPerRow;
+    int? uvPixelStride = image.planes[1].bytesPerPixel;
+
+    // UV Pixel Stride 유효성 검사 및 대체
+    if (uvPixelStride == null || uvPixelStride <= 0) {
+      print('⚠️ uvPixelStride가 유효하지 않아 기본값 2를 사용합니다. (iOS/Android)');
+      uvPixelStride = 2; // NV12/NV21의 기본값 2로 설정
+    }
+
+    final Uint8List rgb = Uint8List(width * height * 4); // RGBA 버퍼 (패딩 없음)
+
+    for (int h = 0; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        // 1. YUV 데이터 읽기 인덱스 (패딩/Stride 포함)
+        final int yDataIndex = h * yRowStride + w;
+
+        // 2. RGB 버퍼 쓰기 인덱스 (패딩 미포함, 논리적 픽셀 위치)
+        // RGB 버퍼는 width 기준 (yRowStride보다 작음)
+        final int pixelIndex = h * width + w;
+
+        // UV 인덱스 계산: UV Row Stride 사용 (정렬된 데이터 처리)
+        final int uvRow = h ~/ 2;
+        final int uvCol = w ~/ 2;
+
+        final int uvIndex = uvRow * uvRowStride + uvCol * uvPixelStride;
+
+        final int Y = y[yDataIndex];
+        int U, V;
+
+        if (vPlane != null) {
+          // 3 Planes (YUV420p)
+          U = uv[uvIndex];
+
+          final int vIndex = uvRow * image.planes[2].bytesPerRow + uvCol * image.planes[2].bytesPerPixel!;
+          V = vPlane[vIndex];
+        } else {
+          // 2 Planes (NV21/NV12): UV가 인터리브드 됨
+          if (Platform.isIOS) {
+            // 💡 iOS는 NV12(UV 순서)가 표준이므로, 순서를 되돌립니다.
+            // 이전의 '빨간색 오류'는 Y/Stride 문제였고, 이제 U/V 순서를 맞춥니다.
+            U = uv[uvIndex]; // U 먼저 (청색 성분)
+            V = uv[uvIndex + 1]; // V 다음 (적색 성분)
+          } else {
+            // Android (NV21) 가정: VU 순서
+            V = uv[uvIndex];
+            U = uv[uvIndex + 1];
+          }
+        }
+
+        // YUV to RGB conversion formula
+        int R = (Y + 1.402 * (V - 128)).round();
+        int G = (Y - 0.344136 * (U - 128) - 0.714136 * (V - 128)).round();
+        int B = (Y + 1.772 * (U - 128)).round();
+
+        // Clamp R, G, B to [0, 255]
+        R = R.clamp(0, 255);
+        G = G.clamp(0, 255);
+        B = B.clamp(0, 255);
+
+        // RGBA 순서로 버퍼에 쓰기 (논리적 픽셀 인덱스 사용)
+        final int offset = pixelIndex * 4;
+        rgb[offset] = R;
+        rgb[offset + 1] = G;
+        rgb[offset + 2] = B;
+        rgb[offset + 3] = 255;   // Alpha
+      }
+    }
+
+    return rgb;
+  }
+
+// BGRA8888 포맷에서 RGB로 변환하는 로직 (iOS에서 사용될 수 있음)
+  Uint8List _bgra8888toRgb(CameraImage image) {
+    // BGRA8888은 한 Plane에 모든 데이터가 있습니다.
+    final bytes = image.planes[0].bytes;
+    final int width = image.width;
+    final int height = image.height;
+    final Uint8List rgb = Uint8List(width * height * 4); // ARGB
+
+    for (int i = 0, j = 0; i < bytes.length; i += 4, j += 4) {
+      final int B = bytes[i];
+      final int G = bytes[i + 1];
+      final int R = bytes[i + 2];
+      // bytes[i + 3]은 A (Alpha) 값입니다.
+
+      rgb[j] = 255; // Alpha
+      rgb[j + 1] = R;
+      rgb[j + 2] = G;
+      rgb[j + 3] = B;
+    }
+    return rgb;
   }
 }

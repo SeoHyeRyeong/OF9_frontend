@@ -12,7 +12,7 @@ import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:frontend/features/notification/fcm_service.dart';
 import 'firebase_options.dart';
-import 'package:uni_links/uni_links.dart';
+import 'package:app_links/app_links.dart';
 import 'dart:async';
 
 
@@ -67,6 +67,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  late AppLinks _appLinks;
   StreamSubscription? _sub;
 
   @override
@@ -82,33 +83,31 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _initUniLinks() async {
+    _appLinks = AppLinks();
+
     try {
-      final initialUri = await getInitialUri();
+      // 초기 링크 가져오기
+      final initialUri = await _appLinks.getInitialLink();
       if (initialUri != null) {
         _handleDeepLink(initialUri);
       }
 
-      _sub = uriLinkStream.listen((Uri? uri) {
-        if (uri != null) {
-          _handleDeepLink(uri);
-        }
+      // 링크 스트림 구독
+      _sub = _appLinks.uriLinkStream.listen((Uri uri) {
+        _handleDeepLink(uri);
       });
     } catch (e) {
       print('❌ Deep Link 초기화 실패: $e');
     }
   }
 
+  // _handleDeepLink는 그대로 사용 (변경 없음)
   void _handleDeepLink(Uri uri) {
     if (uri.host == 'dodada.site' && uri.pathSegments.length > 1) {
       if (uri.pathSegments[0] == 'profile') {
         final userId = uri.pathSegments[1];
         Future.delayed(const Duration(milliseconds: 500), () {
           // TODO: OtherUserProfileScreen import 후 사용
-          // navigatorKey.currentState?.push(
-          //   MaterialPageRoute(
-          //     builder: (context) => OtherUserProfileScreen(userId: userId),
-          //   ),
-          // );
           print('✅ 프로필 페이지로 이동: userId=$userId');
         });
       }

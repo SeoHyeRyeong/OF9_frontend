@@ -18,14 +18,12 @@ class FollowStatusManager extends ChangeNotifier {
   void updateFollowStatus(int userId, String followStatus) {
     _followStatusMap[userId] = followStatus;
     notifyListeners();
-    print('[FollowStatusManager] userId=$userId, followStatus=$followStatus 업데이트');
   }
 
   /// 초기 상태 설정 (이미 있으면 무시)
   void setInitialStatus(int userId, String followStatus) {
     if (!_followStatusMap.containsKey(userId)) {
       _followStatusMap[userId] = followStatus;
-      print('[FollowStatusManager] userId=$userId 초기 상태: $followStatus');
     }
   }
 
@@ -33,13 +31,11 @@ class FollowStatusManager extends ChangeNotifier {
   void removeStatus(int userId) {
     _followStatusMap.remove(userId);
     notifyListeners();
-    print('🗑[FollowStatusManager] userId=$userId 상태 삭제');
   }
 
   /// 모든 상태 초기화
   void clearAll() {
     _followStatusMap.clear();
     notifyListeners();
-    print('[FollowStatusManager] 모든 상태 초기화');
   }
 }

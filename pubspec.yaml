@@ -51,11 +51,10 @@ dependencies:
   flutter_svg: ^1.1.6
   camera: ^0.10.5+5
   table_calendar: ^3.0.0
-  uni_links: ^0.5.1  # Deep Link 처리
   share_plus: ^10.1.2
   gal: ^2.3.0
   permission_handler: ^11.0.1
-
+  app_links: ^6.3.2
   google_mlkit_text_recognition: ^0.15.0
   clarity_flutter: ^1.5.0
   firebase_core: ^4.2.1

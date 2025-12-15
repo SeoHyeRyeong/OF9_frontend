@@ -69,6 +69,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
   late int _commentCount;
   late String _followStatus;
   bool _isFollowLoading = false;
+  bool _isLikeLoading = false;
 
   @override
   void initState() {
@@ -127,12 +128,16 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
       if (newIsLiked != null && newLikeCount != null && newCommentCount != null) {
         if (_isLiked != newIsLiked || _likeCount != newLikeCount || _commentCount != newCommentCount) {
-          setState(() {
-            _isLiked = newIsLiked;
-            _likeCount = newLikeCount;
-            _commentCount = newCommentCount;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _isLiked = newIsLiked;
+                _likeCount = newLikeCount;
+                _commentCount = newCommentCount;
+              });
+              print('✅ [FeedItemWidget] 전역 상태 동기화: recordId=$recordId, commentCount=$newCommentCount');
+            }
           });
-          print('✅ [FeedItemWidget] 전역 상태 동기화: recordId=$recordId, commentCount=$newCommentCount');
         }
       }
     }
@@ -144,11 +149,15 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
     if (userId != null) {
       final newFollowStatus = _followManager.getFollowStatus(userId);
       if (newFollowStatus != null && newFollowStatus != _followStatus) {
-        setState(() {
-          _followStatus = newFollowStatus;
-          widget.feedData['followStatus'] = newFollowStatus;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _followStatus = newFollowStatus;
+              widget.feedData['followStatus'] = newFollowStatus;
+            });
+            print('✅ [FeedItemWidget] 팔로우 상태 동기화: userId=$userId, followStatus=$newFollowStatus');
+          }
         });
-        print('✅ [FeedItemWidget] 팔로우 상태 동기화: userId=$userId, followStatus=$newFollowStatus');
       }
     }
   }
@@ -215,22 +224,43 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
 
   Future<void> _toggleLike() async {
     final recordId = widget.feedData['recordId']?.toString();
-    if (recordId == null) return;
+    if (recordId == null || _isLikeLoading) return;
+
+    // 즉시 UI 토글
+    setState(() {
+      _isLiked = !_isLiked;
+      _likeCount = _isLiked ? _likeCount + 1 : _likeCount - 1;
+      _isLikeLoading = true;
+    });
+
+    // 전역 상태도 즉시 업데이트 (다른 화면에서 바로 반영)
+    _likeManager.updateLikeState(int.parse(recordId), _isLiked, _likeCount);
 
     try {
+      // API 호출
       final result = await FeedApi.toggleLike(recordId);
       final isLiked = result['isLiked'] as bool;
-      final likeCountRaw = result['likeCount'];
-      final likeCount = likeCountRaw is int ? likeCountRaw : (likeCountRaw as num).toInt();
+      final likeCount = result['likeCount'] is int
+          ? result['likeCount']
+          : (result['likeCount'] as num).toInt();
 
-      _likeManager.updateLikeState(int.parse(recordId), isLiked, likeCount);
-
+      // API 응답으로 최종 확정 (로컬만 업데이트, 전역은 이미 했음)
       setState(() {
         _isLiked = isLiked;
         _likeCount = likeCount;
+        _isLikeLoading = false;
       });
+
+      // 전역도 보정 (API 결과와 다를 수 있으니)
+      _likeManager.updateLikeState(int.parse(recordId), isLiked, likeCount);
     } catch (e) {
-      print('❌ 좋아요 토글 실패: $e');
+      // 실패하면 원래대로
+      setState(() {
+        _isLiked = !_isLiked;
+        _likeCount = _isLiked ? _likeCount + 1 : _likeCount - 1;
+        _isLikeLoading = false;
+      });
+      _likeManager.updateLikeState(int.parse(recordId), _isLiked, _likeCount);
     }
   }
 

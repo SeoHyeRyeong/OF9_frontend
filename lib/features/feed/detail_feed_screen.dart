@@ -62,11 +62,16 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
   List<CommentDto> _comments = [];
 
   int? _currentUserId;
+  String? _currentUserNickname;
+  String? _currentUserProfileImage;
   bool _isGameCardExpanded = false;
 
   // 팔로우 상태 관리
   String _followStatus = 'NOT_FOLLOWING';
   bool _isFollowLoading = false;
+
+  // 좋아요 로딩 상태
+  bool _isLikeLoading = false;
 
   // 댓글 수정 관련 상태
   int? _editingCommentId;
@@ -110,13 +115,15 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
   Future<void> _loadCurrentUserId() async {
     try {
       final userProfile = await UserApi.getMyProfile();
-      final userId = userProfile['data']['id'];
+      final data = userProfile['data'];
       setState(() {
-        _currentUserId = userId;
+        _currentUserId = data['id'];
+        _currentUserNickname = data['nickname'];
+        _currentUserProfileImage = data['profileImageUrl'];
       });
-      print('✅ 현재 사용자 ID: $userId');
+      print('✅ 현재 사용자 정보: ${data['nickname']}');
     } catch (e) {
-      print('❌ 사용자 ID 조회 실패: $e');
+      print('❌ 사용자 정보 조회 실패: $e');
     }
   }
 
@@ -126,12 +133,17 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     final newCommentCount = _feedCountManager.getCommentCount(widget.recordId);
 
     if (newIsLiked != null && newLikeCount != null && newCommentCount != null) {
+      // 값이 실제로 다를 때만 업데이트 (API에서 이미 업데이트했으면 skip)
       if (_isLiked != newIsLiked || _likeCount != newLikeCount ||
           _commentCount != newCommentCount) {
-        setState(() {
-          _isLiked = newIsLiked;
-          _likeCount = newLikeCount;
-          _commentCount = newCommentCount;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _isLiked = newIsLiked;
+              _likeCount = newLikeCount;
+              _commentCount = newCommentCount;
+            });
+          }
         });
       }
     }
@@ -141,8 +153,12 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     final comments = _commentListManager.getComments(widget.recordId);
 
     if (comments != null) {
-      setState(() {
-        _comments = List.from(comments);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _comments = List.from(comments);
+          });
+        }
       });
     }
   }
@@ -152,10 +168,14 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     if (userId != null) {
       final newFollowStatus = _followManager.getFollowStatus(userId);
       if (newFollowStatus != null && newFollowStatus != _followStatus) {
-        setState(() {
-          _followStatus = newFollowStatus;
-          if (_recordDetail != null) {
-            _recordDetail!['followStatus'] = newFollowStatus;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _followStatus = newFollowStatus;
+              if (_recordDetail != null) {
+                _recordDetail!['followStatus'] = newFollowStatus;
+              }
+            });
           }
         });
       }
@@ -228,25 +248,43 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
   }
 
   Future<void> _toggleLike() async {
+    if (_isLikeLoading) return;
+
+    // 즉시 UI 토글
+    setState(() {
+      _isLiked = !_isLiked;
+      _likeCount = _isLiked ? _likeCount + 1 : _likeCount - 1;
+      _isLikeLoading = true;
+    });
+
+    // 전역 상태도 즉시 업데이트
+    _feedCountManager.updateLikeState(widget.recordId, _isLiked, _likeCount);
+
     try {
+      // API 호출
       final result = await FeedApi.toggleLike(widget.recordId.toString());
-
       final isLiked = result['isLiked'] as bool;
-      final likeCountRaw = result['likeCount'];
-      final likeCount = likeCountRaw is int
-          ? likeCountRaw
-          : (likeCountRaw as num).toInt();
+      final likeCount = result['likeCount'] is int
+          ? result['likeCount']
+          : (result['likeCount'] as num).toInt();
 
-      _feedCountManager.updateLikeState(widget.recordId, isLiked, likeCount);
-
+      // API 응답으로 최종 확정 (로컬만)
       setState(() {
         _isLiked = isLiked;
         _likeCount = likeCount;
+        _isLikeLoading = false;
       });
 
-      print('✅ 좋아요 토글 성공: isLiked=$isLiked, likeCount=$likeCount');
+      // 전역도 보정
+      _feedCountManager.updateLikeState(widget.recordId, isLiked, likeCount);
     } catch (e) {
-      print('❌ 좋아요 토글 실패: $e');
+      // 실패하면 원래대로
+      setState(() {
+        _isLiked = !_isLiked;
+        _likeCount = _isLiked ? _likeCount + 1 : _likeCount - 1;
+        _isLikeLoading = false;
+      });
+      _feedCountManager.updateLikeState(widget.recordId, _isLiked, _likeCount);
     }
   }
 
@@ -258,7 +296,6 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     _commentController.clear();
     _commentFocusNode.unfocus();
     FocusScope.of(context).unfocus();
-    await Future.delayed(Duration(milliseconds: 100));
 
     try {
       if (_editingCommentId != null) {
@@ -275,32 +312,43 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
 
         await _loadComments();
       } else {
-        // 댓글 작성 모드
+        // 댓글 작성 - 간단한 낙관적 업데이트
+
+        // 즉시 개수만 증가
+        setState(() {
+          _commentCount = _commentCount + 1;
+        });
+        _feedCountManager.updateCommentCount(widget.recordId, _commentCount);
+
+        // API 호출
         final result = await FeedApi.createComment(
             widget.recordId.toString(), originalContent);
         final newComment = CommentDto.fromJson(result);
 
-        print('✅ 댓글 작성 API 응답 받음: ${newComment.content}');
-        print('📊 응답에 포함된 totalCommentCount: ${newComment.totalCommentCount}');
-
-        // 서버에서 최신 댓글 목록 다시 불러오기 (이게 가장 확실함)
-        await _loadComments();
-
-        // 댓글 카운트 업데이트
-        if (newComment.totalCommentCount != null) {
-          setState(() {
+        // API 응답으로 댓글 추가 및 개수 보정
+        setState(() {
+          _comments.add(newComment);
+          if (newComment.totalCommentCount != null) {
             _commentCount = newComment.totalCommentCount!;
-          });
+          }
+        });
+
+        if (newComment.totalCommentCount != null) {
           _feedCountManager.updateCommentCount(
               widget.recordId, newComment.totalCommentCount!);
-          print('✅ 댓글 카운트 업데이트: ${newComment.totalCommentCount}');
         }
-
-        print('✅ 댓글 작성 완료 - 총 ${_comments.length}개');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       print('❌ 댓글 ${_editingCommentId != null ? "수정" : "작성"} 실패: $e');
-      print('스택트레이스: $stackTrace');
+
+      if (_editingCommentId == null) {
+        // 댓글 작성 실패시 개수 원래대로
+        setState(() {
+          _commentCount = _commentCount > 0 ? _commentCount - 1 : 0;
+        });
+        _feedCountManager.updateCommentCount(widget.recordId, _commentCount);
+      }
+
       _commentController.text = originalContent;
     }
   }

@@ -155,7 +155,6 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
               _followStatus = newFollowStatus;
               widget.feedData['followStatus'] = newFollowStatus;
             });
-            print('✅ [FeedItemWidget] 팔로우 상태 동기화: userId=$userId, followStatus=$newFollowStatus');
           }
         });
       }

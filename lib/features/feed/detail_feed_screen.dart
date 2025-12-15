@@ -374,16 +374,19 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
         final totalCount = response['totalCommentCount'] is int
             ? response['totalCommentCount']
             : (response['totalCommentCount'] as num).toInt();
-        _commentListManager.removeComment(
-          widget.recordId,
-          commentId,
-          totalCommentCount: totalCount,
-        );
         print('✅ 댓글 삭제 완료 - totalCommentCount: $totalCount');
+
+        // 댓글 수 업데이트
+        setState(() {
+          _commentCount = totalCount;
+        });
+        _feedCountManager.updateCommentCount(widget.recordId, totalCount);
       } else {
-        _commentListManager.removeComment(widget.recordId, commentId);
         print('✅ 댓글 삭제 완료, totalCommentCount 정보 없음');
       }
+
+      // 서버에서 최신 댓글 목록 다시 불러오기
+      await _loadComments();
     } catch (e) {
       print('❌ 댓글 삭제 실패: $e');
     }

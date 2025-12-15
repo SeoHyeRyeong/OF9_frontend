@@ -19,16 +19,10 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 1) 시스템 UI / 방향 먼저 세팅 (Android 시스템 바텀바 UI 위해)
   await SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.edgeToEdge,
   );
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  // FCM 초기화
-  await FCMService().initialize();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -47,8 +41,17 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  // 2) Firebase / FCM 초기화
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await FCMService().initialize();
+
+  // 3) 앱 실행
   runApp(const MyApp());
 
+  // 4) 비동기 초기화 (dotenv, Kakao 등)
   _initializeInBackground();
 }
 
@@ -65,7 +68,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // ✅ MethodChannel을 클래스 안으로
+  // 네이티브 딥링크용 MethodChannel
   static const platform = MethodChannel('com.of9.dodada/deeplink');
 
   @override
@@ -74,7 +77,6 @@ class _MyAppState extends State<MyApp> {
     _setupNativeDeepLink();
   }
 
-  // ✅ 네이티브에서 호출받기
   void _setupNativeDeepLink() {
     platform.setMethodCallHandler((call) async {
       if (call.method == 'handleDeepLink') {
@@ -91,11 +93,9 @@ class _MyAppState extends State<MyApp> {
     if (uri.host == 'dodada.site' &&
         uri.pathSegments.isNotEmpty &&
         uri.pathSegments[0] == 'profile') {
-
       final userId = int.parse(uri.pathSegments[1]);
       print('✅ [Flutter] 프로필 이동: userId=$userId');
 
-      // ✅ 즉시 네비게이션
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final context = navigatorKey.currentContext;
         if (context != null) {

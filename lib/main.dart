@@ -14,7 +14,7 @@ import 'package:frontend/features/notification/fcm_service.dart';
 import 'firebase_options.dart';
 import 'package:app_links/app_links.dart';
 import 'dart:async';
-
+import 'package:frontend/features/mypage/mypage_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -69,11 +69,13 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late AppLinks _appLinks;
   StreamSubscription? _sub;
+  static const platform = MethodChannel('com.of9.dodada/deeplink');
 
   @override
   void initState() {
     super.initState();
     _initUniLinks();
+    _setupNativeDeepLink();
   }
 
   @override
@@ -101,17 +103,53 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  // _handleDeepLink는 그대로 사용 (변경 없음)
+  // 네이티브에서 호출받기
+  void _setupNativeDeepLink() {
+    platform.setMethodCallHandler((call) async {
+      if (call.method == 'handleDeepLink') {
+        final String url = call.arguments;
+        print('✅ [Flutter] 네이티브에서 URL 수신: $url');
+        _handleDeepLinkUrl(url);
+      }
+    });
+  }
+
   void _handleDeepLink(Uri uri) {
     if (uri.host == 'dodada.site' && uri.pathSegments.length > 1) {
       if (uri.pathSegments[0] == 'profile') {
-        final userId = uri.pathSegments[1];
-        Future.delayed(const Duration(milliseconds: 500), () {
-          // TODO: OtherUserProfileScreen import 후 사용
-          print('✅ 프로필 페이지로 이동: userId=$userId');
-        });
+        final userId = int.parse(uri.pathSegments[1]);
+        _navigateToProfile(userId);
       }
     }
+  }
+
+  void _handleDeepLinkUrl(String urlString) {
+    final uri = Uri.parse(urlString);
+
+    if (uri.host == 'dodada.site' &&
+        uri.pathSegments.isNotEmpty &&
+        uri.pathSegments[0] == 'profile') {
+      final userId = int.parse(uri.pathSegments[1]);
+      print('✅ [Flutter] 프로필 이동: userId=$userId');
+      _navigateToProfile(userId);
+    }
+  }
+
+  void _navigateToProfile(int userId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => MyPageScreen(
+              fromNavigation: false,
+              showBackButton: true,
+            ),
+          ),
+        );
+        print('✅ [Flutter] 네비게이션 완료: userId=$userId');
+      }
+    });
   }
 
   @override

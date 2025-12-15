@@ -39,13 +39,13 @@
                     <string>kakao$(NATIVE_APP_KEY)</string>
                 </array>
             </dict>
-            <!-- Deep Link용 -->
+            <!-- 두다다 커스텀 스킴 -->
             <dict>
-                <key>CFBundleTypeRole</key>
-                <string>Editor</string>
+                <key>CFBundleURLName</key>
+                <string>com.of9.dodada</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
-                    <string>https</string>
+                    <string>dodada</string>
                 </array>
             </dict>
         </array>

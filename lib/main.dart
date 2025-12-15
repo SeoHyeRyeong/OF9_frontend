@@ -19,7 +19,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1) 시스템 UI / 방향 먼저 세팅 (Android 시스템 바텀바 UI 위해)
+  // 1) 시스템 UI 세팅
   await SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.edgeToEdge,
   );
@@ -145,37 +145,48 @@ class _MyAppState extends State<MyApp> {
       designSize: const Size(360, 800),
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (context, child) => MaterialApp(
-        navigatorKey: navigatorKey,
-        title: 'Flutter Kakao Login',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          textTheme: GoogleFonts.notoSansKrTextTheme(
-            Theme.of(context).textTheme,
-          ).apply(
-            fontFamilyFallback: ['NotoSansKR', 'AppleSDGothicNeo', 'MalgunGothic'],
-          ),
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.dark,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarContrastEnforced: false,
         ),
-        debugShowCheckedModeBanner: false,
-        builder: (context, child) {
-          final mediaQueryData = MediaQuery.of(context);
-          return MediaQuery(
-            data: mediaQueryData.copyWith(
-              textScaler: const TextScaler.linear(1.0),
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          title: 'Flutter Kakao Login',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            textTheme: GoogleFonts.notoSansKrTextTheme(
+              Theme.of(context).textTheme,
+            ).apply(
+              fontFamilyFallback: ['NotoSansKR', 'AppleSDGothicNeo', 'MalgunGothic'],
             ),
-            child: child!,
-          );
-        },
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('ko', 'KR'),
-        ],
-        locale: const Locale('ko', 'KR'),
-        home: const SplashScreen(),
+          ),
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) {
+            final mediaQueryData = MediaQuery.of(context);
+            return MediaQuery(
+              data: mediaQueryData.copyWith(
+                textScaler: const TextScaler.linear(1.0),
+              ),
+              child: child!,
+            );
+          },
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ko', 'KR'),
+          ],
+          locale: const Locale('ko', 'KR'),
+          home: const SplashScreen(),
+        ),
       ),
     );
   }

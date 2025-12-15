@@ -25,13 +25,6 @@ Future<void> main() async {
     SystemUiMode.edgeToEdge,
   );
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  // FCM 초기화
-  await FCMService().initialize();
-
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -44,10 +37,17 @@ Future<void> main() async {
     ),
   );
 
-  SystemChrome.setPreferredOrientations([
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // FCM 초기화
+  await FCMService().initialize();
 
   runApp(const MyApp());
 
@@ -184,37 +184,48 @@ class _MyAppState extends State<MyApp> {
       designSize: const Size(360, 800),
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (context, child) => MaterialApp(
-        navigatorKey: navigatorKey,
-        title: 'Flutter Kakao Login',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          textTheme: GoogleFonts.notoSansKrTextTheme(
-            Theme.of(context).textTheme,
-          ).apply(
-            fontFamilyFallback: ['NotoSansKR', 'AppleSDGothicNeo', 'MalgunGothic'],
-          ),
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.dark,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarContrastEnforced: false,
         ),
-        debugShowCheckedModeBanner: false,
-        builder: (context, child) {
-          final mediaQueryData = MediaQuery.of(context);
-          return MediaQuery(
-            data: mediaQueryData.copyWith(
-              textScaler: const TextScaler.linear(1.0),
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          title: 'Flutter Kakao Login',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            textTheme: GoogleFonts.notoSansKrTextTheme(
+              Theme.of(context).textTheme,
+            ).apply(
+              fontFamilyFallback: ['NotoSansKR', 'AppleSDGothicNeo', 'MalgunGothic'],
             ),
-            child: child!,
-          );
-        },
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('ko', 'KR'),
-        ],
-        locale: const Locale('ko', 'KR'),
-        home: const SplashScreen(),
+          ),
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) {
+            final mediaQueryData = MediaQuery.of(context);
+            return MediaQuery(
+              data: mediaQueryData.copyWith(
+                textScaler: const TextScaler.linear(1.0),
+              ),
+              child: child!,
+            );
+          },
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ko', 'KR'),
+          ],
+          locale: const Locale('ko', 'KR'),
+          home: const SplashScreen(),
+        ),
       ),
     );
   }

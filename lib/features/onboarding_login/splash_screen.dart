@@ -194,17 +194,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: Brightness.dark,
-        systemNavigationBarDividerColor: Colors.transparent,
-        systemNavigationBarContrastEnforced: false,
-      ),
-    );
-
+    // ✅ MaterialApp의 AnnotatedRegion이 전역으로 처리하므로 여기서는 제거
     return Scaffold(
       backgroundColor: Colors.white,
       extendBody: true,

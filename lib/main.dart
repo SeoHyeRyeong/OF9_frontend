@@ -30,6 +30,9 @@ Future<void> main() async {
   // FCM 초기화
   await FCMService().initialize();
 
+  // 🔎 릴리즈/디버그 공통 FCM 토큰 로그
+  await FCMService().logFcmToken();
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -65,7 +68,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // ✅ MethodChannel을 클래스 안으로
   static const platform = MethodChannel('com.of9.dodada/deeplink');
 
   @override
@@ -74,7 +76,6 @@ class _MyAppState extends State<MyApp> {
     _setupNativeDeepLink();
   }
 
-  // ✅ 네이티브에서 호출받기
   void _setupNativeDeepLink() {
     platform.setMethodCallHandler((call) async {
       if (call.method == 'handleDeepLink') {
@@ -91,11 +92,9 @@ class _MyAppState extends State<MyApp> {
     if (uri.host == 'dodada.site' &&
         uri.pathSegments.isNotEmpty &&
         uri.pathSegments[0] == 'profile') {
-
       final userId = int.parse(uri.pathSegments[1]);
       print('✅ [Flutter] 프로필 이동: userId=$userId');
 
-      // ✅ 즉시 네비게이션
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final context = navigatorKey.currentContext;
         if (context != null) {

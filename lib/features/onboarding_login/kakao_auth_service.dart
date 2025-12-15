@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:frontend/features/notification/fcm_service.dart';
 
 /// Secure Storage인스턴스 (앱 전체에서 재사용)
 final _secureStorage = FlutterSecureStorage();
@@ -178,6 +180,10 @@ class KakaoAuthService {
 
           if (ourAccessToken != null && ourRefreshToken != null) {
             print('🎉 백엔드 토큰 수신: ourAccessToken=${ourAccessToken.substring(0, 20)}..., ourRefreshToken=${ourRefreshToken.substring(0, 20)}...');
+
+            // ✅ 로그인 성공 후 FCM 토큰 저장
+            _saveFcmTokenAfterLogin();
+
             return {'accessToken': ourAccessToken, 'refreshToken': ourRefreshToken};
           } else {
             print('❌ data 내부에 토큰이 없음: $data');
@@ -190,6 +196,50 @@ class KakaoAuthService {
       print('🔥 백엔드 통신 오류: $e');
     }
     return null;
+  }
+
+  /// ✅ 로그인 성공 후 FCM 토큰 백엔드에 저장 (비동기)
+  Future<void> _saveFcmTokenAfterLogin() async {
+    try {
+      print('📱 로그인 성공 - FCM 토큰 저장 시도');
+
+      // 약간의 딜레이 추가 (토큰 저장 완료 대기)
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // FCM 토큰 가져오기
+      String? fcmToken = await FCMService().getToken();
+      if (fcmToken != null) {
+        print('✅ FCM 토큰 획득: ${fcmToken.substring(0, 20)}...');
+
+        final backendUrl = dotenv.env['BACKEND_URL'] ?? '';
+        final url = Uri.parse('$backendUrl/users/fcm-token');
+
+        final accessToken = await getAccessToken();
+        if (accessToken == null) {
+          print('⚠️ 액세스 토큰 없음 - FCM 토큰 저장 건너뜀');
+          return;
+        }
+
+        final response = await http.post(
+          url,
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'fcmToken': fcmToken}),
+        ).timeout(const Duration(seconds: 5));
+
+        if (response.statusCode == 200) {
+          print('✅ FCM 토큰 백엔드 저장 성공');
+        } else {
+          print('❌ FCM 토큰 저장 실패: ${response.statusCode}');
+        }
+      } else {
+        print('⚠️ FCM 토큰 없음 - 저장 건너뜀');
+      }
+    } catch (e) {
+      print('❌ FCM 토큰 저장 오류 (무시): $e');
+    }
   }
 
   /// 3) Secure Storage에 두 토큰 저장
@@ -278,7 +328,6 @@ class KakaoAuthService {
         url,
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $currentAccessToken',
         },
         body: payload,
       ).timeout(const Duration(seconds: 8));
@@ -407,11 +456,9 @@ class KakaoAuthService {
         }
       }
 
-      // ⚠️ 400 에러는 재시도 없이 반환하여 상위 로직에서 처리하도록 합니다.
       if (response.statusCode == 400) {
         print('❌ 400 Bad Request 발생 - 서버가 요청을 이해하지 못함');
       }
-
 
       return response;
     } catch (e) {
@@ -452,7 +499,6 @@ class KakaoAuthService {
     try {
       print('🔄 기존 사용자 로그인 시작');
 
-      // 'KIA 타이거즈'는 임시 값일 가능성이 있으므로, 실제 사용자 팀 정보를 사용해야 합니다.
       final ourTokens = await sendKakaoTokenToBackend(kakaoAccessToken, 'KIA 타이거즈');
 
       if (ourTokens != null) {
@@ -460,6 +506,10 @@ class KakaoAuthService {
           accessToken: ourTokens['accessToken']!,
           refreshToken: ourTokens['refreshToken']!,
         );
+
+        // ✅ 로그인 성공 후 FCM 토큰 저장
+        _saveFcmTokenAfterLogin();
+
         print('✅ 기존 사용자 로그인 성공');
         return true;
       }

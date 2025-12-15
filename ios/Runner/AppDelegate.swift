@@ -1,5 +1,7 @@
 import Flutter
 import UIKit
+import FirebaseCore
+import FirebaseMessaging
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -19,7 +21,19 @@ import UIKit
         binaryMessenger: controller.binaryMessenger
     )
 
+    // ✅ FCM 설정 추가!
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self
+    }
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // ✅ APNs 토큰 등록 (추가!)
+  override func application(_ application: UIApplication,
+                            didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    Messaging.messaging().apnsToken = deviceToken
+    print("✅ APNs 토큰 등록 완료")
   }
 
   // ✅ Universal Links 처리

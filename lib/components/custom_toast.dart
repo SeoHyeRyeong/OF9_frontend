@@ -6,6 +6,9 @@ import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/utils/size_utils.dart';
 
 class CustomToast {
+  // 현재 표시 중인 토스트 추적
+  static OverlayEntry? _currentOverlayEntry;
+
   /// 상단 토스트 버전
   static void showSimpleTop({
     required BuildContext context,
@@ -13,6 +16,12 @@ class CustomToast {
     required String message,
     Duration duration = const Duration(seconds: 2),
   }) {
+    // 이미 토스트가 표시 중이면 제거
+    if (_currentOverlayEntry != null) {
+      _currentOverlayEntry?.remove();
+      _currentOverlayEntry = null;
+    }
+
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
 
@@ -25,10 +34,12 @@ class CustomToast {
           if (overlayEntry.mounted) {
             overlayEntry.remove();
           }
+          _currentOverlayEntry = null;
         },
       ),
     );
 
+    _currentOverlayEntry = overlayEntry;
     overlay.insert(overlayEntry);
   }
 
@@ -42,6 +53,12 @@ class CustomToast {
     VoidCallback? onCancel,
     Duration duration = const Duration(seconds: 2),
   }) {
+    // 이미 토스트가 표시 중이면 제거
+    if (_currentOverlayEntry != null) {
+      _currentOverlayEntry?.remove();
+      _currentOverlayEntry = null;
+    }
+
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
 
@@ -63,90 +80,90 @@ class CustomToast {
                   color: AppColors.trans600,
                   borderRadius: BorderRadius.circular(scaleHeight(60)),
                 ),
-                  child: Row(
-                    children: [
-                      SizedBox(width: scaleWidth(20)),
+                child: Row(
+                  children: [
+                    SizedBox(width: scaleWidth(20)),
 
-                      // 프로필 이미지
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(scaleHeight(10.06)),
-                        child: profileImageUrl != null
-                            ? Image.network(
-                          profileImageUrl,
-                          width: scaleHeight(34),
-                          height: scaleHeight(34),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => SvgPicture.asset(
-                            defaultIconAsset,
-                            width: scaleHeight(34),
-                            height: scaleHeight(34),
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                            : SvgPicture.asset(
+                    // 프로필 이미지
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(scaleHeight(10.06)),
+                      child: profileImageUrl != null
+                          ? Image.network(
+                        profileImageUrl,
+                        width: scaleHeight(34),
+                        height: scaleHeight(34),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => SvgPicture.asset(
                           defaultIconAsset,
                           width: scaleHeight(34),
                           height: scaleHeight(34),
                           fit: BoxFit.cover,
                         ),
+                      )
+                          : SvgPicture.asset(
+                        defaultIconAsset,
+                        width: scaleHeight(34),
+                        height: scaleHeight(34),
+                        fit: BoxFit.cover,
                       ),
+                    ),
 
-                      SizedBox(width: scaleWidth(12)),
+                    SizedBox(width: scaleWidth(12)),
 
-                      Expanded(
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: scaleWidth(13)),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: RichText(
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: nickname,
+                                  style: AppFonts.pretendard.b3_sb(context)
+                                      .copyWith(color: AppColors.gray20),
+                                ),
+                                TextSpan(
+                                  text: '님 ',
+                                  style: AppFonts.pretendard.body_sm_400(context)
+                                      .copyWith(color: AppColors.gray100),
+                                ),
+                                TextSpan(
+                                  text: message,
+                                  style: AppFonts.pretendard.body_sm_400(context)
+                                      .copyWith(color: AppColors.gray100),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 취소 버튼 or 여백
+                    if (onCancel != null) ...[
+                      GestureDetector(
+                        onTap: () {
+                          overlayEntry.remove();
+                          onCancel();
+                        },
                         child: Padding(
-                          padding: EdgeInsets.only(right: scaleWidth(13)),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: RichText(
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: nickname,
-                                    style: AppFonts.pretendard.b3_sb(context)
-                                        .copyWith(color: AppColors.gray20),
-                                  ),
-                                  TextSpan(
-                                    text: '님 ',
-                                    style: AppFonts.pretendard.body_sm_400(context)
-                                        .copyWith(color: AppColors.gray100),
-                                  ),
-                                  TextSpan(
-                                    text: message,
-                                    style: AppFonts.pretendard.body_sm_400(context)
-                                        .copyWith(color: AppColors.gray100),
-                                  ),
-                                ],
-                              ),
+                          padding: EdgeInsets.only(right: scaleWidth(20)),
+                          child: Center(
+                            child: FixedText(
+                              '취소',
+                              style: AppFonts.pretendard.caption_md_500(context)
+                                  .copyWith(color: AppColors.gray20),
                             ),
                           ),
                         ),
                       ),
-
-                      // 취소 버튼 or 여백
-                      if (onCancel != null) ...[
-                        GestureDetector(
-                          onTap: () {
-                            overlayEntry.remove();
-                            onCancel();
-                          },
-                          child: Padding(
-                            padding: EdgeInsets.only(right: scaleWidth(20)),
-                            child: Center(
-                              child: FixedText(
-                                '취소',
-                                style: AppFonts.pretendard.caption_md_500(context)
-                                    .copyWith(color: AppColors.gray20),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ] else
-                        SizedBox(width: scaleWidth(20)),
-                    ],
-                  ),
+                    ] else
+                      SizedBox(width: scaleWidth(20)),
+                  ],
+                ),
               ),
             ),
           ),
@@ -154,18 +171,17 @@ class CustomToast {
       ),
     );
 
+    _currentOverlayEntry = overlayEntry;
     overlay.insert(overlayEntry);
 
     Future.delayed(duration, () {
       if (overlayEntry.mounted) {
         overlayEntry.remove();
+        _currentOverlayEntry = null;
       }
     });
   }
 
-
-  // 현재 표시 중인 토스트 추적
-  static OverlayEntry? _currentOverlayEntry;
 
   /// 글자만 있는 버전
   static void showWithAction({

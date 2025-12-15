@@ -21,5 +21,10 @@
         <!-- 상태바 관련 설정 -->
         <item name="android:windowTranslucentStatus">false</item>
         <item name="android:statusBarColor">#00000000</item>
+
+        <!-- 네비게이션바 투명 설정 추가 -->
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:navigationBarColor">#00000000</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 </resources>

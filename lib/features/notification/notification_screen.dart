@@ -332,7 +332,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
                       children: [
                         Text(
                           "알림",
-                          style: AppFonts.suite.h3_b(context).copyWith(
+                          style: AppFonts.pretendard.title_md_600(context).copyWith(
                             height: 1.0,
                           ),
                         ),
@@ -394,8 +394,8 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
           child: Text(
             _tabTexts[index],
             style: isSelected
-                ? AppFonts.suite.c1_b(context).copyWith(color: AppColors.white)
-                : AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray500),
+                ? AppFonts.pretendard.caption_md_500(context).copyWith(color: AppColors.white)
+                : AppFonts.pretendard.caption_md_400(context).copyWith(color: AppColors.gray500),
           ),
         ),
       ),
@@ -408,7 +408,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
     }
     if (_notifications.isEmpty) {
       return Center(
-        child: Text("받은 알림이 없어요", style: AppFonts.suite.head_sm_700(context).copyWith(color: AppColors.gray400)),
+        child: Text("받은 알림이 없어요", style: AppFonts.pretendard.head_sm_600(context).copyWith(color: AppColors.gray400)),
       );
     }
     return RefreshIndicator(
@@ -590,7 +590,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
                 padding: EdgeInsets.zero,
                 elevation: 0
             ),
-            child: Text('수락', style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.white)),
+            child: Text('수락', style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.white)),
           ),
         ),
         SizedBox(width: scaleWidth(4)),
@@ -604,7 +604,7 @@ class _NotificationScreenState extends State<NotificationScreen> with WidgetsBin
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: EdgeInsets.zero
             ),
-            child: Text('삭제', style: AppFonts.suite.c1_m(context).copyWith(color: AppColors.gray600)),
+            child: Text('삭제', style: AppFonts.pretendard.c1_m(context).copyWith(color: AppColors.gray600)),
           ),
         ),
       ],

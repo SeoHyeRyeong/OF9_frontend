@@ -8,6 +8,7 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/utils/fixed_text.dart';
 import 'package:frontend/api/record_api.dart';
 import 'package:frontend/api/feed_api.dart';
+import 'package:frontend/api/complaint_api.dart';
 import 'package:frontend/utils/feed_count_manager.dart';
 import 'package:frontend/utils/comment_state_manager.dart';
 import 'package:frontend/utils/follow_status_manager.dart';
@@ -427,6 +428,42 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
     }
   }
 
+  /// 게시글 신고하기
+  Future<void> _reportRecord() async {
+    try {
+      await ComplaintApi.reportRecord(widget.recordId);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('신고가 접수되었습니다'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      print('✅ 게시글 신고 성공');
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = '신고 처리 중 오류가 발생했습니다';
+
+        if (e.toString().contains('이미 신고한 내용입니다')) {
+          errorMessage = '이미 신고한 게시글입니다';
+        } else if (e.toString().contains('자기 자신을 신고할 수 없습니다')) {
+          errorMessage = '자기 자신의 게시글은 신고할 수 없습니다';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      print('❌ 게시글 신고 실패: $e');
+    }
+  }
+
   void _showMoreOptions() {
     // 본인 게시글일 때만 수정/삭제
     if (_isMyPost) {
@@ -589,6 +626,7 @@ class _DetailFeedScreenState extends State<DetailFeedScreen> {
             textColor: AppColors.error,
             onTap: () {
               Navigator.pop(context);
+              _reportRecord();
             },
           ),
         ],

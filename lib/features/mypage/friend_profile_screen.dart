@@ -8,6 +8,7 @@ import 'package:frontend/utils/size_utils.dart';
 import 'package:frontend/components/custom_bottom_navbar.dart';
 import 'package:frontend/api/user_api.dart';
 import 'package:frontend/api/feed_api.dart';
+import 'package:frontend/api/complaint_api.dart';
 import 'package:frontend/features/mypage/mypage_screen.dart';
 import 'package:frontend/features/mypage/follower_screen.dart';
 import 'package:frontend/features/mypage/following_screen.dart';
@@ -625,6 +626,42 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     }
   }
 
+  /// 사용자 신고하기
+  Future<void> _reportUser() async {
+    try {
+      await ComplaintApi.reportUser(widget.userId);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('신고가 접수되었습니다'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      print('✅ 사용자 신고 성공');
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = '신고 처리 중 오류가 발생했습니다';
+
+        if (e.toString().contains('이미 신고한 내용입니다')) {
+          errorMessage = '이미 신고한 사용자입니다';
+        } else if (e.toString().contains('자기 자신을 신고할 수 없습니다')) {
+          errorMessage = '자기 자신을 신고할 수 없습니다';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      print('❌ 사용자 신고 실패: $e');
+    }
+  }
+
   Widget _buildMediaImage(dynamic mediaData, double width, double height) {
     try {
       if (mediaData is String) {
@@ -844,6 +881,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     isBlocked: isBlocked,
                     onBlockTap: _handleBlock,
                     isMutualFollow: isMutualFollow,
+                    onReportUser: _reportUser,
                   ),
                 ),
                 SliverList(
@@ -1938,6 +1976,7 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   final bool isBlocked;
   final VoidCallback onBlockTap;
   final bool isMutualFollow;
+  final VoidCallback onReportUser;
 
   _FriendProfileHeaderDelegate({
     required this.height,
@@ -1949,7 +1988,9 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.isBlocked,
     required this.onBlockTap,
     required this.isMutualFollow,
+    required this.onReportUser,
   });
+
 
   @override
   double get minExtent => height;
@@ -2011,6 +2052,7 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                         textColor: AppColors.error,
                         onTap: () {
                           Navigator.pop(context);
+                          onReportUser();
                         },
                       ),
                     ],
@@ -2075,6 +2117,7 @@ class _FriendProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                       textColor: AppColors.error,
                       onTap: () {
                         Navigator.pop(context);
+                        onReportUser();
                       },
                     ),
                   ],

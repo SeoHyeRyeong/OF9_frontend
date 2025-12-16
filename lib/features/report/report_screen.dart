@@ -485,10 +485,9 @@ class _ReportScreenState extends State<ReportScreen> {
   ///카운트다운,티켓 요약 카드
   Widget _buildCountdownSection({required bool hasRecords}) {
     final seasonInfo = _reportData?['seasonInfo'];
-    final message = seasonInfo?['message'] ?? '시즌 정보 없음';
+    final message = seasonInfo?['message'] ?? '';
     final daysRemaining = seasonInfo?['daysRemaining'] ?? 0;
     final daysRemainingStr = daysRemaining.toString();
-
     final bool isDDay = daysRemaining >= 0 && daysRemaining <= 10;
 
     return Container(
@@ -499,33 +498,34 @@ class _ReportScreenState extends State<ReportScreen> {
           Text(
             message,
             style: AppFonts.suite.body_md_500(context).copyWith(
-                color: AppColors.gray30),
+              color: AppColors.gray30,
+            ),
           ),
           SizedBox(height: scaleHeight(13)),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // D 박스
+              // "D" 글자
               Container(
-                width: scaleWidth(38),
-                height: scaleHeight(40),
+                padding: EdgeInsets.only(
+                  left: scaleWidth(8),
+                  right: scaleWidth(8),
+                  top: scaleHeight(7),
+                  bottom: scaleHeight(2),
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(scaleWidth(5)),
                 ),
-                alignment: Alignment.center,
-                child: Transform.translate(
-                  offset: Offset(0, scaleHeight(3)),
-                  child: Text(
-                    "D",
-                    style: TextStyle(
-                      fontFamily: 'Jalnan',
-                      fontSize: 30.sp,
-                      color: AppColors.gray900,
-                      height: 1.0,
-                      letterSpacing: -1,
-                    ),
+                child: Text(
+                  'D',
+                  style: TextStyle(
+                    fontFamily: 'Jalnan',
+                    fontSize: 30.sp,
+                    color: AppColors.gray900,
+                    height: 1.0,
+                    letterSpacing: -1,
                   ),
                 ),
               ),
@@ -541,75 +541,73 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                 ),
               ),
-              // 숫자 박스들
+              // D-DAY 또는 숫자
               if (daysRemaining == 0) ...[
-                // 0일일 때 "DAY" 표시
-                ...['D', 'A', 'Y'].map((char) =>
-                    Padding(
-                      padding: EdgeInsets.only(
-                          right: char != 'Y' ? scaleWidth(4) : 0),
-                      child: Container(
-                        width: scaleWidth(38),
-                        height: scaleHeight(40),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(scaleWidth(5)),
-                        ),
-                        alignment: Alignment.center,
-                        child: Transform.translate(
-                          offset: Offset(0, scaleHeight(3)),
-                          child: Text(
-                            char,
-                            style: TextStyle(
-                              fontFamily: 'Jalnan',
-                              fontSize: 30.sp,
-                              color: AppColors.error,
-                              height: 1.0,
-                              letterSpacing: -1,
-                            ),
-                          ),
-                        ),
+                // D-DAY
+                ...['D', 'A', 'Y'].map((char) => Padding(
+                  padding: EdgeInsets.only(
+                    right: char != 'Y' ? scaleWidth(4) : 0,
+                  ),
+                  child: Container(
+                    padding: EdgeInsets.only(
+                      left: scaleWidth(8),
+                      right: scaleWidth(8),
+                      top: scaleHeight(7),
+                      bottom: scaleHeight(2),
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(scaleWidth(5)),
+                    ),
+                    child: Text(
+                      char,
+                      style: TextStyle(
+                        fontFamily: 'Jalnan',
+                        fontSize: 30.sp,
+                        color: AppColors.error,
+                        height: 1.0,
+                        letterSpacing: -1,
                       ),
-                    )),
-              ] else
-                ...[
-                  // 1~10일 때 숫자 표시
-                  ...List.generate(daysRemainingStr.length, (index) {
-                    final bool isNumeric = int.tryParse(
-                        daysRemainingStr[index]) != null;
-                    final Color textColor = (isDDay && isNumeric) ? AppColors
-                        .error: AppColors.gray900;
+                    ),
+                  ),
+                )),
+              ] else ...[
+                // 숫자 표시
+                ...List.generate(daysRemainingStr.length, (index) {
+                  final bool isNumeric = int.tryParse(daysRemainingStr[index]) != null;
+                  final Color textColor = isDDay && isNumeric
+                      ? AppColors.error
+                      : AppColors.gray900;
 
-                    return Padding(
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: index < daysRemainingStr.length - 1 ? scaleWidth(4) : 0,
+                    ),
+                    child: Container(
                       padding: EdgeInsets.only(
-                        right: index < daysRemainingStr.length - 1 ? scaleWidth(
-                            4) : 0,
+                        left: scaleWidth(8),
+                        right: scaleWidth(8),
+                        top: scaleHeight(7),
+                        bottom: scaleHeight(2),
                       ),
-                      child: Container(
-                        width: scaleWidth(38),
-                        height: scaleHeight(40),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(scaleWidth(5)),
-                        ),
-                        alignment: Alignment.center,
-                        child: Transform.translate(
-                          offset: Offset(0, scaleHeight(3)),
-                          child: Text(
-                            daysRemainingStr[index],
-                            style: TextStyle(
-                              fontFamily: 'Jalnan',
-                              fontSize: 30.sp,
-                              color: textColor,
-                              height: 1.0,
-                              letterSpacing: -1,
-                            ),
-                          ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(scaleWidth(5)),
+                      ),
+                      child: Text(
+                        daysRemainingStr[index],
+                        style: TextStyle(
+                          fontFamily: 'Jalnan',
+                          fontSize: 30.sp,
+                          color: textColor,
+                          height: 1.0,
+                          letterSpacing: -1,
                         ),
                       ),
-                    );
-                  }),
-                ],
+                    ),
+                  );
+                }),
+              ],
             ],
           ),
           SizedBox(height: scaleHeight(33)),
@@ -646,7 +644,6 @@ class _ReportScreenState extends State<ReportScreen> {
         key: _ticketKey,
         child: Container(
           width: double.infinity,
-          height: scaleHeight(195),
           child: Stack(
             children: [
               // 기본 티켓
@@ -669,157 +666,147 @@ class _ReportScreenState extends State<ReportScreen> {
                     notchRadius: scaleWidth(12),
                     dividerDashWidth: scaleHeight(7),
                     dividerDashSpace: scaleHeight(7),
-                    dividerXPosition: (MediaQuery
-                        .of(context)
-                        .size
-                        .width - scaleWidth(32)) * 0.7,
+                    dividerXPosition: (MediaQuery.of(context).size.width - scaleWidth(32)) * 0.7,
                     dividerStrokeWidth: 1.47,
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: scaleWidth(15.27),
-                      top: scaleHeight(16.4),
-                      right: scaleWidth(10.25),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 왼쪽 영역
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 프로필
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: scaleWidth(32),
-                                    height: scaleHeight(32),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(
-                                          scaleWidth(11.85)),
-                                      border: Border.all(
-                                          color: AppColors.gray100, width: 0.76),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                          scaleWidth(11.85)),
-                                      child: profileImageUrl != null &&
-                                          profileImageUrl!.isNotEmpty
-                                          ? Image.network(
-                                        profileImageUrl!,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        errorBuilder: (context, error,
-                                            stackTrace) =>
-                                            SvgPicture.asset(
-                                              AppImages.profile,
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                              fit: BoxFit.cover,
-                                            ),
-                                      )
-                                          : SvgPicture.asset(
-                                        AppImages.profile,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        fit: BoxFit.cover,
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: scaleWidth(15.27),
+                        top: scaleHeight(16.4),
+                        right: scaleWidth(10.25),
+                        bottom: scaleHeight(13.41),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 왼쪽 영역
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // 프로필
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: scaleWidth(32),
+                                      height: scaleHeight(32),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(scaleWidth(11.85)),
+                                        border: Border.all(
+                                            color: AppColors.gray100, width: 0.76),
                                       ),
-                                    ),
-                                  ),
-                                  SizedBox(width: scaleWidth(9)),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        nickname,
-                                        style: AppFonts.suite.caption_md_500(
-                                            context).copyWith(
-                                            color: AppColors.gray800),
-                                      ),
-                                      if (favTeam != '응원팀 없음')
-                                        Text(
-                                          "$favTeam 팬",
-                                          style: AppFonts.suite.caption_re_400(
-                                              context).copyWith(
-                                              color: AppColors.gray300),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(scaleWidth(11.85)),
+                                        child: profileImageUrl != null &&
+                                            profileImageUrl!.isNotEmpty
+                                            ? Image.network(
+                                          profileImageUrl!,
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          errorBuilder: (context, error,
+                                              stackTrace) =>
+                                              SvgPicture.asset(
+                                                AppImages.profile,
+                                                width: double.infinity,
+                                                height: double.infinity,
+                                                fit: BoxFit.cover,
+                                              ),
+                                        )
+                                            : SvgPicture.asset(
+                                          AppImages.profile,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          fit: BoxFit.cover,
                                         ),
+                                      ),
+                                    ),
+                                    SizedBox(width: scaleWidth(9)),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          nickname,
+                                          style: AppFonts.suite.caption_md_500(context).copyWith(
+                                              color: AppColors.gray800),
+                                        ),
+                                        if (favTeam != '응원팀 없음')
+                                          Text(
+                                            "$favTeam 팬",
+                                            style: AppFonts.suite.caption_re_400(context).copyWith(
+                                                color: AppColors.gray300),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: scaleHeight(3)),
+
+                                Align(
+                                  alignment: Alignment((0.36 * 2) - 1, 0),
+                                  child: Text(
+                                    "${totalWinRate % 1 == 0
+                                        ? totalWinRate.toInt()
+                                        : totalWinRate.toStringAsFixed(1)}%",
+                                    style: TextStyle(
+                                      fontFamily: AppFonts.suiteFontFamily,
+                                      fontSize: 42.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.gray800,
+                                      height: 1.6,
+                                      letterSpacing: -0.84,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+
+                                Align(
+                                  alignment: Alignment((0.37 * 2) - 1, 0),
+                                  child: Text(
+                                    "총 ${totalGames}회의 경기를 관람했어요",
+                                    style: AppFonts.suite.caption_re_400(context).copyWith(
+                                        color: AppColors.gray600, fontSize: 10.sp),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+
+                                SizedBox(height: scaleHeight(14)),
+
+                                Align(
+                                  alignment: Alignment((0.29 * 2) - 1, 0),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _buildWinLossDrawBadge(AppImages.win, totalWin),
+                                      SizedBox(width: scaleWidth(10)),
+                                      _buildWinLossDrawBadge(AppImages.tie, totalDraw),
+                                      SizedBox(width: scaleWidth(10)),
+                                      _buildWinLossDrawBadge(AppImages.lose, totalLose),
                                     ],
                                   ),
-                                ],
-                              ),
-                              SizedBox(height: scaleHeight(3)),
-
-                              Align(
-                                alignment: Alignment((0.36 * 2) - 1, 0),
-                                child: Text(
-                                  "${totalWinRate % 1 == 0
-                                      ? totalWinRate.toInt()
-                                      : totalWinRate.toStringAsFixed(1)}%",
-                                  style: TextStyle(
-                                    fontFamily: AppFonts.suiteFontFamily,
-                                    fontSize: 42.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.gray800,
-                                    height: 1.6,
-                                    letterSpacing: -0.84,
-                                  ),
-                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-
-                              Align(
-                                alignment: Alignment((0.37 * 2) - 1, 0),
-                                child: Text(
-                                  "총 ${totalGames}회의 경기를 관람했어요",
-                                  style: AppFonts.suite.caption_re_400(context)
-                                      .copyWith(
-                                      color: AppColors.gray600, fontSize: 10.sp),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-
-                              SizedBox(height: scaleHeight(14)),
-
-                              Align(
-                                alignment: Alignment((0.29 * 2) - 1, 0),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                              ],
+                            ),
+                          ),
+                          // 오른쪽 홈/원정 박스
+                          Column(
+                            children: [
+                              Expanded(
+                                child: Column(
                                   children: [
-                                    _buildWinLossDrawBadge(
-                                        AppImages.win, totalWin),
-                                    SizedBox(width: scaleWidth(10)),
-                                    _buildWinLossDrawBadge(
-                                        AppImages.tie, totalDraw),
-                                    SizedBox(width: scaleWidth(10)),
-                                    _buildWinLossDrawBadge(
-                                        AppImages.lose, totalLose),
+                                    Expanded(child: _buildHomeAwayBox("홈", homeWinRate, homeWin, homeLose)),
+                                    SizedBox(height: scaleHeight(8)),
+                                    Expanded(child: _buildHomeAwayBox("원정", awayWinRate, awayWin, awayLose)),
                                   ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        // 오른쪽 홈/원정 박스
-                        Column(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  Expanded(child: _buildHomeAwayBox(
-                                      "홈", homeWinRate, homeWin, homeLose)),
-                                  SizedBox(height: scaleHeight(8)),
-                                  Expanded(child: _buildHomeAwayBox(
-                                      "원정", awayWinRate, awayWin, awayLose)),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: scaleHeight(14)),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1324,12 +1311,12 @@ class _ReportScreenState extends State<ReportScreen> {
         Widget iconWidget;
         if (isProfileImage) {
           // 프로필 이미지
-          final bool hasProfileUrl = iconPath != null && iconPath.isNotEmpty &&
-              !isPlaceholder;
-          iconWidget = ClipOval(
+          final bool hasProfileUrl = iconPath != null && iconPath.isNotEmpty && !isPlaceholder;
+          iconWidget = ClipRRect(
+            borderRadius: BorderRadius.circular(iconSize / 2),
             child: hasProfileUrl
                 ? Image.network(
-              iconPath,
+              iconPath!,
               width: iconSize,
               height: iconSize,
               fit: BoxFit.cover,

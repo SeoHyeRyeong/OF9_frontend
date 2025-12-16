@@ -1542,7 +1542,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                   '리포트',
                   style: AppFonts.pretendard.caption_re_400(context).copyWith(
                     color: AppColors.pri700,
-                    fontSize: 10.sp,
                   ),
                 ),
               ),

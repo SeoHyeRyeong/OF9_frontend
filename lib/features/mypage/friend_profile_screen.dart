@@ -1484,7 +1484,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                   '오늘',
                   style: AppFonts.suite.caption_md_500(context).copyWith(
                     color: AppColors.pri600,
-                    fontSize: 10.sp,
                   ),
                 ),
                 if (events.isNotEmpty) ...[

@@ -5,6 +5,7 @@ import 'package:frontend/main.dart'; // Global Navigator Key
 import 'package:flutter/material.dart';
 import 'package:frontend/features/mypage/friend_profile_screen.dart';
 import 'package:frontend/features/feed/detail_feed_screen.dart';
+import 'package:frontend/features/notification/notification_screen.dart';
 
 // 백그라운드 메시지 핸들러 (top-level 함수 필수)
 @pragma('vm:entry-point')
@@ -114,8 +115,9 @@ class FCMService {
     final type = data['type'];
     print('🎯 알림 타입: $type, 데이터: $data');
 
+    // 1) FOLLOW / FOLLOW_REQUEST → FriendProfileScreen (targetId 또는 userId)
     if (type == 'FOLLOW' || type == 'FOLLOW_REQUEST') {
-      final userId = _parseId(data['userId']);
+      final userId = _parseId(data['targetId']) ?? _parseId(data['userId']);  // ✅ targetId 우선
       if (userId != null) {
         print('👤 프로필 화면으로 이동: userId=$userId');
         Navigator.push(
@@ -124,9 +126,13 @@ class FCMService {
             builder: (_) => FriendProfileScreen(userId: userId),
           ),
         );
+        return;
       }
-    } else if (type == 'LIKE' || type == 'COMMENT' || type == 'NEW_RECORD') {
-      final recordId = _parseId(data['recordId']);
+    }
+
+    // 2) COMMENT / LIKE / NEW_RECORD → DetailFeedScreen (targetId)
+    if (type == 'COMMENT' || type == 'LIKE' || type == 'NEW_RECORD') {
+      final recordId = _parseId(data['targetId']);  // ✅ targetId
       if (recordId != null) {
         print('📝 게시글 상세 화면으로 이동: recordId=$recordId');
         Navigator.push(
@@ -135,13 +141,44 @@ class FCMService {
             builder: (_) => DetailFeedScreen(recordId: recordId),
           ),
         );
+        return;
       }
-    } else if (type == 'SYSTEM' || type == 'NEWS') {
-      print('📢 시스템/소식 알림 - 별도 화면 이동 없음');
+    }
+
+    // 3) SYSTEM / NEWS → NotificationScreen
+    if (type == 'SYSTEM' || type == 'NEWS') {
+      print('📢 시스템/소식 알림 - 알림 화면으로 이동');
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NotificationScreen(),
+        ),
+      );
+      return;
+    }
+
+    // 4) 그 외: targetId 또는 userId 있으면 프로필
+    final userId = _parseId(data['targetId']) ?? _parseId(data['userId']);
+    if (userId != null) {
+      print('👤 userId 기반 프로필 화면으로 이동: userId=$userId');
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FriendProfileScreen(userId: userId),
+        ),
+      );
     } else {
-      print('⚠️ 알 수 없는 알림 타입: $type');
+      print('⚠️ 알 수 없는 알림 타입 또는 데이터 부족 - 알림 화면으로 이동');
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NotificationScreen(),
+        ),
+      );
     }
   }
+
+
 
   int? _parseId(dynamic value) {
     if (value == null) return null;

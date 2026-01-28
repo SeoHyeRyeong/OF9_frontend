@@ -54,3 +54,4 @@
 - 작업 내용
 - 미리보기(첨부)
 <img width="640" alt="img1 daumcdn" src="https://github.com/user-attachments/assets/feda2e1e-8965-46fc-8548-48fc970402c8" />
+# CI 재실행

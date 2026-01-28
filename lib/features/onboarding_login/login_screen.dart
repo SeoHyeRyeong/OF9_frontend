@@ -187,12 +187,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: scaleHeight(28)),
+              SizedBox(height: scaleHeight(16)),
 
               // 5. 카카오 로그인 버튼
               SizedBox(
                 width: double.infinity,
-                height: scaleHeight(60),
+                height: scaleHeight(50),
                 child: ElevatedButton(
                   onPressed: isLoading ? null : _handleKakaoLogin,
                   style: ElevatedButton.styleFrom(
@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(width: scaleWidth(8)),
                       FixedText(
                         '카카오로 로그인',
-                        style: AppFonts.pretendard.head_sm_600(context).copyWith(
+                        style: AppFonts.pretendard.body_sm_500(context).copyWith(
                           color: AppColors.kakao02,
                         ),
                       ),
@@ -225,6 +225,52 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+              SizedBox(height: scaleHeight(8)),
+
+              // 🍎 애플 로그인 버튼 UI 추가
+              SizedBox(
+                width: double.infinity,
+                height: scaleHeight(50),
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : () {
+                    // TODO: 애플 로그인 로직 연결 예정
+                    // 스낵바 메시지 출력
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('준비 중입니다'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black, // 애플 버튼 배경색
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(scaleHeight(16)),
+                    ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // 애플 로고 아이콘 (Icon 혹은 SvgPicture 사용)
+                      const Icon(
+                        Icons.apple,
+                        color: Colors.white,
+                        size: 25,
+                      ),
+                      SizedBox(width: scaleWidth(8)),
+                      FixedText(
+                        'Apple로 계속하기',
+                        style: AppFonts.pretendard.body_sm_500(context).copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
               SizedBox(height: scaleHeight(16)),
 
               // 6. 로그인 문제 텍스트
